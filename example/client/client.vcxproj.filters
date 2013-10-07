@@ -1,0 +1,65 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="..\..\depends\log4z\log4z.cpp">
+      <Filter>log</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\network\iocp\public.cpp">
+      <Filter>network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\network\iocp\tcpaccept_impl.cpp">
+      <Filter>network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\network\iocp\tcpsocket_impl.cpp">
+      <Filter>network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\network\iocp\udpsocket_impl.cpp">
+      <Filter>network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\network\iocp\iocp_impl.cpp">
+      <Filter>network</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\depends\protocol4z\protocol4z.h" />
+    <ClInclude Include="..\..\depends\log4z\log4z.h">
+      <Filter>log</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\network\zsummer.h">
+      <Filter>network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\network\iocp\public.h">
+      <Filter>network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\network\tcpaccept.h">
+      <Filter>network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\network\iocp\tcpaccept_impl.h">
+      <Filter>network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\network\tcpsocket.h">
+      <Filter>network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\network\iocp\tcpsocket_impl.h">
+      <Filter>network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\network\udpsocket.h">
+      <Filter>network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\network\iocp\udpsocket_impl.h">
+      <Filter>network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\network\iocp\iocp_impl.h">
+      <Filter>network</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="log">
+      <UniqueIdentifier>{02d03eaf-85db-4dd2-9262-51d4670d5d72}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="network">
+      <UniqueIdentifier>{1670c306-e1cc-4a8e-b20d-e1feac7c711b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -52,11 +52,15 @@ CUdpSocketImpl::CUdpSocketImpl()
 	m_recvHandle._type = tagReqHandle::HANDLE_RECVFROM;
 	m_recvWSABuf.buf = NULL;
 	m_recvWSABuf.len = 0;
+	m_recvLock = false;
 
 	memset(&m_sendHandle, 0, sizeof(m_sendHandle));
 	m_sendHandle._type = tagReqHandle::HANDLE_SENDTO;
 	m_sendWSABuf.buf = NULL;
 	m_sendWSABuf.len = 0;
+	m_sendLock = false;
+	m_dstIP;
+	m_dstPort = 0;
 
 	m_nLinkStatus = LS_UNINITIALIZE;
 
@@ -131,44 +135,53 @@ bool CUdpSocketImpl::DoSend(char * buf, unsigned int len, const char *dstip, uns
 {
 	if (m_summer == NULL)
 	{
-		LCF("CUdpSocket::DoSend IIOServer pointer uninitialize.socket=" << (unsigned int) m_socket);
+		LCF("CUdpSocketImpl::DoSend IIOServer pointer uninitialize.socket=" << (unsigned int) m_socket);
 		return false;
 	}
 	if (m_nLinkStatus != LS_ESTABLISHED)
 	{
-		LCF("CUdpSocket::DoSendto socket status != LS_ESTABLISHED. socket="<<(unsigned int) m_socket);
+		LCF("CUdpSocketImpl::DoSendto socket status != LS_ESTABLISHED. socket="<<(unsigned int) m_socket);
 		return false;
 	}
 
 	if (len == 0 || len >1200)
 	{
-		LCF("CUdpSocket::DoSend length is error. socket="<<(unsigned int) m_socket);
+		LCF("CUdpSocketImpl::DoSend length is error. socket="<<(unsigned int) m_socket);
 		return false;
 	}
 
+	if (m_sendLock)
+	{
+		LCF("CUdpSocketImpl::DoSend  is locking. socket="<<(unsigned int) m_socket);
+		return false;
+	}
 	
 
 	m_sendWSABuf.buf = buf;
 	m_sendWSABuf.len = len;
+	m_onSendHandler = handler;
+	m_dstIP = dstip;
+	m_dstPort = dstport;
 	DWORD dwTemp1=0;
 	sockaddr_in dst;
 	dst.sin_addr.s_addr = inet_addr(dstip);
 	dst.sin_port = htons(dstport);
 	dst.sin_family = AF_INET;
 	//synchronous
-	if (sendto(m_socket, buf, len, 0, (sockaddr*)&dst, sizeof(dst)) <= 0)
-	{
-		return false;
-	}
-//  //asynchronous
-// 	if (WSASendTo(m_socket, &m_sendWSABuf, 1, &dwTemp1, 0,(sockaddr*)&dst, sizeof(dst),  &m_sendHandle._overlapped, NULL) != 0)
-// 	{
-// 		if (WSAGetLastError() != WSA_IO_PENDING)
-// 		{
-// 			LCE("CUdpSocket::DoSend DoSend failed and ERRCODE!=ERROR_IO_PENDING, socket="<< (unsigned int) m_socket << ", ERRCODE=" << WSAGetLastError());
-// 			return false;
-// 		}
-// 	}
+//	if (sendto(m_socket, buf, len, 0, (sockaddr*)&dst, sizeof(dst)) <= 0)
+//	{
+//		return false;
+//	}
+    //asynchronous
+ 	if (WSASendTo(m_socket, &m_sendWSABuf, 1, &dwTemp1, 0,(sockaddr*)&dst, sizeof(dst),  &m_sendHandle._overlapped, NULL) != 0)
+ 	{
+ 		if (WSAGetLastError() != WSA_IO_PENDING)
+ 		{
+ 			LCE("CUdpSocket::DoSend DoSend failed and ERRCODE!=ERROR_IO_PENDING, socket="<< (unsigned int) m_socket << ", ERRCODE=" << WSAGetLastError());
+ 			return false;
+ 		}
+ 	}
+	m_sendLock = true;
 	return true;
 }
 
@@ -177,21 +190,26 @@ bool CUdpSocketImpl::DoRecv(char * buf, unsigned int len, const _OnRecvHandler& 
 {
 	if (m_summer == NULL)
 	{
-		LCF("CUdpSocket::DoRecv IIOServer pointer uninitialize.socket=" << (unsigned int) m_socket);
+		LCF("CUdpSocketImpl::DoRecv IIOServer pointer uninitialize.socket=" << (unsigned int) m_socket);
 		return false;
 	}
 	if (m_nLinkStatus != LS_ESTABLISHED)
 	{
-		LCF("CUdpSocket::DoRecv socket status != LS_ESTABLISHED. socket="<<(unsigned int) m_socket);
+		LCF("CUdpSocketImpl::DoRecv socket status != LS_ESTABLISHED. socket="<<(unsigned int) m_socket);
 		return false;
 	}
 
 	if (len == 0)
 	{
-		LCF("CUdpSocket::DoRecv length is 0. socket="<<(unsigned int) m_socket);
+		LCF("CUdpSocketImpl::DoRecv length is 0. socket="<<(unsigned int) m_socket);
 		return false;
 	}
 
+	if (m_recvLock)
+	{
+		LCF("CUdpSocketImpl::DoRecv  is locking. socket="<<(unsigned int) m_socket);
+		return false;
+	}
 
 	m_recvWSABuf.buf = buf;
 	m_recvWSABuf.len = len;
@@ -208,6 +226,7 @@ bool CUdpSocketImpl::DoRecv(char * buf, unsigned int len, const _OnRecvHandler& 
 			return false;
 		}
 	}
+	m_recvLock = true;
 	return true;
 }
 
@@ -215,22 +234,27 @@ bool CUdpSocketImpl::OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned 
 {
 	if (cType == tagReqHandle::HANDLE_RECVFROM)
 	{
+		m_recvLock = false;
 		if (bSuccess && dwTranceCount > 0)
 		{
-			m_onRecvHander(EC_SUCCESS, 
-				inet_ntoa(m_recvFrom.sin_addr), ntohs(m_recvFrom.sin_port),
-				m_recvWSABuf.buf, dwTranceCount);
+			m_onRecvHander(EC_SUCCESS, inet_ntoa(m_recvFrom.sin_addr), ntohs(m_recvFrom.sin_port), dwTranceCount);
 		}
 		else
 		{
-			m_onRecvHander(EC_ERROR, 
-				"0.0.0.0", 0,
-				m_recvWSABuf.buf, 0);
+			m_onRecvHander(EC_ERROR, "0.0.0.0", 0,0);
 		}
 	}
 	else if (cType == tagReqHandle::HANDLE_SENDTO)
 	{
-//		m_onSendHandler();
+		m_sendLock = false;
+		if (bSuccess && dwTranceCount > 0)
+		{
+			m_onSendHandler(EC_SUCCESS);
+		}
+		else
+		{
+			m_onSendHandler(EC_ERROR);
+		}
 	}
 	return true;
 }

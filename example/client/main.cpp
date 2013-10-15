@@ -37,7 +37,7 @@
 //! zsummer的测试客户端模块
 //! main文件
 
-
+#include <signal.h>
 
 #include "../../network/zsummer.h"
 #include "../../network/tcpaccept.h"
@@ -86,9 +86,11 @@ int main(int argc, char* argv[])
 	{
 		for (int i = 0; i < 10; i++)
 		{
-			CTcpSocketPtr s(new zsummer::network::CTcpSocket("61.135.169.125", 80));
+			std::string ip="61.135.169.125";
+			unsigned short port = 80;
+			CTcpSocketPtr s(new zsummer::network::CTcpSocket(ip, port));
 			s->Initialize(summer);
-			s->DoConnect(onConnect);
+			s->DoConnect(std::bind(onConnect, std::placeholders::_1, ip, port));
 			clients.push_back(s);
 		}
 	};

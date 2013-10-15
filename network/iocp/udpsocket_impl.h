@@ -46,7 +46,8 @@ namespace zsummer
 		class CUdpSocketImpl
 		{
 		public:
-			typedef std::function<void (zsummer::network::ErrorCode, const char*, unsigned short, char*, int)> _OnRecvHandler;
+			// const char * remoteIP, unsigned short remotePort, nTranslate
+			typedef std::function<void (zsummer::network::ErrorCode, const char*, unsigned short, int)> _OnRecvHandler;
 			typedef std::function<void(zsummer::network::ErrorCode)> _OnSendHandler;
 			CUdpSocketImpl();
 			~CUdpSocketImpl();
@@ -67,11 +68,15 @@ namespace zsummer
 			sockaddr_in  m_recvFrom;
 			int			 m_recvFromLen;
 			_OnRecvHandler m_onRecvHander;
+			bool		 m_recvLock;
 
 			//send
 			tagReqHandle m_sendHandle;
 			WSABUF		 m_sendWSABuf;
 			_OnSendHandler m_onSendHandler;
+			std::string  m_dstIP;
+			unsigned short m_dstPort;
+			bool		 m_sendLock;
 
 			LINK_STATUS m_nLinkStatus;
 		};

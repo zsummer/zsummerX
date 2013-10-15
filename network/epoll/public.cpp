@@ -34,77 +34,14 @@
  * (end of COPYRIGHT)
  */
 
+#include "public.h"
 
-
-
-#ifndef _ZSUMMER_11X_UDPSOCKET_H_
-#define _ZSUMMER_11X_UDPSOCKET_H_
-#ifdef WIN32
-#include "iocp/udpsocket_impl.h"
-#else
-#include "epoll/udpsocket_impl.h"
-#endif
-namespace zsummer
+zsummer::network::CApp::CApp()
 {
-	namespace network
-	{
-		class CUdpSocket
-		{
-		public:
-			CUdpSocket(){}
-			~CUdpSocket(){}
-			bool Initialize(CZSummer &summer, const char *ip, unsigned short port = 0)
-			{
-				return m_impl.Initialize(summer, ip, port);
-			}
-			template<typename H>
-			bool DoRecv(char * buf, unsigned int len, const H &h)
-			{
-				return m_impl.DoRecv(buf, len, h);
-			}
-			template<typename H>
-			bool DoSend(char * buf, unsigned int len, const char *dstip, unsigned short dstport, const H & h)
-			{
-				return m_impl.DoSend(buf, len, dstip, dstport, h);
-			}
-		private:
-			CUdpSocketImpl m_impl;
-		};
-	};
-	
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#endif
-
-
-
-
-
-
-
-
+	g_coreID = -1;
+}
+LoggerId g_coreID;
+zsummer::network::CApp g_epoll_app;
 
 
 

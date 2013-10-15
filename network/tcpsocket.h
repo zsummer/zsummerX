@@ -43,6 +43,7 @@
 #ifdef WIN32
 #include "iocp/tcpsocket_impl.h"
 #else
+#include "epoll/tcpsocket_impl.h"
 #endif
 namespace zsummer
 {
@@ -51,8 +52,15 @@ namespace zsummer
 		class CTcpSocket
 		{
 		public:
+#ifdef WIN32
 			CTcpSocket(std::string remoteIP, unsigned short remotePort):m_impl(INVALID_SOCKET, remoteIP, remotePort){}
 			CTcpSocket(SOCKET s, std::string remoteIP, unsigned short remotePort):m_impl(s, remoteIP, remotePort){}
+#else
+			CTcpSocket(std::string remoteIP, unsigned short remotePort):m_impl(-1, remoteIP, remotePort){}
+			CTcpSocket(int fd, std::string remoteIP, unsigned short remotePort):m_impl(fd, remoteIP, remotePort){}
+#endif // WIN32
+
+			
 			~CTcpSocket(){}
 			inline bool Initialize(CZSummer & summer)
 			{

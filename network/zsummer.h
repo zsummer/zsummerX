@@ -63,6 +63,7 @@
 #ifdef WIN32
 #include "iocp/iocp_impl.h"
 #else
+#include "epoll/epoll_impl.h"
 #endif
 
 namespace zsummer

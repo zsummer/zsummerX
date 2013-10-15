@@ -34,12 +34,8 @@
 * (end of COPYRIGHT)
 */
 
-
-
-#ifndef _ZSUMMER_11X_IOCP_IMPL_H_
-#define _ZSUMMER_11X_IOCP_IMPL_H_
-
-
+#ifndef _ZSUMMER_EPOLL_IMPL_H_
+#define _ZSUMMER_EPOLL_IMPL_H_
 #include "public.h"
 
 
@@ -47,54 +43,22 @@ namespace zsummer
 {
 	namespace network
 	{
-		//! 消息泵, message loop.
 		class CZSummerImpl
 		{
 		public:
+			typedef std::vector<std::pair<int, void*> > MsgVct;
 			typedef std::function<void()> _OnPostHandler;
 			typedef std::function<void(unsigned long long)> _OnTimerHandler;
-			CZSummerImpl()
-			{
-				m_io = NULL;
-				m_queSeq = 0;
-			}
-			~CZSummerImpl()
-			{
-			}
-			inline bool Initialize()
-			{
-				if (g_coreID <0)
-				{
-					g_coreID = zsummer::log4z::ILog4zManager::GetInstance()->FindLogger("NetWork");
-				}
-
-				if (m_io != NULL)
-				{
-					LCF("iocp is craeted !");
-					return false;
-				}
-				m_io = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, NULL, 1);
-				if (!m_io)
-				{
-					LCF("CreateIoCompletionPort False!");
-					return false;
-				}
-				m_nextExpire = (unsigned long long)-1;
-				return true;
-			}
+			CZSummerImpl();
+			~CZSummerImpl();
+			bool Initialize();
 			void RunOnce();
+
 			template <typename handle>
 			inline void Post(const handle &h)
 			{
 				PostMsg(PCK_USER_DATA, h);
 			}
-
-			inline void PostMsg(POST_COM_KEY pck, const _OnPostHandler &handle)
-			{
-				_OnPostHandler *ptr = new _OnPostHandler(handle);
-				PostQueuedCompletionStatus(m_io, 0, pck,(LPOVERLAPPED)(ptr));
-			}
-
 			inline unsigned long long CreateTimer(unsigned int delayms, const _OnTimerHandler &handle)
 			{
 				_OnTimerHandler *pfunc= new _OnTimerHandler(handle);
@@ -132,7 +96,6 @@ namespace zsummer
 				return bRet;
 			}
 		public:
-
 			inline void CheckTimer()
 			{
 				if (!m_queTimer.empty())
@@ -176,16 +139,25 @@ namespace zsummer
 				}
 			}
 
+
 		public:
-			//! IOCP句柄
-			HANDLE m_io;
+			void PostMsg(POST_COM_KEY pck, const _OnPostHandler &handle);
+
+		public:
+			int	m_epoll;
+			//! 网络消息
+			epoll_event m_events[5000];
+			//线程消息
+			int		m_sockpair[2];
+			tagRegister m_recv;
+			MsgVct	m_msgs;
+			std::mutex	m_msglock;
+
 			//! 定时器
 			std::map<unsigned long long, _OnTimerHandler* > m_queTimer;
 			unsigned int m_queSeq; //! 用于生成定时器ID
 			volatile unsigned long long m_nextExpire; //! 最快触发时间
 			std::mutex m_lockTimer; //! 锁
-
-
 		};
 	}
 

@@ -268,13 +268,13 @@ bool CTcpSocketImpl::OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned 
 					LCW("setsockopt TCP_NODELAY fail!  last err=" << WSAGetLastError() );
 				}
 			}
-			m_onConnectHandler(ErrorCode::EC_SUCCESS, m_remoteIP, m_remotePort);
+			m_onConnectHandler(ErrorCode::EC_SUCCESS);
 		}
 		else
 		{
 			closesocket(m_socket);
 			m_socket = INVALID_SOCKET;
-			m_onConnectHandler(ErrorCode::EC_ERROR, m_remoteIP, m_remotePort);
+			m_onConnectHandler(ErrorCode::EC_ERROR);
 		}
 		return true;
 	}
@@ -287,16 +287,16 @@ bool CTcpSocketImpl::OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned 
 		m_isRecving = false;
 		if (!bSuccess)
 		{
-			m_onRecvHandler(ErrorCode::EC_ERROR, m_recvWSABuf.buf, m_recvWSABuf.len, dwTranceCount);
+			m_onRecvHandler(ErrorCode::EC_ERROR, dwTranceCount);
 			return true;
 		}
 		// client side active closed
 		if (dwTranceCount == 0)
 		{
-			m_onRecvHandler(ErrorCode::EC_ERROR, m_recvWSABuf.buf, m_recvWSABuf.len, dwTranceCount);
+			m_onRecvHandler(ErrorCode::EC_ERROR, dwTranceCount);
 			return true;
 		}
-		m_onRecvHandler(ErrorCode::EC_SUCCESS, m_recvWSABuf.buf, m_recvWSABuf.len, dwTranceCount);
+		m_onRecvHandler(ErrorCode::EC_SUCCESS, dwTranceCount);
 		return true;
 	}
 	if (cType == tagReqHandle::HANDLE_SEND)
@@ -305,10 +305,10 @@ bool CTcpSocketImpl::OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned 
 		m_isSending = false;
 		if (!bSuccess)
 		{
-			m_onSendHandler(ErrorCode::EC_ERROR, m_sendWsaBuf.buf, m_sendWsaBuf.len, dwTranceCount);
+			m_onSendHandler(ErrorCode::EC_ERROR,dwTranceCount);
 			return true;
 		}
-		m_onSendHandler(ErrorCode::EC_SUCCESS, m_sendWsaBuf.buf, m_sendWsaBuf.len, dwTranceCount);
+		m_onSendHandler(ErrorCode::EC_SUCCESS, dwTranceCount);
 		return true;
 	}
 	return true;

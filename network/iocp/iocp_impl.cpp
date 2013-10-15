@@ -78,7 +78,7 @@ void CZSummerImpl::RunOnce()
 	//! 检查自定义通知
 	if (uComKey == PCK_USER_DATA)
 	{
-		_OnPostHandle * func = (_OnPostHandle*) pOverlapped;
+		_OnPostHandler * func = (_OnPostHandler*) pOverlapped;
 		(*func)();
 		delete func;
 		return;

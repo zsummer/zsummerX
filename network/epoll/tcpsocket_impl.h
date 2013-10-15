@@ -33,67 +33,68 @@
 * 
 * (end of COPYRIGHT)
 */
-#ifndef _ZSUMMER_11X_TCPSOCKET_IMPL_H_
-#define _ZSUMMER_11X_TCPSOCKET_IMPL_H_
+
+#ifndef _ZSUMMER_TCPSOCKET_IMPL_H_
+#define _ZSUMMER_TCPSOCKET_IMPL_H_
+
+
 
 #include "public.h"
 #include "../zsummer.h"
+
 namespace zsummer
 {
 	namespace network
 	{
+
 		class CTcpSocketImpl
 		{
 		public:
 			typedef std::function<void(zsummer::network::ErrorCode)> _OnConnectHandler;
 			typedef std::function<void(zsummer::network::ErrorCode, int)> _OnSendHandler;
 			typedef _OnSendHandler _OnRecvHandler;
-			CTcpSocketImpl(SOCKET s, std::string remoteIP, unsigned short remotePort);
+			CTcpSocketImpl(int fd, std::string remoteIP, unsigned short remotePort);
 			~CTcpSocketImpl();
 			bool Initialize(CZSummer & summer);
 			inline bool GetPeerInfo(std::string& remoteIP, unsigned short &remotePort)
 			{
 				remoteIP = m_remoteIP;
 				remotePort = m_remotePort;
+				return true;
 			}
 			bool DoConnect(const _OnConnectHandler & handler);
 			bool DoSend(char * buf, unsigned int len, const _OnSendHandler &handler);
 			bool DoRecv(char * buf, unsigned int len, const _OnRecvHandler & handler);
 			bool DoClose();
+
+			
+
+			void OnPostClose();
+
+			bool OnEPOLLMessage(int type, int flag);
+
+
 		public:
-			bool OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned char cType);
-		public:
-			//private
 			CZSummer *  m_summer;
-			SOCKET		m_socket;
 			std::string m_remoteIP;
 			unsigned short m_remotePort;
-
-			//recv
-			tagReqHandle m_recvHandle;
-			WSABUF		 m_recvWSABuf;
 			_OnRecvHandler m_onRecvHandler;
-
-
-			//send
-			tagReqHandle m_sendHandle;
-			WSABUF		 m_sendWsaBuf;
 			_OnSendHandler m_onSendHandler;
-
-
-			//connect
-			tagReqHandle m_connectHandle;
 			_OnConnectHandler m_onConnectHandler;
-			//status
-			bool m_isRecving;
-			bool m_isSending;
-			bool m_isConnecting;
-			int m_nLinkStatus;
+
+			tagRegister m_handle;
+
+			bool		m_bNeedDestroy;
+
+			unsigned int m_iRecvLen;
+			char	*	 m_pRecvBuf;
+
+			unsigned int m_iSendLen;
+			char *		 m_pSendBuf;
 		};
 	}
+
 }
-
-
 
 
 

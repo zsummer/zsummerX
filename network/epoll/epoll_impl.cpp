@@ -59,11 +59,6 @@ CZSummerImpl::~CZSummerImpl()
 
 bool CZSummerImpl::Initialize()
 {
-	if (g_coreID <0)
-	{
-		g_coreID = zsummer::log4z::ILog4zManager::GetInstance()->FindLogger("NetWork");
-	}
-	//assert(g_coreID != -1);
 	m_nextExpire = (unsigned long long)-1;
 
 	if (m_epoll != 0)

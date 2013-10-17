@@ -33,7 +33,7 @@
  * 
  * (end of COPYRIGHT)
  */
-#include "public.h"
+
 #include "../zsummer.h"
 #include "tcpaccept_impl.h"
 

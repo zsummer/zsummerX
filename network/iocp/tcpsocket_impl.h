@@ -36,7 +36,7 @@
 #ifndef _ZSUMMER_11X_TCPSOCKET_IMPL_H_
 #define _ZSUMMER_11X_TCPSOCKET_IMPL_H_
 
-#include "public.h"
+#include "../common/common.h"
 #include "../zsummer.h"
 namespace zsummer
 {
@@ -45,9 +45,7 @@ namespace zsummer
 		class CTcpSocketImpl
 		{
 		public:
-			typedef std::function<void(zsummer::network::ErrorCode)> _OnConnectHandler;
-			typedef std::function<void(zsummer::network::ErrorCode, int)> _OnSendHandler;
-			typedef _OnSendHandler _OnRecvHandler;
+
 			CTcpSocketImpl(SOCKET s, std::string remoteIP, unsigned short remotePort);
 			~CTcpSocketImpl();
 			bool Initialize(CZSummer & summer);

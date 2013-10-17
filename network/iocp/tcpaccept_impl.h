@@ -36,7 +36,7 @@
 #ifndef _ZSUMMER_11X_TCPACCEPT_IMPL_H_
 #define _ZSUMMER_11X_TCPACCEPT_IMPL_H_
 
-#include "public.h"
+#include "../common/common.h"
 #include "../zsummer.h"
 #include "../tcpsocket.h"
 namespace zsummer
@@ -46,8 +46,7 @@ namespace zsummer
 		class CTcpAcceptImpl
 		{
 		public:
-			typedef std::shared_ptr<CTcpSocket> CTcpSocketPtr;
-			typedef std::function<void(zsummer::network::ErrorCode, CTcpSocketPtr)> _OnAcceptHandler;
+
 			CTcpAcceptImpl(CZSummer &summer);
 			virtual ~CTcpAcceptImpl();
 			bool OpenAccept(const char * ip, unsigned short port);

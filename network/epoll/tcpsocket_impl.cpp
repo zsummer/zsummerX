@@ -237,45 +237,61 @@ bool CTcpSocketImpl::OnEPOLLMessage(int type, int flag)
 		return true;
 	}
 
-
-	if (flag & EPOLLHUP)
+	if (flag & EPOLLHUP || flag & EPOLLERR)
 	{
-		//LCI("CTcpSocket::OnEPOLLMessage()" << this << " EPOLLHUP  error. epfd="<<((CIOServer *)m_ios)->m_epoll << ", handle fd=" << m_handle._fd << ", events=" << flag);
+		if (flag & EPOLLHUP)
+		{
+			//LCI("CTcpSocket::OnEPOLLMessage()" << this << " EPOLLHUP  error. epfd="<<((CIOServer *)m_ios)->m_epoll << ", handle fd=" << m_handle._fd << ", events=" << flag);
+		}
+
+		if (flag & EPOLLERR)
+		{
+			//LCI("CTcpSocket::OnEPOLLMessage()" << this << "  EPOLLERR error. epfd="<<m_summer->m_impl.m_epoll << ", handle fd=" << m_handle._fd << ", events=" << flag);
+		}
+		if (m_handle._event.events  & EPOLLIN)
+		{
+			bool ret = true;
+			ZSUMMER_EPOLL_MOD_DEL(ret, EPOLLIN);
+			m_onRecvHandler(EC_ERROR,0);
+		}
+		if (m_handle._event.events  & EPOLLOUT)
+		{
+			bool ret = true;
+			ZSUMMER_EPOLL_MOD_DEL(ret, EPOLLOUT);
+			m_onSendHandler(EC_ERROR,0);
+		}
 		return false;
 	}
 
-	if (flag & EPOLLERR)
-	{
-		//LCI("CTcpSocket::OnEPOLLMessage()" << this << "  EPOLLERR error. epfd="<<m_summer->m_impl.m_epoll << ", handle fd=" << m_handle._fd << ", events=" << flag);
-		return false;
-	}
+
 	if (flag & EPOLLIN)
 	{
-		if (m_pRecvBuf == NULL || m_iRecvLen == 0)
+		int ret = recv(m_handle._fd, m_pRecvBuf, m_iRecvLen, 0);
+		if (ret == 0)
 		{
-			LCE("CTcpSocket::OnEPOLLMessage()" << this << " recv error. epfd="<<m_summer->m_impl.m_epoll << ", handle fd=" << m_handle._fd << ", m_pRecvBuf=" <<(void*)m_pRecvBuf << ", m_iRecvLen=" << m_iRecvLen);
+			LCE("CTcpSocket::OnEPOLLMessage()" << this << " recv error. epfd="<<m_summer->m_impl.m_epoll << ", handle fd=" << m_handle._fd << ", ret=" << ret << ", errno=" << strerror(errno));
+			m_onRecvHandler(EC_REMOTE_CLOSED,ret);
+			return false;
 		}
-		else
+		if (ret ==-1 && (errno !=EAGAIN && errno != EWOULDBLOCK) )
 		{
-			int ret = recv(m_handle._fd, m_pRecvBuf, m_iRecvLen, 0);
-			if (ret == 0 || (ret ==-1 && (errno !=EAGAIN && errno != EWOULDBLOCK)) )
+			LCE("CTcpSocket::OnEPOLLMessage()" << this << " recv error. epfd="<<m_summer->m_impl.m_epoll << ", handle fd=" << m_handle._fd << ", ret=" << ret << ", errno=" << strerror(errno));
+			m_onRecvHandler(EC_ERROR,ret);
+			return false;
+		}
+
+		if (ret != -1)
+		{
+			m_pRecvBuf = NULL;
+			m_iRecvLen = 0;
+			bool mod = true;
+			ZSUMMER_EPOLL_MOD_DEL(mod, EPOLLIN);
+			if (!mod)
 			{
-				LCE("CTcpSocket::OnEPOLLMessage()" << this << " recv error. epfd="<<m_summer->m_impl.m_epoll << ", handle fd=" << m_handle._fd << ", ret=" << ret << ", errno=" << strerror(errno));
+				m_onRecvHandler(EC_ERROR,0);
 				return false;
 			}
-
-			if (ret != -1)
-			{
-				m_pRecvBuf = NULL;
-				m_iRecvLen = 0;
-				m_handle._event.events = m_handle._event.events& ~EPOLLIN;
-				if (!EPOLLMod(m_summer->m_impl.m_epoll, m_handle._fd, &m_handle._event))
-				{
-					LCE("CTcpSocket::OnEPOLLMessage()" << this << "recv EPOLLMod error. epfd="<<m_summer->m_impl.m_epoll << ", handle fd=" << m_handle._fd << ", errno=" << strerror(errno));
-					return false;
-				}
-				m_onRecvHandler(EC_SUCCESS,ret);
-			}
+			m_onRecvHandler(EC_SUCCESS,ret);
 		}
 	}
 
@@ -298,10 +314,11 @@ bool CTcpSocketImpl::OnEPOLLMessage(int type, int flag)
 			{
 				m_pSendBuf = NULL;
 				m_iSendLen = 0;
-				m_handle._event.events = m_handle._event.events& ~EPOLLOUT;
-				if (!EPOLLMod(m_summer->m_impl.m_epoll, m_handle._fd, &m_handle._event))
+				bool mod = true;
+				ZSUMMER_EPOLL_MOD_DEL(mod, EPOLLOUT);
+				if (!mod)
 				{
-					LCE("CTcpSocket::OnEPOLLMessage()" << this << "send EPOLLMod error. epfd="<<m_summer->m_impl.m_epoll << ", handle fd=" << m_handle._fd << ", errno=" << strerror(errno));
+					m_onSendHandler(EC_ERROR,0);
 					return false;
 				}
 				m_onSendHandler(EC_SUCCESS, ret);

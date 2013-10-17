@@ -36,7 +36,7 @@
 #ifndef _ZSUMMER_11X_UDPSOCKET_IMPL_H_
 #define _ZSUMMER_11X_UDPSOCKET_IMPL_H_
 
-#include "public.h"
+#include "../common/common.h"
 #include "../zsummer.h"
 
 namespace zsummer
@@ -46,14 +46,12 @@ namespace zsummer
 		class CUdpSocketImpl
 		{
 		public:
-			// const char * remoteIP, unsigned short remotePort, nTranslate
-			typedef std::function<void (zsummer::network::ErrorCode, const char*, unsigned short, int)> _OnRecvHandler;
-			typedef std::function<void(zsummer::network::ErrorCode)> _OnSendHandler;
+
 			CUdpSocketImpl();
 			~CUdpSocketImpl();
 			bool Initialize(CZSummer & summer, const char *ip, unsigned short port);
-			bool DoRecv(char * buf, unsigned int len, const _OnRecvHandler& handler);
-			bool DoSend(char * buf, unsigned int len, const char *dstip, unsigned short dstport, const _OnSendHandler& handler);
+			bool DoRecv(char * buf, unsigned int len, const _OnRecvFromHandler& handler);
+			bool DoSend(char * buf, unsigned int len, const char *dstip, unsigned short dstport, const _OnSendToHandler& handler);
 			bool OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned char cType);
 		public:
 			//private
@@ -67,13 +65,13 @@ namespace zsummer
 			WSABUF		 m_recvWSABuf;
 			sockaddr_in  m_recvFrom;
 			int			 m_recvFromLen;
-			_OnRecvHandler m_onRecvHander;
+			_OnRecvFromHandler m_onRecvHander;
 			bool		 m_recvLock;
 
 			//send
 			tagReqHandle m_sendHandle;
 			WSABUF		 m_sendWSABuf;
-			_OnSendHandler m_onSendHandler;
+			_OnSendToHandler m_onSendHandler;
 			std::string  m_dstIP;
 			unsigned short m_dstPort;
 			bool		 m_sendLock;

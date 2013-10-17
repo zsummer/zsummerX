@@ -34,7 +34,7 @@
  * (end of COPYRIGHT)
  */
 
-#include "public.h"
+
 #include "tcpsocket_impl.h"
 
 using namespace zsummer::network;

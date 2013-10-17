@@ -34,7 +34,7 @@
  * (end of COPYRIGHT)
  */
 
-#include "public.h"
+
 #include "udpsocket_impl.h"
 #include "../zsummer.h"
 using namespace zsummer::network;
@@ -131,7 +131,7 @@ bool CUdpSocketImpl::Initialize(CZSummer & summer, const char *ip, unsigned shor
 
 
 
-bool CUdpSocketImpl::DoSend(char * buf, unsigned int len, const char *dstip, unsigned short dstport,const _OnSendHandler& handler )
+bool CUdpSocketImpl::DoSend(char * buf, unsigned int len, const char *dstip, unsigned short dstport,const _OnSendToHandler& handler )
 {
 	if (m_summer == NULL)
 	{
@@ -186,7 +186,7 @@ bool CUdpSocketImpl::DoSend(char * buf, unsigned int len, const char *dstip, uns
 }
 
 
-bool CUdpSocketImpl::DoRecv(char * buf, unsigned int len, const _OnRecvHandler& handler)
+bool CUdpSocketImpl::DoRecv(char * buf, unsigned int len, const _OnRecvFromHandler& handler)
 {
 	if (m_summer == NULL)
 	{

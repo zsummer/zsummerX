@@ -40,7 +40,7 @@
 #define _ZSUMMER_11X_IOCP_IMPL_H_
 
 
-#include "public.h"
+#include "../common/common.h"
 
 
 namespace zsummer
@@ -51,8 +51,7 @@ namespace zsummer
 		class CZSummerImpl
 		{
 		public:
-			typedef std::function<void()> _OnPostHandler;
-			typedef std::function<void(unsigned long long)> _OnTimerHandler;
+
 			CZSummerImpl()
 			{
 				m_io = NULL;
@@ -63,11 +62,6 @@ namespace zsummer
 			}
 			inline bool Initialize()
 			{
-				if (g_coreID <0)
-				{
-					g_coreID = zsummer::log4z::ILog4zManager::GetInstance()->FindLogger("NetWork");
-				}
-
 				if (m_io != NULL)
 				{
 					LCF("iocp is craeted !");

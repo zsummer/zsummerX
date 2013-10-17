@@ -34,29 +34,34 @@
  * (end of COPYRIGHT)
  */
 
-#include "public.h"
+#include "common.h"
 //init socket env
-zsummer::network::CInitWSASocketEnv appInitSocket;
+zsummer::network::CInitEnvironment appInitEnvironment;
 LoggerId g_coreID;
 
-
+#ifdef WIN32
 #pragma comment(lib, "ws2_32")
 #pragma comment(lib, "shlwapi")
 #pragma comment(lib, "psapi")
 #pragma comment(lib, "Mswsock")
+#endif
 
-zsummer::network::CInitWSASocketEnv::CInitWSASocketEnv()
+zsummer::network::CInitEnvironment::CInitEnvironment()
 {
+#ifdef WIN32
 	WORD version = MAKEWORD(2,2);
 	WSADATA d;
 	if (WSAStartup(version, &d) != 0)
 	{
 		assert(0);
 	}
-	g_coreID = -1;
+#endif
+	g_coreID = zsummer::log4z::ILog4zManager::GetInstance()->CreateLogger("NetWork");
 }
-zsummer::network::CInitWSASocketEnv::~CInitWSASocketEnv()
+zsummer::network::CInitEnvironment::~CInitEnvironment()
 {
+#ifdef WIN32
 	WSACleanup();
+#endif
 }
 

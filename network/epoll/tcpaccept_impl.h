@@ -37,7 +37,7 @@
 #ifndef _ZSUMMER_TCPACCEPT_IMPL_H_
 #define _ZSUMMER_TCPACCEPT_IMPL_H_
 
-#include "public.h"
+#include "../common/common.h"
 #include "../zsummer.h"
 #include "../tcpsocket.h"
 /*

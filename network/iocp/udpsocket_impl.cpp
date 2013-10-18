@@ -59,8 +59,7 @@ CUdpSocketImpl::CUdpSocketImpl()
 	m_sendWSABuf.buf = NULL;
 	m_sendWSABuf.len = 0;
 	m_sendLock = false;
-	m_dstIP;
-	m_dstPort = 0;
+
 
 	m_nLinkStatus = LS_UNINITIALIZE;
 
@@ -160,19 +159,12 @@ bool CUdpSocketImpl::DoSend(char * buf, unsigned int len, const char *dstip, uns
 	m_sendWSABuf.buf = buf;
 	m_sendWSABuf.len = len;
 	m_onSendHandler = handler;
-	m_dstIP = dstip;
-	m_dstPort = dstport;
 	DWORD dwTemp1=0;
 	sockaddr_in dst;
 	dst.sin_addr.s_addr = inet_addr(dstip);
 	dst.sin_port = htons(dstport);
 	dst.sin_family = AF_INET;
-	//synchronous
-//	if (sendto(m_socket, buf, len, 0, (sockaddr*)&dst, sizeof(dst)) <= 0)
-//	{
-//		return false;
-//	}
-    //asynchronous
+
  	if (WSASendTo(m_socket, &m_sendWSABuf, 1, &dwTemp1, 0,(sockaddr*)&dst, sizeof(dst),  &m_sendHandle._overlapped, NULL) != 0)
  	{
  		if (WSAGetLastError() != WSA_IO_PENDING)

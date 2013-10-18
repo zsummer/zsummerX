@@ -72,8 +72,6 @@ namespace zsummer
 			tagReqHandle m_sendHandle;
 			WSABUF		 m_sendWSABuf;
 			_OnSendToHandler m_onSendHandler;
-			std::string  m_dstIP;
-			unsigned short m_dstPort;
 			bool		 m_sendLock;
 
 			LINK_STATUS m_nLinkStatus;

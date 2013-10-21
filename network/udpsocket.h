@@ -53,9 +53,9 @@ namespace zsummer
 		public:
 			CUdpSocket(){}
 			~CUdpSocket(){}
-			bool Initialize(CZSummer &summer, const char *ip, unsigned short port = 0)
+			bool Initialize(CZSummer &summer, const char *localIP, unsigned short localPort = 0)
 			{
-				return m_impl.Initialize(summer, ip, port);
+				return m_impl.Initialize(summer, localIP, localPort);
 			}
 			template<typename H>
 			bool DoRecv(char * buf, unsigned int len, const H &h)

@@ -19,9 +19,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{E66E6ED2-A784-4919-B93D-5247624F2C4F}</ProjectGuid>
+    <ProjectGuid>{B3E829E2-6A0B-41CB-8E6D-AD9B46A2E0F0}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>client</RootNamespace>
+    <RootNamespace>linux</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -145,20 +145,19 @@
   <ItemGroup>
     <ClCompile Include="..\..\depends\log4z\log4z.cpp" />
     <ClCompile Include="..\..\network\common\common.cpp" />
-    <ClCompile Include="..\..\network\iocp\iocp_impl.cpp" />
-    <ClCompile Include="..\..\network\iocp\tcpaccept_impl.cpp" />
-    <ClCompile Include="..\..\network\iocp\tcpsocket_impl.cpp" />
-    <ClCompile Include="..\..\network\iocp\udpsocket_impl.cpp" />
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="..\..\network\epoll\epoll_impl.cpp" />
+    <ClCompile Include="..\..\network\epoll\tcpaccept_impl.cpp" />
+    <ClCompile Include="..\..\network\epoll\tcpsocket_impl.cpp" />
+    <ClCompile Include="..\..\network\epoll\udpsocket_impl.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\depends\log4z\log4z.h" />
     <ClInclude Include="..\..\depends\protocol4z\protocol4z.h" />
     <ClInclude Include="..\..\network\common\common.h" />
-    <ClInclude Include="..\..\network\iocp\iocp_impl.h" />
-    <ClInclude Include="..\..\network\iocp\tcpaccept_impl.h" />
-    <ClInclude Include="..\..\network\iocp\tcpsocket_impl.h" />
-    <ClInclude Include="..\..\network\iocp\udpsocket_impl.h" />
+    <ClInclude Include="..\..\network\epoll\epoll_impl.h" />
+    <ClInclude Include="..\..\network\epoll\tcpaccept_impl.h" />
+    <ClInclude Include="..\..\network\epoll\tcpsocket_impl.h" />
+    <ClInclude Include="..\..\network\epoll\udpsocket_impl.h" />
     <ClInclude Include="..\..\network\tcpaccept.h" />
     <ClInclude Include="..\..\network\tcpsocket.h" />
     <ClInclude Include="..\..\network\udpsocket.h" />

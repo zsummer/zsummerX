@@ -70,7 +70,7 @@ namespace zsummer
 
 			sockaddr_in		m_addr;
 
-			tagRegister m_handle;
+			tagRegister m_register;
 			_OnAcceptHandler m_onAcceptHandler;
 			bool	m_isAcceptLock;
 

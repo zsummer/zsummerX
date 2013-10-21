@@ -53,6 +53,7 @@
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <sys/epoll.h>
+#include <string.h>
 
 #endif
 
@@ -98,6 +99,38 @@ namespace zsummer
 		// const char * remoteIP, unsigned short remotePort, nTranslate
 		typedef std::function<void (zsummer::network::ErrorCode, const char*, unsigned short, int)> _OnRecvFromHandler;
 		typedef std::function<void(zsummer::network::ErrorCode)> _OnSendToHandler;
+
+#ifndef WIN32
+		inline bool SetNonBlock(int fd) 
+		{
+			return fcntl((fd), F_SETFL, fcntl(fd, F_GETFL)|O_NONBLOCK) == 0;
+		}
+		inline bool SetNoDelay(int fd)
+		{
+			int bTrue = true?1:0;
+			return setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (char*)&bTrue, sizeof(bTrue)) == 0;
+		}
+#else
+		inline bool SetNonBlock(SOCKET s) 
+		{		
+			unsigned long val = 1;
+			int nb = ioctlsocket(s, FIONBIO, &val);
+			if (nb != NO_ERROR)
+			{
+				return false;
+			}
+			return true;
+		}
+		inline bool SetNoDelay(SOCKET s)
+		{
+			BOOL bTrue = TRUE;
+			if (setsockopt(s,IPPROTO_TCP, TCP_NODELAY, (char*)&bTrue, sizeof(bTrue)) != 0)
+			{
+				return false;
+			}
+			return true;
+		}
+#endif
 	}
 }
 
@@ -172,15 +205,7 @@ namespace zsummer
 			inline void removeEvent(uint32_t ev){ _event.events &= ~ev;}
 		};
 
-		inline bool SetNonBlock(int fd) 
-		{
-			return fcntl((fd), F_SETFL, fcntl(fd, F_GETFL)|O_NONBLOCK) == 0;
-		}
-		inline bool SetNoDelay(int fd)
-		{
-			int bTrue = true?1:0;
-			return setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (char*)&bTrue, sizeof(bTrue)) == 0;
-		}
+
 		inline bool EPOLLMod(int epfd, int fd,  struct epoll_event *event)
 		{
 			if (epoll_ctl(epfd, EPOLL_CTL_MOD, fd, event) != 0)
@@ -192,24 +217,24 @@ namespace zsummer
 #define ZSUMMER_EPOLL_MOD_ADD(suc, flag) \
 		{ \
 			suc = true; \
-			m_handle._event.events = m_handle._event.events | flag; \
-			if (epoll_ctl(m_summer->m_impl.m_epoll, EPOLL_CTL_MOD,  m_handle._fd, &m_handle._event) != 0) \
+			m_register._event.events = m_register._event.events | flag; \
+			if (epoll_ctl(m_summer->m_impl.m_epoll, EPOLL_CTL_MOD,  m_register._fd, &m_register._event) != 0) \
 			{ \
 				LCE("ZSUMMER_EPOLL_MOD_ADD:" << this \
 				<< ", EPOLLMod error. epfd="<<m_summer->m_impl.m_epoll \
-				<< ", handle fd=" << m_handle._fd << ", errno=" << strerror(errno));\
+				<< ", m_register fd=" << m_register._fd << ", errno=" << strerror(errno));\
 				suc = false; \
 			} \
 		}
 #define ZSUMMER_EPOLL_MOD_DEL(suc, flag) \
 		{ \
 			suc = true; \
-			m_handle._event.events = m_handle._event.events& ~flag; \
-			if (epoll_ctl(m_summer->m_impl.m_epoll, EPOLL_CTL_MOD,  m_handle._fd, &m_handle._event) != 0) \
+			m_register._event.events = m_register._event.events& ~flag; \
+			if (epoll_ctl(m_summer->m_impl.m_epoll, EPOLL_CTL_MOD,  m_register._fd, &m_register._event) != 0) \
 			{ \
 				LCE("ZSUMMER_EPOLL_MOD_DEL:" << this \
 				<< ", EPOLLMod error. epfd="<<m_summer->m_impl.m_epoll \
-				<< ", handle fd=" << m_handle._fd << ", errno=" << strerror(errno));\
+				<< ", m_register fd=" << m_register._fd << ", errno=" << strerror(errno));\
 				suc = false; \
 			} \
 		}

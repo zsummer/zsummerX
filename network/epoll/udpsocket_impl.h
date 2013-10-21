@@ -51,20 +51,17 @@ namespace zsummer
 		{
 		public:
 			// const char * remoteIP, unsigned short remotePort, nTranslate
-			typedef std::function<void (zsummer::network::ErrorCode, const char*, unsigned short, int)> _OnRecvHandler;
-			typedef std::function<void(zsummer::network::ErrorCode)> _OnSendHandler;
 			CUdpSocketImpl();
 			~CUdpSocketImpl();
-			bool Initialize(CZSummer & summer, const char *ip, unsigned short port);
+			bool Initialize(CZSummer & summer, const char *localIP, unsigned short localPort);
 			bool DoRecv(char * buf, unsigned int len, const _OnRecvHandler& handler);
 			bool DoSend(char * buf, unsigned int len, const char *dstip, unsigned short dstport, const _OnSendHandler& handler);
 			bool OnEPOLLMessage(int type, int flag);
 		public:
 			CZSummer * m_summer;
-			sockaddr_in	m_addr;
-			tagRegister m_handle;
-			_OnRecvHandler m_onRecvHandler;
-			_OnSendHandler m_onSendHandler;
+			tagRegister m_register;
+			_OnRecvFromHandler m_onRecvFromHandler;
+			_OnSendToHandler m_onSendToHandler;
 			unsigned int m_iRecvLen;
 			char	*	 m_pRecvBuf;
 			unsigned int m_iSendLen;

@@ -1,20 +1,19 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="main.cpp" />
     <ClCompile Include="..\..\depends\log4z\log4z.cpp">
       <Filter>log</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\network\iocp\tcpaccept_impl.cpp">
+    <ClCompile Include="..\..\network\epoll\tcpaccept_impl.cpp">
       <Filter>network</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\network\iocp\tcpsocket_impl.cpp">
+    <ClCompile Include="..\..\network\epoll\tcpsocket_impl.cpp">
       <Filter>network</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\network\iocp\udpsocket_impl.cpp">
+    <ClCompile Include="..\..\network\epoll\udpsocket_impl.cpp">
       <Filter>network</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\network\iocp\iocp_impl.cpp">
+    <ClCompile Include="..\..\network\epoll\epoll_impl.cpp">
       <Filter>network</Filter>
     </ClCompile>
     <ClCompile Include="..\..\network\common\common.cpp">
@@ -26,28 +25,28 @@
     <ClInclude Include="..\..\depends\log4z\log4z.h">
       <Filter>log</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\network\zsummer.h">
+    <ClInclude Include="..\..\network\epoll\tcpaccept_impl.h">
+      <Filter>network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\network\epoll\tcpsocket_impl.h">
+      <Filter>network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\network\epoll\udpsocket_impl.h">
+      <Filter>network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\network\epoll\epoll_impl.h">
       <Filter>network</Filter>
     </ClInclude>
     <ClInclude Include="..\..\network\tcpaccept.h">
       <Filter>network</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\network\iocp\tcpaccept_impl.h">
-      <Filter>network</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\network\tcpsocket.h">
-      <Filter>network</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\network\iocp\tcpsocket_impl.h">
       <Filter>network</Filter>
     </ClInclude>
     <ClInclude Include="..\..\network\udpsocket.h">
       <Filter>network</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\network\iocp\udpsocket_impl.h">
-      <Filter>network</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\network\iocp\iocp_impl.h">
+    <ClInclude Include="..\..\network\zsummer.h">
       <Filter>network</Filter>
     </ClInclude>
     <ClInclude Include="..\..\network\common\common.h">

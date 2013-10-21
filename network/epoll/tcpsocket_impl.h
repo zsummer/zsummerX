@@ -82,7 +82,7 @@ namespace zsummer
 			_OnSendHandler m_onSendHandler;
 			_OnConnectHandler m_onConnectHandler;
 
-			tagRegister m_handle;
+			tagRegister m_register;
 
 			bool		m_bNeedDestroy;
 

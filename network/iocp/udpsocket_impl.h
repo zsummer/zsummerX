@@ -49,10 +49,10 @@ namespace zsummer
 
 			CUdpSocketImpl();
 			~CUdpSocketImpl();
-			bool Initialize(CZSummer & summer, const char *ip, unsigned short port);
-			bool DoRecv(char * buf, unsigned int len, const _OnRecvFromHandler& handler);
+			bool Initialize(CZSummer & summer, const char *localIP, unsidler& handler);
 			bool DoSend(char * buf, unsigned int len, const char *dstip, unsigned short dstport, const _OnSendToHandler& handler);
-			bool OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned char cType);
+			bool OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned char cType);gned short localPort);
+			bool DoRecv(char * buf, unsigned int len, const _OnRecvFromHan
 		public:
 			//private
 			CZSummer * m_summer;

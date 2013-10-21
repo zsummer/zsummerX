@@ -75,7 +75,7 @@ CUdpSocketImpl::~CUdpSocketImpl()
 	}
 }
 
-bool CUdpSocketImpl::Initialize(CZSummer & summer, const char *ip, unsigned short port)
+bool CUdpSocketImpl::Initialize(CZSummer & summer, const char *localIP, unsigned short localPort)
 {
 	if (m_socket != INVALID_SOCKET)
 	{
@@ -94,21 +94,12 @@ bool CUdpSocketImpl::Initialize(CZSummer & summer, const char *ip, unsigned shor
 		LCE("CUdpSocket: create socket  error! ERRCODE=" << WSAGetLastError());
 		return false;
 	}
-	{
-		unsigned long val = 1;
-		int nb = ioctlsocket(m_socket, FIONBIO, &val);
-		if (nb != NO_ERROR)
-		{
-			LCE("CUdpSocket: socket set nonblocking  error! ERRCODE=" << WSAGetLastError());
-			return false;
-		}
-		
-	}
+
 	sockaddr_in addr;
 	memset(&addr, 0, sizeof(SOCKADDR_IN));
 	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = inet_addr(ip);
-	addr.sin_port = ntohs(port);
+	addr.sin_addr.s_addr = inet_addr(localIP);
+	addr.sin_port = ntohs(localPort);
 	if (bind(m_socket, (sockaddr *) &addr, sizeof(sockaddr_in)) != 0)
 	{
 		LCE("CUdpSocket: bind local addr error!  socket=" << (unsigned int)m_socket << ", ERRCODE=" << WSAGetLastError());

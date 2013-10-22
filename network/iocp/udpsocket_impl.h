@@ -46,13 +46,12 @@ namespace zsummer
 		class CUdpSocketImpl
 		{
 		public:
-
 			CUdpSocketImpl();
 			~CUdpSocketImpl();
-			bool Initialize(CZSummer & summer, const char *localIP, unsidler& handler);
+			bool Initialize(CZSummer & summer, const char *localIP, unsigned short localPort);
 			bool DoSend(char * buf, unsigned int len, const char *dstip, unsigned short dstport, const _OnSendToHandler& handler);
-			bool OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned char cType);gned short localPort);
-			bool DoRecv(char * buf, unsigned int len, const _OnRecvFromHan
+			bool OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned char cType);
+			bool DoRecv(char * buf, unsigned int len, const _OnRecvFromHandler &handler);
 		public:
 			//private
 			CZSummer * m_summer;

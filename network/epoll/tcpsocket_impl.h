@@ -50,9 +50,6 @@ namespace zsummer
 		class CTcpSocketImpl
 		{
 		public:
-			typedef std::function<void(zsummer::network::ErrorCode)> _OnConnectHandler;
-			typedef std::function<void(zsummer::network::ErrorCode, int)> _OnSendHandler;
-			typedef _OnSendHandler _OnRecvHandler;
 			CTcpSocketImpl(int fd, std::string remoteIP, unsigned short remotePort);
 			~CTcpSocketImpl();
 			bool Initialize(CZSummer & summer);
@@ -78,19 +75,23 @@ namespace zsummer
 			CZSummer *  m_summer;
 			std::string m_remoteIP;
 			unsigned short m_remotePort;
-			_OnRecvHandler m_onRecvHandler;
-			_OnSendHandler m_onSendHandler;
+			tagRegister m_register;
+			
+			
 			_OnConnectHandler m_onConnectHandler;
 
-			tagRegister m_register;
+			
 
-			bool		m_bNeedDestroy;
 
+			_OnRecvHandler m_onRecvHandler;
 			unsigned int m_iRecvLen;
 			char	*	 m_pRecvBuf;
+			bool		 m_isRecvLock;
 
+			_OnSendHandler m_onSendHandler;
 			unsigned int m_iSendLen;
 			char *		 m_pSendBuf;
+			bool		 m_isSendLock;
 		};
 	}
 

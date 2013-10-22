@@ -54,18 +54,23 @@ namespace zsummer
 			CUdpSocketImpl();
 			~CUdpSocketImpl();
 			bool Initialize(CZSummer & summer, const char *localIP, unsigned short localPort);
-			bool DoRecv(char * buf, unsigned int len, const _OnRecvHandler& handler);
-			bool DoSend(char * buf, unsigned int len, const char *dstip, unsigned short dstport, const _OnSendHandler& handler);
+			bool DoRecv(char * buf, unsigned int len, const _OnRecvFromHandler& handler);
+			bool DoSend(char * buf, unsigned int len, const char *dstip, unsigned short dstport, const _OnSendToHandler& handler);
 			bool OnEPOLLMessage(int type, int flag);
 		public:
 			CZSummer * m_summer;
 			tagRegister m_register;
+
 			_OnRecvFromHandler m_onRecvFromHandler;
-			_OnSendToHandler m_onSendToHandler;
 			unsigned int m_iRecvLen;
 			char	*	 m_pRecvBuf;
+			bool		m_isRecvFromLock;
+
+			_OnSendToHandler m_onSendToHandler;
 			unsigned int m_iSendLen;
 			char	*	 m_pSendBuf;
+			bool		m_isSendToLock;
+
 			std::string m_dstip;
 			unsigned short m_dstport;
 		};

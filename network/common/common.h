@@ -88,17 +88,21 @@ namespace zsummer
 		{
 			PCK_USER_DATA,
 		};
+					
+
 		typedef std::function<void()> _OnPostHandler;
 		typedef std::function<void(unsigned long long)> _OnTimerHandler;
+
 		class CTcpSocket;
 		typedef std::shared_ptr<CTcpSocket> CTcpSocketPtr;
 		typedef std::function<void(ErrorCode, CTcpSocketPtr)> _OnAcceptHandler;
+
 		typedef std::function<void(ErrorCode)> _OnConnectHandler;
 		typedef std::function<void(ErrorCode, int)> _OnSendHandler;
 		typedef _OnSendHandler _OnRecvHandler;
 		// const char * remoteIP, unsigned short remotePort, nTranslate
-		typedef std::function<void (zsummer::network::ErrorCode, const char*, unsigned short, int)> _OnRecvFromHandler;
-		typedef std::function<void(zsummer::network::ErrorCode)> _OnSendToHandler;
+		typedef std::function<void (ErrorCode, const char*, unsigned short, int)> _OnRecvFromHandler;
+		typedef std::function<void(ErrorCode)> _OnSendToHandler;
 
 #ifndef WIN32
 		inline bool SetNonBlock(int fd) 
@@ -201,43 +205,8 @@ namespace zsummer
 				_fd = -1;
 				_ptr = NULL;
 			}
-			inline void addEvent(uint32_t ev){ _event.events |= ev;}
-			inline void removeEvent(uint32_t ev){ _event.events &= ~ev;}
 		};
 
-
-		inline bool EPOLLMod(int epfd, int fd,  struct epoll_event *event)
-		{
-			if (epoll_ctl(epfd, EPOLL_CTL_MOD, fd, event) != 0)
-			{
-				return false;
-			}
-			return true;
-		}
-#define ZSUMMER_EPOLL_MOD_ADD(suc, flag) \
-		{ \
-			suc = true; \
-			m_register._event.events = m_register._event.events | flag; \
-			if (epoll_ctl(m_summer->m_impl.m_epoll, EPOLL_CTL_MOD,  m_register._fd, &m_register._event) != 0) \
-			{ \
-				LCE("ZSUMMER_EPOLL_MOD_ADD:" << this \
-				<< ", EPOLLMod error. epfd="<<m_summer->m_impl.m_epoll \
-				<< ", m_register fd=" << m_register._fd << ", errno=" << strerror(errno));\
-				suc = false; \
-			} \
-		}
-#define ZSUMMER_EPOLL_MOD_DEL(suc, flag) \
-		{ \
-			suc = true; \
-			m_register._event.events = m_register._event.events& ~flag; \
-			if (epoll_ctl(m_summer->m_impl.m_epoll, EPOLL_CTL_MOD,  m_register._fd, &m_register._event) != 0) \
-			{ \
-				LCE("ZSUMMER_EPOLL_MOD_DEL:" << this \
-				<< ", EPOLLMod error. epfd="<<m_summer->m_impl.m_epoll \
-				<< ", m_register fd=" << m_register._fd << ", errno=" << strerror(errno));\
-				suc = false; \
-			} \
-		}
 
 #endif
 
@@ -252,12 +221,12 @@ namespace zsummer
 extern LoggerId g_coreID;
 
 
-#define LCD( log ) LOG_DEBUG( g_coreID, log )
-#define LCI( log ) LOG_INFO( g_coreID, log )
-#define LCW( log ) LOG_WARN( g_coreID, log )
-#define LCE( log ) LOG_ERROR( g_coreID, log )
-#define LCA( log ) LOG_ALARM( g_coreID, log )
-#define LCF( log ) LOG_FATAL( g_coreID, log )
+#define LCD( log ) LOG_DEBUG( g_coreID, __FUNCTION__ <<": "<< log )
+#define LCI( log ) LOG_INFO( g_coreID,__FUNCTION__ <<": "<<  log )
+#define LCW( log ) LOG_WARN( g_coreID,__FUNCTION__ << ": "<< log )
+#define LCE( log ) LOG_ERROR( g_coreID,__FUNCTION__ << ": "<< log )
+#define LCA( log ) LOG_ALARM( g_coreID,__FUNCTION__ << ": "<< log )
+#define LCF( log ) LOG_FATAL( g_coreID,__FUNCTION__ << ": "<< log )
 
 
 

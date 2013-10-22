@@ -47,8 +47,6 @@ namespace zsummer
 		{
 		public:
 			typedef std::vector<std::pair<int, void*> > MsgVct;
-			typedef std::function<void()> _OnPostHandler;
-			typedef std::function<void(unsigned long long)> _OnTimerHandler;
 			CZSummerImpl();
 			~CZSummerImpl();
 			bool Initialize();
@@ -149,7 +147,7 @@ namespace zsummer
 			epoll_event m_events[5000];
 			//线程消息
 			int		m_sockpair[2];
-			tagRegister m_recv;
+			tagRegister m_register;
 			MsgVct	m_msgs;
 			std::mutex	m_msglock;
 

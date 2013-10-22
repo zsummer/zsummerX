@@ -48,8 +48,10 @@ CUdpSocketImpl::CUdpSocketImpl()
 	m_pRecvBuf = NULL;
 	m_iSendLen = 0;
 	m_pSendBuf = NULL;
-	m_dstip;
+	m_dstip.clear();
 	m_dstport = 0;
+	m_isRecvFromLock = false;
+	m_isSendToLock = false;
 }
 
 
@@ -58,7 +60,7 @@ CUdpSocketImpl::~CUdpSocketImpl()
 	if (m_register._fd != -1)
 	{
 		close(m_register._fd);
-		m_handle._fd = -1;
+		m_register._fd = -1;
 	}
 }
 bool  CUdpSocketImpl::Initialize(CZSummer & summer, const char *localIP, unsigned short localPort)
@@ -70,7 +72,7 @@ bool  CUdpSocketImpl::Initialize(CZSummer & summer, const char *localIP, unsigne
 	}
 	if (m_register._fd != -1)
 	{
-		LCE("CUdpSocketImpl socket is aready used, _fd not is -1. this=" << this << ", fd=" << m_handle._fd);
+		LCE("CUdpSocketImpl socket is aready used, _fd not is -1. this=" << this << ", fd=" << m_register._fd);
 		return false;
 	}
 	m_summer = &summer;
@@ -103,7 +105,7 @@ bool  CUdpSocketImpl::Initialize(CZSummer & summer, const char *localIP, unsigne
 	return true;
 }
 
-bool CUdpSocketImpl::DoSend(char * buf, unsigned int len, const char *dstip, unsigned short dstport, const _OnSendHandler& handler)
+bool CUdpSocketImpl::DoSend(char * buf, unsigned int len, const char *dstip, unsigned short dstport, const _OnSendToHandler& handler)
 {
 	if (m_summer == NULL)
 	{
@@ -115,7 +117,7 @@ bool CUdpSocketImpl::DoSend(char * buf, unsigned int len, const char *dstip, uns
 		LCE("CUdpSocketImpl::DoSend()" << this << " argument err! len=" << len);
 		return false;
 	}
-	if (m_pSendBuf != NULL || m_iSendLen != 0 || m_onSendToHandler != nullptr)
+	if (m_pSendBuf != NULL || m_iSendLen != 0 || m_isSendToLock)
 	{
 		LCE("CUdpSocketImpl::DoRecv()" << this << "    (m_pRecvBuf != NULL || m_iRecvLen != 0) == TRUE");
 		return false;
@@ -125,17 +127,18 @@ bool CUdpSocketImpl::DoSend(char * buf, unsigned int len, const char *dstip, uns
 	m_iSendLen = len;
 	m_dstip = dstip;
 	m_dstport = dstport;
-	m_register.addEvent(EPOLLOUT);
-	if (!EPOLLMod(m_summer->m_impl.m_epoll, m_register._fd, &m_register._event) != 0)
+	m_register._event.events = m_register._event.events|EPOLLOUT;
+	if (epoll_ctl(m_summer->m_impl.m_epoll, EPOLL_CTL_MOD, m_register._fd, &m_register._event) != 0)
 	{
 		LCE("CUdpSocketImpl::DoSend()" << this << " EPOLLMod error. epfd="<<m_summer->m_impl.m_epoll << ", m_register fd=" << m_register._fd << ", errno=" << strerror(errno));
 		return false;
 	}
+	m_isSendToLock = true;
   return true;
 }
 
 
-bool CUdpSocketImpl::DoRecv(char * buf, unsigned int len, const _OnRecvHandler& handler)
+bool CUdpSocketImpl::DoRecv(char * buf, unsigned int len, const _OnRecvFromHandler& handler)
 {
 	if (m_summer == NULL)
 	{
@@ -162,18 +165,25 @@ bool CUdpSocketImpl::DoRecv(char * buf, unsigned int len, const _OnRecvHandler& 
 	m_onRecvFromHandler = handler;
 	m_pRecvBuf = buf;
 	m_iRecvLen = len;
-	m_register.addEvent(EPOLLIN);
-	if (!EPOLLMod(m_summer->m_impl.m_epoll, m_register._fd, &m_register._event) != 0)
+	m_register._event.events = m_register._event.events|EPOLLIN;
+	if (epoll_ctl(m_summer->m_impl.m_epoll, EPOLL_CTL_MOD, m_register._fd, &m_register._event) != 0)
 	{
 		LCE("CUdpSocketImpl::DoRecv()" << this << " EPOLLMod error. epfd="<<m_summer->m_impl.m_epoll << ", m_register fd=" << m_register._fd << ", errno=" << strerror(errno));
 		return false;
 	}
+	m_isRecvFromLock = true;
 	return true;
 }
 
 
 bool CUdpSocketImpl::OnEPOLLMessage(int type, int flag)
 {
+	if (m_isRecvFromLock && m_isSendToLock)
+	{
+		LCE("unknown error" );
+		return false;
+	}
+
 	if (flag & EPOLLHUP || flag & EPOLLERR)
 	{
 		if (flag & EPOLLHUP)
@@ -184,64 +194,71 @@ bool CUdpSocketImpl::OnEPOLLMessage(int type, int flag)
 		{
 			LCE("CUdpSocketImpl::OnEPOLLMessage()" << this << "  EPOLLERR error. epfd="<<m_summer->m_impl.m_epoll << ", m_register fd=" << m_register._fd << ", events=" << flag);
 		}
-
+		if (m_isRecvFromLock)
+		{
+			m_isRecvFromLock = false;
+			m_onRecvFromHandler(EC_ERROR, "", 0, 0);
+		}
+		if (m_isSendToLock)
+		{
+			m_isSendToLock = false;
+			m_onSendToHandler(EC_ERROR);
+		}
 		return false;
 	}
 
-	if (flag & EPOLLIN)
+	if (flag & EPOLLIN && m_isRecvFromLock)
 	{
-		m_handle.removeEvent(EPOLLIN);
-		if (!EPOLLMod(m_summer->m_impl.m_epoll, m_handle._fd, &m_handle._event))
+		m_isRecvFromLock = false;
+		m_register._event.events = m_register._event.events&~EPOLLIN;
+		if (epoll_ctl(m_summer->m_impl.m_epoll, EPOLL_CTL_MOD, m_register._fd, &m_register._event) != 0)
 		{
-			LCE("CUdpSocketImpl::OnEPOLLMessage()" << this << "recv EPOLLMod error. epfd="<<m_summer->m_impl.m_epoll << ", handle fd=" << m_handle._fd << ", errno=" << strerror(errno));
+			LCE("CUdpSocketImpl::DoRecv()" << this << " EPOLLMod error. epfd="<<m_summer->m_impl.m_epoll << ", m_register fd=" << m_register._fd << ", errno=" << strerror(errno));
 			return false;
 		}
-		if (m_pRecvBuf == NULL || m_iRecvLen == 0)
-		{
-			LCE("CUdpSocketImpl::OnEPOLLMessage()" << this << " recv error. epfd="<<m_summer->m_impl.m_epoll << ", handle fd=" << m_handle._fd << ", m_pRecvBuf=" <<(void*)m_pRecvBuf << ", m_iRecvLen=" << m_iRecvLen);
-		}
-		else
-		{
-			sockaddr_in raddr;
-			memset(&raddr, 0, sizeof(raddr));
-			socklen_t len = sizeof(raddr);
-			int ret = recvfrom(m_handle._fd, m_pRecvBuf, m_iRecvLen, 0, (sockaddr*)&raddr, &len);
-			if (ret == 0 || (ret ==-1 && (errno !=EAGAIN && errno != EWOULDBLOCK)) )
-			{
-				LCE("CUdpSocketImpl::OnEPOLLMessage()" << this << " recv error. epfd="<<m_summer->m_impl.m_epoll << ", handle fd=" << m_handle._fd << ", ret=" << ret << ", errno=" << strerror(errno));
-				return false;
-			}
 
-			if (ret != -1)
-			{
-				m_pRecvBuf = NULL;
-				m_iRecvLen = 0;
-				m_onRecvHandler(EC_SUCCESS, inet_ntoa(raddr.sin_addr), ntohs(raddr.sin_port), ret);
-			}
-		}
-	}
-	if (flag & EPOLLOUT)
-	{
-		if (m_pSendBuf == NULL || m_iRecvLen == 0)
+		sockaddr_in raddr;
+		memset(&raddr, 0, sizeof(raddr));
+		socklen_t len = sizeof(raddr);
+		int ret = recvfrom(m_register._fd, m_pRecvBuf, m_iRecvLen, 0, (sockaddr*)&raddr, &len);
+		if (ret == 0 || (ret ==-1 && (errno !=EAGAIN && errno != EWOULDBLOCK)) )
 		{
-			LCE("CUdpSocketImpl::OnEPOLLMessage()" << this << " recv error. epfd="<<m_summer->m_impl.m_epoll  << ", handle fd=" << m_handle._fd << ", m_pRecvBuf=" <<(void*)m_pRecvBuf << ", m_iRecvLen=" << m_iRecvLen);
+			LCE("CUdpSocketImpl::OnEPOLLMessage()" << this << " recv error. epfd="<<m_summer->m_impl.m_epoll << ", m_register fd=" << m_register._fd << ", ret=" << ret << ", errno=" << strerror(errno));
 			return false;
 		}
-		m_handle.removeEvent(EPOLLOUT);
+		if (ret == -1)
+		{
+			LCE("CUdpSocketImpl::OnEPOLLMessage()" << this << " recv error. epfd="<<m_summer->m_impl.m_epoll << ", m_register fd=" << m_register._fd << ", ret=" << ret << ", errno=" << strerror(errno));
+			return false;
+		}
+
+		m_pRecvBuf = NULL;
+		m_iRecvLen = 0;
+		m_onRecvFromHandler(EC_SUCCESS, inet_ntoa(raddr.sin_addr), ntohs(raddr.sin_port), ret);
+	}
+	if (flag & EPOLLOUT && m_isSendToLock)
+	{
+		m_isSendToLock = false;
+		m_register._event.events = m_register._event.events&~EPOLLOUT;
+		if (epoll_ctl(m_summer->m_impl.m_epoll, EPOLL_CTL_MOD, m_register._fd, &m_register._event) != 0)
+		{
+			LCE("CUdpSocketImpl::DoRecv()" << this << " EPOLLMod error. epfd="<<m_summer->m_impl.m_epoll << ", m_register fd=" << m_register._fd << ", errno=" << strerror(errno));
+		}
+
 		sockaddr_in addr;
 		addr.sin_family = AF_INET;
 		addr.sin_addr.s_addr = inet_addr(m_dstip.c_str());
 		addr.sin_port = htons(m_dstport);
-		int sl = sendto(m_handle._fd, m_pSendBuf, m_iSendLen, 0, (sockaddr*)&addr, sizeof(addr));
+		int sl = sendto(m_register._fd, m_pSendBuf, m_iSendLen, 0, (sockaddr*)&addr, sizeof(addr));
 		if (sl<= 0)
 		{
 			LCE("CUdpSocket sendto error, sentlen=" << sl);
-			m_onSendHandler(EC_ERROR);
+			m_onSendToHandler(EC_ERROR);
 			return false;
 		}
 		else
 		{
-			m_onSendHandler(EC_SUCCESS);
+			m_onSendToHandler(EC_SUCCESS);
 		}
 	}
 	

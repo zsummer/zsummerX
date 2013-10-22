@@ -44,7 +44,7 @@ using namespace zsummer::network;
 
 CZSummerImpl::CZSummerImpl()
 {
-	m_epoll = 0;
+	m_epoll = -1;
 	m_nextExpire = (unsigned long long)-1;
 	m_sockpair[0] = 0;
 	m_sockpair[1] = 0;
@@ -61,35 +61,35 @@ bool CZSummerImpl::Initialize()
 {
 	m_nextExpire = (unsigned long long)-1;
 
-	if (m_epoll != 0)
+	if (m_epoll != -1)
 	{
-		LCF("ERR: epoll is create !");
+		LCF("epoll is created !");
 		return false;
 	}
 	m_epoll = epoll_create(200);
 	if (m_epoll == -1)
 	{
-		LCF("ERR: create epoll err errno=" << strerror(errno));
+		LCF("create epoll err errno=" << strerror(errno));
 		return false;
 	}
 	{
 		if (socketpair(AF_LOCAL, SOCK_STREAM, 0, m_sockpair) != 0)
 		{
-			LCF("ERR: create socketpair.  errno=" << strerror(errno));
+			LCF("create socketpair.  errno=" << strerror(errno));
 			return false;
 		}
 		SetNonBlock(m_sockpair[0]);
 		SetNonBlock(m_sockpair[1]);
 		SetNoDelay(m_sockpair[1]);
 		SetNoDelay(m_sockpair[1]);
-		m_recv._ptr = this;
-		m_recv._type = tagRegister::REG_THREAD;
-		m_recv._fd = m_sockpair[1];
-		m_recv._event.data.ptr = &m_recv;
-		m_recv._event.events = EPOLLIN;
-		if (epoll_ctl(m_epoll, EPOLL_CTL_ADD, m_sockpair[1], &m_recv._event) != 0)
+		m_register.reset();
+		m_register._ptr = this;
+		m_register._type = tagRegister::REG_THREAD;
+		m_register._fd = m_sockpair[1];
+		m_register._event.events = EPOLLIN;
+		if (epoll_ctl(m_epoll, EPOLL_CTL_ADD, m_sockpair[1], &m_register._event) != 0)
 		{
-			LCF("epoll_ctl socketpair.  errno=" << errno);
+			LCF("epoll_ctl add socketpair failed .  errno=" << errno);
 			return false;
 		}
 	}
@@ -129,7 +129,7 @@ void CZSummerImpl::RunOnce()
 	{
 		if (errno != EINTR)
 		{
-			LCD("ERR: epoll_wait err!  errno=" <<strerror(errno));
+			LCD(" epoll_wait err!  errno=" <<strerror(errno));
 			return; //! error
 		}
 		return;

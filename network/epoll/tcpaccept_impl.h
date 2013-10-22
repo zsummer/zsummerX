@@ -51,9 +51,6 @@ namespace zsummer
 		class CTcpAcceptImpl
 		{
 		public:
-			typedef std::shared_ptr<CTcpSocket> CTcpSocketPtr;
-			typedef std::function<void(zsummer::network::ErrorCode, CTcpSocketPtr)> _OnAcceptHandler;
-
 			CTcpAcceptImpl(CZSummer &summer);
 			~CTcpAcceptImpl();
 			bool Initialize();
@@ -70,7 +67,7 @@ namespace zsummer
 
 			sockaddr_in		m_addr;
 
-			tagRegister m_register;
+			tagRegister m_register; //! epoll ×¢²áÊÂ¼þ
 			_OnAcceptHandler m_onAcceptHandler;
 			bool	m_isAcceptLock;
 

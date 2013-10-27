@@ -150,6 +150,7 @@ bool CUdpSocketImpl::DoSend(char * buf, unsigned int len, const char *dstip, uns
 	m_sendWSABuf.buf = buf;
 	m_sendWSABuf.len = len;
 	m_onSendHandler = handler;
+
 	DWORD dwTemp1=0;
 	sockaddr_in dst;
 	dst.sin_addr.s_addr = inet_addr(dstip);
@@ -161,6 +162,9 @@ bool CUdpSocketImpl::DoSend(char * buf, unsigned int len, const char *dstip, uns
  		if (WSAGetLastError() != WSA_IO_PENDING)
  		{
  			LCE("CUdpSocket::DoSend DoSend failed and ERRCODE!=ERROR_IO_PENDING, socket="<< (unsigned int) m_socket << ", ERRCODE=" << WSAGetLastError());
+			m_sendWSABuf.buf = nullptr;
+			m_sendWSABuf.len = 0;
+			m_onSendHandler = nullptr;
  			return false;
  		}
  	}
@@ -197,6 +201,7 @@ bool CUdpSocketImpl::DoRecv(char * buf, unsigned int len, const _OnRecvFromHandl
 	m_recvWSABuf.buf = buf;
 	m_recvWSABuf.len = len;
 	m_onRecvHander = handler;
+
 	sizeof(&m_recvFrom, 0, sizeof(m_recvFrom));
 	m_recvFromLen = sizeof(m_recvFrom);
 	DWORD dwRecv = 0;
@@ -206,6 +211,9 @@ bool CUdpSocketImpl::DoRecv(char * buf, unsigned int len, const _OnRecvFromHandl
 		if (WSAGetLastError() != WSA_IO_PENDING)
 		{
 			LCE("CUdpSocket::DoRecv DoRecv failed and ERRCODE!=ERROR_IO_PENDING, socket="<< (unsigned int) m_socket << ", ERRCODE=" << WSAGetLastError());
+			m_recvWSABuf.buf = nullptr;
+			m_recvWSABuf.len = 0;
+			m_onRecvHander = nullptr;
 			return false;
 		}
 	}
@@ -218,25 +226,34 @@ bool CUdpSocketImpl::OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned 
 	if (cType == tagReqHandle::HANDLE_RECVFROM)
 	{
 		m_recvLock = false;
+		m_recvWSABuf.buf = nullptr;
+		m_recvWSABuf.len = 0;
+		_OnRecvFromHandler onRecv;
+		onRecv.swap(m_onRecvHander);
 		if (bSuccess && dwTranceCount > 0)
 		{
-			m_onRecvHander(EC_SUCCESS, inet_ntoa(m_recvFrom.sin_addr), ntohs(m_recvFrom.sin_port), dwTranceCount);
+			onRecv(EC_SUCCESS, inet_ntoa(m_recvFrom.sin_addr), ntohs(m_recvFrom.sin_port), dwTranceCount);
 		}
 		else
 		{
-			m_onRecvHander(EC_ERROR, "0.0.0.0", 0,0);
+			onRecv(EC_ERROR, "0.0.0.0", 0,0);
 		}
+
 	}
 	else if (cType == tagReqHandle::HANDLE_SENDTO)
 	{
 		m_sendLock = false;
+		m_sendWSABuf.buf = nullptr;
+		m_sendWSABuf.len = 0;
+		_OnSendToHandler onSend;
+		onSend.swap(m_onSendHandler);
 		if (bSuccess && dwTranceCount > 0)
 		{
-			m_onSendHandler(EC_SUCCESS);
+			onSend(EC_SUCCESS);
 		}
 		else
 		{
-			m_onSendHandler(EC_ERROR);
+			onSend(EC_ERROR);
 		}
 	}
 	return true;

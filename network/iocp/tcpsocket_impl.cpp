@@ -246,6 +246,9 @@ bool CTcpSocketImpl::DoRecv(char * buf, unsigned int len, const _OnRecvHandler &
 		if (WSAGetLastError() != WSA_IO_PENDING)
 		{
 			LCE("CTcpSocket::DoRecv DoRecv failed and ERRCODE!=ERROR_IO_PENDING, socket="<< (unsigned int) m_socket << ", ERRCODE=" << WSAGetLastError());
+			m_recvWSABuf.buf = nullptr;
+			m_recvWSABuf.len = 0;
+			m_onRecvHandler = nullptr;
 			return false;
 		}
 	}

@@ -149,6 +149,7 @@ bool CTcpAcceptImpl::DoAccept(const _OnAcceptHandler& handler)
 	if (m_socket == INVALID_SOCKET)
 	{
 		LCF("create client socket err! ERRCODE=" << WSAGetLastError() << " ip=" << m_ip << ", port=" << m_port);
+		m_onAcceptHandler = nullptr;
 		return false;
 	}
 
@@ -157,6 +158,9 @@ bool CTcpAcceptImpl::DoAccept(const _OnAcceptHandler& handler)
 		if (WSAGetLastError() != ERROR_IO_PENDING)
 		{
 			LCE("do AcceptEx err, ERRCODE=" << WSAGetLastError() << " ip=" << m_ip << ", port=" << m_port);
+			m_onAcceptHandler = nullptr;
+			closesocket(m_socket);
+			m_socket = INVALID_SOCKET;
 			return false;
 		}
 	}
@@ -166,6 +170,8 @@ bool CTcpAcceptImpl::DoAccept(const _OnAcceptHandler& handler)
 bool CTcpAcceptImpl::OnIOCPMessage(BOOL bSuccess)
 {
 	m_bAccpetLock = false;
+	_OnAcceptHandler onAccept;
+	onAccept.swap(m_onAcceptHandler);
 	if (bSuccess)
 	{
 		{
@@ -186,13 +192,14 @@ bool CTcpAcceptImpl::OnIOCPMessage(BOOL bSuccess)
 		int tmp2 = 0;
 		GetAcceptExSockaddrs(m_recvBuf, m_recvLen, sizeof(SOCKADDR_IN)+16, sizeof(SOCKADDR_IN)+16, &paddr1, &tmp1, &paddr2, &tmp2);
 		CTcpSocketPtr ps(new CTcpSocket(m_socket, inet_ntoa(((sockaddr_in*)paddr2)->sin_addr), ntohs(((sockaddr_in*)paddr2)->sin_port)));
-		m_onAcceptHandler(EC_SUCCESS, ps);
+		m_socket = INVALID_SOCKET;
+		onAccept(EC_SUCCESS, ps);
 	}
 	else
 	{
 		CTcpSocketPtr ps;
-		m_onAcceptHandler(EC_ERROR, ps);
 		LCW("Accept Fail,  retry doAccept ... ip=" << m_ip << ", port=" << m_port);
+		onAccept(EC_ERROR, ps);
 	}
 	return true;
 }

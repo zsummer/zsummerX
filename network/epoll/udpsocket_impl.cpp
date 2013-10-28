@@ -213,8 +213,8 @@ bool CUdpSocketImpl::OnEPOLLMessage(int type, int flag)
 		}
 		if (m_isSendToLock)
 		{
-			_OnSendToHandler temp;
-			temp.swap(m_onSendToHandler);;
+			_OnSendToHandler onSendTo;
+			onSendTo.swap(m_onSendToHandler);;
 			m_isSendToLock = false;
 			m_onSendToHandler = nullptr;
 			m_pSendBuf = nullptr;
@@ -222,7 +222,7 @@ bool CUdpSocketImpl::OnEPOLLMessage(int type, int flag)
 			m_dstip.clear();
 			m_dstport = 0;
 
-			temp(EC_ERROR);
+			onSendTo(EC_ERROR);
 		}
 		return false;
 	}
@@ -230,6 +230,8 @@ bool CUdpSocketImpl::OnEPOLLMessage(int type, int flag)
 	if (flag & EPOLLIN && m_isRecvFromLock)
 	{
 		m_isRecvFromLock = false;
+		_OnRecvFromHandler onRecv;
+		onRecv.swap(m_onRecvFromHandler);
 		m_register._event.events = m_register._event.events&~EPOLLIN;
 		if (epoll_ctl(m_summer->m_impl.m_epoll, EPOLL_CTL_MOD, m_register._fd, &m_register._event) != 0)
 		{
@@ -241,8 +243,7 @@ bool CUdpSocketImpl::OnEPOLLMessage(int type, int flag)
 		memset(&raddr, 0, sizeof(raddr));
 		socklen_t len = sizeof(raddr);
 		int ret = recvfrom(m_register._fd, m_pRecvBuf, m_iRecvLen, 0, (sockaddr*)&raddr, &len);
-		_OnRecvFromHandler onRecv;
-		onRecv.swap(m_onRecvFromHandler);
+
 		m_pRecvBuf = nullptr;
 		m_iRecvLen = 0;
 		if (ret == 0 || (ret ==-1 && (errno !=EAGAIN && errno != EWOULDBLOCK)) )
@@ -263,6 +264,8 @@ bool CUdpSocketImpl::OnEPOLLMessage(int type, int flag)
 	if (flag & EPOLLOUT && m_isSendToLock)
 	{
 		m_isSendToLock = false;
+		_OnSendToHandler onSendTo;
+		onSendTo.swap(m_onSendToHandler);;
 
 		m_register._event.events = m_register._event.events&~EPOLLOUT;
 		if (epoll_ctl(m_summer->m_impl.m_epoll, EPOLL_CTL_MOD, m_register._fd, &m_register._event) != 0)
@@ -275,8 +278,7 @@ bool CUdpSocketImpl::OnEPOLLMessage(int type, int flag)
 		addr.sin_addr.s_addr = inet_addr(m_dstip.c_str());
 		addr.sin_port = htons(m_dstport);
 		int sl = sendto(m_register._fd, m_pSendBuf, m_iSendLen, 0, (sockaddr*)&addr, sizeof(addr));
-		_OnSendToHandler onSend;
-		onSend.swap(m_onSendToHandler);;
+		
 		m_pSendBuf = nullptr;
 		m_iSendLen = 0;
 		m_dstip.clear();
@@ -284,12 +286,12 @@ bool CUdpSocketImpl::OnEPOLLMessage(int type, int flag)
 		if (sl<= 0)
 		{
 			LCE("CUdpSocket sendto error, sentlen=" << sl);
-			onSend(EC_ERROR);
+			onSendTo(EC_ERROR);
 			return false;
 		}
 		else
 		{
-			onSend(EC_SUCCESS);
+			onSendTo(EC_SUCCESS);
 		}
 
 	}

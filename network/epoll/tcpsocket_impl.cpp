@@ -64,7 +64,11 @@ CTcpSocketImpl::CTcpSocketImpl(int fd, std::string remoteIP, unsigned short remo
 
 CTcpSocketImpl::~CTcpSocketImpl()
 {
-
+	if (m_register._fd != -1)
+	{
+		close(m_register._fd);
+		m_register._fd = -1;
+	}
 }
 
  bool CTcpSocketImpl::Initialize(CZSummer & summer)
@@ -119,12 +123,14 @@ bool CTcpSocketImpl::DoConnect(const _OnConnectHandler & handler)
 	if (ret!=0 && errno != EINPROGRESS)
 	{
 		LCE("CTcpSocket::DoConnect()" << this << " ::connect error. epfd="<<m_summer->m_impl.m_epoll << ", m_register fd=" << m_register._fd << ", errno=" << strerror(errno));
+		m_onConnectHandler = nullptr;
 		return false;
 	}
 	
 	if (epoll_ctl(m_summer->m_impl.m_epoll, EPOLL_CTL_ADD, m_register._fd, &m_register._event) != 0)
 	{
 		LCE("CTcpSocket::DoConnect()" << this << " EPOLL_CTL_ADD error. epfd="<<m_summer->m_impl.m_epoll << ", m_register fd=" << m_register._fd << ", errno=" << strerror(errno));
+		m_onConnectHandler = nullptr;
 		return false;
 	}
 
@@ -166,6 +172,9 @@ bool CTcpSocketImpl::DoSend(char * buf, unsigned int len, const _OnSendHandler &
 	if (epoll_ctl(m_summer->m_impl.m_epoll,EPOLL_CTL_MOD, m_register._fd, &m_register._event) != 0)
 	{
 		LCE("CTcpSocket::DoSend()" << this << " EPOLLMod error. epfd="<<m_summer->m_impl.m_epoll << ", m_register fd=" << m_register._fd << ", errno=" << strerror(errno));
+		m_pSendBuf = nullptr;
+		m_iSendLen = 0;
+		m_onSendHandler = nullptr;
 		return false;
 	}
 	m_isSendLock = true;
@@ -205,6 +214,9 @@ bool CTcpSocketImpl::DoRecv(char * buf, unsigned int len, const _OnRecvHandler &
 	if (epoll_ctl(m_summer->m_impl.m_epoll, EPOLL_CTL_MOD, m_register._fd, &m_register._event) != 0)
 	{
 		LCE("CTcpSocket::DoRecv()" << this << " EPOLLMod error. epfd="<<m_summer->m_impl.m_epoll << ", m_register fd=" << m_register._fd << ", errno=" << strerror(errno));
+		m_pRecvBuf = nullptr;
+		m_iRecvLen = 0;
+		m_onRecvHandler = nullptr;
 		return false;
 	}
 	m_isRecvLock = true;
@@ -222,6 +234,8 @@ bool CTcpSocketImpl::OnEPOLLMessage(int type, int flag)
 
 	if (m_register._type == tagRegister::REG_CONNECT)
 	{
+		_OnConnectHandler onConnect;
+		onConnect.swap(m_onConnectHandler);
 		if (flag & EPOLLOUT)
 		{
 			m_register._event.events = /*EPOLLONESHOT*/ 0;
@@ -230,7 +244,7 @@ bool CTcpSocketImpl::OnEPOLLMessage(int type, int flag)
 				LCE("CTcpSocket::OnEPOLLMessage()" << this << " connect true & EPOLLMod error. epfd="<<m_summer->m_impl.m_epoll << ", m_register fd=" << m_register._fd << ", errno=" << strerror(errno));
 			}
 			m_register._type = tagRegister::REG_ESTABLISHED_TCP;
-			m_onConnectHandler(EC_SUCCESS);
+			onConnect(EC_SUCCESS);
 
 		}
 		else 
@@ -241,7 +255,7 @@ bool CTcpSocketImpl::OnEPOLLMessage(int type, int flag)
 			}
 			close(m_register._fd);
 			m_register.reset();
-			m_onConnectHandler(EC_ERROR);
+			onConnect(EC_ERROR);
 		}
 		return true;
 	}
@@ -259,12 +273,16 @@ bool CTcpSocketImpl::OnEPOLLMessage(int type, int flag)
 		if (m_isRecvLock)
 		{
 			m_isRecvLock = false;
-			m_onRecvHandler(EC_ERROR,0);
+			_OnRecvHandler onRecv;
+			onRecv.swap(m_onRecvHandler);
+			onRecv(EC_ERROR,0);
 		}
 		if (m_isSendLock)
 		{
 			m_isSendLock = false;
-			m_onSendHandler(EC_ERROR,0);
+			_OnSendHandler onSend;
+			onSend.swap(m_onSendHandler);
+			onSend(EC_ERROR,0);
 		}
 		return false;
 	}
@@ -272,6 +290,8 @@ bool CTcpSocketImpl::OnEPOLLMessage(int type, int flag)
 	if (flag & EPOLLIN && m_isRecvLock)
 	{
 		m_isRecvLock = false;
+		_OnRecvHandler onRecv;
+		onRecv.swap(m_onRecvHandler);
 		int ret = recv(m_register._fd, m_pRecvBuf, m_iRecvLen, 0);
 		m_register._event.events = m_register._event.events &~EPOLLIN;
 		if (epoll_ctl(m_summer->m_impl.m_epoll, EPOLL_CTL_MOD, m_register._fd, &m_register._event) != 0)
@@ -281,31 +301,33 @@ bool CTcpSocketImpl::OnEPOLLMessage(int type, int flag)
 		if (ret == 0)
 		{
 			LCE("CTcpSocket::OnEPOLLMessage()" << this << " recv error. epfd="<<m_summer->m_impl.m_epoll << ", m_register fd=" << m_register._fd << ", ret=" << ret << ", errno=" << strerror(errno));
-			m_onRecvHandler(EC_REMOTE_CLOSED,ret);
+			onRecv(EC_REMOTE_CLOSED,ret);
 			return false;
 		}
 		if (ret ==-1 && (errno !=EAGAIN && errno != EWOULDBLOCK) )
 		{
 			LCE("CTcpSocket::OnEPOLLMessage()" << this << " recv error. epfd="<<m_summer->m_impl.m_epoll << ", m_register fd=" << m_register._fd << ", ret=" << ret << ", errno=" << strerror(errno));
-			m_onRecvHandler(EC_ERROR,ret);
+			onRecv(EC_ERROR,ret);
 			return false;
 		}
 		if (ret == -1)
 		{
 			LCE("CTcpSocket::OnEPOLLMessage()" << this << " recv error. epfd="<<m_summer->m_impl.m_epoll << ", m_register fd=" << m_register._fd << ", ret=" << ret << ", errno=" << strerror(errno));
-			m_onRecvHandler(EC_ERROR,ret);
+			onRecv(EC_ERROR,ret);
 			return false;
 		}
 
 		m_pRecvBuf = NULL;
 		m_iRecvLen = 0;
-		m_onRecvHandler(EC_SUCCESS,ret);
+		onRecv(EC_SUCCESS,ret);
 		
 	}
 
 	if (flag & EPOLLOUT && m_isSendLock)
 	{
 		m_isSendLock = false;
+		_OnSendHandler onSend;
+		onSend.swap(m_onSendHandler);
 
 		int ret = send(m_register._fd, m_pSendBuf, m_iSendLen, 0);
 		m_register._event.events = m_register._event.events &~EPOLLOUT;
@@ -316,19 +338,19 @@ bool CTcpSocketImpl::OnEPOLLMessage(int type, int flag)
 		if (ret == -1 && (errno != EAGAIN && errno != EWOULDBLOCK))
 		{
 			LCE("CTcpSocket::OnEPOLLMessage()" << this << " send error. epfd="<<m_summer->m_impl.m_epoll << ", m_register fd=" << m_register._fd << ", ret=" << ret << ", errno=" << strerror(errno));
-			m_onSendHandler(EC_ERROR, 0);
+			onSend(EC_ERROR, 0);
 			return false;
 		}
 		if (ret == -1)
 		{
 			LCE("CTcpSocket::OnEPOLLMessage()" << this << " send error. epfd="<<m_summer->m_impl.m_epoll << ", m_register fd=" << m_register._fd << ", ret=" << ret << ", errno=" << strerror(errno));
-			m_onSendHandler(EC_ERROR, 0);
+			onSend(EC_ERROR, 0);
 			return false;
 		}
 
 		m_pSendBuf = NULL;
 		m_iSendLen = 0;
-		m_onSendHandler(EC_SUCCESS, ret);
+		onSend(EC_SUCCESS, ret);
 	}
 	return true;
 }
@@ -345,6 +367,7 @@ bool CTcpSocketImpl::DoClose()
 		}
 		shutdown(m_register._fd, SHUT_RDWR);
 		close(m_register._fd);
+		m_register._fd = -1;
 	}
 	return true;
 }

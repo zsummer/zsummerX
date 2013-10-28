@@ -161,6 +161,7 @@ bool CTcpSocketImpl::DoConnect(const _OnConnectHandler & handler)
 		if (WSAGetLastError() != ERROR_IO_PENDING)
 		{
 			LCE("CTcpSocket::DoConnect DoConnect failed and ERRCODE!=ERROR_IO_PENDING, socket="<< (unsigned int) m_socket << ", ERRCODE=" << WSAGetLastError());
+			m_onConnectHandler = nullptr;
 			return false;
 		}
 
@@ -204,6 +205,9 @@ bool CTcpSocketImpl::DoSend(char * buf, unsigned int len, const _OnSendHandler &
 		if (WSAGetLastError() != WSA_IO_PENDING)
 		{
 			LCE("CTcpSocket::DoSend DoSend failed and ERRCODE!=ERROR_IO_PENDING, socket="<< (unsigned int) m_socket << ", ERRCODE=" << WSAGetLastError());
+			m_sendWsaBuf.buf = nullptr;
+			m_sendWsaBuf.len = 0;
+			m_onSendHandler = nullptr;
 			return false;
 		}
 	}
@@ -261,6 +265,8 @@ bool CTcpSocketImpl::OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned 
 	if (cType == tagReqHandle::HANDLE_CONNECT)
 	{
 		m_isConnecting = false;
+		_OnConnectHandler onConnect;
+		onConnect.swap(m_onConnectHandler);
 		if (bSuccess)
 		{
 			m_nLinkStatus = LS_ESTABLISHED;
@@ -271,13 +277,13 @@ bool CTcpSocketImpl::OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned 
 					LCW("setsockopt TCP_NODELAY fail!  last err=" << WSAGetLastError() );
 				}
 			}
-			m_onConnectHandler(ErrorCode::EC_SUCCESS);
+			onConnect(ErrorCode::EC_SUCCESS);
 		}
 		else
 		{
 			closesocket(m_socket);
 			m_socket = INVALID_SOCKET;
-			m_onConnectHandler(ErrorCode::EC_ERROR);
+			onConnect(ErrorCode::EC_ERROR);
 		}
 		return true;
 	}
@@ -288,30 +294,34 @@ bool CTcpSocketImpl::OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned 
 	{
 		//server side active close.
 		m_isRecving = false;
+		_OnRecvHandler onRecv;
+		onRecv.swap(m_onRecvHandler);
 		if (!bSuccess)
 		{
-			m_onRecvHandler(ErrorCode::EC_ERROR, dwTranceCount);
+			onRecv(ErrorCode::EC_ERROR, dwTranceCount);
 			return true;
 		}
 		// client side active closed
 		if (dwTranceCount == 0)
 		{
-			m_onRecvHandler(ErrorCode::EC_ERROR, dwTranceCount);
+			onRecv(ErrorCode::EC_ERROR, dwTranceCount);
 			return true;
 		}
-		m_onRecvHandler(ErrorCode::EC_SUCCESS, dwTranceCount);
+		onRecv(ErrorCode::EC_SUCCESS, dwTranceCount);
 		return true;
 	}
 	if (cType == tagReqHandle::HANDLE_SEND)
 	{
 		//server side active close.
 		m_isSending = false;
+		_OnSendHandler onSend;
+		onSend.swap(m_onSendHandler);
 		if (!bSuccess)
 		{
-			m_onSendHandler(ErrorCode::EC_ERROR,dwTranceCount);
+			onSend(ErrorCode::EC_ERROR,dwTranceCount);
 			return true;
 		}
-		m_onSendHandler(ErrorCode::EC_SUCCESS, dwTranceCount);
+		onSend(ErrorCode::EC_SUCCESS, dwTranceCount);
 		return true;
 	}
 	return true;

@@ -52,7 +52,11 @@ CTcpAcceptImpl::CTcpAcceptImpl(CZSummer &summer)
 
 CTcpAcceptImpl::~CTcpAcceptImpl()
 {
-
+	if (m_register._fd != -1)
+	{
+		close(m_register._fd);
+		m_register._fd = -1;
+	}
 }
 
 bool CTcpAcceptImpl::Initialize()
@@ -132,6 +136,7 @@ bool CTcpAcceptImpl::DoAccept(const _OnAcceptHandler &handle)
 	if (epoll_ctl(m_summer->m_impl.m_epoll, EPOLL_CTL_MOD, m_register._fd, &m_register._event) != 0)
 	{
 		LCF("EPOLL_CTL_MOD!  errno=" << strerror(errno));
+		m_onAcceptHandler = nullptr;
 		return false;
 	}
 	m_isAcceptLock = true;
@@ -147,6 +152,8 @@ bool CTcpAcceptImpl::OnEPOLLMessage(bool bSuccess)
 	}
 
 	m_isAcceptLock = false;
+	_OnAcceptHandler onAccept;
+	onAccept.swap(m_onAcceptHandler);
 	m_register._event.events = 0;
 	if (epoll_ctl(m_summer->m_impl.m_epoll, EPOLL_CTL_MOD, m_register._fd, &m_register._event) != 0)
 	{
@@ -155,7 +162,7 @@ bool CTcpAcceptImpl::OnEPOLLMessage(bool bSuccess)
 	if (!bSuccess)
 	{
 		LCF("accept EPOLLERR, errno=" << strerror(errno));
-		m_onAcceptHandler(EC_ERROR, CTcpSocketPtr());
+		onAccept(EC_ERROR, CTcpSocketPtr());
 		return false;
 	}
 	else
@@ -171,7 +178,7 @@ bool CTcpAcceptImpl::OnEPOLLMessage(bool bSuccess)
 			{
 				LCE("ERR: accept -1, errno=" << strerror(errno));
 			}
-			m_onAcceptHandler(EC_ERROR, CTcpSocketPtr());
+			onAccept(EC_ERROR, CTcpSocketPtr());
 			return false;
 		}
 
@@ -179,7 +186,7 @@ bool CTcpAcceptImpl::OnEPOLLMessage(bool bSuccess)
 		SetNoDelay(s);
 		
 		CTcpSocketPtr ps(new CTcpSocket(s,inet_ntoa(cltaddr.sin_addr), ntohs(cltaddr.sin_port)));
-		m_onAcceptHandler(EC_SUCCESS, ps);
+		onAccept(EC_SUCCESS, ps);
 	}
 	return true;
 }

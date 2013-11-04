@@ -59,6 +59,11 @@ CUdpSocketImpl::~CUdpSocketImpl()
 {
 	if (m_register._fd != -1)
 	{
+		if (m_isRecvFromLock || m_isSendToLock)
+		{
+			LCE("Destruct CUdpSocketImpl Error. socket handle not invalid and some request was not completed. fd=" 
+				<< m_register._fd << ", m_isRecvFromLock=" << m_isRecvFromLock << ", m_isSendToLock=" << m_isSendToLock );
+		}
 		close(m_register._fd);
 		m_register._fd = -1;
 	}

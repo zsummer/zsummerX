@@ -70,7 +70,12 @@ CUdpSocketImpl::~CUdpSocketImpl()
 {
 	if (m_socket != INVALID_SOCKET)
 	{
-		LCF("Destruct CUdpSocket Error. socket handle not invalid, socket=" << (unsigned int)m_socket);
+		if (m_sendLock || m_recvLock)
+		{
+			LCE("Destruct CUdpSocketImpl Error. socket handle not invalid and some request was not completed. socket=" 
+				<< (unsigned int)m_socket << ", m_sendLock=" << m_sendLock << ", m_recvLock=" << m_recvLock );
+		}
+		closesocket(m_socket);
 		m_socket = INVALID_SOCKET;
 	}
 }

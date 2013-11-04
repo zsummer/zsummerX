@@ -66,6 +66,11 @@ CTcpSocketImpl::~CTcpSocketImpl()
 {
 	if (m_register._fd != -1)
 	{
+		if (m_isRecvLock || m_isSendLock)
+		{
+			LCE("Destruct CTcpSocketImpl Error. socket handle not invalid and some request was not completed. fd=" 
+				<< m_register._fd << ", m_isRecvLock=" << m_isRecvLock << ", m_isSendLock=" << m_isSendLock );
+		}
 		close(m_register._fd);
 		m_register._fd = -1;
 	}

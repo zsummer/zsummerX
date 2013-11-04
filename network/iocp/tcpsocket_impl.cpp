@@ -72,7 +72,12 @@ CTcpSocketImpl::~CTcpSocketImpl()
 {
 	if (m_socket != INVALID_SOCKET)
 	{
-		LCF("Destruct CTcpSocket Error. socket handle not invalid, socket=" << (unsigned int)m_socket);
+		if (m_isConnecting || m_isRecving || m_isSending)
+		{
+			LCE("Destruct CTcpSocketImpl Error. socket handle not invalid and some request was not completed. socket=" 
+				<< (unsigned int)m_socket << ", m_isConnecting=" << m_isConnecting << ", m_isRecving=" << m_isRecving << ", m_isSending=" << m_isSending);
+		}
+		closesocket(m_socket);
 		m_socket = INVALID_SOCKET;
 	}
 }

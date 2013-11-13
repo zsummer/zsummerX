@@ -195,7 +195,7 @@ bool CTcpAcceptImpl::Close()
 {
 	if (epoll_ctl(m_summer->m_impl.m_epoll, EPOLL_CTL_DEL, m_register._fd, &m_register._event) != 0)
 	{
-		LCE(" EPOLL_CTL_DEL err!  errno=" << strerror(errno));
+		LCF(" EPOLL_CTL_DEL err!  errno=" << strerror(errno));
 	}
 	shutdown(m_register._fd, SHUT_RDWR);
 	close(m_register._fd);

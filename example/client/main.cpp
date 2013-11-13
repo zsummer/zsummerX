@@ -191,7 +191,7 @@ int main(int argc, char* argv[])
 	{
 		if (ec)
 		{
-			LOGE ("onSend Error, EC=" << ec );
+			LOGE ("onRecv Error, EC=" << ec );
 			return;
 		}
 		pack->_curpos += ts;
@@ -277,7 +277,7 @@ int main(int argc, char* argv[])
 
 		for (int i = 0; i < 1000; i++)
 		{
-			std::string ip="127.0.0.1";
+			std::string ip="192.168.10.59";
 			unsigned short port = 81;
 			CTcpSocketPtr c(new zsummer::network::CTcpSocket(ip, port));
 			c->Initialize(summer);

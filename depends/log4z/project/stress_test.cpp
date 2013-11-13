@@ -42,8 +42,8 @@ LoggerId g_lgMoniter;
 << ", constant:" << 100.12345678\
 << ", bool:" << (bool) true;
 
-//! stress coefficient
-const int SWITCH_NUM = 100;
+//! limit waiting count
+const unsigned int LIMIT_WAITING_COUNT = 10000;
 
 //! process quit.
 bool g_quit;
@@ -58,9 +58,9 @@ void MultiThreadFunc()
 		LOG_DEBUG(g_lgMySql, LOG_CONTENT);
 		LOG_DEBUG(g_lgNet, LOG_CONTENT);
 		LOG_DEBUG(g_lgMoniter, LOG_CONTENT);
-		if (count%SWITCH_NUM == 0)
+		if (ILog4zManager::GetInstance()->GetStatusWaitingCount() >LIMIT_WAITING_COUNT)
 		{
-			SleepMillisecond(10);
+			SleepMillisecond(50);
 		}
 	}
 	LOGA("thread quit ... ");
@@ -110,9 +110,8 @@ int main(int argc, char *argv[])
 		lastData += speedData;
 		LOGI("Stress Status:  Write Speed: " << speedCount/5 
 			<< " n/s, Speed: " << speedData/1024/5 
-			<< " KB/s, Waiting: " << ILog4zManager::GetInstance()->GetStatusWaitingCount()
-			<< " n, Total Count: " << lastCount
-			<< " n, Total Data: " << lastData);
+			<< " KB/s, Waiting: " << ILog4zManager::GetInstance()->GetStatusWaitingCount());
+		ILog4zManager::GetInstance()->UpdateConfig();
 		SleepMillisecond(5000);
 	}
 

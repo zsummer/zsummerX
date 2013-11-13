@@ -1,7 +1,10 @@
 #################
 ## Eclipse
 #################
-
+CMakeCache.txt
+cmake_install.cmake
+CMakeFiles
+Makefile
 *.pydevproject
 .project
 .metadata

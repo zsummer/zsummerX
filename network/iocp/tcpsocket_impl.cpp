@@ -209,7 +209,7 @@ bool CTcpSocketImpl::DoSend(char * buf, unsigned int len, const _OnSendHandler &
 	{
 		if (WSAGetLastError() != WSA_IO_PENDING)
 		{
-			LCE("CTcpSocket::DoSend DoSend failed and ERRCODE!=ERROR_IO_PENDING, socket="<< (unsigned int) m_socket << ", ERRCODE=" << WSAGetLastError());
+			LCD("CTcpSocket::DoSend DoSend failed and ERRCODE!=ERROR_IO_PENDING, socket="<< (unsigned int) m_socket << ", ERRCODE=" << WSAGetLastError());
 			m_sendWsaBuf.buf = nullptr;
 			m_sendWsaBuf.len = 0;
 			m_onSendHandler = nullptr;
@@ -254,7 +254,7 @@ bool CTcpSocketImpl::DoRecv(char * buf, unsigned int len, const _OnRecvHandler &
 	{
 		if (WSAGetLastError() != WSA_IO_PENDING)
 		{
-			LCE("CTcpSocket::DoRecv DoRecv failed and ERRCODE!=ERROR_IO_PENDING, socket="<< (unsigned int) m_socket << ", ERRCODE=" << WSAGetLastError());
+			LCD("CTcpSocket::DoRecv DoRecv failed and ERRCODE!=ERROR_IO_PENDING, socket="<< (unsigned int) m_socket << ", ERRCODE=" << WSAGetLastError());
 			m_recvWSABuf.buf = nullptr;
 			m_recvWSABuf.len = 0;
 			m_onRecvHandler = nullptr;
@@ -303,13 +303,13 @@ bool CTcpSocketImpl::OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned 
 		onRecv.swap(m_onRecvHandler);
 		if (!bSuccess)
 		{
-			onRecv(ErrorCode::EC_ERROR, dwTranceCount);
+			onRecv(ErrorCode::EC_REMOTE_HANGUP, dwTranceCount);
 			return true;
 		}
 		// client side active closed
 		if (dwTranceCount == 0)
 		{
-			onRecv(ErrorCode::EC_ERROR, dwTranceCount);
+			onRecv(ErrorCode::EC_REMOTE_CLOSED, dwTranceCount);
 			return true;
 		}
 		onRecv(ErrorCode::EC_SUCCESS, dwTranceCount);
@@ -323,7 +323,7 @@ bool CTcpSocketImpl::OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned 
 		onSend.swap(m_onSendHandler);
 		if (!bSuccess)
 		{
-			onSend(ErrorCode::EC_ERROR,dwTranceCount);
+			onSend(ErrorCode::EC_REMOTE_HANGUP,dwTranceCount);
 			return true;
 		}
 		onSend(ErrorCode::EC_SUCCESS, dwTranceCount);

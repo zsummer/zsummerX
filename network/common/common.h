@@ -83,6 +83,7 @@ namespace zsummer
 			EC_SUCCESS = 0,
 			EC_ERROR,
 			EC_REMOTE_CLOSED,
+			EC_REMOTE_HANGUP,
 		};
 		enum POST_COM_KEY
 		{

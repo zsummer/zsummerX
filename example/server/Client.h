@@ -49,7 +49,10 @@ class CClient : public std::enable_shared_from_this<CClient>
 public:
 	CClient(CProcess &proc, CTcpSocketPtr sockptr);
 	~CClient();
-
+	inline void Initialize()
+	{
+		DoRecv();
+	}
 private:
 	void DoRecv();
 	void OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen);

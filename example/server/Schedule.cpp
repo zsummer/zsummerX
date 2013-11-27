@@ -48,6 +48,11 @@ CSchedule::CSchedule():m_accept( m_summer)
 
 void CSchedule::Start()
 {
+	if (!m_summer.Initialize())
+	{
+		return ;
+	}
+
 	for (int i=0; i< 1; i++)
 	{
 		CProcess * p = new CProcess;
@@ -57,12 +62,9 @@ void CSchedule::Start()
 		}
 	}
 	
+
 	m_accept.OpenAccept("0.0.0.0", 81);
 	m_accept.DoAccept(std::bind(&CSchedule::OnAccept, this, std::placeholders::_1, std::placeholders::_2));
-	if (!m_summer.Initialize())
-	{
-		return ;
-	}
 	m_thread = std::thread(std::bind(&CSchedule::Run, this));
 }
 void CSchedule::Stop()

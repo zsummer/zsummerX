@@ -42,7 +42,6 @@ CClient::CClient(CProcess &proc, CTcpSocketPtr sockptr):m_process(proc)
 	memset(&m_recving, 0, sizeof(m_recving));
 	memset(&m_sending, 0, sizeof(m_sending));
 	m_curSendLen = 0;
-	DoRecv();
 }
 
 CClient::~CClient()

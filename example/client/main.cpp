@@ -275,7 +275,7 @@ int main(int argc, char* argv[])
 	auto doConnect = [&]()
 	{
 
-		for (int i = 0; i < 5; i++)
+		for (int i = 0; i < 1; i++)
 		{
 			std::string ip="127.0.0.1";
 			unsigned short port = 81;

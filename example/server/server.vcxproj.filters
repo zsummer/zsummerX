@@ -7,9 +7,6 @@
     <ClCompile Include="..\..\network\iocp\iocp_impl.cpp">
       <Filter>network</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\network\iocp\public.cpp">
-      <Filter>network</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\network\iocp\tcpaccept_impl.cpp">
       <Filter>network</Filter>
     </ClCompile>
@@ -19,6 +16,21 @@
     <ClCompile Include="..\..\network\iocp\udpsocket_impl.cpp">
       <Filter>network</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\network\common\common.cpp">
+      <Filter>network</Filter>
+    </ClCompile>
+    <ClCompile Include="Client.cpp">
+      <Filter>main</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>main</Filter>
+    </ClCompile>
+    <ClCompile Include="Process.cpp">
+      <Filter>main</Filter>
+    </ClCompile>
+    <ClCompile Include="Schedule.cpp">
+      <Filter>main</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\depends\protocol4z\protocol4z.h" />
@@ -26,9 +38,6 @@
       <Filter>log</Filter>
     </ClInclude>
     <ClInclude Include="..\..\network\iocp\iocp_impl.h">
-      <Filter>network</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\network\iocp\public.h">
       <Filter>network</Filter>
     </ClInclude>
     <ClInclude Include="..\..\network\tcpaccept.h">
@@ -52,6 +61,21 @@
     <ClInclude Include="..\..\network\zsummer.h">
       <Filter>network</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\network\common\common.h">
+      <Filter>network</Filter>
+    </ClInclude>
+    <ClInclude Include="Client.h">
+      <Filter>main</Filter>
+    </ClInclude>
+    <ClInclude Include="header.h">
+      <Filter>main</Filter>
+    </ClInclude>
+    <ClInclude Include="Process.h">
+      <Filter>main</Filter>
+    </ClInclude>
+    <ClInclude Include="Schedule.h">
+      <Filter>main</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="log">
@@ -59,6 +83,9 @@
     </Filter>
     <Filter Include="network">
       <UniqueIdentifier>{73a1b02d-b830-45e3-9834-2da0579beca3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="main">
+      <UniqueIdentifier>{51004b39-054d-4492-a663-06a9d59c577e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

@@ -275,9 +275,9 @@ int main(int argc, char* argv[])
 	auto doConnect = [&]()
 	{
 
-		for (int i = 0; i < 1000; i++)
+		for (int i = 0; i < 5; i++)
 		{
-			std::string ip="192.168.10.59";
+			std::string ip="127.0.0.1";
 			unsigned short port = 81;
 			CTcpSocketPtr c(new zsummer::network::CTcpSocket(ip, port));
 			c->Initialize(summer);

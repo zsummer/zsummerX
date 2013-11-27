@@ -144,17 +144,21 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\depends\log4z\log4z.cpp" />
+    <ClCompile Include="..\..\network\common\common.cpp" />
     <ClCompile Include="..\..\network\iocp\iocp_impl.cpp" />
-    <ClCompile Include="..\..\network\iocp\public.cpp" />
     <ClCompile Include="..\..\network\iocp\tcpaccept_impl.cpp" />
     <ClCompile Include="..\..\network\iocp\tcpsocket_impl.cpp" />
     <ClCompile Include="..\..\network\iocp\udpsocket_impl.cpp" />
+    <ClCompile Include="Client.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Process.cpp" />
+    <ClCompile Include="Schedule.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\depends\log4z\log4z.h" />
     <ClInclude Include="..\..\depends\protocol4z\protocol4z.h" />
+    <ClInclude Include="..\..\network\common\common.h" />
     <ClInclude Include="..\..\network\iocp\iocp_impl.h" />
-    <ClInclude Include="..\..\network\iocp\public.h" />
     <ClInclude Include="..\..\network\iocp\tcpaccept_impl.h" />
     <ClInclude Include="..\..\network\iocp\tcpsocket_impl.h" />
     <ClInclude Include="..\..\network\iocp\udpsocket_impl.h" />
@@ -162,6 +166,10 @@
     <ClInclude Include="..\..\network\tcpsocket.h" />
     <ClInclude Include="..\..\network\udpsocket.h" />
     <ClInclude Include="..\..\network\zsummer.h" />
+    <ClInclude Include="Client.h" />
+    <ClInclude Include="header.h" />
+    <ClInclude Include="Process.h" />
+    <ClInclude Include="Schedule.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

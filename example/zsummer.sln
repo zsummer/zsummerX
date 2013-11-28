@@ -35,11 +35,13 @@ Global
 		{B3E829E2-6A0B-41CB-8E6D-AD9B46A2E0F0}.Debug|x64.ActiveCfg = Debug|x64
 		{B3E829E2-6A0B-41CB-8E6D-AD9B46A2E0F0}.Debug|x64.Build.0 = Debug|x64
 		{B3E829E2-6A0B-41CB-8E6D-AD9B46A2E0F0}.Release|Win32.ActiveCfg = Release|Win32
-		{B3E829E2-6A0B-41CB-8E6D-AD9B46A2E0F0}.Release|Win32.Build.0 = Release|Win32
 		{B3E829E2-6A0B-41CB-8E6D-AD9B46A2E0F0}.Release|x64.ActiveCfg = Release|x64
 		{B3E829E2-6A0B-41CB-8E6D-AD9B46A2E0F0}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
 	EndGlobalSection
 EndGlobal

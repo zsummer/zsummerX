@@ -58,7 +58,7 @@ private:
 	void OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen);
 	void MessageEntry(zsummer::protocol4z::ReadStream & rs);
 
-	void DoSend(Packet * pack);
+	void DoSend(char *buf, unsigned short len);
 	void OnSend(zsummer::network::ErrorCode ec,  int nSentLen);
 
 	

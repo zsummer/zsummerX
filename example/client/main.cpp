@@ -199,6 +199,8 @@ int main(int argc, char* argv[])
 		if (ret == -1)
 		{
 			LOGD("CheckBuffIntegrity fail.");
+			c->DoClose();
+			return ;
 		}
 		else if (ret > 0)
 		{
@@ -244,6 +246,7 @@ int main(int argc, char* argv[])
 			pack->_reqTime = std::chrono::system_clock::now().time_since_epoch()/std::chrono::milliseconds(1);
 			c->DoRecv(pack->_orgdata+pack->_curpos, 2, std::bind(onRecv, std::placeholders::_1, std::placeholders::_2, pack, c));
 			summer.CreateTimer(1500 + rand()%3000, std::bind(doSend, c));
+			//doSend(c);
 		}
 	};
 	//«Î«ÛΩ” ’

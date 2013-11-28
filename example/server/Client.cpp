@@ -51,6 +51,7 @@ CClient::~CClient()
 		delete m_sendque.front();
 		m_sendque.pop();
 	}
+	
 }
 void CClient::DoRecv()
 {
@@ -113,11 +114,10 @@ void CClient::MessageEntry(zsummer::protocol4z::ReadStream & rs)
 			unsigned long long clientTick = 0;
 			std::string text;
 			rs >> clientTick >> text;
-			Packet *p = new Packet;
-			zsummer::protocol4z::WriteStream ws(p->_orgdata, _MSG_BUF_LEN);
+			char buf[_MSG_BUF_LEN];
+			zsummer::protocol4z::WriteStream ws(buf, _MSG_BUF_LEN);
 			ws << protocolID << clientTick << text;
-			p->_len = ws.GetWriteLen();
-			DoSend(p);
+			DoSend(buf, ws.GetWriteLen());
 		}
 		break;
 	default:
@@ -127,18 +127,20 @@ void CClient::MessageEntry(zsummer::protocol4z::ReadStream & rs)
 		break;
 	}
 }
-void CClient::DoSend(Packet * pack)
+void CClient::DoSend(char *buf, unsigned short len)
 {
 	if (m_sending._len != 0)
 	{
+		Packet *pack = new Packet;
+		memcpy(pack->_orgdata, buf, len);
+		pack->_len = len;
 		m_sendque.push(pack);
 	}
 	else
 	{
-		memcpy(m_sending._orgdata, pack->_orgdata, pack->_len);
-		m_sending._len= pack->_len;
+		memcpy(m_sending._orgdata, buf, len);
+		m_sending._len= len;
 		m_curSendLen = 0;
-		delete pack;
 		m_sockptr->DoSend(m_sending._orgdata, m_sending._len, std::bind(&CClient::OnSend, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
 	}
 }

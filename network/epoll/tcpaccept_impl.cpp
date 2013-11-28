@@ -47,6 +47,7 @@ CTcpAcceptImpl::CTcpAcceptImpl(CZSummer &summer)
 	m_port = 0;
 	m_summer = &summer;
 	m_isAcceptLock = false;
+	m_register.reset();
 }
 
 

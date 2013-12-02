@@ -274,19 +274,29 @@ int main(int argc, char* argv[])
 			LOGE("connect error, ERRORCODE=" << ec);
 		}
 	};
+
+	int n=1;
+	std::string ip;
+	unsigned short port = 0;
 	//请求建立连接
 	auto doConnect = [&]()
 	{
-
-		for (int i = 0; i < 1; i++)
+		for (int i = 0; i < n; i++)
 		{
-			std::string ip="127.0.0.1";
-			unsigned short port = 81;
 			CTcpSocketPtr c(new zsummer::network::CTcpSocket(ip, port));
 			c->Initialize(summer);
 			c->DoConnect(std::bind(onConnect, std::placeholders::_1, c));
 		}
 	};
+	cout << "please input ip: " << endl;
+	cin >> ip;
+	cout << "please input port: " << endl;
+	cin >> port;
+	cout << "please input clients count:" << endl;
+	cin >> n;
+	cout << "ip[" << ip << "], port[" << port <<"], clients[" << n << "]. please push any key to continue." << endl;
+	getchar();
+	getchar();
 	summer.Post(doConnect);
 
 	//定时检测

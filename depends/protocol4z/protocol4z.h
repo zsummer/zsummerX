@@ -37,10 +37,10 @@
 
 /*
  * AUTHORS:  YaweiZhang <yawei_zhang@foxmail.com>
- * VERSION:  0.1
+ * VERSION:  0.2
  * PURPOSE:  A lightweight library for process protocol .
  * CREATION: 2013.07.04
- * LCHANGE:  2013.07.04
+ * LCHANGE:  2013.12.03
  * LICENSE:  Expat/MIT License, See Copyright Notice at the begin of this file.
  */
 
@@ -52,7 +52,7 @@
 /* 
  * UPDATES LOG
  * 
- * VERSION 0.1.0 <DATE: 2010.10.4>
+ * VERSION 0.1.0 <DATE: 2013.07.4>
  * 	create the first project.  
  * 	support big-endian or little-endian
  * 
@@ -63,6 +63,7 @@
 
 #include <string.h>
 #include <string>
+#include <assert.h>
 #ifndef WIN32
 #include <stdexcept>
 #else
@@ -77,159 +78,36 @@
 _ZSUMMER_BEGIN
 _ZSUMMER_PROTOCOL4Z_BEGIN
 
-
-//! Write Stream class
-//! 
-//! 包头:包体
-//! 包头用双字存储, 内容为整个包的长度(包括包头).
-//! [unsigned short] : [variable content]
-//! 
-class WriteStream
+//!check runtime system's endian type. it's return true if big endian type.
+inline bool CheckBigEndianType()
 {
-public:
-	WriteStream(char *buf, unsigned short maxlen, bool bigEndType = false)
+	short t = 1;
+	const char *p = (const char *)&t;
+	if (*p == 1)
 	{
-		m_buf = buf;
-		m_bufLen = maxlen;
-		m_curLen = 2;
-		m_reversalEndianType = false;
-		//! check reversal endian.
-		{
-			short t = 1;
-			const char *p = (const char *)&t;
-			if (*p == 1)
-			{
-				if (bigEndType)
-				{
-					m_reversalEndianType = true;
-				}
-			}
-			else
-			{
-				if (!bigEndType)
-				{
-					m_reversalEndianType = true;
-				}
-			}
-		}
+		return false;
 	}
+	return true;
+}
 
-public:
-	template <class T>
-	inline WriteStream & WriteSimpleData(T const t, unsigned short len = sizeof(T))
+//!read stream header from buff
+inline unsigned short ReadStreamHeader(const char *buf, bool bigEndType)
+{
+	unsigned short packLen = 0;
+	if (CheckBigEndianType() == bigEndType)
 	{
-		if (len != 1 && len != 2 && len != 4 && len != 8) //! support byte only 1,2,4,8
-		{
-			throw std::runtime_error("bad type id");
-		}
-		if (m_curLen + len > m_bufLen)
-		{
-			throw std::runtime_error("out of range");
-		}
-
-		do 
-		{
-			if (!m_reversalEndianType)
-			{
-				const char * p = (const char *)&t;
-				m_buf[m_curLen] = *p++;
-				if (len == 1) break;
-				m_buf[m_curLen+1] = *p++;
-				if (len == 2) break;
-				m_buf[m_curLen+2] = *p++;
-				m_buf[m_curLen+3] = *p++;
-				if (len == 4) break;
-				m_buf[m_curLen+4] = *p++;
-				m_buf[m_curLen+5] = *p++;
-				m_buf[m_curLen+6] = *p++;
-				m_buf[m_curLen+7] = *p++;
-				break;
-			}
-			else
-			{
-				const char * p = (const char *)&t;
-				p+= len-1;
-				m_buf[m_curLen] = *p--;
-				if (len == 1) break;
-				m_buf[m_curLen+1] = *p--;
-				if (len == 2) break;
-				m_buf[m_curLen+2] = *p--;
-				m_buf[m_curLen+3] = *p--;
-				if (len == 4) break;
-				m_buf[m_curLen+4] = *p--;
-				m_buf[m_curLen+5] = *p--;
-				m_buf[m_curLen+6] = *p--;
-				m_buf[m_curLen+7] = *p--;
-				break;
-			}
-		} while (0);
-		m_curLen += len;
-		if (!m_reversalEndianType)
-		{
-			m_buf[0] = *((const char*) &m_curLen);
-			m_buf[1] = *(((const char*) &m_curLen) +1);
-		}
-		else
-		{
-			m_buf[0] = *(((const char*) &m_curLen) +1);
-			m_buf[1] = *((const char*) &m_curLen);
-		}
-		return * this;
+		char * p = (char *)&packLen;
+		*p++ = buf[0];
+		*p = buf[1];
 	}
-	inline WriteStream & WriteContentData(const void * data, unsigned short len)
+	else
 	{
-		if (m_curLen + len > m_bufLen)
-		{
-			throw std::runtime_error("out of range");
-		}
-		if (len == 0)
-		{
-			return *this;
-		}
-		memcpy(&m_buf[m_curLen], data, len);
-		m_curLen += len;
-		if (!m_reversalEndianType)
-		{
-			m_buf[0] = *((const char*) &m_curLen);
-			m_buf[1] = *(((const char*) &m_curLen) +1);
-		}
-		else
-		{
-			m_buf[0] = *(((const char*) &m_curLen) +1);
-			m_buf[1] = *((const char*) &m_curLen);
-		}
-		return *this;
+		char * p = (char *)&packLen;
+		*p++ = buf[1];
+		*p = buf[0];
 	}
-
-	inline unsigned short GetWriteLen(){return m_curLen;}
-	inline WriteStream & operator << (const bool data) { return WriteSimpleData(data);}
-	inline WriteStream & operator << (const char data) { return WriteSimpleData(data);}
-	inline WriteStream & operator << (const unsigned char data) { return WriteSimpleData(data);}
-	inline WriteStream & operator << (const short data) { return WriteSimpleData(data);}
-	inline WriteStream & operator << (const unsigned short data) { return WriteSimpleData(data);}
-	inline WriteStream & operator << (const int data) { return WriteSimpleData(data);}
-	inline WriteStream & operator << (const unsigned int data) { return WriteSimpleData(data);}
-// 	inline WriteStream & operator << (const long data) { return WriteSimpleData(data);}
-// 	inline WriteStream & operator << (const unsigned long data) { return WriteSimpleData(data);}
-	inline WriteStream & operator << (const long long data) { return WriteSimpleData(data);}
-	inline WriteStream & operator << (const unsigned long long data) { return WriteSimpleData(data);}
-	inline WriteStream & operator << (const float data) { return WriteSimpleData(data);}
-	inline WriteStream & operator << (const double data) { return WriteSimpleData(data);}
-	inline WriteStream & operator << (const char * data) 
-	{ 
-		unsigned short len = (unsigned short) strlen(data);
-		WriteSimpleData(len);
-		return WriteContentData(data, len);
-	}
-	inline WriteStream & operator << (const std::string & data) { return *this << data.c_str();}
-
-private:
-	WriteStream(){}
-	char * m_buf;
-	unsigned short m_bufLen;
-	unsigned short m_curLen;
-	bool m_reversalEndianType;
-};
+	return packLen;
+}
 
 //! return: -1:error,  0:ready, >0: need buff length to recv.
 inline int CheckBuffIntegrity(const char * buff, unsigned short curBuffLen, unsigned short maxBuffLen, bool bigEndType = false)
@@ -243,42 +121,9 @@ inline int CheckBuffIntegrity(const char * buff, unsigned short curBuffLen, unsi
 	{
 		return 1;
 	}
-	//! 检查大小端字节序
-	bool reversalEndianType = false;
-	{
-		short t = 1;
-		const char *p = (const char *)&t;
-		if (*p == 1)
-		{
-			if (bigEndType)
-			{
-				reversalEndianType = true;
-			}
-		}
-		else
-		{
-			if (!bigEndType)
-			{
-				reversalEndianType = true;
-			}
-		}
-	}
-
 
 	//! 获取包长度
-	unsigned short packLen = 0;
-	if (!reversalEndianType)
-	{
-		char * p = (char *)&packLen;
-		*p++ = buff[0];
-		*p = buff[1];
-	}
-	else
-	{
-		char * p = (char *)&packLen;
-		*p++ = buff[1];
-		*p = buff[0];
-	}
+	unsigned short packLen = ReadStreamHeader(buff, bigEndType);
 
 	//! check
 	if (packLen > maxBuffLen)
@@ -296,6 +141,138 @@ inline int CheckBuffIntegrity(const char * buff, unsigned short curBuffLen, unsi
 	return packLen - curBuffLen;
 }
 
+//! Write Stream class
+//! 
+//! 包头:包体
+//! 包头用双字存储, 内容为整个包的长度(包括包头).
+//! [unsigned short] : [variable content]
+//! 
+class Stream
+{
+public:
+	//! attach memory & check EndianType
+	Stream(char *buf, unsigned short maxlen, bool bigEndType)
+	{
+		assert(buf);
+		m_buff = buf;
+		m_bufLen = maxlen;
+		m_curLen = 2;
+		m_reversalEndianType = (bigEndType != CheckBigEndianType());
+	}
+	~Stream(){}
+
+	//! 
+	inline void CheckMoveCursor(unsigned short unit)
+	{
+		unsigned short tmp = m_curLen+unit;
+		if (tmp < m_curLen || tmp < unit)
+		{
+			throw std::runtime_error("out of 64K memory.");
+		}
+		if (tmp > m_bufLen)
+		{
+			throw std::runtime_error("out of memory");
+		}
+	}
+	inline void MoveCursor(unsigned short unit)
+	{
+		m_curLen += unit;
+	}
+
+	//!
+	inline void MemoryCopy(char *dst, char *src, unsigned short len)
+	{
+		if (!m_reversalEndianType)
+		{
+			memcpy(dst, src, len);
+		}
+		else
+		{
+			while (len >0)
+			{
+				*dst = src[len-1];
+				dst++;
+				len --;
+			}
+		}
+	}
+	//!
+	inline void FillHeader()
+	{
+		if (m_reversalEndianType)
+		{
+			m_buff[0] = *(((const char*) &m_curLen) +1);
+			m_buff[1] = *((const char*) &m_curLen);
+		}
+		else
+		{
+			m_buff[0] = *((const char*) &m_curLen);
+			m_buff[1] = *(((const char*) &m_curLen) +1);
+		}
+	}
+
+protected:
+	char * m_buff;
+	unsigned short m_bufLen;
+	unsigned short m_curLen;
+	bool m_reversalEndianType;
+private:
+	Stream(){}
+};
+class WriteStream :public Stream
+{
+public:
+	WriteStream(char *buf, unsigned short maxlen, bool bigEndType = false):Stream(buf, maxlen, bigEndType){}
+	~WriteStream(){}
+public:
+	template <class T>
+	inline WriteStream & WriteSimpleData(T t, unsigned short len = sizeof(T))
+	{
+		CheckMoveCursor(len);
+		MemoryCopy(m_buff+m_curLen, (char *)&t, len);
+		MoveCursor(len);
+		FillHeader();
+		return * this;
+	}
+	inline WriteStream & WriteContentData(const void * data, unsigned short len)
+	{
+		CheckMoveCursor(len);
+		memcpy(m_buff+m_curLen, data, len);
+		MoveCursor(len);
+		FillHeader();
+		return *this;
+	}
+
+	inline unsigned short GetWriteLen(){return m_curLen;}
+	inline WriteStream & operator << (bool data) { return WriteSimpleData(data);}
+	inline WriteStream & operator << (char data) { return WriteSimpleData(data);}
+	inline WriteStream & operator << (unsigned char data) { return WriteSimpleData(data);}
+	inline WriteStream & operator << (short data) { return WriteSimpleData(data);}
+	inline WriteStream & operator << (unsigned short data) { return WriteSimpleData(data);}
+	inline WriteStream & operator << (int data) { return WriteSimpleData(data);}
+	inline WriteStream & operator << (unsigned int data) { return WriteSimpleData(data);}
+ 	inline WriteStream & operator << (long data) { return WriteSimpleData((long long)data);}
+ 	inline WriteStream & operator << (unsigned long data) { return WriteSimpleData((unsigned long long)data);}
+	inline WriteStream & operator << (long long data) { return WriteSimpleData(data);}
+	inline WriteStream & operator << (unsigned long long data) { return WriteSimpleData(data);}
+	inline WriteStream & operator << (float data) { return WriteSimpleData(data);}
+	inline WriteStream & operator << (double data) { return WriteSimpleData(data);}
+	inline WriteStream & operator << (const char *const data) 
+	{
+		size_t len = strlen(data);
+		if (len > 65536-4)
+		{
+			throw std::runtime_error("string length too long");
+		}
+		WriteSimpleData((unsigned short)len);
+		WriteContentData(data, (unsigned short)len);
+		return *this;
+	}
+	inline WriteStream & operator << (const std::string & data) { return *this << data.c_str();}
+};
+
+
+
 //! Read Stream class
 //! 
 //! 包头   : 包体 
@@ -303,103 +280,29 @@ inline int CheckBuffIntegrity(const char * buff, unsigned short curBuffLen, unsi
 //!
 //! header = length(header section)+ length(body section); 
 //! 
-class ReadStream
+class ReadStream :public Stream
 {
 public:
-	ReadStream(const char *buf, unsigned short len, bool bigEndType = false)
-	{
-		m_buf = buf;
-		m_bufLen = len;
-		m_curLen = 2;
-		m_reversalEndianType = false;
-
-		{
-			short t = 1;
-			const char *p = (const char *)&t;
-			if (*p == 1)
-			{
-				if (bigEndType)
-				{
-					m_reversalEndianType = true;
-				}
-			}
-			else
-			{
-				if (!bigEndType)
-				{
-					m_reversalEndianType = true;
-				}
-			}
-		}
-	}
-
+	ReadStream(const char *buf, unsigned short len, bool bigEndType = false):Stream((char*)buf, len, bigEndType){}
+	~ReadStream(){}
 public:
 	template <class T>
 	inline ReadStream & ReadSimpleData(T & t, unsigned short len = sizeof(T))
 	{
-		if (len != 1 && len != 2 && len != 4 && len != 8) //! support byte only 1,2,4,8
-		{
-			throw std::runtime_error("bad type id");
-		}
-		if (m_curLen + len > m_bufLen)
-		{
-			throw std::runtime_error("out of range");
-		}
-
-		do 
-		{
-			if (!m_reversalEndianType)
-			{
-				char * p = (char *)&t;
-				*p++ = m_buf[m_curLen];
-				if (len == 1) break;
-				*p++ = m_buf[m_curLen+1];
-				if (len == 2) break;
-				*p++ = m_buf[m_curLen+2];
-				*p++ = m_buf[m_curLen+3];
-				if (len == 4) break;
-				*p++ = m_buf[m_curLen+4];
-				*p++ = m_buf[m_curLen+5];
-				*p++ = m_buf[m_curLen+6];
-				*p++ = m_buf[m_curLen+7];
-				break;
-			}
-			else
-			{
-				char * p = (char *)&t;
-				p+= len-1;
-				*p-- = m_buf[m_curLen];
-				if (len == 1) break;
-				*p-- = m_buf[m_curLen+1];
-				if (len == 2) break;
-				*p-- = m_buf[m_curLen+2];
-				*p-- = m_buf[m_curLen+3];
-				if (len == 4) break;
-				*p-- = m_buf[m_curLen+4];
-				*p-- = m_buf[m_curLen+5];
-				*p-- = m_buf[m_curLen+6];
-				*p-- = m_buf[m_curLen+7];
-				break;
-			}
-		} while (0);
-		m_curLen += len;
+		CheckMoveCursor(len);
+		MemoryCopy((char*)&t, m_buff+m_curLen, len);
+		MoveCursor(len);
 		return * this;
 	}
 	inline const char * PeekContentData(unsigned short len)
 	{
-		if (m_curLen + len > m_bufLen)
-		{
-			throw std::runtime_error("out of range");
-		}
-		return &m_buf[m_curLen];
+		CheckMoveCursor(len);
+		return m_buff+m_curLen;
 	}
 	inline void SkipContentData(unsigned short len)
 	{
-		if (m_curLen + len > m_bufLen)
-		{
-			throw std::runtime_error("out of range");
-		}
-		m_curLen += len;
+		CheckMoveCursor(len);
+		MoveCursor(len);
 	}
 	inline ReadStream & ReadContentData(char * data, unsigned short len)
 	{
@@ -416,8 +319,20 @@ public:
 	inline ReadStream & operator >> (unsigned short & data) { return ReadSimpleData(data);}
 	inline ReadStream & operator >> (int & data) { return ReadSimpleData(data);}
 	inline ReadStream & operator >> (unsigned int & data) { return ReadSimpleData(data);}
-// 	inline ReadStream & operator >> (long & data) { return ReadSimpleData(data);}
-// 	inline ReadStream & operator >> (unsigned long & data) { return ReadSimpleData(data);}
+ 	inline ReadStream & operator >> (long & data)
+	{ 
+		long long tmp = 0;
+		ReadStream & ret = ReadSimpleData(tmp);
+		data =(long) tmp;
+		return ret;
+	}
+ 	inline ReadStream & operator >> (unsigned long & data)
+	{ 
+		unsigned long long tmp = 0;
+		ReadStream & ret = ReadSimpleData(tmp);
+		data = (unsigned long)tmp;
+		return ret;
+	}
 	inline ReadStream & operator >> (long long & data) { return ReadSimpleData(data);}
 	inline ReadStream & operator >> (unsigned long long & data) { return ReadSimpleData(data);}
 	inline ReadStream & operator >> (float & data) { return ReadSimpleData(data);}
@@ -431,12 +346,6 @@ public:
 		SkipContentData(len);
 		return *this;
 	}
-private:
-	ReadStream(){}
-	const char * m_buf;
-	unsigned short m_bufLen;
-	unsigned short m_curLen;
-	bool m_reversalEndianType;
 };
 
 

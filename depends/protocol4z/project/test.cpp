@@ -21,7 +21,41 @@ struct tagData
 	unsigned long long ull;
 	float f;
 	double lf;
+	std::string str;
 };
+void Clear(tagData&tag1)
+{
+	tag1.bl = false;
+	tag1.ch = 0; 
+	tag1.uch = 0; 
+	tag1.ush = 0; 
+	tag1.n = 0; 
+	tag1.u = 0; 
+	tag1.l = 0; 
+	tag1.ul = 0;  
+	tag1.ll = 0; 
+	tag1.ull = 0; 
+	tag1.f = 0; 
+	tag1.lf = 0;
+	tag1.str.clear();
+}
+bool operator==(const tagData & tag1, const tagData &tag2)
+{
+	return tag1.bl == tag2.bl 
+		&& tag1.ch == tag2.ch
+		&& tag1.uch == tag2.uch
+		&& tag1.ush == tag2.ush
+		&& tag1.n == tag2.n
+		&& tag1.u == tag2.u
+		&& tag1.l == tag2.l
+		&& tag1.ul == tag2.ul
+		&& tag1.ll == tag2.ll
+		&& tag1.ull == tag2.ull
+		&& tag1.f == tag2.f
+		&& tag1.lf == tag2.lf
+		&& tag1.str == tag2.str;
+}
+
 ReadStream & operator >>(ReadStream & rs, tagData & data)
 {
 	rs >> data.bl;
@@ -37,6 +71,7 @@ ReadStream & operator >>(ReadStream & rs, tagData & data)
 	rs >> data.ull;
 	rs >> data.f;
 	rs >> data.lf;
+	rs >> data.str;
 	return rs;
 }
 WriteStream & operator <<(WriteStream & ws, const tagData & data)
@@ -54,6 +89,7 @@ WriteStream & operator <<(WriteStream & ws, const tagData & data)
 	ws << data.ull;
 	ws << data.f;
 	ws << data.lf;
+	ws << data.str;
 	return ws;
 }
 int main()
@@ -62,7 +98,8 @@ int main()
 	
 	tagData test1;
 	tagData test2;
-	memset(&test1,0,sizeof(test1));
+	Clear(test1);
+	Clear(test2);
 	test1.bl = true;
 	test1.ch = 'a';
 	test1.uch = 200;
@@ -76,10 +113,22 @@ int main()
 	test1.ull = 250;
 	test1.f = (float)123.231;
 	test1.lf = -120.333333333;
+	test1.str = "1234567";
+
+
+	int randCount = 2;
+	bool bigEndianType = true;
+
+	
+	while (randCount >0)
 	{
+		randCount--;
+		bigEndianType = !bigEndianType;
 		memset(buf, 0, sizeof(buf));
-		memset(&test2,0, sizeof(test2));
-		WriteStream ws(buf, (53-8)+sizeof(long)*2);
+		Clear(test2);
+		//2head, 59 pod, 2 str head, 7 string char count.
+		const int protocolLen = 2+59+2+7;
+		WriteStream ws(buf, protocolLen, bigEndianType);
 		try
 		{
 			ws << test1;
@@ -89,22 +138,14 @@ int main()
 			cout << e.what() << endl;
 		}
 
-		memset(&test2, 0, sizeof(test2));
-		unsigned short headerlen = 1;
+		unsigned short headerlen = ReadStreamHeader(buf, bigEndianType);
+		
+		if (headerlen != protocolLen)
 		{
-			char *p = (char*)&headerlen;
-			if (*p == 1)
-			{
-				memcpy(&headerlen, buf, 2);
-			}
-			else
-			{
-				*((char*)&headerlen) = buf[1];
-				*(((char*)&headerlen)+1) = buf[0];
-			}
+			cout << "read header len error" << endl;
 		}
 
-		ReadStream rs(buf, headerlen);
+		ReadStream rs(buf, headerlen, bigEndianType);
 		try
 		{
 			rs >> test2;
@@ -113,106 +154,39 @@ int main()
 		{
 			cout << e.what() << endl;
 		}
-		if (memcmp(&test1, &test2, sizeof(test1)) == 0)
+		if (test1 == test2)
 		{
-			cout <<"check little endian protocol success" << endl;
+			cout <<"check  protocol success" << endl;
 		}
 		else
 		{
-			cout <<"check little endian protocol failed" << endl;
+			cout <<"check lprotocol failed" << endl;
 		}
 
 		try
 		{
 			ws << char(1);
-			cout <<"Bounds check  litter-endian WriteStream failed" << endl;
+			cout <<"Bounds check  WriteStream failed" << endl;
 		}
 		catch (std::runtime_error e)
 		{
-			cout <<"Bounds check  litter-endian WriteStream success. exception.what()=" << e.what() << endl;
+			cout <<"Bounds check  WriteStream success. "<< endl;
 		}
 		try
 		{
 			char ch = 'a';
 			rs >> ch;
-			cout <<"Bounds check  litter-endian ReadStream failed" << endl;
+			cout <<"Bounds check  ReadStream failed" << endl;
 		}
 		catch (std::runtime_error e)
 		{
-			cout <<"Bounds check  litter-endian ReadStream success. exception.what()=" << e.what() << endl;
+			cout <<"Bounds check  ReadStream success."  << endl;
 		}
 	}
 	
 
 
-
-	{
-		memset(buf, 0, sizeof(buf));
-		memset(&test2,0, sizeof(test2));
-		WriteStream ws(buf, (53-8)+sizeof(long)*2, true);
-		try
-		{
-			ws << test1;
-		}
-		catch(std::exception e)
-		{
-			cout << e.what() << endl;
-		}
-
-		memset(&test2, 0, sizeof(test2));
-		unsigned short headerlen = 1;
-		{
-			char *p = (char*)&headerlen;
-			if (*p == 1)
-			{
-				*((char*)&headerlen) = buf[1];
-				*(((char*)&headerlen)+1) = buf[0];
-			}
-			else
-			{
-				memcpy(&headerlen, buf, 2);
-			}
-		}
-
-		ReadStream rs(buf, headerlen, true);
-		try
-		{
-			rs >> test2;
-		}
-		catch(std::runtime_error e)
-		{
-			cout << e.what() << endl;
-		}
-		if (memcmp(&test1, &test2, sizeof(test1)) == 0)
-		{
-			cout <<"check big-endian protocol success" << endl;
-		}
-		else
-		{
-			cout <<"check big-endian protocol failed" << endl;
-		}
-
-		try
-		{
-			ws << char(1);
-			cout <<"Bounds check  big-endian WriteStream failed" << endl;
-		}
-		catch (std::runtime_error e)
-		{
-			cout <<"Bounds check  big-endian WriteStream success. exception.what()=" << e.what() << endl;
-		}
-		try
-		{
-			char ch = 'a';
-			rs >> ch;
-			cout <<"Bounds check  big-endian ReadStream failed" << endl;
-		}
-		catch (std::runtime_error e)
-		{
-			cout <<"Bounds check  big-endian ReadStream success. exception.what()=" << e.what() << endl;
-		}
-	}
-
-
+	cout << "all check done . " << endl;
+	getchar();
 	return 0;
 }

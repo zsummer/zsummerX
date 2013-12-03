@@ -62,10 +62,9 @@ namespace zsummer
 			{
 				return m_impl.DoRecv(buf, len, h);
 			}
-			template<typename H>
-			bool DoSend(char * buf, unsigned int len, const char *dstip, unsigned short dstport, const H & h)
+			bool DoSend(char * buf, unsigned int len, const char *dstip, unsigned short dstport)
 			{
-				return m_impl.DoSend(buf, len, dstip, dstport, h);
+				return m_impl.DoSend(buf, len, dstip, dstport);
 			}
 		private:
 			CUdpSocketImpl m_impl;

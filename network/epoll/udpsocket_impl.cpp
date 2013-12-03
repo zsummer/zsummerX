@@ -46,12 +46,6 @@ CUdpSocketImpl::CUdpSocketImpl()
 	m_register.reset();
 	m_iRecvLen  = 0;
 	m_pRecvBuf = NULL;
-	m_iSendLen = 0;
-	m_pSendBuf = NULL;
-	m_dstip.clear();
-	m_dstport = 0;
-	m_isRecvFromLock = false;
-	m_isSendToLock = false;
 }
 
 
@@ -59,10 +53,10 @@ CUdpSocketImpl::~CUdpSocketImpl()
 {
 	if (m_register._fd != -1)
 	{
-		if (m_isRecvFromLock || m_isSendToLock)
+		if (m_isRecvFromLock )
 		{
 			LCE("Destruct CUdpSocketImpl Error. socket handle not invalid and some request was not completed. fd=" 
-				<< m_register._fd << ", m_isRecvFromLock=" << m_isRecvFromLock << ", m_isSendToLock=" << m_isSendToLock );
+				<< m_register._fd << ", m_isRecvFromLock=" << m_isRecvFromLock  );
 		}
 		close(m_register._fd);
 		m_register._fd = -1;
@@ -110,7 +104,7 @@ bool  CUdpSocketImpl::Initialize(CZSummer & summer, const char *localIP, unsigne
 	return true;
 }
 
-bool CUdpSocketImpl::DoSend(char * buf, unsigned int len, const char *dstip, unsigned short dstport, const _OnSendToHandler& handler)
+bool CUdpSocketImpl::DoSend(char * buf, unsigned int len, const char *dstip, unsigned short dstport)
 {
 	if (m_summer == NULL)
 	{
@@ -122,29 +116,12 @@ bool CUdpSocketImpl::DoSend(char * buf, unsigned int len, const char *dstip, uns
 		LCE("CUdpSocketImpl::DoSend()" << this << " argument err! len=" << len);
 		return false;
 	}
-	if (m_pSendBuf != NULL || m_iSendLen != 0 || m_isSendToLock)
-	{
-		LCE("CUdpSocketImpl::DoRecv()" << this << "    (m_pRecvBuf != NULL || m_iRecvLen != 0) == TRUE");
-		return false;
-	}
-	m_onSendToHandler = handler;
-	m_pSendBuf = buf;
-	m_iSendLen = len;
-	m_dstip = dstip;
-	m_dstport = dstport;
-	m_register._event.events = m_register._event.events|EPOLLOUT;
-	if (epoll_ctl(m_summer->m_impl.m_epoll, EPOLL_CTL_MOD, m_register._fd, &m_register._event) != 0)
-	{
-		LCF("CUdpSocketImpl::DoSend()" << this << " EPOLLMod error. epfd="<<m_summer->m_impl.m_epoll << ", m_register fd=" << m_register._fd << ", errno=" << strerror(errno));
-		m_onSendToHandler = nullptr;
-		m_pSendBuf = nullptr;
-		m_iSendLen = 0;
-		m_dstip.clear();
-		m_dstport = 0;
-		return false;
-	}
-	m_isSendToLock = true;
-  return true;
+	sockaddr_in addr;
+	addr.sin_family = AF_INET;
+	addr.sin_addr.s_addr = inet_addr(dstip);
+	addr.sin_port = htons(dstport);
+	sendto(m_register._fd, buf, len, 0, (sockaddr*)&addr, sizeof(addr));
+	return true;
 }
 
 
@@ -191,14 +168,12 @@ bool CUdpSocketImpl::DoRecv(char * buf, unsigned int len, const _OnRecvFromHandl
 
 bool CUdpSocketImpl::OnEPOLLMessage(int type, int flag)
 {
-	if (m_isRecvFromLock && m_isSendToLock)
+	if (!m_isRecvFromLock)
 	{
 		LCE("unknown error" );
 		return false;
 	}
 	bool isNeedUnlockRecv = m_isRecvFromLock;
-	bool isNeedUnlockSend = m_isSendToLock;
-
 	if (flag & EPOLLHUP || flag & EPOLLERR)
 	{
 		if (flag & EPOLLHUP)
@@ -217,19 +192,6 @@ bool CUdpSocketImpl::OnEPOLLMessage(int type, int flag)
 			m_pRecvBuf = nullptr;
 			m_iRecvLen = 0;
 			onRecv(EC_ERROR, "", 0, 0);
-		}
-		if (isNeedUnlockSend)
-		{
-			m_isSendToLock = false;
-			_OnSendToHandler onSendTo;
-			onSendTo.swap(m_onSendToHandler);;
-			m_onSendToHandler = nullptr;
-			m_pSendBuf = nullptr;
-			m_iSendLen = 0;
-			m_dstip.clear();
-			m_dstport = 0;
-
-			onSendTo(EC_ERROR);
 		}
 		return false;
 	}
@@ -268,40 +230,7 @@ bool CUdpSocketImpl::OnEPOLLMessage(int type, int flag)
 
 		onRecv(EC_SUCCESS, inet_ntoa(raddr.sin_addr), ntohs(raddr.sin_port), ret);
 	}
-	if (flag & EPOLLOUT && isNeedUnlockSend)
-	{
-		m_isSendToLock = false;
-		_OnSendToHandler onSendTo;
-		onSendTo.swap(m_onSendToHandler);;
-
-		m_register._event.events = m_register._event.events&~EPOLLOUT;
-		if (epoll_ctl(m_summer->m_impl.m_epoll, EPOLL_CTL_MOD, m_register._fd, &m_register._event) != 0)
-		{
-			LCF("CUdpSocketImpl::DoRecv()" << this << " EPOLLMod error. epfd="<<m_summer->m_impl.m_epoll << ", m_register fd=" << m_register._fd << ", errno=" << strerror(errno));
-		}
-
-		sockaddr_in addr;
-		addr.sin_family = AF_INET;
-		addr.sin_addr.s_addr = inet_addr(m_dstip.c_str());
-		addr.sin_port = htons(m_dstport);
-		int sl = sendto(m_register._fd, m_pSendBuf, m_iSendLen, 0, (sockaddr*)&addr, sizeof(addr));
-		
-		m_pSendBuf = nullptr;
-		m_iSendLen = 0;
-		m_dstip.clear();
-		m_dstport = 0;
-		if (sl<= 0)
-		{
-			LCE("CUdpSocket sendto error, sentlen=" << sl);
-			onSendTo(EC_ERROR);
-			return false;
-		}
-		else
-		{
-			onSendTo(EC_SUCCESS);
-		}
-
-	}
+	
 	
 
 	return true;

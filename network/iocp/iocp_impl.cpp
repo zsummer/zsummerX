@@ -37,6 +37,7 @@
 #include "iocp_impl.h"
 #include "tcpsocket_impl.h"
 #include "tcpaccept_impl.h"
+#include "udpsocket_impl.h"
 
 
 using namespace zsummer::network;
@@ -106,8 +107,8 @@ void CZSummerImpl::RunOnce()
 	case tagReqHandle::HANDLE_SENDTO:
 	case tagReqHandle::HANDLE_RECVFROM:
 		{
-//			CUdpSocket * pKey = (CUdpSocket*) uComKey;
-//			pKey->OnIOCPMessage(bRet, dwTranceCount, type);
+			CUdpSocketImpl * pKey = (CUdpSocketImpl*) uComKey;
+			pKey->OnIOCPMessage(bRet, dwTranceCount, type);
 		}
 		break;
 	default:

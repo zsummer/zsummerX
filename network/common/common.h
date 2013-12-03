@@ -101,6 +101,10 @@ namespace zsummer
 		typedef std::function<void(ErrorCode)> _OnConnectHandler;
 		typedef std::function<void(ErrorCode, int)> _OnSendHandler;
 		typedef _OnSendHandler _OnRecvHandler;
+
+		//
+		class CUdpSocket;
+		typedef std::shared_ptr<CUdpSocket>CUdpSocketPtr;
 		// const char * remoteIP, unsigned short remotePort, nTranslate
 		typedef std::function<void (ErrorCode, const char*, unsigned short, int)> _OnRecvFromHandler;
 		typedef std::function<void(ErrorCode)> _OnSendToHandler;

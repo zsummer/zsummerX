@@ -7,6 +7,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "server", "server\server.vcx
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "linux", "linux\linux.vcxproj", "{B3E829E2-6A0B-41CB-8E6D-AD9B46A2E0F0}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "udpclient", "udpclient\udpclient.vcxproj", "{194E3B3C-61AD-429D-8A6A-92978D525E45}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "udpserver", "udpserver\udpserver.vcxproj", "{25A3954A-B13B-484B-997C-49C552263F70}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -37,11 +41,24 @@ Global
 		{B3E829E2-6A0B-41CB-8E6D-AD9B46A2E0F0}.Release|Win32.ActiveCfg = Release|Win32
 		{B3E829E2-6A0B-41CB-8E6D-AD9B46A2E0F0}.Release|x64.ActiveCfg = Release|x64
 		{B3E829E2-6A0B-41CB-8E6D-AD9B46A2E0F0}.Release|x64.Build.0 = Release|x64
+		{194E3B3C-61AD-429D-8A6A-92978D525E45}.Debug|Win32.ActiveCfg = Debug|Win32
+		{194E3B3C-61AD-429D-8A6A-92978D525E45}.Debug|Win32.Build.0 = Debug|Win32
+		{194E3B3C-61AD-429D-8A6A-92978D525E45}.Debug|x64.ActiveCfg = Debug|x64
+		{194E3B3C-61AD-429D-8A6A-92978D525E45}.Debug|x64.Build.0 = Debug|x64
+		{194E3B3C-61AD-429D-8A6A-92978D525E45}.Release|Win32.ActiveCfg = Release|Win32
+		{194E3B3C-61AD-429D-8A6A-92978D525E45}.Release|Win32.Build.0 = Release|Win32
+		{194E3B3C-61AD-429D-8A6A-92978D525E45}.Release|x64.ActiveCfg = Release|x64
+		{194E3B3C-61AD-429D-8A6A-92978D525E45}.Release|x64.Build.0 = Release|x64
+		{25A3954A-B13B-484B-997C-49C552263F70}.Debug|Win32.ActiveCfg = Debug|Win32
+		{25A3954A-B13B-484B-997C-49C552263F70}.Debug|Win32.Build.0 = Debug|Win32
+		{25A3954A-B13B-484B-997C-49C552263F70}.Debug|x64.ActiveCfg = Debug|x64
+		{25A3954A-B13B-484B-997C-49C552263F70}.Debug|x64.Build.0 = Debug|x64
+		{25A3954A-B13B-484B-997C-49C552263F70}.Release|Win32.ActiveCfg = Release|Win32
+		{25A3954A-B13B-484B-997C-49C552263F70}.Release|Win32.Build.0 = Release|Win32
+		{25A3954A-B13B-484B-997C-49C552263F70}.Release|x64.ActiveCfg = Release|x64
+		{25A3954A-B13B-484B-997C-49C552263F70}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(Performance) = preSolution
-		HasPerformanceSessions = true
 	EndGlobalSection
 EndGlobal

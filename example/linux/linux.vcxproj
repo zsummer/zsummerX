@@ -149,6 +149,7 @@
     <ClCompile Include="..\..\network\epoll\tcpaccept_impl.cpp" />
     <ClCompile Include="..\..\network\epoll\tcpsocket_impl.cpp" />
     <ClCompile Include="..\..\network\epoll\udpsocket_impl.cpp" />
+    <ClCompile Include="..\..\network\timer\timer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\depends\log4z\log4z.h" />
@@ -160,6 +161,7 @@
     <ClInclude Include="..\..\network\epoll\udpsocket_impl.h" />
     <ClInclude Include="..\..\network\tcpaccept.h" />
     <ClInclude Include="..\..\network\tcpsocket.h" />
+    <ClInclude Include="..\..\network\timer\timer.h" />
     <ClInclude Include="..\..\network\udpsocket.h" />
     <ClInclude Include="..\..\network\zsummer.h" />
   </ItemGroup>

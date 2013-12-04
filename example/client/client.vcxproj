@@ -149,6 +149,7 @@
     <ClCompile Include="..\..\network\iocp\tcpaccept_impl.cpp" />
     <ClCompile Include="..\..\network\iocp\tcpsocket_impl.cpp" />
     <ClCompile Include="..\..\network\iocp\udpsocket_impl.cpp" />
+    <ClCompile Include="..\..\network\timer\timer.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -161,6 +162,7 @@
     <ClInclude Include="..\..\network\iocp\udpsocket_impl.h" />
     <ClInclude Include="..\..\network\tcpaccept.h" />
     <ClInclude Include="..\..\network\tcpsocket.h" />
+    <ClInclude Include="..\..\network\timer\timer.h" />
     <ClInclude Include="..\..\network\udpsocket.h" />
     <ClInclude Include="..\..\network\zsummer.h" />
   </ItemGroup>

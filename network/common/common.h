@@ -78,6 +78,7 @@ namespace zsummer
 {
 	namespace network
 	{
+		//! 错误码
 		enum ErrorCode
 		{
 			EC_SUCCESS = 0,
@@ -85,13 +86,15 @@ namespace zsummer
 			EC_REMOTE_CLOSED,
 			EC_REMOTE_HANGUP,
 		};
+		//! 完成键
 		enum POST_COM_KEY
 		{
 			PCK_USER_DATA,
 		};
-					
-
+		
+		//! 处理器
 		typedef std::function<void()> _OnPostHandler;
+		//unsigned long long : timer ID
 		typedef std::function<void(unsigned long long)> _OnTimerHandler;
 
 		class CTcpSocket;
@@ -99,13 +102,16 @@ namespace zsummer
 		typedef std::function<void(ErrorCode, CTcpSocketPtr)> _OnAcceptHandler;
 
 		typedef std::function<void(ErrorCode)> _OnConnectHandler;
+		//! int : translate bytes
 		typedef std::function<void(ErrorCode, int)> _OnSendHandler;
 		typedef _OnSendHandler _OnRecvHandler;
 
 		//
 		class CUdpSocket;
 		typedef std::shared_ptr<CUdpSocket>CUdpSocketPtr;
-		// const char * remoteIP, unsigned short remotePort, nTranslate
+		//! const char *: remote ip
+		//! unsigned short: remote port
+		//! int : translate bytes
 		typedef std::function<void (ErrorCode, const char*, unsigned short, int)> _OnRecvFromHandler;
 		typedef std::function<void(ErrorCode)> _OnSendToHandler;
 

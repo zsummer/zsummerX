@@ -1,23 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\..\depends\log4z\log4z.cpp">
-      <Filter>log</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\network\iocp\iocp_impl.cpp">
-      <Filter>network</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\network\iocp\tcpaccept_impl.cpp">
-      <Filter>network</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\network\iocp\tcpsocket_impl.cpp">
-      <Filter>network</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\network\iocp\udpsocket_impl.cpp">
-      <Filter>network</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\network\common\common.cpp">
-      <Filter>network</Filter>
+    <ClCompile Include="..\..\network\timer\timer.cpp">
+      <Filter>network\timmer</Filter>
     </ClCompile>
     <ClCompile Include="Client.cpp">
       <Filter>main</Filter>
@@ -33,36 +18,8 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\depends\protocol4z\protocol4z.h" />
-    <ClInclude Include="..\..\depends\log4z\log4z.h">
-      <Filter>log</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\network\iocp\iocp_impl.h">
-      <Filter>network</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\network\tcpaccept.h">
-      <Filter>network</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\network\iocp\tcpaccept_impl.h">
-      <Filter>network</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\network\tcpsocket.h">
-      <Filter>network</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\network\iocp\tcpsocket_impl.h">
-      <Filter>network</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\network\udpsocket.h">
-      <Filter>network</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\network\iocp\udpsocket_impl.h">
-      <Filter>network</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\network\zsummer.h">
-      <Filter>network</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\network\common\common.h">
-      <Filter>network</Filter>
+    <ClInclude Include="..\..\network\timer\timer.h">
+      <Filter>network\timmer</Filter>
     </ClInclude>
     <ClInclude Include="Client.h">
       <Filter>main</Filter>
@@ -78,14 +35,84 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\depends\log4z\log4z.cpp">
+      <Filter>log</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\network\common\common.cpp">
+      <Filter>network\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\network\iocp\iocp_impl.cpp">
+      <Filter>network\impl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\network\iocp\tcpaccept_impl.cpp">
+      <Filter>network\impl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\network\iocp\tcpsocket_impl.cpp">
+      <Filter>network\impl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\network\iocp\udpsocket_impl.cpp">
+      <Filter>network\impl</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\depends\log4z\log4z.h">
+      <Filter>log</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\network\common\common.h">
+      <Filter>network\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\network\zsummer.h">
+      <Filter>network\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\network\tcpsocket.h">
+      <Filter>network\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\network\udpsocket.h">
+      <Filter>network\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\network\tcpaccept.h">
+      <Filter>network\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\network\iocp\iocp_impl.h">
+      <Filter>network\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\network\iocp\tcpaccept_impl.h">
+      <Filter>network\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\network\iocp\tcpsocket_impl.h">
+      <Filter>network\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\network\iocp\udpsocket_impl.h">
+      <Filter>network\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\depends\protocol4z\protocol4z.h">
+      <Filter>protocol</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
     <Filter Include="log">
-      <UniqueIdentifier>{3a5f3b57-e09f-42bd-9fd4-97e9833293ce}</UniqueIdentifier>
+      <UniqueIdentifier>{02d03eaf-85db-4dd2-9262-51d4670d5d72}</UniqueIdentifier>
     </Filter>
     <Filter Include="network">
-      <UniqueIdentifier>{73a1b02d-b830-45e3-9834-2da0579beca3}</UniqueIdentifier>
+      <UniqueIdentifier>{1670c306-e1cc-4a8e-b20d-e1feac7c711b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="network\common">
+      <UniqueIdentifier>{ec35c1ca-5758-41e1-8298-2a541638767f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="network\interface">
+      <UniqueIdentifier>{f89e83a8-6a05-482b-b73d-67b4ae4ba526}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="network\timmer">
+      <UniqueIdentifier>{d7d27401-f32a-4231-868a-d00fa489ff42}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="network\impl">
+      <UniqueIdentifier>{f27d84d5-5f27-4af9-b6c4-e4ccdf6f2b2e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="protocol">
+      <UniqueIdentifier>{5d657f81-5e77-43b2-9a7f-137851983841}</UniqueIdentifier>
     </Filter>
     <Filter Include="main">
-      <UniqueIdentifier>{51004b39-054d-4492-a663-06a9d59c577e}</UniqueIdentifier>
+      <UniqueIdentifier>{eae75d06-8690-4446-9b92-dd83bc433026}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

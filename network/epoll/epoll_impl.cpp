@@ -45,7 +45,6 @@ using namespace zsummer::network;
 CZSummerImpl::CZSummerImpl()
 {
 	m_epoll = -1;
-	m_nextExpire = (unsigned long long)-1;
 	m_sockpair[0] = 0;
 	m_sockpair[1] = 0;
 }
@@ -59,7 +58,7 @@ CZSummerImpl::~CZSummerImpl()
 
 bool CZSummerImpl::Initialize()
 {
-	m_nextExpire = (unsigned long long)-1;
+	
 
 	if (m_epoll != -1)
 	{
@@ -112,19 +111,7 @@ void CZSummerImpl::PostMsg(POST_COM_KEY pck, const _OnPostHandler &handle)
 
 void CZSummerImpl::RunOnce()
 {
-	int dwDelayMs =0;
-	unsigned long long nowMs = std::chrono::system_clock::now().time_since_epoch()/std::chrono::milliseconds(1);
-	dwDelayMs = (int) (m_nextExpire -nowMs);
-	if (dwDelayMs > 100)
-	{
-		dwDelayMs = 100;
-	}
-	else if (dwDelayMs < 10)
-	{
-		dwDelayMs = 10;
-	}
-
-	int retCount = epoll_wait(m_epoll, m_events, 1000,  dwDelayMs);
+	int retCount = epoll_wait(m_epoll, m_events, 1000,   m_timer.GetNextExpireTime());
 	if (retCount == -1)
 	{
 		if (errno != EINTR)
@@ -137,7 +124,7 @@ void CZSummerImpl::RunOnce()
 	//check timer
 	//检查定时器超时状态
 	{
-		CheckTimer();
+		m_timer.CheckTimer();
 		if (retCount == 0) return;//timeout
 	}
 

@@ -79,7 +79,7 @@ bool CZSummerImpl::Initialize()
 		}
 		SetNonBlock(m_sockpair[0]);
 		SetNonBlock(m_sockpair[1]);
-		SetNoDelay(m_sockpair[1]);
+		SetNoDelay(m_sockpair[0]);
 		SetNoDelay(m_sockpair[1]);
 		m_register.reset();
 		m_register._ptr = this;

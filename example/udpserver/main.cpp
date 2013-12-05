@@ -78,13 +78,16 @@ int main(int argc, char* argv[])
 #endif
 	//client 初始化
 	typedef std::shared_ptr<Packet> PacketPtr;
-	zsummer::log4z::ILog4zManager::GetInstance()->Config("client.cfg");
+	zsummer::log4z::ILog4zManager::GetInstance()->Config("server.cfg");
 	zsummer::log4z::ILog4zManager::GetInstance()->Start();
 	zsummer::network::CZSummer summer;
 	summer.Initialize();
 	zsummer::network::CUdpSocket server;
 	server.Initialize(summer, "0.0.0.0", 82);
 	char recvFromBuf[_MSG_BUF_LEN];
+	//statistic
+	unsigned long long totalCount = 0;
+
 	//! 接收
 	//void (ErrorCode, const char*, unsigned short, int)
 	std::function<void (zsummer::network::ErrorCode, const char*, unsigned short, int)>  onRecv = [&](zsummer::network::ErrorCode ec, 
@@ -116,6 +119,7 @@ int main(int argc, char* argv[])
 						zsummer::protocol4z::WriteStream ws(buf, _MSG_BUF_LEN);
 						ws << protocolID << clientTick << text;
 						server.DoSend(buf, ws.GetWriteLen(), ip, port);
+						totalCount++;
 					}
 					break;
 				default:
@@ -133,7 +137,14 @@ int main(int argc, char* argv[])
 		server.DoRecv(recvFromBuf, _MSG_BUF_LEN, onRecv);
 	};
 
-
+	unsigned long long lastTotalCount = 0;
+	std::function<void(unsigned long long)> onTimer = [&](unsigned long long)
+	{
+		LOGI("Current Recv Total Count=" << totalCount << ", speed=" << (totalCount - lastTotalCount)/5);
+		lastTotalCount = totalCount;
+		summer.CreateTimer(5000, onTimer);
+	};
+	summer.CreateTimer(5000, onTimer);
 	server.DoRecv(recvFromBuf, _MSG_BUF_LEN, onRecv);
 
 	do

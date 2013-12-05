@@ -245,7 +245,7 @@ int main(int argc, char* argv[])
 			pack->_curpos = 0;
 			pack->_reqTime = std::chrono::system_clock::now().time_since_epoch()/std::chrono::milliseconds(1);
 			c->DoRecv(pack->_orgdata+pack->_curpos, 2, std::bind(onRecv, std::placeholders::_1, std::placeholders::_2, pack, c));
-			summer.CreateTimer(1500 + rand()%3000, std::bind(doSend, c));
+			summer.CreateTimer(2500 + rand()%5000, std::bind(doSend, c));
 			//doSend(c);
 		}
 	};

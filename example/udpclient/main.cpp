@@ -62,7 +62,6 @@ struct tagStatistic
 {
 	enum TYPE_DELAY
 	{
-		TD_SEND,
 		TD_TOTAL,
 		TD_END,
 	};
@@ -161,6 +160,8 @@ int main(int argc, char* argv[])
 	//! 统计信息
 	tagStatistic statist;
 	memset(&statist, 0, sizeof(statist));
+	unsigned long long totalSend = 0;
+	unsigned long long totalRecv = 0;
 
 
 
@@ -173,7 +174,8 @@ int main(int argc, char* argv[])
 		ws << pic->_reqTime; // local tick count
 		ws << "100000000000000000000000000"; // append text, fill the length protocol.
 		pic->sock.DoSend(pic->sendData, ws.GetWriteLen(), remoteIP, remotePort);
-		summer.CreateTimer(rand()%1000+500,std::bind(doSend,std::placeholders::_1, ip.c_str(), port, pic));
+		summer.CreateTimer(rand()%5000+2500,std::bind(doSend,std::placeholders::_1, ip.c_str(), port, pic));
+		totalSend++;
 
 	};
 
@@ -181,6 +183,7 @@ int main(int argc, char* argv[])
 	std::function<void(ErrorCode, const char*, unsigned short, int, PicnicPtr)>  onRecv = [&](ErrorCode ec,
 		const char *remoteIP, unsigned short port, int translate, PicnicPtr pic)
 	{
+		
 		if (ec)
 		{
 			LOGE ("onRecv Error, EC=" << ec );
@@ -222,12 +225,14 @@ int main(int argc, char* argv[])
 			}
 			
 		}
+		totalRecv++;
 		pic->sock.DoRecv(pic->recvData, _MSG_BUF_LEN, std::bind(onRecv, 
 											std::placeholders::_1,
 											std::placeholders::_2,
 											std::placeholders::_3,
 											std::placeholders::_4,
 											pic));
+		//doSend(0, ip.c_str(), port, pic);
 	};
 
 
@@ -239,14 +244,18 @@ int main(int argc, char* argv[])
 	for (int i = 0; i < n; i++)
 	{
 		PicnicPtr pic(new Picnic);
-		pic->sock.Initialize(summer, ip.c_str(), 0);
+		if (!pic->sock.Initialize(summer, "0.0.0.0", 0))
+		{
+			LOGI("init udp socket error.");
+			continue;
+		}
 		pic->sock.DoRecv(pic->recvData, _MSG_BUF_LEN, std::bind(onRecv, 
 													std::placeholders::_1,
 													std::placeholders::_2,
 													std::placeholders::_3,
 													std::placeholders::_4,
 													pic));
-		summer.CreateTimer(rand()%1000+500,std::bind(doSend,std::placeholders::_1, ip.c_str(), port, pic));
+		summer.CreateTimer(rand()%10000+3000,std::bind(doSend,std::placeholders::_1, ip.c_str(), port, pic));
 	}
 
 
@@ -267,6 +276,7 @@ int main(int argc, char* argv[])
 			<< " -- " << statist._delay[i][tagStatistic::TM_1000MS]
 			<< " -- " << statist._delay[i][tagStatistic::TM_LOWMS] << " --");
 		}
+		LOGI("totalSend="<< totalSend << ", totalRecv=" << totalRecv);
 		summer.CreateTimer(10*1000, doTimer);
 	};
 	summer.CreateTimer(10*1000, doTimer);

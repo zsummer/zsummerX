@@ -138,12 +138,11 @@ void CZSummerImpl::RunOnce()
 		if (pReg->_type == tagRegister::REG_THREAD)
 		{
 			char buf[1000];
-			while (recv(pReg->_fd, buf, 1000, 0) > 0){}
+			while (recv(pReg->_fd, buf, 1000, 0) > 0);
 
 			MsgVct msgs;
 			m_msglock.lock();
 			msgs.swap(m_msgs);
-			m_msgs.clear();
 			m_msglock.unlock();
 
 			for (auto iter = msgs.begin(); iter != msgs.end(); ++iter)

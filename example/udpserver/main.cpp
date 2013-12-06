@@ -46,7 +46,7 @@ using namespace std;
 using namespace zsummer::network;
 
 //! 消息包缓冲区大小
-#define _MSG_BUF_LEN	(1000)
+#define _MSG_BUF_LEN	(1200)
 
 //! 消息包 
 struct Packet

@@ -45,8 +45,8 @@
 using namespace std;
 using namespace zsummer::network;
 //! 消息包缓冲区大小
-#define _MSG_BUF_LEN	(1000)
-
+#define _MSG_BUF_LEN	(1200)
+std::string g_fillString;
 //! 消息包 
 struct Picnic
 {
@@ -143,6 +143,7 @@ int main(int argc, char* argv[])
 	zsummer::log4z::ILog4zManager::GetInstance()->Start();
 	zsummer::network::CZSummer summer;
 	summer.Initialize();
+	g_fillString.resize(1000, 'z');
 	int n=1;
 	std::string ip;
 	unsigned short port = 0;
@@ -172,9 +173,9 @@ int main(int argc, char* argv[])
 		zsummer::protocol4z::WriteStream ws(pic->sendData, _MSG_BUF_LEN);
 		ws << (unsigned short) 1; //protocol id
 		ws << pic->_reqTime; // local tick count
-		ws << "100000000000000000000000000"; // append text, fill the length protocol.
+		ws << g_fillString; // append text, fill the length protocol.
 		pic->sock.DoSend(pic->sendData, ws.GetWriteLen(), remoteIP, remotePort);
-		summer.CreateTimer(rand()%5000+2500,std::bind(doSend,std::placeholders::_1, ip.c_str(), port, pic));
+		//summer.CreateTimer(rand()%5000+2500,std::bind(doSend,std::placeholders::_1, ip.c_str(), port, pic));
 		totalSend++;
 
 	};
@@ -232,7 +233,7 @@ int main(int argc, char* argv[])
 											std::placeholders::_3,
 											std::placeholders::_4,
 											pic));
-		//doSend(0, ip.c_str(), port, pic);
+		doSend(0, ip.c_str(), port, pic);
 	};
 
 
@@ -255,7 +256,7 @@ int main(int argc, char* argv[])
 													std::placeholders::_3,
 													std::placeholders::_4,
 													pic));
-		summer.CreateTimer(rand()%10000+3000,std::bind(doSend,std::placeholders::_1, ip.c_str(), port, pic));
+		summer.CreateTimer(rand()%1000+3000,std::bind(doSend,std::placeholders::_1, ip.c_str(), port, pic));
 	}
 
 

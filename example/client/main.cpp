@@ -46,8 +46,8 @@
 using namespace std;
 using namespace zsummer::network;
 //! 消息包缓冲区大小
-#define _MSG_BUF_LEN	(8*1024)
-
+#define _MSG_BUF_LEN	(2*1024)
+std::string g_fillString;
 //! 消息包 
 struct Packet
 {
@@ -121,8 +121,11 @@ struct tagStatistic
 	}
 };
 
-
-
+bool g_runing = true;
+void sig(int)
+{
+	g_runing = false;
+}
 
 int main(int argc, char* argv[])
 {
@@ -139,6 +142,7 @@ int main(int argc, char* argv[])
 	signal( SIGQUIT, SIG_IGN );
 	signal( SIGCHLD, SIG_IGN);
 #endif
+	signal(SIGINT,sig);
 	//client 初始化
 	zsummer::log4z::ILog4zManager::GetInstance()->Config("client.cfg");
 	zsummer::log4z::ILog4zManager::GetInstance()->Start();
@@ -146,7 +150,7 @@ int main(int argc, char* argv[])
 	summer.Initialize();
 	std::list<CTcpSocketPtr> clients;
 	typedef std::shared_ptr<Packet> PacketPtr;
-
+	g_fillString.resize(1000, 'z');
 	//! 统计信息
 	tagStatistic statist;
 	memset(&statist, 0, sizeof(statist));
@@ -174,13 +178,12 @@ int main(int argc, char* argv[])
 	//! 请求发送
 	auto doSend = [&](CTcpSocketPtr c)
 	{
-
 		PacketPtr pack(new Packet);
 		pack->_reqTime = std::chrono::system_clock::now().time_since_epoch()/std::chrono::milliseconds(1);
 		zsummer::protocol4z::WriteStream ws(pack->_orgdata, _MSG_BUF_LEN);
 		ws << (unsigned short) 1; //protocol id
 		ws << pack->_reqTime; // local tick count
-		ws << "100000000000000000000000000"; // append text, fill the length protocol.
+		ws << g_fillString; // append text, fill the length protocol.
 		pack->_len = ws.GetWriteLen();
 		pack->_curpos = 0;
 		c->DoSend(pack->_orgdata+pack->_curpos, pack->_len-pack->_curpos, std::bind(onSend, std::placeholders::_1, std::placeholders::_2, pack, c));
@@ -245,8 +248,8 @@ int main(int argc, char* argv[])
 			pack->_curpos = 0;
 			pack->_reqTime = std::chrono::system_clock::now().time_since_epoch()/std::chrono::milliseconds(1);
 			c->DoRecv(pack->_orgdata+pack->_curpos, 2, std::bind(onRecv, std::placeholders::_1, std::placeholders::_2, pack, c));
-			summer.CreateTimer(2500 + rand()%5000, std::bind(doSend, c));
-			//doSend(c);
+			//summer.CreateTimer(2500 + rand()%5000, std::bind(doSend, c));
+			doSend(c);
 		}
 	};
 	//请求接收
@@ -322,7 +325,7 @@ int main(int argc, char* argv[])
 	do
 	{
 		summer.RunOnce();
-	} while (true);
+	} while (g_runing);
 	return 0;
 }
 

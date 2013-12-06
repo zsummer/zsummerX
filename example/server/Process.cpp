@@ -53,7 +53,9 @@ bool CProcess::Start()
 	{
 		return false;
 	}
-	m_thread = std::thread(std::bind(&CProcess::Run, this));
+	
+	std::thread t(std::bind(&CProcess::Run, this));
+	m_thread.swap(t);
 	return true;
 }
 

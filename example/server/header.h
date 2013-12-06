@@ -39,8 +39,6 @@
 
 #ifndef ZSUMMER_HEADER_H_
 #define ZSUMMER_HEADER_H_
-#include "../../depends/log4z/log4z.h"
-#include "../../depends/protocol4z/protocol4z.h"
 #include "../../network/tcpaccept.h"
 #include "../../network/zsummer.h"
 #include "../../network/tcpsocket.h"
@@ -50,7 +48,8 @@
 #include <iomanip>
 #include <string.h>
 #include <signal.h>
-
+#include <log4z/log4z.h>
+#include <protocol4z/protocol4z.h>
 using namespace std;
 
 

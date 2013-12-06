@@ -38,10 +38,10 @@
 //! mainÎÄ¼þ
 
 #include <signal.h>
-#include "../../depends/log4z/log4z.h"
 #include "../../network/zsummer.h"
 #include "../../network/udpsocket.h"
-#include "../../depends/protocol4z/protocol4z.h"
+#include <log4z/log4z.h>
+#include <protocol4z/protocol4z.h>
 using namespace std;
 using namespace zsummer::network;
 

@@ -1,0 +1,16 @@
+
+include_directories(${zsummer_SOURCE_DIR}/../depends)
+aux_source_directory(${zsummer_SOURCE_DIR}/../depends/log4z LOG4Z)    
+aux_source_directory(${zsummer_SOURCE_DIR}/../network/common COMMON)   
+aux_source_directory(${zsummer_SOURCE_DIR}/../network/epoll NETWORK)    
+aux_source_directory(${zsummer_SOURCE_DIR}/../network/timer TIMER)    
+aux_source_directory(./ LOCAL)    
+
+set(source ${LOG4Z} ${COMMON} ${NETWORK} ${TIMER} ${LOCAL}) 
+link_libraries(pthread)
+add_definitions(-static -static-libgcc -static-libstdc++ -Wl,-dn -Wall -g -O0 -std=c++11 -DNODEBUG)
+
+set(EXECUTABLE_OUTPUT_PATH "${zsummer_SOURCE_DIR}/bin/")
+add_executable(${PROJECT_NAME} ${source})
+
+

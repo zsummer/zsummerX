@@ -38,11 +38,11 @@
 //! main文件
 
 #include <signal.h>
-#include "../../depends/log4z/log4z.h"
 #include "../../network/zsummer.h"
 #include "../../network/tcpaccept.h"
 #include "../../network/tcpsocket.h"
-#include "../../depends/protocol4z/protocol4z.h"
+#include <log4z/log4z.h>
+#include <protocol4z/protocol4z.h>
 using namespace std;
 using namespace zsummer::network;
 //! 消息包缓冲区大小

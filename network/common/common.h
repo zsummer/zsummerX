@@ -72,7 +72,7 @@
 #include <thread>
 #include <mutex>
 
-#include "../../depends/log4z/log4z.h"
+#include <log4z/log4z.h>
 
 namespace zsummer
 {

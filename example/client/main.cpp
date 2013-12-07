@@ -48,6 +48,7 @@ using namespace zsummer::network;
 //! 消息包缓冲区大小
 #define _MSG_BUF_LEN	(2*1024)
 std::string g_fillString;
+
 //! 消息包 
 struct Packet
 {
@@ -146,6 +147,7 @@ int main(int argc, char* argv[])
 	//client 初始化
 	zsummer::log4z::ILog4zManager::GetInstance()->Config("client.cfg");
 	zsummer::log4z::ILog4zManager::GetInstance()->Start();
+	std::this_thread::sleep_for(std::chrono::milliseconds(500));
 	zsummer::network::CZSummer summer;
 	summer.Initialize();
 	std::list<CTcpSocketPtr> clients;
@@ -154,6 +156,7 @@ int main(int argc, char* argv[])
 	//! 统计信息
 	tagStatistic statist;
 	memset(&statist, 0, sizeof(statist));
+	int ping_pong_test = 1;
 
 
 	//! 发送
@@ -248,8 +251,16 @@ int main(int argc, char* argv[])
 			pack->_curpos = 0;
 			pack->_reqTime = std::chrono::system_clock::now().time_since_epoch()/std::chrono::milliseconds(1);
 			c->DoRecv(pack->_orgdata+pack->_curpos, 2, std::bind(onRecv, std::placeholders::_1, std::placeholders::_2, pack, c));
-			//summer.CreateTimer(2500 + rand()%5000, std::bind(doSend, c));
-			doSend(c);
+			if (ping_pong_test)
+			{
+				doSend(c);
+			}
+			else
+			{
+				summer.CreateTimer(2500 + rand()%5000, std::bind(doSend, c));
+			}
+			
+			
 		}
 	};
 	//请求接收
@@ -282,13 +293,18 @@ int main(int argc, char* argv[])
 	std::string ip;
 	unsigned short port = 0;
 	//请求建立连接
-	auto doConnect = [&]()
+	std::function<void(int)> doConnect = [&](int n)
 	{
 		for (int i = 0; i < n; i++)
 		{
 			CTcpSocketPtr c(new zsummer::network::CTcpSocket(ip, port));
 			c->Initialize(summer);
 			c->DoConnect(std::bind(onConnect, std::placeholders::_1, c));
+			if (i > 500)
+			{
+				summer.CreateTimer(1000, std::bind(doConnect, n-i));
+				break;
+			}
 		}
 	};
 	cout << "please input ip: " << endl;
@@ -297,10 +313,12 @@ int main(int argc, char* argv[])
 	cin >> port;
 	cout << "please input clients count:" << endl;
 	cin >> n;
-	cout << "ip[" << ip << "], port[" << port <<"], clients[" << n << "]. please push any key to continue." << endl;
+	cout << "please input is ping-pong-test " << endl;
+	cin >> ping_pong_test;
+	cout << "ip[" << ip << "], port[" << port <<"], clients[" << n << "], ping-pong[" << ping_pong_test << "]. please push any key to continue.";
 	getchar();
 	getchar();
-	summer.Post(doConnect);
+	summer.Post(std::bind(doConnect, n));
 
 	//定时检测
 	std::function<void(unsigned long long)> doTimer = [&](unsigned long long)

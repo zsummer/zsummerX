@@ -55,7 +55,7 @@ using namespace std;
 
 
 //! 消息包缓冲区大小
-#define _MSG_BUF_LEN	(16*1024)
+#define _MSG_BUF_LEN	(2*1024)
 
 
 //! 消息包 

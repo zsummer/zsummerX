@@ -63,7 +63,7 @@ int main(int argc, char* argv[])
 	//! 启动日志服务
 	ILog4zManager::GetInstance()->Config("server.cfg");
 	ILog4zManager::GetInstance()->Start();
-
+	std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
 	//! 启动调度器
 	CSchedule schedule;

@@ -86,11 +86,7 @@ namespace zsummer
 			EC_REMOTE_CLOSED,
 			EC_REMOTE_HANGUP,
 		};
-		//! 完成键
-		enum POST_COM_KEY
-		{
-			PCK_USER_DATA,
-		};
+
 		
 		//! 处理器
 		typedef std::function<void()> _OnPostHandler;
@@ -114,6 +110,15 @@ namespace zsummer
 		//! int : translate bytes
 		typedef std::function<void (ErrorCode, const char*, unsigned short, int)> _OnRecvFromHandler;
 		typedef std::function<void(ErrorCode)> _OnSendToHandler;
+
+		enum LINK_STATUS
+		{
+			LS_UNINITIALIZE, //socket构造后的状态
+			LS_WAITLINK, // socket init之后的状态
+			LS_ESTABLISHED, //正常通信状态
+			LS_CLOSED,
+		};
+
 
 #ifndef WIN32
 		inline bool SetNonBlock(int fd) 
@@ -159,7 +164,7 @@ namespace zsummer
 		{
 			OVERLAPPED	 _overlapped;
 			unsigned char _type;
-			enum
+			enum HANDLE_TYPE
 			{
 				HANDLE_ACCEPT, 
 				HANDLE_RECV, 
@@ -169,19 +174,16 @@ namespace zsummer
 				HANDLE_SENDTO,
 			};
 		};
+		//! 完成键
+		enum POST_COM_KEY
+		{
+			PCK_USER_DATA,
+		};
 #define HandlerFromOverlaped(ptr)  ((tagReqHandle*)((char*)ptr - (char*)&((tagReqHandle*)NULL)->_overlapped))
 
-		enum LINK_STATUS
-		{
-			LS_UNINITIALIZE,
-			LS_ESTABLISHED,
-			LS_CLOSED,
-		};
-
-
 #else
-		/* 
-			typedef union epoll_data {
+		
+		/*	typedef union epoll_data {
                void    *ptr;
                int      fd;
                uint32_t u32;
@@ -189,33 +191,24 @@ namespace zsummer
            } epoll_data_t;
 
            struct epoll_event {
-               uint32_t     events;    Epoll events 
-               epoll_data_t data;      User data variable 
+               uint32_t     events;//    Epoll events 
+               epoll_data_t data;//      User data variable 
            };
 		*/
 		struct tagRegister
 		{
-			enum REGISTER_TYPE
-			{
-				REG_INVALIDE,
-				REG_ACCEPT, // listen
-				REG_ESTABLISHED_TCP, //socket write & read
-				REG_ESTABLISHED_UDP, //socket write & read
-				REG_CONNECT, // connect
-				REG_THREAD, // user message router
-			};
 			epoll_event   _event; //event, auto set
 			unsigned char _type; //register type
+			unsigned char _linkstat;
 			int			  _fd;   //file descriptor
 			void *		  _ptr;  //user pointer
-			inline void reset()
+			enum REG_TYPE
 			{
-				_event.data.ptr = this;
-				_event.events = 0;
-				_type = REG_INVALIDE;
-				_fd = -1;
-				_ptr = NULL;
-			}
+				REG_ZSUMMER,
+				REG_TCP_SOCKET, 
+				REG_TCP_ACCEPT,
+				REG_UDP_SOCKET
+			};
 		};
 
 

@@ -52,7 +52,7 @@ public:
 	//! Ïß³Ì
 	void Run();
 
-	void OnAccept(zsummer::network::ErrorCode ec, CTcpSocketPtr sockptr);
+	void OnAccept(zsummer::network::ErrorCode ec, CTcpSocketPtr sockptr, CProcess * process);
 
 
 

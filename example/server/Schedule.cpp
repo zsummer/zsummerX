@@ -64,7 +64,9 @@ void CSchedule::Start()
 	
 
 	m_accept.OpenAccept("0.0.0.0", 81);
-	m_accept.DoAccept(std::bind(&CSchedule::OnAccept, this, std::placeholders::_1, std::placeholders::_2));
+	CTcpSocketPtr s(new zsummer::network::CTcpSocket());
+	s->Initialize(m_process[m_iCurProcess]->GetZSummer());
+	m_accept.DoAccept(s, std::bind(&CSchedule::OnAccept, this, std::placeholders::_1, std::placeholders::_2, m_process[m_iCurProcess]));
 	m_thread = std::thread(std::bind(&CSchedule::Run, this));
 }
 void CSchedule::Stop()
@@ -82,17 +84,20 @@ void CSchedule::Run()
 }
 
 
-void CSchedule::OnAccept(zsummer::network::ErrorCode ec, CTcpSocketPtr sockptr)
+void CSchedule::OnAccept(zsummer::network::ErrorCode ec, CTcpSocketPtr sockptr, CProcess * process)
 {
 	if (ec)
 	{
 		LOGE("OnAccept error. ec=" <<ec );
 		return;
 	}
-	m_process[m_iCurProcess]->Post(std::bind(&CProcess::RecvSocketPtr, m_process[m_iCurProcess], sockptr));
+	process->Post(std::bind(&CProcess::RecvSocketPtr, process, sockptr));
+
 	m_iCurProcess++;
 	m_iCurProcess = m_iCurProcess%(int)m_process.size();
 	g_nTotalLinked ++;
-	m_accept.DoAccept(std::bind(&CSchedule::OnAccept, this, std::placeholders::_1, std::placeholders::_2));
+	CTcpSocketPtr s(new zsummer::network::CTcpSocket());
+	s->Initialize(m_process[m_iCurProcess]->GetZSummer());
+	m_accept.DoAccept(s, std::bind(&CSchedule::OnAccept, this, std::placeholders::_1, std::placeholders::_2, m_process[m_iCurProcess]));
 }
 

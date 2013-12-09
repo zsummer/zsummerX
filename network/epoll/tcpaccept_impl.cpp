@@ -47,7 +47,12 @@ CTcpAcceptImpl::CTcpAcceptImpl(CZSummer &summer)
 	m_port = 0;
 	m_summer = &summer;
 	m_isAcceptLock = false;
-	m_register.reset();
+	m_register._event.data.ptr = &m_register;
+	m_register._event.events = 0;
+	m_register._fd = -1;
+	m_register._linkstat = LS_UNINITIALIZE;
+	m_register._ptr = this;
+	m_register._type = tagRegister::REG_TCP_ACCEPT;
 }
 
 
@@ -62,6 +67,7 @@ CTcpAcceptImpl::~CTcpAcceptImpl()
 
 bool CTcpAcceptImpl::Initialize()
 {
+	m_register._linkstat = LS_WAITLINK;
 	return true;
 }
 
@@ -88,8 +94,8 @@ bool CTcpAcceptImpl::OpenAccept(const char * ip, unsigned short port)
 	}
 
 	SetNonBlock(m_register._fd);
-	m_register._ptr = this;
-	m_register._type = tagRegister::REG_ACCEPT;
+
+
 
 	int bReuse = 1;
 	if (setsockopt(m_register._fd, SOL_SOCKET, SO_REUSEADDR,  &bReuse, sizeof(bReuse)) != 0)
@@ -105,7 +111,7 @@ bool CTcpAcceptImpl::OpenAccept(const char * ip, unsigned short port)
 	{
 		LCF("socket bind err, errno=" << strerror(errno));
 		close(m_register._fd);
-		m_register.reset();
+		m_register._fd = -1;
 		return false;
 	}
 
@@ -113,7 +119,7 @@ bool CTcpAcceptImpl::OpenAccept(const char * ip, unsigned short port)
 	{
 		LCF("socket listen err, errno=" << strerror(errno));
 		close(m_register._fd);
-		m_register.reset();
+		m_register._fd = -1;
 		return false;
 	}
 
@@ -125,21 +131,21 @@ bool CTcpAcceptImpl::OpenAccept(const char * ip, unsigned short port)
 
 	return true;
 }
-bool CTcpAcceptImpl::DoAccept(const _OnAcceptHandler &handle)
+bool CTcpAcceptImpl::DoAccept(CTcpSocketPtr &s, const _OnAcceptHandler &handle)
 {
 	if (m_isAcceptLock)
 	{
 		LCF(" socket DoAccept err, dumplicate DoAccept");
 		return false;
 	}
-	m_onAcceptHandler = handle;
 	m_register._event.events = EPOLLIN;
 	if (epoll_ctl(m_summer->m_impl.m_epoll, EPOLL_CTL_MOD, m_register._fd, &m_register._event) != 0)
 	{
 		LCF("EPOLL_CTL_MOD!  errno=" << strerror(errno));
-		m_onAcceptHandler = nullptr;
 		return false;
 	}
+	m_onAcceptHandler = handle;
+	m_client = s;
 	m_isAcceptLock = true;
 	return true;
 }
@@ -155,6 +161,8 @@ bool CTcpAcceptImpl::OnEPOLLMessage(bool bSuccess)
 	m_isAcceptLock = false;
 	_OnAcceptHandler onAccept;
 	onAccept.swap(m_onAcceptHandler);
+	CTcpSocketPtr ps(m_client);
+	m_client.reset();
 	m_register._event.events = 0;
 	if (epoll_ctl(m_summer->m_impl.m_epoll, EPOLL_CTL_MOD, m_register._fd, &m_register._event) != 0)
 	{
@@ -163,7 +171,7 @@ bool CTcpAcceptImpl::OnEPOLLMessage(bool bSuccess)
 	if (!bSuccess)
 	{
 		LCF("accept EPOLLERR, errno=" << strerror(errno));
-		onAccept(EC_ERROR, CTcpSocketPtr());
+		onAccept(EC_ERROR, ps);
 		return false;
 	}
 	else
@@ -179,14 +187,14 @@ bool CTcpAcceptImpl::OnEPOLLMessage(bool bSuccess)
 			{
 				LCE("ERR: accept -1, errno=" << strerror(errno));
 			}
-			onAccept(EC_ERROR, CTcpSocketPtr());
+			onAccept(EC_ERROR, ps);
 			return false;
 		}
 
 		SetNonBlock(s);
 		SetNoDelay(s);
-		
-		CTcpSocketPtr ps(new CTcpSocket(s,inet_ntoa(cltaddr.sin_addr), ntohs(cltaddr.sin_port)));
+
+		ps->m_impl.AttachEstablishedSocket(s,inet_ntoa(cltaddr.sin_addr), ntohs(cltaddr.sin_port));
 		onAccept(EC_SUCCESS, ps);
 	}
 	return true;
@@ -200,7 +208,7 @@ bool CTcpAcceptImpl::Close()
 	}
 	shutdown(m_register._fd, SHUT_RDWR);
 	close(m_register._fd);
-	m_register.reset();
+	m_register._fd = -1;
 	return true;
 }
 

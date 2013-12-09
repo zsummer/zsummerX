@@ -81,11 +81,15 @@ bool CZSummerImpl::Initialize()
 		SetNonBlock(m_sockpair[1]);
 		SetNoDelay(m_sockpair[0]);
 		SetNoDelay(m_sockpair[1]);
-		m_register.reset();
-		m_register._ptr = this;
-		m_register._type = tagRegister::REG_THREAD;
-		m_register._fd = m_sockpair[1];
+
+		m_register._event.data.ptr = &m_register;
 		m_register._event.events = EPOLLIN;
+		m_register._fd = m_sockpair[1];
+		m_register._linkstat = LS_ESTABLISHED;
+		m_register._ptr = this;
+		m_register._type = tagRegister::REG_ZSUMMER;
+
+
 		if (epoll_ctl(m_epoll, EPOLL_CTL_ADD, m_sockpair[1], &m_register._event) != 0)
 		{
 			LCF("epoll_ctl add socketpair failed .  errno=" << errno);
@@ -98,11 +102,11 @@ bool CZSummerImpl::Initialize()
 
 
 
-void CZSummerImpl::PostMsg(POST_COM_KEY pck, const _OnPostHandler &handle)
+void CZSummerImpl::PostMsg(const _OnPostHandler &handle)
 {
 	_OnPostHandler * pHandler = new _OnPostHandler(handle);
 	m_msglock.lock();
-	m_msgs.push_back(std::make_pair(pck, pHandler));
+	m_msgs.push_back(pHandler);
 	m_msglock.unlock();
 	char c='0';
 	send(m_sockpair[0], &c, 1, 0);
@@ -121,21 +125,20 @@ void CZSummerImpl::RunOnce()
 		}
 		return;
 	}
+
 	//check timer
-	//检查定时器超时状态
 	{
 		m_timer.CheckTimer();
 		if (retCount == 0) return;//timeout
 	}
 
 
-		
 	for (int i=0; i<retCount; i++)
 	{
 		int eventflag = m_events[i].events;
 		tagRegister * pReg = (tagRegister *)m_events[i].data.ptr;
 		//tagHandle  type
-		if (pReg->_type == tagRegister::REG_THREAD)
+		if (pReg->_type == tagRegister::REG_ZSUMMER)
 		{
 			char buf[1000];
 			while (recv(pReg->_fd, buf, 1000, 0) > 0);
@@ -147,15 +150,12 @@ void CZSummerImpl::RunOnce()
 
 			for (auto iter = msgs.begin(); iter != msgs.end(); ++iter)
 			{
-				if (iter->first == PCK_USER_DATA)
-				{
-					_OnPostHandler * p = (_OnPostHandler*)(iter->second);
-					(*p)();
-					delete p;
-				}
+				_OnPostHandler * p = (_OnPostHandler*)(*iter);
+				(*p)();
+				delete p;
 			}
 		}
-		else if (pReg->_type == tagRegister::REG_ACCEPT)
+		else if (pReg->_type == tagRegister::REG_TCP_ACCEPT)
 		{
 			CTcpAcceptImpl *pKey = (CTcpAcceptImpl *) pReg->_ptr;
 			if (eventflag & EPOLLIN)
@@ -167,12 +167,12 @@ void CZSummerImpl::RunOnce()
 				pKey->OnEPOLLMessage(false);
 			}
 		}
-		else if (pReg->_type == tagRegister::REG_ESTABLISHED_TCP || pReg->_type == tagRegister::REG_CONNECT)
+		else if (pReg->_type == tagRegister::REG_TCP_SOCKET)
 		{
 			CTcpSocketImpl *pKey = (CTcpSocketImpl *) pReg->_ptr;
 			pKey->OnEPOLLMessage(pReg->_type, eventflag);
 		}
-		else if (pReg->_type == tagRegister::REG_ESTABLISHED_UDP)
+		else if (pReg->_type == tagRegister::REG_UDP_SOCKET)
 		{
 			CUdpSocketImpl *pKey = (CUdpSocketImpl *) pReg->_ptr;
 			pKey->OnEPOLLMessage(pReg->_type, eventflag);

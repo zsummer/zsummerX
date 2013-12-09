@@ -39,18 +39,18 @@ using namespace zsummer::network;
 
 
 
-CTcpSocketImpl::CTcpSocketImpl(int fd, std::string remoteIP, unsigned short remotePort)
+CTcpSocketImpl::CTcpSocketImpl()
 {
 	m_summer = NULL;
-	m_register.reset();
-	m_register._fd = fd;
-	if (m_register._fd != -1)
-	{
-		m_register._type = tagRegister::REG_ESTABLISHED_TCP;
-		m_register._ptr = this;
-	}
-	m_remoteIP = remoteIP;
-	m_remotePort = remotePort;
+	m_register._event.data.ptr = &m_register;
+	m_register._event.events = 0;
+	m_register._fd = -1;
+	m_register._linkstat = LS_UNINITIALIZE;
+	m_register._ptr = this;
+	m_register._type = tagRegister::REG_TCP_SOCKET;
+
+	m_remoteIP = "";
+	m_remotePort = 0;
 
 	m_iRecvLen  = 0;
 	m_pRecvBuf = NULL;
@@ -77,31 +77,52 @@ CTcpSocketImpl::~CTcpSocketImpl()
 
  bool CTcpSocketImpl::Initialize(CZSummer & summer)
 {
-	m_summer = &summer;
-	if (m_register._fd != -1)
+	if (m_register._linkstat != LS_UNINITIALIZE)
 	{
-		m_register._event.events = 0;
-		if (epoll_ctl(m_summer->m_impl.m_epoll, EPOLL_CTL_ADD, m_register._fd, &m_register._event) != 0)
-		{
-			LCF("CTcpSocketImpl EPOLL_CTL_ADD error. epfd="<<m_summer->m_impl.m_epoll << ", m_register fd=" << m_register._fd << ", errno=" << strerror(errno));
-		}
+		LCF("CTcpSocketImpl::Initialize linkstat != LS_UNINITIALIZE");
+		return false;
 	}
+	m_summer = &summer;
+	m_register._linkstat = LS_WAITLINK;
+	return true;
+}
+bool CTcpSocketImpl::AttachEstablishedSocket(int s, std::string remoteIP, unsigned short remotePort)
+{
+	if (m_summer == NULL)
+	{
+		LCF("CTcpSocket::AttachEstablishedSocket m_summer pointer uninitialize.socket=" << m_register._fd);
+		return false;
+	}
+	if (m_register._linkstat != LS_WAITLINK)
+	{
+		LCF("CTcpSocket::AttachEstablishedSocket socket already used or not initilize. socket="<<m_register._fd);
+		return false;
+	}
+
+	m_register._fd = s;
+	if (epoll_ctl(m_summer->m_impl.m_epoll, EPOLL_CTL_ADD, m_register._fd, &m_register._event) != 0)
+	{
+		LCF("CTcpSocketImpl EPOLL_CTL_ADD error. epfd="<<m_summer->m_impl.m_epoll << ", m_register fd=" << m_register._fd << ", errno=" << strerror(errno));
+	}
+	m_remoteIP = remoteIP;
+	m_remotePort = remotePort;
+	m_register._linkstat = LS_ESTABLISHED;
 	return true;
 }
 
 
 
 
-bool CTcpSocketImpl::DoConnect(const _OnConnectHandler & handler)
+bool CTcpSocketImpl::DoConnect(std::string remoteIP, unsigned short remotePort, const _OnConnectHandler & handler)
 {
 	if (m_summer == NULL)
 	{
 		LCE("CTcpSocketImpl::DoConnect()" << this << " summer not bind!");
 		return false;
 	}
-	if (m_register._type != tagRegister::REG_INVALIDE)
+	if (m_register._linkstat != LS_WAITLINK)
 	{
-		LCE("CTcpSocketImpl::DoConnect()" << this << "  type not REG_INVALIDE!");
+		LCE("CTcpSocketImpl::DoConnect()" << this << "  _linkstat not LS_WAITLINK!");
 		return false;
 	}
 	if (m_register._fd != -1)
@@ -112,38 +133,37 @@ bool CTcpSocketImpl::DoConnect(const _OnConnectHandler & handler)
 	m_register._fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (m_register._fd == -1)
 	{
-		LCE("CTcpSocketImpl::DoConnect()" << this << " socket create err errno =" << strerror(errno));
+		LCE("CTcpSocketImpl::DoConnect()" << this << " fd create failed!");
 		return false;
 	}
-
+	
 	SetNonBlock(m_register._fd);
 	SetNoDelay(m_register._fd);
 	m_register._event.events = EPOLLOUT;
-	m_register._ptr = this;
-	m_register._type = tagRegister::REG_CONNECT;
+
+	m_remoteIP = remoteIP;
+	m_remotePort = remotePort;
 	sockaddr_in addr;
 	addr.sin_family = AF_INET;
 	addr.sin_addr.s_addr = inet_addr(m_remoteIP.c_str());
 	addr.sin_port = htons(m_remotePort);
-	m_onConnectHandler = handler;
+	
 	
 	int ret = connect(m_register._fd, (sockaddr *) &addr, sizeof(addr));
 	if (ret!=0 && errno != EINPROGRESS)
 	{
 		LCE("CTcpSocket::DoConnect()" << this << " ::connect error. epfd="<<m_summer->m_impl.m_epoll << ", m_register fd=" << m_register._fd << ", errno=" << strerror(errno));
-		m_onConnectHandler = nullptr;
 		return false;
 	}
 	
 	if (epoll_ctl(m_summer->m_impl.m_epoll, EPOLL_CTL_ADD, m_register._fd, &m_register._event) != 0)
 	{
 		LCF("CTcpSocket::DoConnect()" << this << " EPOLL_CTL_ADD error. epfd="<<m_summer->m_impl.m_epoll << ", m_register fd=" << m_register._fd << ", errno=" << strerror(errno));
-		m_onConnectHandler = nullptr;
 		return false;
 	}
+	m_onConnectHandler = handler;
 	return true;
 }
-
 
 
 bool CTcpSocketImpl::DoSend(char * buf, unsigned int len, const _OnSendHandler &handler)
@@ -153,9 +173,9 @@ bool CTcpSocketImpl::DoSend(char * buf, unsigned int len, const _OnSendHandler &
 		LCE("CTcpSocket::DoSend()" << this << " IIOServer not bind!");
 		return false;
 	}
-	if (m_register._type != tagRegister::REG_ESTABLISHED_TCP)
+	if (m_register._linkstat != LS_ESTABLISHED)
 	{
-		LCE("CTcpSocketImpl::DoRecv()" << this << "  type not REG_ESTABLISHED_TCP!");
+		LCE("CTcpSocketImpl::DoRecv()" << this << "  _linkstat not REG_ESTABLISHED_TCP!");
 		return false;
 	}
 	if (len == 0)
@@ -178,7 +198,7 @@ bool CTcpSocketImpl::DoSend(char * buf, unsigned int len, const _OnSendHandler &
 	
 	m_pSendBuf = buf;
 	m_iSendLen = len;
-	m_onSendHandler = handler;
+	
 
 	m_register._event.events = m_register._event.events|EPOLLOUT;
 	if (epoll_ctl(m_summer->m_impl.m_epoll,EPOLL_CTL_MOD, m_register._fd, &m_register._event) != 0)
@@ -186,9 +206,9 @@ bool CTcpSocketImpl::DoSend(char * buf, unsigned int len, const _OnSendHandler &
 		LCD("CTcpSocket::DoSend()" << this << " EPOLLMod error. epfd="<<m_summer->m_impl.m_epoll << ", m_register fd=" << m_register._fd << ", errno=" << strerror(errno));
 		m_pSendBuf = nullptr;
 		m_iSendLen = 0;
-		m_onSendHandler = nullptr;
 		return false;
 	}
+	m_onSendHandler = handler;
 	m_isSendLock = true;
 	//LOGI("do send");
 	return true;
@@ -202,7 +222,7 @@ bool CTcpSocketImpl::DoRecv(char * buf, unsigned int len, const _OnRecvHandler &
 		LCE("CTcpSocketImpl::DoRecv()" << this << "  IIOServer not bind!");
 		return false;
 	}
-	if (m_register._type != tagRegister::REG_ESTABLISHED_TCP)
+	if (m_register._linkstat != LS_ESTABLISHED)
 	{
 		LCE("CTcpSocketImpl::DoRecv()" << this << "  type not REG_ESTABLISHED_TCP!");
 		return false;
@@ -225,7 +245,7 @@ bool CTcpSocketImpl::DoRecv(char * buf, unsigned int len, const _OnRecvHandler &
 	
 	m_pRecvBuf = buf;
 	m_iRecvLen = len;
-	m_onRecvHandler = handler;
+	
 
 	m_register._event.events = m_register._event.events|EPOLLIN;
 	if (epoll_ctl(m_summer->m_impl.m_epoll, EPOLL_CTL_MOD, m_register._fd, &m_register._event) != 0)
@@ -233,9 +253,9 @@ bool CTcpSocketImpl::DoRecv(char * buf, unsigned int len, const _OnRecvHandler &
 		LCD("CTcpSocket::DoRecv()" << this << " EPOLLMod error. epfd="<<m_summer->m_impl.m_epoll << ", m_register fd=" << m_register._fd << ", errno=" << strerror(errno));
 		m_pRecvBuf = nullptr;
 		m_iRecvLen = 0;
-		m_onRecvHandler = nullptr;
 		return false;
 	}
+	m_onRecvHandler = handler;
 	m_isRecvLock = true;
 	return true;
 }
@@ -245,16 +265,16 @@ bool CTcpSocketImpl::OnEPOLLMessage(int type, int flag)
 {
 	bool isNeedUnlockRecv = m_isRecvLock;
 	bool isNeedUnlockSend = m_isSendLock;
-	unsigned char linkType = m_register._type;
+	unsigned char linkstat = m_register._linkstat;
 	ErrorCode ec = EC_ERROR;
 
-	if (!isNeedUnlockRecv && !isNeedUnlockSend && linkType != tagRegister::REG_CONNECT)
+	if (!isNeedUnlockRecv && !isNeedUnlockSend && linkstat != LS_WAITLINK)
 	{
 		LCE("unknown error.  epfd="<<m_summer->m_impl.m_epoll << ", m_register fd=" << m_register._fd << ", errno=" << strerror(errno));
 		return false;
 	}
 
-	if (linkType == tagRegister::REG_CONNECT)
+	if (linkstat == LS_WAITLINK)
 	{
 		_OnConnectHandler onConnect;
 		onConnect.swap(m_onConnectHandler);
@@ -265,12 +285,12 @@ bool CTcpSocketImpl::OnEPOLLMessage(int type, int flag)
 			{
 				LCD("CTcpSocketImpl::OnEPOLLMessage()" << this << " connect true & EPOLLMod error. epfd="<<m_summer->m_impl.m_epoll << ", m_register fd=" << m_register._fd << ", errno=" << strerror(errno));
 			}
-			m_register._type = tagRegister::REG_ESTABLISHED_TCP;
+			m_register._linkstat = LS_ESTABLISHED;
 			onConnect(EC_SUCCESS);
 		}
 		else 
 		{
-			m_register._type = tagRegister::REG_INVALIDE;
+			m_register._linkstat = LS_WAITLINK;
 			if (epoll_ctl(m_summer->m_impl.m_epoll, EPOLL_CTL_DEL, m_register._fd, &m_register._event) != 0)
 			{
 				LCD("CTcpSocketImpl::OnEPOLLMessage()" << this << " connect true & EPOLL DEL error. epfd="<<m_summer->m_impl.m_epoll << ", m_register fd=" << m_register._fd << ", errno=" << strerror(errno));
@@ -280,7 +300,7 @@ bool CTcpSocketImpl::OnEPOLLMessage(int type, int flag)
 		return true;
 	}
 
-	if (linkType != tagRegister::REG_ESTABLISHED_TCP)
+	if (linkstat != LS_ESTABLISHED)
 	{
 		LCE("CTcpSocketImpl::OnEPOLLMessage()" << this << " unknow type !=REG_ESTABLISHED_TCP. epfd="<<m_summer->m_impl.m_epoll << ", m_register fd=" << m_register._fd << ", errno=" << strerror(errno));
 		return true;
@@ -354,9 +374,9 @@ bool CTcpSocketImpl::OnEPOLLMessage(int type, int flag)
 
 clean:
 
-	if (m_register._type == tagRegister::REG_ESTABLISHED_TCP)
+	if (m_register._linkstat == LS_ESTABLISHED)
 	{
-		m_register._type = tagRegister::REG_INVALIDE;
+		m_register._linkstat = LS_CLOSED;
 	}
 	if (epoll_ctl(m_summer->m_impl.m_epoll, EPOLL_CTL_DEL, m_register._fd, &m_register._event) != 0)
 	{
@@ -383,9 +403,9 @@ clean:
 
 bool CTcpSocketImpl::DoClose()
 {
-	if (m_register._type == tagRegister::REG_ESTABLISHED_TCP)
+	if (m_register._linkstat == LS_ESTABLISHED)
 	{
-		m_register._type = tagRegister::REG_INVALIDE;
+		m_register._linkstat = LS_CLOSED;
 		if (epoll_ctl(m_summer->m_impl.m_epoll, EPOLL_CTL_DEL, m_register._fd, &m_register._event) != 0)
 		{
 			LCD("CTcpSocket::Close()" << this << " EPOLL_CTL_DEL error. epfd="<<m_summer->m_impl.m_epoll << ", m_register fd=" << m_register._fd << ", errno=" << strerror(errno));

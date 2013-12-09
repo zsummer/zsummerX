@@ -55,7 +55,7 @@ namespace zsummer
 			~CTcpAcceptImpl();
 			bool Initialize();
 			bool OpenAccept(const char * ip, unsigned short port);
-			bool DoAccept(const _OnAcceptHandler &handle);
+			bool DoAccept(CTcpSocketPtr &s, const _OnAcceptHandler &handle);
 			bool OnEPOLLMessage(bool bSuccess);
 			bool Close();
 
@@ -69,6 +69,8 @@ namespace zsummer
 
 			tagRegister m_register; //! epoll ×¢²áÊÂ¼þ
 			_OnAcceptHandler m_onAcceptHandler;
+			CTcpSocketPtr  m_client;
+
 			bool	m_isAcceptLock;
 
 		};

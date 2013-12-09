@@ -297,9 +297,9 @@ int main(int argc, char* argv[])
 	{
 		for (int i = 0; i < n; i++)
 		{
-			CTcpSocketPtr c(new zsummer::network::CTcpSocket(ip, port));
+			CTcpSocketPtr c(new zsummer::network::CTcpSocket());
 			c->Initialize(summer);
-			c->DoConnect(std::bind(onConnect, std::placeholders::_1, c));
+			c->DoConnect(ip, port, std::bind(onConnect, std::placeholders::_1, c));
 			if (i > 500)
 			{
 				summer.CreateTimer(1000, std::bind(doConnect, n-i));

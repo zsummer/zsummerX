@@ -52,17 +52,7 @@ namespace zsummer
 		class CTcpSocket
 		{
 		public:
-			/*
-			* 构造函数: 1. 作为connect使用, 构造函数填写server端IP和port, 然后执行Initialize和DoConnect即可发起到服务器的连接.
-			*			2. 内部使用, attach一个已有的established状态的原始socket.
-			*/
-#ifdef WIN32
-			CTcpSocket(std::string remoteIP, unsigned short remotePort):m_impl(INVALID_SOCKET, remoteIP, remotePort), m_userData(0){}
-			CTcpSocket(SOCKET s, std::string remoteIP, unsigned short remotePort):m_impl(s, remoteIP, remotePort), m_userData(0){}
-#else
-			CTcpSocket(std::string remoteIP, unsigned short remotePort):m_impl(-1, remoteIP, remotePort), m_userData(0){}
-			CTcpSocket(int fd, std::string remoteIP, unsigned short remotePort):m_impl(fd, remoteIP, remotePort), m_userData(0){}
-#endif // WIN32
+			CTcpSocket():m_userData(0){}
 			~CTcpSocket(){}
 
 			//! 初始化,  把当前socket绑定到指定的zsummer上.
@@ -74,9 +64,9 @@ namespace zsummer
 			//! 发起连接. Hander原型: void(zsummer::network::ErrorCode);
 			//! ErrorCode: 0为成功. 其他为失败, 错误码见枚举定义处.
 			template<typename H>
-			inline bool DoConnect(const H &h)
+			inline bool DoConnect(std::string remoteIP, unsigned short remotePort, const H &h)
 			{
-				return m_impl.DoConnect(h);
+				return m_impl.DoConnect(remoteIP, remotePort, h);
 			}
 
 			//!发起Send请求. Hander原型: void(ErrorCode, int)

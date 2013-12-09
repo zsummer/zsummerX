@@ -57,9 +57,9 @@ namespace zsummer
 				return m_impl.OpenAccept(ip, port);
 			}
 			template<typename H>
-			bool DoAccept(const H &h)
+			bool DoAccept(CTcpSocketPtr &s, const H &h)
 			{
-				return m_impl.DoAccept(h);
+				return m_impl.DoAccept(s, h);
 			}
 		private:
 			CTcpAcceptImpl m_impl;

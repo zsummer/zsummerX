@@ -50,7 +50,7 @@ namespace zsummer
 			CTcpAcceptImpl(CZSummer &summer);
 			virtual ~CTcpAcceptImpl();
 			bool OpenAccept(const char * ip, unsigned short port);
-			bool DoAccept(const _OnAcceptHandler &handler);
+			bool DoAccept(CTcpSocketPtr& s, const _OnAcceptHandler &handler);
 			bool OnIOCPMessage(BOOL bSuccess);
 
 			//config
@@ -69,6 +69,7 @@ namespace zsummer
 			DWORD m_recvLen;
 			tagReqHandle m_handle;
 			_OnAcceptHandler m_onAcceptHandler;
+			CTcpSocketPtr m_client;
 
 			//status
 			bool m_bAccpetLock;

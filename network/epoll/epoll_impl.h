@@ -46,7 +46,7 @@ namespace zsummer
 		class CZSummerImpl
 		{
 		public:
-			typedef std::vector<std::pair<int, void*> > MsgVct;
+			typedef std::vector<void*> MsgVct;
 			CZSummerImpl();
 			~CZSummerImpl();
 			bool Initialize();
@@ -55,7 +55,7 @@ namespace zsummer
 			template <typename handle>
 			inline void Post(const handle &h)
 			{
-				PostMsg(PCK_USER_DATA, h);
+				PostMsg(h);
 			}
 			inline unsigned long long CreateTimer(unsigned int delayms, const _OnTimerHandler &handle)
 			{
@@ -69,7 +69,7 @@ namespace zsummer
 
 
 		public:
-			void PostMsg(POST_COM_KEY pck, const _OnPostHandler &handle);
+			void PostMsg(const _OnPostHandler &handle);
 
 		public:
 			int	m_epoll;

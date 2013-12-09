@@ -50,7 +50,7 @@ namespace zsummer
 		class CTcpSocketImpl
 		{
 		public:
-			CTcpSocketImpl(int fd, std::string remoteIP, unsigned short remotePort);
+			CTcpSocketImpl();
 			~CTcpSocketImpl();
 			bool Initialize(CZSummer & summer);
 			inline bool GetPeerInfo(std::string& remoteIP, unsigned short &remotePort)
@@ -59,7 +59,7 @@ namespace zsummer
 				remotePort = m_remotePort;
 				return true;
 			}
-			bool DoConnect(const _OnConnectHandler & handler);
+			bool DoConnect(std::string remoteIP, unsigned short remotePort, const _OnConnectHandler & handler);
 			bool DoSend(char * buf, unsigned int len, const _OnSendHandler &handler);
 			bool DoRecv(char * buf, unsigned int len, const _OnRecvHandler & handler);
 			bool DoClose();
@@ -69,7 +69,7 @@ namespace zsummer
 			void OnPostClose();
 
 			bool OnEPOLLMessage(int type, int flag);
-
+			bool AttachEstablishedSocket(int s, std::string remoteIP, unsigned short remotePort);
 
 		public:
 			CZSummer *  m_summer;

@@ -38,12 +38,13 @@
 #include "tcpsocket_impl.h"
 
 using namespace zsummer::network;
-CTcpSocketImpl::CTcpSocketImpl(SOCKET s, std::string remoteIP, unsigned short remotePort)
+CTcpSocketImpl::CTcpSocketImpl()
 {
 	m_summer = NULL;
-	m_socket = s;
-	m_remoteIP = remoteIP;
-	m_remotePort = remotePort;
+	m_socket = INVALID_SOCKET;
+	m_nLinkStatus = LS_UNINITIALIZE;
+	m_remoteIP = "";
+	m_remotePort = 0;
 	//recv
 	memset(&m_recvHandle, 0, sizeof(m_recvHandle));
 	m_recvHandle._type = tagReqHandle::HANDLE_RECV;
@@ -64,7 +65,7 @@ CTcpSocketImpl::CTcpSocketImpl(SOCKET s, std::string remoteIP, unsigned short re
 	m_isRecving = false;
 	m_isSending = false;
 	m_isConnecting = false;
-	m_nLinkStatus = LS_UNINITIALIZE;
+	
 }
 
 
@@ -84,59 +85,58 @@ CTcpSocketImpl::~CTcpSocketImpl()
 
 bool CTcpSocketImpl::Initialize(CZSummer & summer)
 {
-	m_summer = &summer;
-	//! connect set
-	if (m_socket == INVALID_SOCKET)
+	if (m_nLinkStatus != LS_UNINITIALIZE)
 	{
-		m_socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
-		if (m_socket == INVALID_SOCKET)
-		{
-			LCE("connecter create socket  error! ERRCODE=" << WSAGetLastError());
-			return false;
-		}
-		SOCKADDR_IN addr;
-		memset(&addr, 0, sizeof(SOCKADDR_IN));
-		addr.sin_family = AF_INET;
-		if (bind(m_socket, (sockaddr *) &addr, sizeof(SOCKADDR_IN)) != 0)
-		{
-			LCE("connecter bind local addr error!  socket=" << (unsigned int)m_socket << ", ERRCODE=" << WSAGetLastError());
-			return false;
-		}
-	}
-	// accepted socket
-	else
-	{
-		m_nLinkStatus = LS_ESTABLISHED;
-	}
-
-	if (CreateIoCompletionPort((HANDLE)m_socket, m_summer->m_impl.m_io, (ULONG_PTR)this, 1) == NULL)
-	{
-		LCE("bind socket to IOCP error. socket="<< (unsigned int) m_socket << ", ERRCODE=" << GetLastError());
-		closesocket(m_socket);
-		m_socket = INVALID_SOCKET;
+		LCE("CTcpSocketImpl::Initialize  LinkStatus != LS_UNINITIALIZE" );
 		return false;
 	}
+	m_summer = &summer;
+	m_nLinkStatus = LS_WAITLINK;
 	return true;
 }
 
 
-
+bool CTcpSocketImpl::AttachEstablishedSocket(SOCKET s, std::string remoteIP, unsigned short remotePort)
+{
+	if (m_summer == NULL)
+	{
+		LCF("CTcpSocket::AttachEstablishedSocket m_summer pointer uninitialize.socket=" << (unsigned int) m_socket);
+		return false;
+	}
+	if (m_nLinkStatus != LS_WAITLINK)
+	{
+		LCF("CTcpSocket::AttachEstablishedSocket socket already used or not initilize. socket="<<(unsigned int) m_socket);
+		return false;
+	}
+	m_socket = s;
+	if (CreateIoCompletionPort((HANDLE)m_socket, m_summer->m_impl.m_io, (ULONG_PTR)this, 1) == NULL)
+	{
+		LCE("CTcpSocket::AttachEstablishedSocket bind socket to IOCP error. socket="<< (unsigned int) m_socket << ", ERRCODE=" << GetLastError());
+		closesocket(m_socket);
+		m_socket = INVALID_SOCKET;
+		return false;
+	}
+	m_remoteIP = remoteIP;
+	m_remotePort = remotePort;
+	m_nLinkStatus = LS_ESTABLISHED;
+	return true;
+}
 
 
 typedef  BOOL (PASCAL  *ConnectEx)(  SOCKET s,  const struct sockaddr* name,  int namelen,
 			 PVOID lpSendBuffer,  DWORD dwSendDataLength,  LPDWORD lpdwBytesSent,
 			 LPOVERLAPPED lpOverlapped);
 
-bool CTcpSocketImpl::DoConnect(const _OnConnectHandler & handler)
+bool CTcpSocketImpl::DoConnect(std::string remoteIP, unsigned short remotePort, const _OnConnectHandler & handler)
 {
 	if (m_summer == NULL)
 	{
 		LCF("CTcpSocket::DoConnect m_summer pointer uninitialize.socket=" << (unsigned int) m_socket);
 		return false;
 	}
-	if (m_nLinkStatus != LS_UNINITIALIZE)
+	if (m_nLinkStatus != LS_WAITLINK)
 	{
-		LCF("CTcpSocket::DoConnect socket already used. socket="<<(unsigned int) m_socket);
+		LCF("CTcpSocket::DoConnect socket already used or not initilize. socket="<<(unsigned int) m_socket);
 		return false;
 	}
 	if (m_isConnecting)
@@ -144,6 +144,31 @@ bool CTcpSocketImpl::DoConnect(const _OnConnectHandler & handler)
 		LCF("CTcpSocket::DoConnect socket is connecting. socket="<<(unsigned int) m_socket);
 		return false;
 	}
+	
+	m_socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
+	if (m_socket == INVALID_SOCKET)
+	{
+		LCE("CTcpSocket::DoConnect socket create error! ERRCODE=" << WSAGetLastError());
+		return false;
+	}
+
+	SOCKADDR_IN localAddr;
+	memset(&localAddr, 0, sizeof(SOCKADDR_IN));
+	localAddr.sin_family = AF_INET;
+	if (bind(m_socket, (sockaddr *) &localAddr, sizeof(SOCKADDR_IN)) != 0)
+	{
+		LCE("CTcpSocket::DoConnect bind local addr error!  socket=" << (unsigned int)m_socket << ", ERRCODE=" << WSAGetLastError());
+		return false;
+	}
+
+	if (CreateIoCompletionPort((HANDLE)m_socket, m_summer->m_impl.m_io, (ULONG_PTR)this, 1) == NULL)
+	{
+		LCE("CTcpSocket::DoConnect bind socket to IOCP error. socket="<< (unsigned int) m_socket << ", ERRCODE=" << GetLastError());
+		closesocket(m_socket);
+		m_socket = INVALID_SOCKET;
+		return false;
+	}
+
 
 	GUID gid = WSAID_CONNECTEX;
 	ConnectEx lpConnectEx = NULL;
@@ -153,24 +178,26 @@ bool CTcpSocketImpl::DoConnect(const _OnConnectHandler & handler)
 		LCE("Get ConnectEx pointer err!  socket="<< (unsigned int) m_socket <<", ERRCODE= "<< WSAGetLastError());
 		return false;
 	}
-	SOCKADDR_IN addr;
-	addr.sin_addr.s_addr = inet_addr(m_remoteIP.c_str());
-	addr.sin_family = AF_INET;
-	addr.sin_port = htons(m_remotePort);
-	m_onConnectHandler = handler;
+	m_remoteIP = remoteIP;
+	m_remotePort = remotePort;
+	SOCKADDR_IN remoteAddr;
+	remoteAddr.sin_addr.s_addr = inet_addr(m_remoteIP.c_str());
+	remoteAddr.sin_family = AF_INET;
+	remoteAddr.sin_port = htons(m_remotePort);
+	
 
 	char buf[1];
 	DWORD dwLenth = 0;
-	if (!lpConnectEx(m_socket, (sockaddr *)&addr, sizeof(addr), buf, 0, &dwLenth, &m_connectHandle._overlapped))
+	if (!lpConnectEx(m_socket, (sockaddr *)&remoteAddr, sizeof(remoteAddr), buf, 0, &dwLenth, &m_connectHandle._overlapped))
 	{
 		if (WSAGetLastError() != ERROR_IO_PENDING)
 		{
 			LCE("CTcpSocket::DoConnect DoConnect failed and ERRCODE!=ERROR_IO_PENDING, socket="<< (unsigned int) m_socket << ", ERRCODE=" << WSAGetLastError());
-			m_onConnectHandler = nullptr;
 			return false;
 		}
 
 	}
+	m_onConnectHandler = handler;
 	m_isConnecting = true;
 	return true;
 }
@@ -203,7 +230,6 @@ bool CTcpSocketImpl::DoSend(char * buf, unsigned int len, const _OnSendHandler &
 
 	m_sendWsaBuf.buf = buf;
 	m_sendWsaBuf.len = len;
-	m_onSendHandler = handler;
 	DWORD dwTemp1=0;
 	if (WSASend(m_socket, &m_sendWsaBuf, 1, &dwTemp1, 0, &m_sendHandle._overlapped, NULL) != 0)
 	{
@@ -212,10 +238,10 @@ bool CTcpSocketImpl::DoSend(char * buf, unsigned int len, const _OnSendHandler &
 			LCD("CTcpSocket::DoSend DoSend failed and ERRCODE!=ERROR_IO_PENDING, socket="<< (unsigned int) m_socket << ", ERRCODE=" << WSAGetLastError());
 			m_sendWsaBuf.buf = nullptr;
 			m_sendWsaBuf.len = 0;
-			m_onSendHandler = nullptr;
 			return false;
 		}
 	}
+	m_onSendHandler = handler;
 	m_isSending = true;
 	return true;
 }
@@ -247,7 +273,7 @@ bool CTcpSocketImpl::DoRecv(char * buf, unsigned int len, const _OnRecvHandler &
 
 	m_recvWSABuf.buf = buf;
 	m_recvWSABuf.len = len;
-	m_onRecvHandler = handler;
+	
 	DWORD dwRecv = 0;
 	DWORD dwFlag = 0;
 	if (WSARecv(m_socket, &m_recvWSABuf, 1, &dwRecv, &dwFlag, &m_recvHandle._overlapped, NULL) != 0)
@@ -257,10 +283,10 @@ bool CTcpSocketImpl::DoRecv(char * buf, unsigned int len, const _OnRecvHandler &
 			LCD("CTcpSocket::DoRecv DoRecv failed and ERRCODE!=ERROR_IO_PENDING, socket="<< (unsigned int) m_socket << ", ERRCODE=" << WSAGetLastError());
 			m_recvWSABuf.buf = nullptr;
 			m_recvWSABuf.len = 0;
-			m_onRecvHandler = nullptr;
 			return false;
 		}
 	}
+	m_onRecvHandler = handler;
 	m_isRecving = true;
 	return true;
 }

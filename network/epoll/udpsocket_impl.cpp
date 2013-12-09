@@ -43,7 +43,12 @@ using namespace zsummer::network;
 CUdpSocketImpl::CUdpSocketImpl()
 {
 	m_summer = NULL;
-	m_register.reset();
+	m_register._event.data.ptr = &m_register;
+	m_register._event.events = 0;
+	m_register._fd = -1;
+	m_register._linkstat = LS_UNINITIALIZE;
+	m_register._ptr = this;
+	m_register._type = tagRegister::REG_UDP_SOCKET;
 	m_iRecvLen  = 0;
 	m_pRecvBuf = NULL;
 }
@@ -75,10 +80,9 @@ bool  CUdpSocketImpl::Initialize(CZSummer & summer, const char *localIP, unsigne
 		return false;
 	}
 	m_summer = &summer;
-	m_register.reset();
 	m_register._ptr = this;
 	m_register._fd = socket(AF_INET, SOCK_DGRAM, 0);
-	m_register._type = tagRegister::REG_ESTABLISHED_UDP;
+	m_register._linkstat = LS_WAITLINK;
 	if (m_register._fd == -1)
 	{
 		LCE("CUdpSocketImpl create socket fail. this=" << this << ", errno=" << strerror(errno));
@@ -101,6 +105,7 @@ bool  CUdpSocketImpl::Initialize(CZSummer & summer, const char *localIP, unsigne
 		LCF("CUdpSocketImpl::Initialize()" << this << " EPOLL_CTL_ADD error. epfd="<<m_summer->m_impl.m_epoll << ", m_register fd=" << m_register._fd << ", errno=" << strerror(errno));
 		return false;
 	}
+	m_register._linkstat = LS_ESTABLISHED;
 	return true;
 }
 
@@ -149,7 +154,7 @@ bool CUdpSocketImpl::DoRecv(char * buf, unsigned int len, const _OnRecvFromHandl
 		return false;
 	}
 
-	m_onRecvFromHandler = handler;
+	
 	m_pRecvBuf = buf;
 	m_iRecvLen = len;
 	m_register._event.events = m_register._event.events|EPOLLIN;
@@ -161,6 +166,7 @@ bool CUdpSocketImpl::DoRecv(char * buf, unsigned int len, const _OnRecvFromHandl
 		m_iRecvLen = 0;
 		return false;
 	}
+	m_onRecvFromHandler = handler;
 	m_isRecvFromLock = true;
 	return true;
 }

@@ -1,0 +1,22 @@
+zsummer_11x tcp ping-pong test  2013_12_11  
+on windows  , CPU I7-2600, 6G memory  
+on linux , vmware I7-2600, 800M memory  
+    
+测试平台  测试对象          连接数      每秒echo包个数     延迟数据                           CPU    内存  Server端IO次数  内存吞吐速度  echo延迟    
+windows   zsummer_11x_tcp	  1           32929						   100%在1ms以内                       -      -    98,787           单向33M      0.0303ms    
+windows   zsummer_11x_tcp   2           65404              99.99在1ms以内, 剩余的在20ms以内    -      -    196,212					单向65M      0.0305ms   
+linux     zsummer_11x_tcp   1           15551              100%在1ms以内                       -      -    46,653           单向16M      0.0643ms    
+linux     zsummer_11x_tcp   2           41375              100%在1ms以内                       -      -    124,125          单向41M      0.0483ms    
+    
+windows   zsummer_tcp	      1           35185						   100%在1ms以内                       -      -    98,787           单向35M      0.0284ms   
+windows   zsummer_tcp       2           65216              99.99在1ms以内, 剩余的在20ms以内    -      -    196,212					单向65M      0.0153ms   
+linux     zsummer_tcp       1           15870              100%在1ms以内                       -      -    47,610           单向16M      0.0630ms   
+linux     zsummer_tcp       2           42206              100%在1ms以内                       -      -    126618           单向42M      0.0473ms  
+  
+windows   boost             1           27524              -                                   -      -    82,572					  单向27M      0.0363ms    
+linux     boost             1           11008              -                                   -      -    33,024           单向11M      0.0908ms    
+    
+windows   zsummer_11x_udp   1           37456              100%在1ms以内                       -      -    74,912           单向37M      0.0266ms    
+linux     zsummer_11x_udp   1           20520              100%在1ms以内                       -      -    41,040           单向21M      0.0487ms    
+  
+  

@@ -61,7 +61,7 @@ namespace zsummer
 				return m_impl.Initialize(summer);
 			}
 
-			//! 发起连接. Hander原型: void(zsummer::network::ErrorCode);
+			//! handle: void(zsummer::network::ErrorCode);
 			//! ErrorCode: 0为成功. 其他为失败, 错误码见枚举定义处.
 			template<typename H>
 			inline bool DoConnect(std::string remoteIP, unsigned short remotePort, const H &h)
@@ -69,7 +69,7 @@ namespace zsummer
 				return m_impl.DoConnect(remoteIP, remotePort, h);
 			}
 
-			//!发起Send请求. Hander原型: void(ErrorCode, int)
+			//!handle: void(ErrorCode, int)
 			//! ErrorCode: 0为成功. 其他为失败, 错误码见枚举定义处.
 			//! int: 发送掉的字节长度, 如果没有全部发送出去 要调用该接口把残留的数据继续发出去.
 			template<typename H>
@@ -82,7 +82,7 @@ namespace zsummer
 			//! buf: 要发送的缓冲区地址
 			//! len: 要发送的最大长度
 			//!
-			//! Hander原型: void(ErrorCode, int)
+			//! handle: void(ErrorCode, int)
 			//! ErrorCode: 0为成功. 其他为失败, 错误码见枚举定义处.
 			//! int: 接收到的字节长度.
 			template<typename H>

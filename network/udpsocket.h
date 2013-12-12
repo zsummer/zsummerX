@@ -57,12 +57,16 @@ namespace zsummer
 			{
 				return m_impl.Initialize(summer, localIP, localPort);
 			}
+
+			//handle: std::function<void (ErrorCode, const char*, unsigned short, int)>
 			template<typename H>
-			bool DoRecv(char * buf, unsigned int len, const H &h)
+			bool DoRecvFrom(char * buf, unsigned int len, const H &h)
 			{
 				return m_impl.DoRecv(buf, len, h);
 			}
-			bool DoSend(char * buf, unsigned int len, const char *dstip, unsigned short dstport)
+
+			//handle: std::function<void(ErrorCode)>
+			bool DoSendTo(char * buf, unsigned int len, const char *dstip, unsigned short dstport)
 			{
 				return m_impl.DoSend(buf, len, dstip, dstport);
 			}

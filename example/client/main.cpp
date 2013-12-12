@@ -307,15 +307,16 @@ int main(int argc, char* argv[])
 			}
 		}
 	};
-	cout << "please input ip: " << endl;
+	LOGI("please input ip: ");
 	cin >> ip;
-	cout << "please input port: " << endl;
+	LOGI("please input port: ");
 	cin >> port;
-	cout << "please input clients count:" << endl;
+	LOGI("please input clients count:");
 	cin >> n;
-	cout << "please input is ping-pong-test " << endl;
+	LOGI("please input is ping-pong-test ");
 	cin >> ping_pong_test;
-	cout << "ip[" << ip << "], port[" << port <<"], clients[" << n << "], ping-pong[" << ping_pong_test << "]. please push any key to continue.";
+	LOGI("ip[" << ip << "], port[" << port <<"], clients[" << n << "], ping-pong[" 
+		<< ping_pong_test << "]. please push any key to continue.");
 	getchar();
 	getchar();
 	summer.Post(std::bind(doConnect, n));

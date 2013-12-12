@@ -37,7 +37,7 @@
 
 /*
  * AUTHORS:  YaweiZhang <yawei_zhang@foxmail.com>
- * VERSION:  1.0.0 beta
+ * VERSION:  1.0.0
  * PURPOSE:  A lightweight C++ library for network.
  * CREATION: 2013.9.28
  * LCHANGE:  -
@@ -83,11 +83,16 @@ namespace zsummer
 			{
 				m_impl.RunOnce();
 			}
+
+			//handle: std::function<void()>
 			template<typename H>
 			inline void Post(const H &h)
 			{
 				m_impl.Post(h);
 			}
+
+			//handle: std::function<void(unsigned long long)>
+			//unsigned long long : timer ID
 			template<typename H>
 			inline unsigned long long CreateTimer(unsigned int delayms, const H &h)
 			{

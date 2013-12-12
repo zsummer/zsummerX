@@ -147,13 +147,13 @@ int main(int argc, char* argv[])
 	int n=1;
 	std::string ip;
 	unsigned short port = 0;
-	cout << "please input ip: " << endl;
+	LOGI("please input ip: ");
 	cin >> ip;
-	cout << "please input port: " << endl;
+	LOGI("please input port: ");
 	cin >> port;
-	cout << "please input clients count:" << endl;
+	LOGI("please input clients count:");
 	cin >> n;
-	cout << "ip[" << ip << "], port[" << port <<"], clients[" << n << "]. please push any key to continue." ;
+	LOGI("ip[" << ip << "], port[" << port <<"], clients[" << n << "]. please push any key to continue.");
 	getchar();
 	getchar();
 
@@ -174,7 +174,7 @@ int main(int argc, char* argv[])
 		ws << (unsigned short) 1; //protocol id
 		ws << pic->_reqTime; // local tick count
 		ws << g_fillString; // append text, fill the length protocol.
-		pic->sock.DoSend(pic->sendData, ws.GetWriteLen(), remoteIP, remotePort);
+		pic->sock.DoSendTo(pic->sendData, ws.GetWriteLen(), remoteIP, remotePort);
 		//summer.CreateTimer(rand()%5000+2500,std::bind(doSend,std::placeholders::_1, ip.c_str(), port, pic));
 		totalSend++;
 
@@ -227,7 +227,7 @@ int main(int argc, char* argv[])
 			
 		}
 		totalRecv++;
-		pic->sock.DoRecv(pic->recvData, _MSG_BUF_LEN, std::bind(onRecv, 
+		pic->sock.DoRecvFrom(pic->recvData, _MSG_BUF_LEN, std::bind(onRecv, 
 											std::placeholders::_1,
 											std::placeholders::_2,
 											std::placeholders::_3,
@@ -250,7 +250,7 @@ int main(int argc, char* argv[])
 			LOGI("init udp socket error.");
 			continue;
 		}
-		pic->sock.DoRecv(pic->recvData, _MSG_BUF_LEN, std::bind(onRecv, 
+		pic->sock.DoRecvFrom(pic->recvData, _MSG_BUF_LEN, std::bind(onRecv, 
 													std::placeholders::_1,
 													std::placeholders::_2,
 													std::placeholders::_3,

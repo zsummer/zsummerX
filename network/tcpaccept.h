@@ -56,6 +56,8 @@ namespace zsummer
 			{
 				return m_impl.OpenAccept(ip, port);
 			}
+
+			//handle: std::function<void(ErrorCode, CTcpSocketPtr)>
 			template<typename H>
 			bool DoAccept(CTcpSocketPtr &s, const H &h)
 			{

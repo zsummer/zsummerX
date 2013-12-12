@@ -118,7 +118,7 @@ int main(int argc, char* argv[])
 						char buf[_MSG_BUF_LEN];
 						zsummer::protocol4z::WriteStream ws(buf, _MSG_BUF_LEN);
 						ws << protocolID << clientTick << text;
-						server.DoSend(buf, ws.GetWriteLen(), ip, port);
+						server.DoSendTo(buf, ws.GetWriteLen(), ip, port);
 						totalCount++;
 					}
 					break;
@@ -134,7 +134,7 @@ int main(int argc, char* argv[])
 				LOGE("MessageEntry catch one exception: "<< e.what() );
 			}
 		}
-		server.DoRecv(recvFromBuf, _MSG_BUF_LEN, onRecv);
+		server.DoRecvFrom(recvFromBuf, _MSG_BUF_LEN, onRecv);
 	};
 
 	unsigned long long lastTotalCount = 0;
@@ -145,7 +145,7 @@ int main(int argc, char* argv[])
 		summer.CreateTimer(5000, onTimer);
 	};
 	summer.CreateTimer(5000, onTimer);
-	server.DoRecv(recvFromBuf, _MSG_BUF_LEN, onRecv);
+	server.DoRecvFrom(recvFromBuf, _MSG_BUF_LEN, onRecv);
 
 	do
 	{

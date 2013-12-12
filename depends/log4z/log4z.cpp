@@ -408,8 +408,8 @@ public:
 		else
 		{
 			timespec ts;
-			ts.tv_sec += time(NULL) + timeout/1000;
-			ts.tv_nsec += (timeout%1000)*1000000;
+			ts.tv_sec = time(NULL) + timeout/1000;
+			ts.tv_nsec = (timeout%1000)*1000000;
 			return (sem_timedwait(&m_semid, &ts) == 0);
 		}
 #endif
@@ -1402,7 +1402,7 @@ void ShowColorText(const char *text, int level)
 	{
 		CAutoLock l(gs_ShowColorTextLock);
 		SetConsoleTextAttribute(hStd, cs_sColor[level]);
-		printf(text);
+		printf("%s", text);
 		SetConsoleTextAttribute(hStd, oldInfo.wAttributes);
 	}
 
@@ -1412,7 +1412,7 @@ void ShowColorText(const char *text, int level)
 	return;
 
 showfail:
-	printf(text);
+	printf("%s", text);
 }
 
 

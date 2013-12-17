@@ -295,12 +295,12 @@ int main(int argc, char* argv[])
 	//请求建立连接
 	std::function<void(int)> doConnect = [&](int n)
 	{
-		for (int i = 0; i < n; i++)
+		for (int i = 1; i <= n; i++)
 		{
 			CTcpSocketPtr c(new zsummer::network::CTcpSocket());
 			c->Initialize(summer);
 			c->DoConnect(ip, port, std::bind(onConnect, std::placeholders::_1, c));
-			if (i > 500)
+			if (i >= 200)
 			{
 				summer.CreateTimer(1000, std::bind(doConnect, n-i));
 				break;

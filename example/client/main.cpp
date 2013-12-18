@@ -147,7 +147,7 @@ int main(int argc, char* argv[])
 	//client ³õÊ¼»¯
 	zsummer::log4z::ILog4zManager::GetInstance()->Config("client.cfg");
 	zsummer::log4z::ILog4zManager::GetInstance()->Start();
-	std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
 	zsummer::network::CZSummer summer;
 	summer.Initialize();
 	std::list<CTcpSocketPtr> clients;
@@ -257,7 +257,7 @@ int main(int argc, char* argv[])
 			}
 			else
 			{
-				summer.CreateTimer(2500 + rand()%5000, std::bind(doSend, c));
+				summer.CreateTimer(9000 + rand()%1500, std::bind(doSend, c));
 			}
 			
 			
@@ -279,7 +279,7 @@ int main(int argc, char* argv[])
 		if (!ec)
 		{
 			LOGI("connect success");
-			//clients.push_back(c);
+			clients.push_back(c);
 			doRecv(c);
 			doSend(c);
 		}
@@ -340,11 +340,20 @@ int main(int argc, char* argv[])
 		}
 		summer.CreateTimer(10*1000, doTimer);
 	};
+
+
 	summer.CreateTimer(10*1000, doTimer);
 	do
 	{
 		summer.RunOnce();
 	} while (g_runing);
+	while (!clients.empty())
+	{
+		CTcpSocketPtr c(clients.front());
+		c->DoClose();
+		clients.pop_front();
+	}
+
 	return 0;
 }
 

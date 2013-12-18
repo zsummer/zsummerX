@@ -19,4 +19,12 @@ linux     boost             1           11008              -                    
 windows   zsummer_11x_udp   1           37456              100%在1ms以内                       -      -    74,912           单向37M      0.0266ms    
 linux     zsummer_11x_udp   1           20520              100%在1ms以内                       -      -    41,040           单向21M      0.0487ms    
   
-  
+
+
+
+zsummer_11x   100K  2013_12_17
+ 
+测试平台  测试对象          连接数      每秒echo包个数     延迟数据                                            CPU型号               CPU           内存  Server端IO次数  内存吞吐速度
+windows   zsummer_11x_tcp	  100,066      9228						 18%在1ms以内,80%在5ms以内, 2%在10~100ms以内           I7-2600 四核          21%(17~26)    480M    27684           单向9.2M   
+linux     zsummer_11x_tcp	  100,000      8931						 28%在1ms以内,57%在5ms以内, 15%在10~100ms以内          E5620 双核            22%(15~30)    602M    26793           单向8.9M   
+

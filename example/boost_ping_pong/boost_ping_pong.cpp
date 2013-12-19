@@ -5,14 +5,16 @@
 #include <boost/asio.hpp>
 #include <iostream>
 #include <stdio.h>
-
+#include "../../depends/protocol4z/protocol4z.h"
 #include <chrono>
 using namespace std;
-#define PACK_LEN 1000
+#define PACK_LEN 1024
 int main(int argc, char* argv[])
 {
-	char buffSend[1024];
-	char buffRecv[1024];
+	char buffSend[PACK_LEN];
+	char buffRecv[PACK_LEN];
+	std::string fillstring;
+	fillstring.resize(1000,'z');
 	cout <<"input 1:server, 0:client" << endl;
 	int nServer = 0;
 	cin >> nServer;
@@ -40,8 +42,17 @@ int main(int argc, char* argv[])
 	//		cout << "send ok" << endl;
 		}
 	};
-	std::function<void (const boost::system::error_code&,std::size_t, std::size_t, std::size_t)> onRecv=
-		[&](const boost::system::error_code& ec,std::size_t trans, std::size_t curRecv, std::size_t totalNeedRecv)
+	auto sendOnce=[&](void)
+	{
+		zsummer::protocol4z::WriteStream ws(buffSend, PACK_LEN);
+		ws << (unsigned short) 1; //protocol id
+		ws <<(unsigned long long) 1; // local tick count
+		ws << fillstring; // append text, fill the length protocol.
+		client.async_write_some(boost::asio::buffer(buffSend, ws.GetWriteLen()), 
+					std::bind(onSend, std::placeholders::_1, std::placeholders::_2, 0, ws.GetWriteLen()));
+	};
+	std::function<void (const boost::system::error_code&,std::size_t, std::size_t)> onRecv=
+		[&](const boost::system::error_code& ec,std::size_t trans, std::size_t curRecv)
 	{
 		if (ec)
 		{
@@ -49,26 +60,56 @@ int main(int argc, char* argv[])
 			return;
 		}
 		curRecv += trans;
-		if (totalNeedRecv == curRecv)
+		int needRecv = zsummer::protocol4z::CheckBuffIntegrity(buffRecv, curRecv, PACK_LEN);
+		if ( needRecv == -1)
 		{
-//			cout << "recv one pack" << endl;
-			recvCount++;
-			client.async_read_some(boost::asio::buffer(buffRecv, 2), 
-				std::bind(onRecv, std::placeholders::_1, std::placeholders::_2, 0, PACK_LEN));
-
-
-
-			memcpy(buffSend, buffRecv, 1024);
-			client.async_write_some(boost::asio::buffer(buffSend, PACK_LEN), 
-					std::bind(onSend, std::placeholders::_1, std::placeholders::_2, 0, PACK_LEN));
-
+			cout <<"killed socket: CheckBuffIntegrity error " <<endl;
+			return ;
 		}
-		else
+		if (needRecv > 0)
 		{
-			client.async_read_some(boost::asio::buffer(buffRecv+curRecv, totalNeedRecv-curRecv), 
-				std::bind(onRecv, std::placeholders::_1, std::placeholders::_2, curRecv, totalNeedRecv));
+			client.async_read_some(boost::asio::buffer(buffRecv+curRecv, needRecv), 
+				std::bind(onRecv, std::placeholders::_1, std::placeholders::_2, curRecv));
+			return ;
 		}
+
+		//! 解包完成 进行消息处理
+		zsummer::protocol4z::ReadStream rs(buffRecv, curRecv);
+		try
+		{
+			//协议流异常会被上层捕获并关闭连接
+			unsigned short protocolID = 0;
+			rs >> protocolID;
+			switch (protocolID)
+			{
+			case 1:
+				{
+					unsigned long long localTick = 0;
+					std::string text;
+					rs >> localTick >> text;
+				}
+				break;
+			default:
+				{
+					cout <<"unknown protocol id=" << protocolID <<endl;
+				}
+				break;
+			}
+		}
+		catch (std::runtime_error e)
+		{
+			cout << "MessageEntry catch one exception: "<< e.what()<<endl;
+			return ;
+		}
+		recvCount++;
+		client.async_read_some(boost::asio::buffer(buffRecv, 2), 
+			std::bind(onRecv, std::placeholders::_1, std::placeholders::_2, 0));
+
+
+		sendOnce();
+
 	};
+
 
 	boost::asio::deadline_timer timer(ios, boost::posix_time::seconds(5));
 	unsigned long long lastCount = 0;
@@ -101,7 +142,7 @@ int main(int argc, char* argv[])
 			}
 			cout << client.remote_endpoint().address() << ":" << client.remote_endpoint().port() << endl;
 			client.async_read_some(boost::asio::buffer(buffRecv, 2), 
-				std::bind(onRecv, std::placeholders::_1, std::placeholders::_2, 0, PACK_LEN));
+				std::bind(onRecv, std::placeholders::_1, std::placeholders::_2, 0));
 	}
 	else
 	{
@@ -118,9 +159,10 @@ int main(int argc, char* argv[])
 				cout <<"connect success" << endl;
 			}
 			client.async_read_some(boost::asio::buffer(buffRecv, 2), 
-				std::bind(onRecv, std::placeholders::_1, std::placeholders::_2, 0, PACK_LEN));
-			client.async_write_some(boost::asio::buffer(buffSend, PACK_LEN), 
-					std::bind(onSend, std::placeholders::_1, std::placeholders::_2, 0, PACK_LEN));
+				std::bind(onRecv, std::placeholders::_1, std::placeholders::_2, 0));
+			sendOnce();
+			
+
 	}
 
 

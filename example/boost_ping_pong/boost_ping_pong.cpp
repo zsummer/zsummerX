@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include "../../depends/protocol4z/protocol4z.h"
 #include <chrono>
+
 using namespace std;
 #define PACK_LEN 1024
 int main(int argc, char* argv[])
@@ -20,11 +21,12 @@ int main(int argc, char* argv[])
 	cin >> nServer;
 	
 	boost::asio::io_service ios;
-	boost::asio::ip::tcp::socket client(ios);
+	typedef std::shared_ptr<boost::asio::ip::tcp::socket> SocketPtr;
+	SocketPtr clientPtr(new boost::asio::ip::tcp::socket(ios));
 
 	unsigned long long recvCount = 0;
-		std::function<void (const boost::system::error_code&,std::size_t, std::size_t, std::size_t)> onSend=
-		[&](const boost::system::error_code& ec,std::size_t trans, std::size_t curSend, std::size_t totalNeedSend)
+		std::function<void (const boost::system::error_code&,std::size_t, std::size_t, std::size_t, SocketPtr )> onSend=
+		[&](const boost::system::error_code& ec,std::size_t trans, std::size_t curSend, std::size_t totalNeedSend, SocketPtr client)
 	{
 		if (ec)
 		{
@@ -34,25 +36,25 @@ int main(int argc, char* argv[])
 		curSend += trans;
 		if (curSend != totalNeedSend)
 		{
-			client.async_write_some(boost::asio::buffer(buffSend+curSend, totalNeedSend - curSend), 
-					std::bind(onSend, std::placeholders::_1, std::placeholders::_2, curSend, totalNeedSend));
+			client->async_write_some(boost::asio::buffer(buffSend+curSend, totalNeedSend - curSend), 
+					std::bind(onSend, std::placeholders::_1, std::placeholders::_2, curSend, totalNeedSend, client));
 		}
 		else
 		{
 	//		cout << "send ok" << endl;
 		}
 	};
-	auto sendOnce=[&](void)
+	auto sendOnce=[&](SocketPtr client)
 	{
 		zsummer::protocol4z::WriteStream ws(buffSend, PACK_LEN);
 		ws << (unsigned short) 1; //protocol id
 		ws <<(unsigned long long) 1; // local tick count
 		ws << fillstring; // append text, fill the length protocol.
-		client.async_write_some(boost::asio::buffer(buffSend, ws.GetWriteLen()), 
-					std::bind(onSend, std::placeholders::_1, std::placeholders::_2, 0, ws.GetWriteLen()));
+		client->async_write_some(boost::asio::buffer(buffSend, ws.GetWriteLen()), 
+					std::bind(onSend, std::placeholders::_1, std::placeholders::_2, 0, ws.GetWriteLen(), client));
 	};
-	std::function<void (const boost::system::error_code&,std::size_t, std::size_t)> onRecv=
-		[&](const boost::system::error_code& ec,std::size_t trans, std::size_t curRecv)
+	std::function<void (const boost::system::error_code&,std::size_t, std::size_t, SocketPtr)> onRecv=
+		[&](const boost::system::error_code& ec,std::size_t trans, std::size_t curRecv, SocketPtr client)
 	{
 		if (ec)
 		{
@@ -68,8 +70,8 @@ int main(int argc, char* argv[])
 		}
 		if (needRecv > 0)
 		{
-			client.async_read_some(boost::asio::buffer(buffRecv+curRecv, needRecv), 
-				std::bind(onRecv, std::placeholders::_1, std::placeholders::_2, curRecv));
+			client->async_read_some(boost::asio::buffer(buffRecv+curRecv, needRecv), 
+				std::bind(onRecv, std::placeholders::_1, std::placeholders::_2, curRecv, client));
 			return ;
 		}
 
@@ -102,11 +104,11 @@ int main(int argc, char* argv[])
 			return ;
 		}
 		recvCount++;
-		client.async_read_some(boost::asio::buffer(buffRecv, 2), 
-			std::bind(onRecv, std::placeholders::_1, std::placeholders::_2, 0));
+		client->async_read_some(boost::asio::buffer(buffRecv, 2), 
+			std::bind(onRecv, std::placeholders::_1, std::placeholders::_2, 0, client));
 
 
-		sendOnce();
+		sendOnce(client);
 
 	};
 
@@ -134,21 +136,21 @@ int main(int argc, char* argv[])
 			boost::asio::ip::tcp::endpoint ep(boost::asio::ip::tcp::v4(), 81);
 			boost::asio::ip::tcp::acceptor accepter(ios, ep);
 			boost::system::error_code ec;
-			accepter.accept(client, ep, ec);
+			accepter.accept(*clientPtr.get(), ep, ec);
 			if (ec)
 			{
 				cout << "accept error " << ec.message()<< endl;
 				return 0;
 			}
-			cout << client.remote_endpoint().address() << ":" << client.remote_endpoint().port() << endl;
-			client.async_read_some(boost::asio::buffer(buffRecv, 2), 
-				std::bind(onRecv, std::placeholders::_1, std::placeholders::_2, 0));
+			cout << clientPtr->remote_endpoint().address() << ":" << clientPtr->remote_endpoint().port() << endl;
+			clientPtr->async_read_some(boost::asio::buffer(buffRecv, 2), 
+				std::bind(onRecv, std::placeholders::_1, std::placeholders::_2, 0, clientPtr));
 	}
 	else
 	{
 			boost::asio::ip::tcp::endpoint ep( boost::asio::ip::address_v4::from_string("127.0.0.1"), 81);
 			boost::system::error_code ec;
-			client.connect(ep, ec);
+			clientPtr->connect(ep, ec);
 			if (ec)
 			{
 				cout << " connect error " << ec.message()<< endl;
@@ -158,9 +160,9 @@ int main(int argc, char* argv[])
 			{
 				cout <<"connect success" << endl;
 			}
-			client.async_read_some(boost::asio::buffer(buffRecv, 2), 
-				std::bind(onRecv, std::placeholders::_1, std::placeholders::_2, 0));
-			sendOnce();
+			clientPtr->async_read_some(boost::asio::buffer(buffRecv, 2), 
+				std::bind(onRecv, std::placeholders::_1, std::placeholders::_2, 0, clientPtr));
+			sendOnce(clientPtr);
 			
 
 	}

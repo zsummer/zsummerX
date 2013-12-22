@@ -1,29 +1,40 @@
 ###
-###zsummer_11x tcp ping-pong test  2013_12_19  
+###zsummer_11x tcp ping-pong test  2013_12_23  
 ###
 
 
-测试平台  测试对象          连接数      每秒echo包个数     延迟数据                           CPU    内存     内存吞吐速度  echo延迟 
+测试平台  测试对象          连接数      每秒echo包个数     延迟数据           内存吞吐速度  echo延迟 
 
-on windows  , CPU I7-2600
-windows   zsummer_11x_tcp	  1           32929						   100%在1ms以内                       -      -       单向33M      0.0303ms       
-windows   zsummer_tcp	      1           35185						   100%在1ms以内                       -      -       单向35M      0.0284ms   
-windows   boost             1           27702              -                                   -      -       单向27M      0.0360ms    
-windows   zsummer_11x_udp   1           37456              100%在1ms以内                       -      -       单向37M      0.0266ms    
+on windows  , CPU I7-2600  @ 3.4GHz
+windows   boost             1           27702              -                  单向27M      0.0360ms    
+windows   zsummer_tcp	      1           35185						   100%在1ms以内      单向35M      0.0284ms   
+windows   zsummer_11x_tcp	  1           32929						   100%在1ms以内      单向33M      0.0303ms       
+windows   zsummer_11x_udp   1           37456              100%在1ms以内      单向37M      0.0266ms    
+
+on windows , CPU I5-3550  @ 3.3GHz
+windows   boost             1           31681              -                  单向31M      -    
+windows   zsummer_tcp	      1           33241						   100%在1ms以内      单向33M      - 
+windows   zsummer_11x_tcp	  1           32805						   100%在1ms以内      单向33M      -   
+windows   zsummer_11x_udp   1           35978              100%在1ms以内      单向35M      - 
 
 
 on linux , vmware I7-2600  @ 3.4GHz
-linux     boost             1           14231              -                                   -      -       单向15M      0.0702ms    
-linux     zsummer_11x_tcp   1           14762              100%在1ms以内                       -      -       单向14M      0.0677ms     
-linux     zsummer_11x_udp   1           17086              100%在1ms以内                       -      -       单向17M      0.0585ms    
-linux     zsummer_tcp       1           15300              100%在1ms以内                       -      -       单向15M      0.0653ms   
+linux     boost             1           14231              -                  单向15M      0.0702ms    
+linux     zsummer_tcp       1           15300              100%在1ms以内      单向15M      0.0653ms   
+linux     zsummer_11x_tcp   1           14762              100%在1ms以内      单向14M      0.0677ms     
+linux     zsummer_11x_udp   1           17086              100%在1ms以内      单向17M      0.0585ms    
 
+on linux , vmware I5-3550  @ 3.3GHz
+linux     boost             1           9388               -                  单向9M       -
+linux     zsummer_tcp       1           9565               100%在1ms以内      单向9M       - 
+linux     zsummer_11x_tcp   1           9226               100%在1ms以内      单向9M       -   
+linux     zsummer_11x_udp   1           10186              100%在1ms以内      单向10M      -
 
 on linux , E5620  @ 2.40GHz
-linux     zsummer_tcp       1           40621              100%在1ms以内                       -      -       单向40M      0.0246ms
-linux     zsummer_11x_tcp   1           34150              100%在1ms以内                       -      -       单向34M      0.0319ms
-linux     zsummer_11x_udp   1           44643              100%在1ms以内                       -      -       单向44M      0.0223ms    
-linux     boost_tcp         1           37425                   -                              -      -       单向37M      0.0267ms
+linux     boost_tcp         1           37425                   -             单向37M      0.0267ms
+linux     zsummer_tcp       1           40621              100%在1ms以内      单向40M      0.0246ms
+linux     zsummer_11x_tcp   1           34150              100%在1ms以内      单向34M      0.0319ms
+linux     zsummer_11x_udp   1           44643              100%在1ms以内      单向44M      0.0223ms    
 
 
 ###

@@ -1,7 +1,7 @@
 ###
 ###zsummer_11x tcp ping-pong test  2013_12_23  
 ###
-
+### 
 
 测试平台  测试对象          连接数      每秒echo包个数     延迟数据           内存吞吐速度  echo延迟 
 
@@ -11,6 +11,35 @@ windows   zsummer_tcp	      1           35185						   100%在1ms以内      单向35M
 windows   zsummer_11x_tcp	  1           32929						   100%在1ms以内      单向33M      0.0303ms       
 windows   zsummer_11x_udp   1           37456              100%在1ms以内      单向37M      0.0266ms    
 
+on linux , E5620  @ 2.40GHz
+linux     boost_tcp         1           37425                   -             单向37M      0.0267ms
+linux     zsummer_tcp       1           40621              100%在1ms以内      单向40M      0.0246ms
+linux     zsummer_11x_tcp   1           34150              100%在1ms以内      单向34M      0.0319ms
+linux     zsummer_11x_udp   1           44643              100%在1ms以内      单向44M      0.0223ms    
+
+###
+测试数据总结
+通过对数据的累加[加,减,乘,除]计算进行两台机器在基础运算上差异, 3000万测试数据下 linux E5620使用19秒完成, windows I7-2600 使用22秒完成, 以此为依据则linux比windows的机器性能高15.8%左右
+以设计基本一致的zsummer_11x_udp的压测数据进行修正, 则windows44133, linux44643, .
+以zsummer_tcp这种稍微损失了linux下的性能设计来修正数据来看 windows 41447, linux 40621.
+
+
+###
+###zsummer_11x   100K stress  2013_12_19
+### 
+测试平台  测试对象          连接数      每秒echo包个数     延迟数据                                           CPU           内存   内存吞吐速度
+
+on windows  , CPU I7-2600
+windows   zsummer_11x_tcp	  100,066      9228						 18%在1ms以内,80%在5ms以内, 2%在10~100ms以内          21%(17~26)    480M   单向9.2M   
+windows   zsummer_tcp	      100,014      9649						 16%在1ms以内,77%在5ms以内, 6%在10~100ms以内          23%(22~26)    480M   单向9.6M
+
+on linux , E5620  @ 2.40GHz  
+linux     zsummer_11x_tcp	  100,000      8931						 84%在1ms以内,14%在5ms以内, 2%在10~100ms以内          22%(15~30)    602M   单向8.9M   
+linux     zsummer_tcp	      100,000      9450						 85%在1ms以内,14%在5ms以内, 1%在10~100ms以内          21%(15~28)    611M   单向9.4M   
+
+###
+### 废弃测试数据 暂存
+###
 on windows , CPU I5-3550  @ 3.3GHz
 windows   boost             1           31681              -                  单向31M      -    
 windows   zsummer_tcp	      1           33241						   100%在1ms以内      单向33M      - 
@@ -29,23 +58,3 @@ linux     boost             1           9388               -                  单
 linux     zsummer_tcp       1           9565               100%在1ms以内      单向9M       - 
 linux     zsummer_11x_tcp   1           9226               100%在1ms以内      单向9M       -   
 linux     zsummer_11x_udp   1           10186              100%在1ms以内      单向10M      -
-
-on linux , E5620  @ 2.40GHz
-linux     boost_tcp         1           37425                   -             单向37M      0.0267ms
-linux     zsummer_tcp       1           40621              100%在1ms以内      单向40M      0.0246ms
-linux     zsummer_11x_tcp   1           34150              100%在1ms以内      单向34M      0.0319ms
-linux     zsummer_11x_udp   1           44643              100%在1ms以内      单向44M      0.0223ms    
-
-
-###
-###zsummer_11x   100K stress  2013_12_19
-### 
-测试平台  测试对象          连接数      每秒echo包个数     延迟数据                                           CPU           内存   内存吞吐速度
-
-on windows  , CPU I7-2600
-windows   zsummer_11x_tcp	  100,066      9228						 18%在1ms以内,80%在5ms以内, 2%在10~100ms以内          21%(17~26)    480M   单向9.2M   
-windows   zsummer_tcp	      100,014      9649						 16%在1ms以内,77%在5ms以内, 6%在10~100ms以内          23%(22~26)    480M   单向9.6M
-
-on linux , E5620  @ 2.40GHz  
-linux     zsummer_11x_tcp	  100,000      8931						 84%在1ms以内,14%在5ms以内, 2%在10~100ms以内          22%(15~30)    602M   单向8.9M   
-linux     zsummer_tcp	      100,000      9450						 85%在1ms以内,14%在5ms以内, 1%在10~100ms以内          21%(15~28)    611M   单向9.4M   

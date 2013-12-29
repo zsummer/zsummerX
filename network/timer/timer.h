@@ -50,103 +50,89 @@ namespace zsummer
 			CTimer()
 			{
 				m_queSeq = 0;
-				m_nextExpire = (unsigned long long)-1;
+				m_nextExpire = (unsigned int)-1;
 			}
 			~CTimer()
 			{
 			}
+			inline unsigned  int GetNowMilliTick()
+			{
+				return (unsigned int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+			}
 			inline unsigned int GetNextExpireTime()
 			{
-				unsigned long long nowMs = std::chrono::system_clock::now().time_since_epoch()/std::chrono::milliseconds(1);
-				unsigned long long dwDelayMs = m_nextExpire -nowMs;
+				unsigned int now = GetNowMilliTick();
+				unsigned int dwDelayMs = m_nextExpire - now;
 				if (dwDelayMs > 100)
 				{
 					dwDelayMs = 100;
 				}
-				else if (dwDelayMs < 10)
-				{
-					dwDelayMs = 10;
-				}
-				return (unsigned int) dwDelayMs;
+				return dwDelayMs;
 			}
 			inline unsigned long long CreateTimer(unsigned int delayms, const _OnTimerHandler &handle)
 			{
 				_OnTimerHandler *pfunc= new _OnTimerHandler(handle);
-				unsigned long long now = std::chrono::system_clock::now().time_since_epoch()/std::chrono::milliseconds(1);
-				unsigned long long expire = now+delayms;
-				assert(!(expire&0xfffff00000000000));
-				expire <<= 20;
+				unsigned int now = GetNowMilliTick();
+				unsigned int expire = now+delayms;
+				unsigned long long timerID = expire;
+				timerID <<= 32;
+				timerID |= m_queSeq++;
+				m_queTimer.insert(std::make_pair(timerID, pfunc));
+				if (m_nextExpire > expire)
 				{
-					std::lock_guard<std::mutex> lg(m_lockTimer);
-					m_queSeq++;
-					expire |= (m_queSeq&0xfffff);
-					m_queTimer.insert(std::make_pair(expire, pfunc));
-					if (m_nextExpire > now+delayms || m_nextExpire < now)
-					{
-						m_nextExpire = now+delayms;
-					}
+					m_nextExpire = expire;
 				}
-				return expire;
+				return timerID;
 			}
 			inline bool CancelTimer(unsigned long long timerID)
 			{
-				bool bRet = false;
+				std::map<unsigned long long, _OnTimerHandler* >::iterator iter = m_queTimer.find(timerID);
+				if (iter != m_queTimer.end())
 				{
-					std::lock_guard<std::mutex> l(m_lockTimer);
-					std::map<unsigned long long, _OnTimerHandler* >::iterator iter = m_queTimer.find(timerID);
-					if (iter != m_queTimer.end())
-					{
-						delete iter->second;
-						m_queTimer.erase(iter);
-						bRet = true;
-					}
+					delete iter->second;
+					m_queTimer.erase(iter);
+					return true;
 				}
-				return bRet;
+				return false;
 			}
 			inline void CheckTimer()
 			{
 				if (!m_queTimer.empty())
 				{
-					unsigned long long nowMs = std::chrono::system_clock::now().time_since_epoch()/std::chrono::milliseconds(1);
-					unsigned long long expire = m_nextExpire;
-					if (expire <= nowMs)
+					unsigned int now = GetNowMilliTick();
+					if (m_nextExpire > now)
 					{
-						std::vector<std::pair<unsigned long long, _OnTimerHandler*> > allexpire;
-						{
-							std::lock_guard<std::mutex> lg(m_lockTimer);
-							while(1)
-							{
-								if (m_queTimer.empty())
-								{
-									m_nextExpire = (unsigned long long)-1;
-									break;
-								}
-								auto iter = m_queTimer.begin();
-								unsigned long long nextexpire = (iter->first)>>20;
-								if (nowMs < nextexpire)
-								{
-									m_nextExpire = nextexpire;
-									break;
-								}
-								allexpire.push_back(*iter);
-								m_queTimer.erase(iter);
-							}
-						}
-						for (auto iter = allexpire.begin(); iter != allexpire.end(); ++iter)
-						{
-							(*(iter->second))(iter->first);
-							delete iter->second;
-						}
+						return;
 					}
 
+					while(1)
+					{
+						if (m_queTimer.empty())
+						{
+							m_nextExpire = (unsigned int)-1;
+							break;
+						}
+						auto iter = m_queTimer.begin();
+						unsigned long long timerID = iter->first;
+						_OnTimerHandler * handler = iter->second;
+						unsigned int nextexpire = timerID>>32;
+						if (nextexpire > now)
+						{
+							m_nextExpire = nextexpire;
+							break;
+						}
+						m_queTimer.erase(iter);
+						(*handler)(timerID);
+						delete handler;
+					}
+					
 				}
 			}
 		private:
 			//! 定时器
 			std::map<unsigned long long, _OnTimerHandler* > m_queTimer;
 			unsigned int m_queSeq; //! 用于生成定时器ID的组成部分
-			volatile unsigned long long m_nextExpire; //! 下次触发时间
-			std::mutex m_lockTimer; //! 锁
+			unsigned int m_nextExpire; //! 下次触发时间
 		};
 	}
 }

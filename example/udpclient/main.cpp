@@ -169,7 +169,7 @@ int main(int argc, char* argv[])
 	//! «Î«Û∑¢ÀÕ
 	std::function<void(unsigned long long, const char*, unsigned short, PicnicPtr)> doSend = [&](unsigned long long timeID, const char *remoteIP, unsigned short remotePort, PicnicPtr pic)
 	{
-		pic->_reqTime = std::chrono::system_clock::now().time_since_epoch()/std::chrono::milliseconds(1);
+		pic->_reqTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 		zsummer::protocol4z::WriteStream ws(pic->sendData, _MSG_BUF_LEN);
 		ws << (unsigned short) 1; //protocol id
 		ws << pic->_reqTime; // local tick count
@@ -208,7 +208,7 @@ int main(int argc, char* argv[])
 						unsigned long long localTick = 0;
 						std::string text;
 						rs >> localTick >> text;
-						unsigned long long curTick = std::chrono::system_clock::now().time_since_epoch()/std::chrono::milliseconds(1);
+						unsigned long long curTick = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 						curTick = curTick - localTick;
 						statist.addDelayData(tagStatistic::TD_TOTAL, curTick);
 					}

@@ -48,7 +48,7 @@ using namespace zsummer::network;
 //! 消息包缓冲区大小
 #define _MSG_BUF_LEN	(2*1024)
 std::string g_fillString;
-
+#define  NOW_TIME (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count())
 //! 消息包 
 struct Packet
 {
@@ -57,6 +57,16 @@ struct Packet
 	unsigned short _curpos;
 	unsigned long long   _reqTime;
 };
+
+struct Client
+{
+public:
+	Packet recvData;
+	Packet sendData;
+	CTcpSocket c;
+};
+typedef std::shared_ptr<Client> ClientPtr;
+
 
 //统计
 struct tagStatistic
@@ -150,8 +160,8 @@ int main(int argc, char* argv[])
 
 	zsummer::network::CZSummer summer;
 	summer.Initialize();
-	std::list<CTcpSocketPtr> clients;
-	typedef std::shared_ptr<Packet> PacketPtr;
+	std::list<ClientPtr> clients;
+
 	g_fillString.resize(1000, 'z');
 	//! 统计信息
 	tagStatistic statist;
@@ -160,63 +170,63 @@ int main(int argc, char* argv[])
 
 
 	//! 发送
-	std::function<void(ErrorCode, int,PacketPtr,CTcpSocketPtr)>  onSend = [&](ErrorCode ec, int ts, PacketPtr pack, CTcpSocketPtr c)
+	std::function<void(ErrorCode, int,ClientPtr)>  onSend = [&](ErrorCode ec, int ts, ClientPtr c)
 	{
 		if (ec)
 		{
 			LOGE ("onSend Error, EC=" << ec );
 			return;
 		}
-		if (pack->_curpos + ts < pack->_len)
+		if (c->sendData._curpos + ts < c->sendData._len)
 		{
-			pack->_curpos+= ts;
-			c->DoSend(pack->_orgdata+pack->_curpos, pack->_len-pack->_curpos, std::bind(onSend, std::placeholders::_1, std::placeholders::_2, pack, c));
+			c->sendData._curpos+= ts;
+			c->c.DoSend(c->sendData._orgdata+c->sendData._curpos, c->sendData._len-c->sendData._curpos, std::bind(onSend, std::placeholders::_1, std::placeholders::_2, c));
 		}
 		else
 		{
-			pack->_curpos+=ts;
-			statist.addDelayData(tagStatistic::TD_SEND, std::chrono::system_clock::now().time_since_epoch()/std::chrono::milliseconds(1)-pack->_reqTime);
+			c->sendData._curpos+=ts;
+			statist.addDelayData(tagStatistic::TD_SEND, NOW_TIME-c->sendData._reqTime);
 		}
 	};
 	//! 请求发送
-	auto doSend = [&](CTcpSocketPtr c)
+	auto doSend = [&](ClientPtr c)
 	{
-		PacketPtr pack(new Packet);
-		pack->_reqTime = std::chrono::system_clock::now().time_since_epoch()/std::chrono::milliseconds(1);
-		zsummer::protocol4z::WriteStream ws(pack->_orgdata, _MSG_BUF_LEN);
+		
+		c->sendData._reqTime = NOW_TIME;
+		zsummer::protocol4z::WriteStream ws(c->sendData._orgdata, _MSG_BUF_LEN);
 		ws << (unsigned short) 1; //protocol id
-		ws << pack->_reqTime; // local tick count
+		ws << c->sendData._reqTime; // local tick count
 		ws << g_fillString; // append text, fill the length protocol.
-		pack->_len = ws.GetWriteLen();
-		pack->_curpos = 0;
-		c->DoSend(pack->_orgdata+pack->_curpos, pack->_len-pack->_curpos, std::bind(onSend, std::placeholders::_1, std::placeholders::_2, pack, c));
+		c->sendData._len = ws.GetWriteLen();
+		c->sendData._curpos = 0;
+		c->c.DoSend(c->sendData._orgdata+c->sendData._curpos, c->sendData._len-c->sendData._curpos, std::bind(onSend, std::placeholders::_1, std::placeholders::_2, c));
 	};
 
 	//! 接收
-	std::function<void(ErrorCode, int, PacketPtr,CTcpSocketPtr)>  onRecv = [&](ErrorCode ec, int ts, PacketPtr pack, CTcpSocketPtr c)
+	std::function<void(ErrorCode, int, ClientPtr)>  onRecv = [&](ErrorCode ec, int ts, ClientPtr c)
 	{
 		if (ec)
 		{
 			LOGE ("onRecv Error, EC=" << ec );
 			return;
 		}
-		pack->_curpos += ts;
-		int ret = zsummer::protocol4z::CheckBuffIntegrity(pack->_orgdata, pack->_curpos,_MSG_BUF_LEN);
+		c->recvData._curpos += ts;
+		int ret = zsummer::protocol4z::CheckBuffIntegrity(c->recvData._orgdata, c->recvData._curpos,_MSG_BUF_LEN);
 		if (ret == -1)
 		{
 			LOGD("CheckBuffIntegrity fail.");
-			c->DoClose();
+			c->c.DoClose();
 			return ;
 		}
 		else if (ret > 0)
 		{
-			auto temp = std::bind(onRecv, std::placeholders::_1, std::placeholders::_2, pack, c);
-			c->DoRecv(pack->_orgdata+pack->_curpos, ret, temp);
+			auto temp = std::bind(onRecv, std::placeholders::_1, std::placeholders::_2, c);
+			c->c.DoRecv(c->recvData._orgdata+c->recvData._curpos, ret, temp);
 		}
 		else if (ret == 0)
 		{
 			//! 解包
-			zsummer::protocol4z::ReadStream rs(pack->_orgdata, pack->_curpos);
+			zsummer::protocol4z::ReadStream rs(c->recvData._orgdata, c->recvData._curpos);
 			try
 			{
 				//协议流异常会被上层捕获并关闭连接
@@ -229,7 +239,7 @@ int main(int argc, char* argv[])
 						unsigned long long localTick = 0;
 						std::string text;
 						rs >> localTick >> text;
-						unsigned long long curTick = std::chrono::system_clock::now().time_since_epoch()/std::chrono::milliseconds(1);
+						unsigned long long curTick = NOW_TIME;
 						curTick = curTick - localTick;
 						statist.addDelayData(tagStatistic::TD_TOTAL, curTick);
 					}
@@ -244,13 +254,13 @@ int main(int argc, char* argv[])
 			catch (std::runtime_error e)
 			{
 				LOGE("MessageEntry catch one exception: "<< e.what() );
-				c->DoClose();
+				c->c.DoClose();
 				return ;
 			}
-			pack->_len = 0;
-			pack->_curpos = 0;
-			pack->_reqTime = std::chrono::system_clock::now().time_since_epoch()/std::chrono::milliseconds(1);
-			c->DoRecv(pack->_orgdata+pack->_curpos, 2, std::bind(onRecv, std::placeholders::_1, std::placeholders::_2, pack, c));
+			c->recvData._len = 0;
+			c->recvData._curpos = 0;
+			c->recvData._reqTime = NOW_TIME;
+			c->c.DoRecv(c->recvData._orgdata+c->recvData._curpos, 2, std::bind(onRecv, std::placeholders::_1, std::placeholders::_2, c));
 			if (ping_pong_test)
 			{
 				doSend(c);
@@ -259,22 +269,20 @@ int main(int argc, char* argv[])
 			{
 				summer.CreateTimer(9000 + rand()%1500, std::bind(doSend, c));
 			}
-			
-			
 		}
 	};
 	//请求接收
-	std::function<void(CTcpSocketPtr)> doRecv = [&](CTcpSocketPtr c)
+	std::function<void(ClientPtr)> doRecv = [&](ClientPtr c)
 	{
-		PacketPtr pack(new Packet);
-		pack->_reqTime = std::chrono::system_clock::now().time_since_epoch()/std::chrono::milliseconds(1);
-		pack->_len = 0;
-		pack->_curpos = 0;
-		c->DoRecv(pack->_orgdata+pack->_curpos, 2, std::bind(onRecv, std::placeholders::_1, std::placeholders::_2, pack, c));
+
+		c->recvData._reqTime = NOW_TIME;
+		c->recvData._len = 0;
+		c->recvData._curpos = 0;
+		c->c.DoRecv(c->recvData._orgdata+c->recvData._curpos, 2, std::bind(onRecv, std::placeholders::_1, std::placeholders::_2, c));
 	};
 
 	//建立连接响应
-	auto onConnect = [&](zsummer::network::ErrorCode ec, CTcpSocketPtr c)
+	auto onConnect = [&](zsummer::network::ErrorCode ec, ClientPtr c)
 	{
 		if (!ec)
 		{
@@ -297,9 +305,10 @@ int main(int argc, char* argv[])
 	{
 		for (int i = 1; i <= n; i++)
 		{
-			CTcpSocketPtr c(new zsummer::network::CTcpSocket());
-			c->Initialize(summer);
-			c->DoConnect(ip, port, std::bind(onConnect, std::placeholders::_1, c));
+			
+			ClientPtr c(new Client());
+			c->c.Initialize(summer);
+			c->c.DoConnect(ip, port, std::bind(onConnect, std::placeholders::_1, c));
 			if (i >= 200)
 			{
 				summer.CreateTimer(1000, std::bind(doConnect, n-i));
@@ -349,8 +358,8 @@ int main(int argc, char* argv[])
 	} while (g_runing);
 	while (!clients.empty())
 	{
-		CTcpSocketPtr c(clients.front());
-		c->DoClose();
+		ClientPtr c(clients.front());
+		c->c.DoClose();
 		clients.pop_front();
 	}
 

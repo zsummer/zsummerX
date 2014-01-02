@@ -29,11 +29,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\depends\log4z\log4z.cpp">
-      <Filter>log</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="..\..\depends\log4z\log4z.h">
       <Filter>log</Filter>
     </ClInclude>

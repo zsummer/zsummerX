@@ -122,7 +122,7 @@ namespace zsummer
 							break;
 						}
 						m_queTimer.erase(iter);
-						(*handler)(timerID);
+						(*handler)();
 						delete handler;
 					}
 					

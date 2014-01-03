@@ -91,7 +91,7 @@ namespace zsummer
 		//! ´¦ÀíÆ÷
 		typedef std::function<void()> _OnPostHandler;
 		//unsigned long long : timer ID
-		typedef std::function<void(unsigned long long)> _OnTimerHandler;
+		typedef std::function<void()> _OnTimerHandler;
 
 		class CTcpSocket;
 		typedef std::shared_ptr<CTcpSocket> CTcpSocketPtr;

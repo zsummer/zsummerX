@@ -47,14 +47,14 @@ class CSchedule
 public:
 	CSchedule();
 	//! 启动与停止
-	void Start();
+	void Start(std::string ip, unsigned short port,unsigned short type, unsigned int maxClient, unsigned int interval);
 	void Stop();
 	//! 线程
 	void Run();
 
 	void OnAccept(zsummer::network::ErrorCode ec, CTcpSocketPtr sockptr, CProcess * process);
 
-
+	void doConnect(unsigned int maxClient);
 
 	//! IOServer池
 	std::vector<CProcess *> m_process;
@@ -65,6 +65,10 @@ public:
 	std::thread	 m_thread;
 	zsummer::network::CTcpAccept m_accept;
 	bool	m_bRunning;
+
+	unsigned int m_nMaxClient;
+	std::string m_ip;
+	unsigned short m_port;
 };
 
 

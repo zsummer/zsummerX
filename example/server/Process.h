@@ -46,21 +46,34 @@
 class CProcess
 {
 public:
-	CProcess();
+	CProcess(bool bInitiative, unsigned int interval, std::string ip, unsigned short port);
 	//! 启动与停止
 	bool Start();
 	void Stop();
 	//! 线程
 	void Run();
-	//! 投递线程间消息 当前设计仅供Schedule投递client socket用
+	//!
+	inline zsummer::network::CZSummer & GetZSummer(){return m_summer;}
+private:
+	zsummer::network::CZSummer m_summer;
+	std::thread	 m_thread;
+	bool  m_bRunning;
+	bool  m_bInitiative; //! 是否主动发送echo包
+	unsigned int  m_nInterval; //! 发送间隔
+	std::string m_ip;
+	unsigned short m_port;
+
+public:
 	template<class H>
 	void Post(const H &h)
 	{
 		m_summer.Post(h);
 	}
+	//接收一个socket
 	void RecvSocketPtr(std::shared_ptr<zsummer::network::CTcpSocket> sockptr);
 
-	//! 一些状态统计用接口
+	//all use
+public:
 	inline unsigned long long GetTotalRecvLen() {return m_nTotalRecvLen;}
 	inline void AddTotalRecvLen(unsigned long long len) { m_nTotalRecvLen += len;}
 
@@ -72,25 +85,34 @@ public:
 
 	inline unsigned long long GetTotalSendCount() {return m_nTotalSendCount;}
 	inline void AddTotalSendCount(unsigned long long len) { m_nTotalSendCount += len;}
-
+		
+	inline unsigned long long GetTotalOpen() {return m_nTotalOpen;}
+	inline void AddTotalOpen(unsigned long long len) { m_nTotalOpen += len;}
 	inline unsigned long long GetTotalClosed() {return m_nTotalClosed;}
 	inline void AddTotalClosed(unsigned long long len) { m_nTotalClosed += len;}
-
-
-
-	//!
-	inline zsummer::network::CZSummer & GetZSummer(){return m_summer;}
-	
 private:
-	zsummer::network::CZSummer m_summer;
-	std::thread	 m_thread;
-	bool	m_bRunning;
-
 	unsigned long long  m_nTotalRecvLen;
 	unsigned long long  m_nTotalSendLen;
 	unsigned long long  m_nTotalRecvCount;
 	unsigned long long  m_nTotalSendCount;
+	unsigned long long  m_nTotalOpen;
 	unsigned long long  m_nTotalClosed;
+	
+
+
+	//only connects use
+public:
+	inline unsigned long long GetTotalEcho() {return m_nTotalEcho;}
+	inline void AddTotalEcho(unsigned long long len) { m_nTotalEcho += len;}
+
+	inline unsigned long long GetTotalEchoTime() {return m_nTotalEchoTime;}
+	inline void AddTotalEchoTime(unsigned long long len) { m_nTotalEchoTime += len;}
+private:
+	unsigned long long m_nTotalEcho;
+	unsigned long long m_nTotalEchoTime;
+	
+
+
 
 
 };

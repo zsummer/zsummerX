@@ -60,53 +60,74 @@ int main(int argc, char* argv[])
 	signal( SIGQUIT, SIG_IGN );
 	signal( SIGCHLD, SIG_IGN);
 #endif
-	//! 启动日志服务
-	ILog4zManager::GetInstance()->Config("server.cfg");
-	ILog4zManager::GetInstance()->Start();
+	if (argc < 6 )
+	{
+		cout <<"please input like example:" << endl;
+		cout << "./test ip port type maxClient interval" << endl;
+		cout <<"type:1 server" << endl;
+		cout <<"type:2 client" << endl;
+		cout <<"type:3 client ping-pong" << endl;
+		return 0;
+	}
+	std::string ip = argv[1];
+	unsigned short port = atoi(argv[2]);
+	unsigned short type = atoi(argv[3]);
+	unsigned int maxClient = atoi(argv[4]);
+	unsigned int interval = atoi(argv[5]);
+	if (type == 1)
+	{
+		//! 启动日志服务
+		ILog4zManager::GetInstance()->Config("server.cfg");
+		ILog4zManager::GetInstance()->Start();
+	}
+	else
+	{
+				//! 启动日志服务
+		ILog4zManager::GetInstance()->Config("client.cfg");
+		ILog4zManager::GetInstance()->Start();
+	}
+	LOGI("ip=" << ip << ", port=" << port << ", type=" << type << ", clients=" << maxClient << ", interval=" << interval);
+
 
 
 	//! 启动调度器
 	CSchedule schedule;
-	schedule.Start();
+	schedule.Start(ip, port, type, maxClient, interval);
+
 
 	//main线程用于服务状态统计与输出
-	unsigned long long nLastRecv = 0;
-	unsigned long long nLastSend = 0;
-	unsigned long long nLastRecvCount = 0;
-	unsigned long long nLastSendCount = 0;
+
+	unsigned long long nLast[10] = {0};
+	unsigned long long temp[10] = {0};
 	for (;;)
 	{
 		std::this_thread::sleep_for(std::chrono::milliseconds(5000));
-		unsigned long long temp1 = 0;
-		unsigned long long temp2 = 0;
-		unsigned long long temp3 = 0;
-		unsigned long long temp4 = 0;
-		unsigned long long temp5 = 0;
+		memset(&temp, 0, sizeof(temp));
+
 		for (std::vector<CProcess *>::const_iterator iter = schedule.m_process.begin(); iter != schedule.m_process.end(); ++iter)
 		{
-			temp1 += (*iter)->GetTotalRecvLen();
-			temp2 += (*iter)->GetTotalSendLen();
-			temp3 += (*iter)->GetTotalRecvCount();
-			temp4 += (*iter)->GetTotalSendCount();
-			temp5 += (*iter)->GetTotalClosed();
+			temp[0] += (*iter)->GetTotalRecvLen();
+			temp[1] += (*iter)->GetTotalSendLen();
+			temp[2] += (*iter)->GetTotalRecvCount();
+			temp[3] += (*iter)->GetTotalSendCount();
+			temp[4] += (*iter)->GetTotalOpen();
+			temp[5] += (*iter)->GetTotalClosed();
+			temp[6] += (*iter)->GetTotalRecvLen();
+			temp[7] += (*iter)->GetTotalEcho();
+			temp[8] += (*iter)->GetTotalEchoTime();
 		}
-		LOGD("TotalLinked:" << g_nTotalLinked 
-			<<",  TotalClosed:" << temp5
-			<< " \n\t"
+		LOGD("Linked[" << temp[4] 
+			<<"]  Closed[" << temp[5]
+			<<"]  RecvSpeed[" << (temp[0] - nLast[0])/1024.0/1024.0/5.0
+			<<"]  SendSpeed[" << (temp[1] - nLast[1])/1024.0/1024.0/5.0
+			<<"]  RecvSpeed[" << (temp[2] - nLast[2])/5.0
+			<<"]  SendSpeed[" << (temp[3] - nLast[3])/5.0
+			<<"]  EchoSpeed[" << (temp[7]- nLast[7])/5.0
+			<<"]  DelayTime[" << (temp[8]-nLast[8])/1.0/(temp[7]-nLast[7] == 0 ? 1 :temp[7]-nLast[7])
+			<<"].");
 
-			<< ",  TotalRecvd:" << temp1/1024.0/1024.0 
-			<< " M,  TotalSent:" << temp2/1024.0/1024.0
-			<< " M, Recv Speed:" << (temp1 - nLastRecv)/1024.0/1024.0/5.0
-			<< " M,  Send Speed:" << (temp2 - nLastSend)/1024.0/1024.0/5.0
-			<< " M, \n\t"
-			<< ",  TotalRecvCount:" << temp3
-			<< ",  TotalSentCount:" << temp4
-			<< ",  RecvCount Speed:" << (temp3 - nLastRecvCount)/5.0
-			<< " ,  SendCount Speed:" << (temp4 - nLastSendCount)/5.0);
-		nLastRecv = temp1;
-		nLastSend = temp2;
-		nLastRecvCount = temp3;
-		nLastSendCount = temp4;
+
+		memcpy(&nLast, &temp, sizeof(temp));
 	}
 
 	schedule.Stop();

@@ -67,11 +67,25 @@ struct Packet
 typedef std::shared_ptr<Packet> PacketPtr;
 typedef std::shared_ptr<zsummer::network::CTcpSocket> CTcpSocketPtr;
 
+const char g_text[] = "zsummer_11x:test text.........  zsummer_11x:test text.........  " //64
+					  "zsummer_11x:test text.........  zsummer_11x:test text.........  " //
+					  "zsummer_11x:test text.........  zsummer_11x:test text.........  " //
+					  "zsummer_11x:test text.........  zsummer_11x:test text.........  " //
+					  "zsummer_11x:test text.........  zsummer_11x:test text.........  " //
+					  "zsummer_11x:test text.........  zsummer_11x:test text.........  " //
+					  "zsummer_11x:test text.........  zsummer_11x:test text.........  " //
+					  "zsummer_11x:test text.........  zsummer_11x:test text.........  " // *8
+					  "zsummer_11x:test text.........  zsummer_11x:test text.........  " //
+					  "zsummer_11x:test text.........  zsummer_11x:test text.........  " //
+					  "zsummer_11x:test text.........  zsummer_11x:test text.........  " //
+					  "zsummer_11x:test text.........  zsummer_11x:test text.........  " //
+					  "zsummer_11x:test text.........  zsummer_11x:test text.........  " //
+					  "zsummer_11x:test text.........  zsummer_11x:test text.........  " //
+					  "zsummer_11x:test text.........  zsummer_11x:test text.........  " //
+					  "zsummer_11x:test text.........  zsummer_11x:test text.........  "; // *16 =1024
 
-//! 服务端总连入连接数和总关闭连接数
-extern int g_nTotalLinked;
 
-
+#define  NOW_TIME (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count())
 
 #endif
 

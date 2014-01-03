@@ -42,6 +42,7 @@ CClient::CClient(CProcess &proc, CTcpSocketPtr sockptr):m_process(proc)
 	memset(&m_recving, 0, sizeof(m_recving));
 	memset(&m_sending, 0, sizeof(m_sending));
 	m_curSendLen = 0;
+	m_port = 0;
 }
 
 CClient::~CClient()
@@ -53,11 +54,48 @@ CClient::~CClient()
 	}
 	
 }
+
+void CClient::Initialize(bool bInitiative, unsigned int interval, std::string ip, unsigned short port)
+{
+	m_bInitiative = bInitiative;
+	m_nInterval = interval;
+	m_ip = ip;
+	m_port = port;
+	m_process.AddTotalOpen(1);
+	if (!m_bInitiative)
+	{
+		DoRecv();
+	}
+	else
+	{
+		m_sockptr->DoConnect(m_ip, m_port, std::bind(& CClient::OnConnected, shared_from_this(), std::placeholders::_1));
+	}	
+}
+void CClient::OnConnected(zsummer::network::ErrorCode ec)
+{
+	if (ec)
+	{
+		LOGD("OnConnected failed. ec=" << ec);
+		return;
+	}
+	LOGD("OnConnected success");
+	DoRecv();
+	if (m_nInterval > 0)
+	{
+		m_process.GetZSummer().CreateTimer(m_nInterval, std::bind(&CClient::SendOnce, shared_from_this()));
+	}
+	else
+	{
+		SendOnce();
+	}
+}
+
 void CClient::DoRecv()
 {
 	m_recving._len = 0;
 	m_sockptr->DoRecv(m_recving._orgdata, (int)2, std::bind(&CClient::OnRecv, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
 }
+
 void CClient::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 {
 	if (ec)
@@ -114,10 +152,26 @@ void CClient::MessageEntry(zsummer::protocol4z::ReadStream & rs)
 			unsigned long long clientTick = 0;
 			std::string text;
 			rs >> clientTick >> text;
-			char buf[_MSG_BUF_LEN];
-			zsummer::protocol4z::WriteStream ws(buf, _MSG_BUF_LEN);
-			ws << protocolID << clientTick << text;
-			DoSend(buf, ws.GetWriteLen());
+			if (m_bInitiative)
+			{
+				unsigned long long now = NOW_TIME;
+				if (now < clientTick)
+				{
+					LOGE("now time[" << now << "] < last time[" << clientTick << "].");
+					throw std::runtime_error("now time < last time");
+				}
+				m_process.AddTotalEcho(1);
+				m_process.AddTotalEchoTime(now - clientTick);
+				if (m_nInterval == 0)
+				{
+					SendOnce();
+				}
+			}
+			else
+			{
+				DoSend(protocolID, clientTick, text.c_str());
+			}
+			
 		}
 		break;
 	default:
@@ -127,6 +181,28 @@ void CClient::MessageEntry(zsummer::protocol4z::ReadStream & rs)
 		break;
 	}
 }
+
+void CClient::SendOnce()
+{
+	
+	if (m_sendque.size() < 100000)
+	{
+		DoSend(1,NOW_TIME, g_text);
+	}
+	if (m_bInitiative && m_nInterval > 0)
+	{
+		m_process.GetZSummer().CreateTimer(m_nInterval, std::bind(&CClient::SendOnce, shared_from_this()));
+	}
+}
+
+void CClient::DoSend(unsigned short protocolID, unsigned long long clientTick, const char* text)
+{
+	char buf[_MSG_BUF_LEN];
+	zsummer::protocol4z::WriteStream ws(buf, _MSG_BUF_LEN);
+	ws << protocolID << clientTick << text;
+	DoSend(buf, ws.GetWriteLen());
+}
+
 void CClient::DoSend(char *buf, unsigned short len)
 {
 	if (m_sending._len != 0)

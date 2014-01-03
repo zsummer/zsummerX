@@ -49,15 +49,18 @@ class CClient : public std::enable_shared_from_this<CClient>
 public:
 	CClient(CProcess &proc, CTcpSocketPtr sockptr);
 	~CClient();
-	inline void Initialize()
-	{
-		DoRecv();
-	}
+	void Initialize(bool bInitiative, unsigned int interval, std::string ip, unsigned short port);
 private:
+	void OnConnected(zsummer::network::ErrorCode ec);
+
 	void DoRecv();
 	void OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen);
 	void MessageEntry(zsummer::protocol4z::ReadStream & rs);
 
+
+
+	void SendOnce();
+	void DoSend(unsigned short protocolID, unsigned long long clientTick, const char* text);
 	void DoSend(char *buf, unsigned short len);
 	void OnSend(zsummer::network::ErrorCode ec,  int nSentLen);
 
@@ -76,6 +79,11 @@ private:
 	//! 当前写包
 	Packet m_sending;
 	unsigned short m_curSendLen;
+	//
+	bool  m_bInitiative; //! 是否主动发送echo包
+	unsigned int  m_nInterval; //! 发送间隔
+	std::string m_ip;
+	unsigned short m_port;
 };
 
 #endif

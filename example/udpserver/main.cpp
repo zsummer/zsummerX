@@ -138,7 +138,7 @@ int main(int argc, char* argv[])
 	};
 
 	unsigned long long lastTotalCount = 0;
-	std::function<void(unsigned long long)> onTimer = [&](unsigned long long)
+	std::function<void()> onTimer = [&]()
 	{
 		LOGI("Current Recv Total Count=" << totalCount << ", speed=" << (totalCount - lastTotalCount)/5);
 		lastTotalCount = totalCount;

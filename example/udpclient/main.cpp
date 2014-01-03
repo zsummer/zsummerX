@@ -167,7 +167,7 @@ int main(int argc, char* argv[])
 
 
 	//! 请求发送
-	std::function<void(unsigned long long, const char*, unsigned short, PicnicPtr)> doSend = [&](unsigned long long timeID, const char *remoteIP, unsigned short remotePort, PicnicPtr pic)
+	std::function<void(const char*, unsigned short, PicnicPtr)> doSend = [&](const char *remoteIP, unsigned short remotePort, PicnicPtr pic)
 	{
 		pic->_reqTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 		zsummer::protocol4z::WriteStream ws(pic->sendData, _MSG_BUF_LEN);
@@ -233,7 +233,7 @@ int main(int argc, char* argv[])
 											std::placeholders::_3,
 											std::placeholders::_4,
 											pic));
-		doSend(0, ip.c_str(), port, pic);
+		doSend(ip.c_str(), port, pic);
 	};
 
 
@@ -256,12 +256,12 @@ int main(int argc, char* argv[])
 													std::placeholders::_3,
 													std::placeholders::_4,
 													pic));
-		summer.CreateTimer(rand()%1000+3000,std::bind(doSend,std::placeholders::_1, ip.c_str(), port, pic));
+		summer.CreateTimer(rand()%1000+3000,std::bind(doSend,ip.c_str(), port, pic));
 	}
 
 
 	//定时检测
-	std::function<void(unsigned long long)> doTimer = [&](unsigned long long)
+	std::function<void()> doTimer = [&]()
 	{
 		LOGI("-- type -- 1MS -- 5MS -- 10MS -- 20MS -- 40MS -- 60MS -- 100MS -- 1S -- LOW MS --");
 		for (int i=0; i<tagStatistic::TD_END; i++)

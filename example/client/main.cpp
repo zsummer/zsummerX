@@ -331,7 +331,7 @@ int main(int argc, char* argv[])
 	summer.Post(std::bind(doConnect, n));
 
 	//¶¨Ê±¼ì²â
-	std::function<void(unsigned long long)> doTimer = [&](unsigned long long)
+	std::function<void()> doTimer = [&]()
 	{
 		LOGI("-- type -- 1MS -- 5MS -- 10MS -- 20MS -- 40MS -- 60MS -- 100MS -- 1S -- LOW MS --");
 		for (int i=0; i<tagStatistic::TD_END; i++)

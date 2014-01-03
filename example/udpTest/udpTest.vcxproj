@@ -22,6 +22,7 @@
     <ProjectGuid>{194E3B3C-61AD-429D-8A6A-92978D525E45}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>udpclient</RootNamespace>
+    <ProjectName>udpTest</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

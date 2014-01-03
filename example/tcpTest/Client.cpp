@@ -150,8 +150,8 @@ void CClient::MessageEntry(zsummer::protocol4z::ReadStream & rs)
 	case 1:
 		{
 			unsigned long long clientTick = 0;
-			std::string text;
-			rs >> clientTick >> text;
+			m_recvTextCache.clear();
+			rs >> clientTick >> m_recvTextCache;
 			if (m_bInitiative)
 			{
 				unsigned long long now = NOW_TIME;
@@ -169,7 +169,7 @@ void CClient::MessageEntry(zsummer::protocol4z::ReadStream & rs)
 			}
 			else
 			{
-				DoSend(protocolID, clientTick, text.c_str());
+				DoSend(protocolID, clientTick, m_recvTextCache.c_str());
 			}
 			
 		}
@@ -184,11 +184,9 @@ void CClient::MessageEntry(zsummer::protocol4z::ReadStream & rs)
 
 void CClient::SendOnce()
 {
+
+	DoSend(1,NOW_TIME, g_text);
 	
-	if (m_sendque.size() < 100000)
-	{
-		DoSend(1,NOW_TIME, g_text);
-	}
 	if (m_bInitiative && m_nInterval > 0)
 	{
 		m_process.GetZSummer().CreateTimer(m_nInterval, std::bind(&CClient::SendOnce, shared_from_this()));

@@ -72,6 +72,7 @@ private:
 	
 	//! 读包
 	Packet m_recving;
+	std::string m_recvTextCache;
 
 	//! 写包队列
 	std::queue<Packet *> m_sendque;

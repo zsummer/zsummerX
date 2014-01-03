@@ -63,7 +63,7 @@ int main(int argc, char* argv[])
 	if (argc < 6 )
 	{
 		cout <<"please input like example:" << endl;
-		cout << "./test ip port type maxClient interval" << endl;
+		cout << "./tcpTest ip port type maxClient interval" << endl;
 		cout <<"type:1 server" << endl;
 		cout <<"type:2 client" << endl;
 		cout <<"type:3 client ping-pong" << endl;

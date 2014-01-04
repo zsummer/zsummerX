@@ -26,7 +26,7 @@ make
 
 in windows:  
 cd zsummer_11x/example  
-use vs2012 open  zsummer.sln  
+use vs2012 open  zsummer_11x.sln  
 
 
 # auther: 张亚伟 YaweiZhang  

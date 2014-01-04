@@ -112,18 +112,17 @@ int main(int argc, char* argv[])
 			temp[3] += (*iter)->GetTotalSendCount();
 			temp[4] += (*iter)->GetTotalOpen();
 			temp[5] += (*iter)->GetTotalClosed();
-			temp[6] += (*iter)->GetTotalRecvLen();
-			temp[7] += (*iter)->GetTotalEcho();
-			temp[8] += (*iter)->GetTotalEchoTime();
+			temp[6] += (*iter)->GetTotalEcho();
+			temp[7] += (*iter)->GetTotalEchoTime();
 		}
 		LOGD("Linked[" << temp[4] 
 			<<"]  Closed[" << temp[5]
-			<<"]  RecvSpeed[" << (temp[0] - nLast[0])/1024.0/1024.0/5.0
-			<<"]  SendSpeed[" << (temp[1] - nLast[1])/1024.0/1024.0/5.0
-			<<"]  RecvSpeed[" << (temp[2] - nLast[2])/5.0
+			<<"]  Recv[" << (temp[0] - nLast[0])/1024.0/1024.0/5.0
+			<<"]M  Send[" << (temp[1] - nLast[1])/1024.0/1024.0/5.0
+			<<"]M  RecvSpeed[" << (temp[2] - nLast[2])/5.0
 			<<"]  SendSpeed[" << (temp[3] - nLast[3])/5.0
-			<<"]  EchoSpeed[" << (temp[7]- nLast[7])/5.0
-			<<"]  DelayTime[" << (temp[8]-nLast[8])/1.0/(temp[7]-nLast[7] == 0 ? 1 :temp[7]-nLast[7])
+			<<"]  EchoSpeed[" << (temp[6]- nLast[6])/5.0
+			<<"]  DelayTime[" << (temp[7]-nLast[7])/1.0/(temp[6]-nLast[6] == 0 ? 1 :temp[6]-nLast[6])
 			<<"].");
 
 

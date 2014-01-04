@@ -228,9 +228,10 @@ int main(int argc, char* argv[])
 	std::function<void()> doTimer = [&nLast, &doTimer, &summer]()
 	{
 		LOGI("EchoSpeed[" << (g_totalEcho - nLast[0])/5.0
-			<< "]  DelayTime[" << (g_totalEchoTime - nLast[1])/((g_totalEcho - nLast[0]) ==0?1:(g_totalEcho - nLast[0]))/5.0
+			<< "]  DelayTime[" << (g_totalEchoTime - nLast[1])/1.0/((g_totalEcho - nLast[0]) ==0?1:(g_totalEcho - nLast[0]))
 			<< "]  SendSpeed[" << (g_totalSend - nLast[2])/5.0 
-			<< "]  RecvSpeed[" << (g_totalRecv - nLast[3])/ 5.0);
+			<< "]  RecvSpeed[" << (g_totalRecv - nLast[3])/ 5.0
+			<< "].");
 		nLast[0] = g_totalEcho;
 		nLast[1] = g_totalEchoTime;
 		nLast[2] = g_totalSend;

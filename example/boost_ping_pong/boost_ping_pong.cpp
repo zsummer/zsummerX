@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include "../../depends/protocol4z/protocol4z.h"
 #include <chrono>
+#define  NOW_TIME (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count())
 
 using namespace std;
 #define PACK_LEN 1024
@@ -16,6 +17,7 @@ int main(int argc, char* argv[])
 	char buffRecv[PACK_LEN];
 	std::string fillstring;
 	fillstring.resize(1000,'z');
+	std::string textCache;
 	cout <<"input 1:server, 0:client" << endl;
 	int nServer = 0;
 	cin >> nServer;
@@ -48,7 +50,7 @@ int main(int argc, char* argv[])
 	{
 		zsummer::protocol4z::WriteStream ws(buffSend, PACK_LEN);
 		ws << (unsigned short) 1; //protocol id
-		ws <<(unsigned long long) 1; // local tick count
+		ws <<(unsigned long long) NOW_TIME; // local tick count
 		ws << fillstring; // append text, fill the length protocol.
 		client->async_write_some(boost::asio::buffer(buffSend, ws.GetWriteLen()), 
 					std::bind(onSend, std::placeholders::_1, std::placeholders::_2, 0, ws.GetWriteLen(), client));
@@ -87,8 +89,18 @@ int main(int argc, char* argv[])
 			case 1:
 				{
 					unsigned long long localTick = 0;
-					std::string text;
-					rs >> localTick >> text;
+					textCache.clear();
+					rs >> localTick >> textCache;
+					unsigned long long cur = NOW_TIME;
+					if (nServer)
+					{
+						if (cur < localTick)
+						{
+							throw std::runtime_error("cur < localTick");
+						}
+						
+					}
+					
 				}
 				break;
 			default:

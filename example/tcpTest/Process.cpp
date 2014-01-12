@@ -37,22 +37,9 @@
 #include "Process.h"
 #include "Client.h"
 
-CProcess::CProcess(bool bInitiative, unsigned int interval, std::string ip, unsigned short port)
+CProcess::CProcess()
 {
-	m_bRunning = false;
-	m_bInitiative = bInitiative;
-	m_nInterval = interval;
-	m_ip = ip;
-	m_port = port;
 
-	m_nTotalRecvLen = 0;
-	m_nTotalSendLen = 0;
-	m_nTotalRecvCount = 0;
-	m_nTotalSendCount = 0;
-	m_nTotalOpen = 0;
-	m_nTotalClosed = 0;
-	m_nTotalEcho = 0;
-	m_nTotalEchoTime = 0;
 }
 
 bool CProcess::Start()
@@ -85,6 +72,6 @@ void CProcess::Run()
 void CProcess::RecvSocketPtr(std::shared_ptr<zsummer::network::CTcpSocket> sockptr)
 {
 	std::shared_ptr<CClient> client(new CClient(*this, sockptr));
-	client->Initialize(m_bInitiative, m_nInterval, m_ip, m_port);
+	client->Initialize();
 }
 

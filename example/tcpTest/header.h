@@ -87,5 +87,13 @@ const char g_text[] = "zsummer_11x:test text.........  zsummer_11x:test text....
 
 #define  NOW_TIME (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count())
 
+extern std::string g_remoteIP;
+extern unsigned short g_remotePort;
+extern unsigned short g_serverType;  //0 listen, 1 connect
+extern unsigned short g_maxClient; //0 echo send, 1 direct send
+extern unsigned short g_sendType; //0 echo send, 1 direct send
+extern unsigned int   g_intervalMs; // send interval
+
+
 #endif
 

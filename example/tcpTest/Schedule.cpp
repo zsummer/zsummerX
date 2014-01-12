@@ -41,17 +41,12 @@
 
 CSchedule::CSchedule():m_accept( m_summer)
 {
-	m_iCurProcess = 0;
-	m_nMaxClient = 0;
-	m_bRunning = false;
 }
 
 
-void CSchedule::Start(std::string ip, unsigned short port,unsigned short type, unsigned int maxClient, unsigned int interval)
+void CSchedule::Start()
 {
-	m_ip = ip;
-	m_port = port;
-	m_nMaxClient = maxClient;
+
 	if (!m_summer.Initialize())
 	{
 		return ;
@@ -59,18 +54,18 @@ void CSchedule::Start(std::string ip, unsigned short port,unsigned short type, u
 
 	for (int i=0; i< 1; i++)
 	{
-		CProcess * p = new CProcess(type !=1, type == 3 ? 0 : interval, m_ip, m_port);
+		CProcess * p = new CProcess();
 		if (p->Start())
 		{
 			m_process.push_back(p);
 		}
 	}
 	
-	if (type == 1)
+	if (g_serverType == 0)
 	{
-		if (m_accept.OpenAccept(ip.c_str(), port))
+		if (m_accept.OpenAccept(g_remoteIP.c_str(), g_remotePort))
 		{
-			LOGI("open server port [" << port << "] success");
+			LOGI("open server port [" << g_remotePort << "] success");
 		}
 		CTcpSocketPtr s(new zsummer::network::CTcpSocket());
 		s->Initialize(m_process[m_iCurProcess]->GetZSummer());
@@ -78,7 +73,7 @@ void CSchedule::Start(std::string ip, unsigned short port,unsigned short type, u
 	}
 	else
 	{
-		doConnect(maxClient);
+		doConnect(g_maxClient);
 	}
 
 
@@ -122,22 +117,23 @@ void CSchedule::OnAccept(zsummer::network::ErrorCode ec, CTcpSocketPtr sockptr, 
 		LOGE("OnAccept error. ec=" <<ec );
 		return;
 	}
+	
+	unsigned long long allClosed = 0;
+	unsigned long long allOpen = 0;
+	for (std::vector<CProcess *>::const_iterator iter = m_process.begin(); iter != m_process.end(); ++iter)
 	{
-		unsigned long long allClosed = 0;
-		unsigned long long allOpen = 0;
-		for (std::vector<CProcess *>::const_iterator iter = m_process.begin(); iter != m_process.end(); ++iter)
-		{
-			allClosed += (*iter)->GetTotalClosed();
-			allOpen += (*iter)->GetTotalOpen();
-		}
-		if (allOpen - allClosed > m_nMaxClient )
-		{
-			LOGW("OnAccept success but current links is too many.");
-			return;
-		}
+		allClosed += (*iter)->GetTotalClosed();
+		allOpen += (*iter)->GetTotalOpen();
 	}
+	if (allOpen - allClosed > g_maxClient )
+	{
+		LOGW("OnAccept success but current links is too many.");
+		return;
+	}
+
 	LOGD("OnAccept one socket");
 	process->Post(std::bind(&CProcess::RecvSocketPtr, process, sockptr));
+
 
 	m_iCurProcess++;
 	m_iCurProcess = m_iCurProcess%(int)m_process.size();

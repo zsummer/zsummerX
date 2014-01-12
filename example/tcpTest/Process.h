@@ -46,7 +46,7 @@
 class CProcess
 {
 public:
-	CProcess(bool bInitiative, unsigned int interval, std::string ip, unsigned short port);
+	CProcess();
 	//! 启动与停止
 	bool Start();
 	void Stop();
@@ -57,11 +57,8 @@ public:
 private:
 	zsummer::network::CZSummer m_summer;
 	std::thread	 m_thread;
-	bool  m_bRunning;
-	bool  m_bInitiative; //! 是否主动发送echo包
-	unsigned int  m_nInterval; //! 发送间隔
-	std::string m_ip;
-	unsigned short m_port;
+	bool  m_bRunning = true;
+
 
 public:
 	template<class H>
@@ -91,12 +88,12 @@ public:
 	inline unsigned long long GetTotalClosed() {return m_nTotalClosed;}
 	inline void AddTotalClosed(unsigned long long len) { m_nTotalClosed += len;}
 private:
-	unsigned long long  m_nTotalRecvLen;
-	unsigned long long  m_nTotalSendLen;
-	unsigned long long  m_nTotalRecvCount;
-	unsigned long long  m_nTotalSendCount;
-	unsigned long long  m_nTotalOpen;
-	unsigned long long  m_nTotalClosed;
+	unsigned long long  m_nTotalRecvLen = 0;
+	unsigned long long  m_nTotalSendLen = 0;
+	unsigned long long  m_nTotalRecvCount = 0;
+	unsigned long long  m_nTotalSendCount = 0;
+	unsigned long long  m_nTotalOpen = 0;
+	unsigned long long  m_nTotalClosed = 0;
 	
 
 
@@ -108,8 +105,8 @@ public:
 	inline unsigned long long GetTotalEchoTime() {return m_nTotalEchoTime;}
 	inline void AddTotalEchoTime(unsigned long long len) { m_nTotalEchoTime += len;}
 private:
-	unsigned long long m_nTotalEcho;
-	unsigned long long m_nTotalEchoTime;
+	unsigned long long m_nTotalEcho = 0;
+	unsigned long long m_nTotalEchoTime = 0;
 	
 
 

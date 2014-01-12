@@ -49,7 +49,7 @@ class CClient : public std::enable_shared_from_this<CClient>
 public:
 	CClient(CProcess &proc, CTcpSocketPtr sockptr);
 	~CClient();
-	void Initialize(bool bInitiative, unsigned int interval, std::string ip, unsigned short port);
+	void Initialize();
 private:
 	void OnConnected(zsummer::network::ErrorCode ec);
 
@@ -69,6 +69,7 @@ private:
 
 	CProcess  & m_process;
 	CTcpSocketPtr  m_sockptr;
+	bool m_bEstablished = false;
 	
 	//! 读包
 	Packet m_recving;
@@ -79,12 +80,9 @@ private:
 
 	//! 当前写包
 	Packet m_sending;
-	unsigned short m_curSendLen;
-	//
-	bool  m_bInitiative; //! 是否主动发送echo包
-	unsigned int  m_nInterval; //! 发送间隔
-	std::string m_ip;
-	unsigned short m_port;
+	unsigned short m_curSendLen = 0;
+
+	unsigned long long m_lastDelayTime = 0; //最后一次收到echo消息的延迟时间
 };
 
 #endif

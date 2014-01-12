@@ -42,8 +42,13 @@
 #include "Schedule.h"
 #include "Process.h"
 using namespace zsummer::log4z;
-int g_nTotalLinked = 0;
 
+std::string g_remoteIP = "0.0.0.0";
+unsigned short g_remotePort = 81;
+unsigned short g_serverType = 0;  //0 listen, 1 connect
+unsigned short g_maxClient = 1; //0 echo send, 1 direct send
+unsigned short g_sendType = 0; //0 echo send, 1 direct send
+unsigned int   g_intervalMs = 0; // send interval
 
 int main(int argc, char* argv[])
 {
@@ -60,21 +65,43 @@ int main(int argc, char* argv[])
 	signal( SIGQUIT, SIG_IGN );
 	signal( SIGCHLD, SIG_IGN);
 #endif
-	if (argc < 6 )
+	if (argc == 2 && strcmp(argv[1], "--help") == 0)
 	{
 		cout <<"please input like example:" << endl;
-		cout << "./tcpTest ip port type maxClient interval" << endl;
-		cout <<"type:1 server" << endl;
-		cout <<"type:2 client" << endl;
-		cout <<"type:3 client ping-pong" << endl;
+		cout << "./tcpTest remoteIP=0.0.0.0 remotePort=81 serverType=0 maxClient=1 sendType=0 interval=0" << endl;
+		cout <<"serverType: 0 server, 1 client" << endl;
+		cout <<"maxClient: limite max" << endl;
+		cout <<"sendType: 0 echo send, 1 direct send" << endl;
+		cout <<"interval: send once interval" << endl;
 		return 0;
 	}
-	std::string ip = argv[1];
-	unsigned short port = atoi(argv[2]);
-	unsigned short type = atoi(argv[3]);
-	unsigned int maxClient = atoi(argv[4]);
-	unsigned int interval = atoi(argv[5]);
-	if (type == 1)
+	if (argc > 1)
+	{
+		g_remoteIP = argv[1];
+	}
+	if (argc > 2)
+	{
+		g_remotePort = atoi(argv[2]);
+	}
+	if (argc > 3)
+	{
+		g_serverType = atoi(argv[3]);
+	}
+	if (argc > 4)
+	{
+		g_maxClient = atoi(argv[4]);
+	}
+	if (argc > 5)
+	{
+		g_sendType = atoi(argv[5]);
+	}
+	if (argc > 6)
+	{
+		g_intervalMs = atoi(argv[6]);
+	}
+
+	
+	if (g_serverType == 1)
 	{
 		//! 启动日志服务
 		ILog4zManager::GetInstance()->Config("server.cfg");
@@ -86,13 +113,14 @@ int main(int argc, char* argv[])
 		ILog4zManager::GetInstance()->Config("client.cfg");
 		ILog4zManager::GetInstance()->Start();
 	}
-	LOGI("ip=" << ip << ", port=" << port << ", type=" << type << ", clients=" << maxClient << ", interval=" << interval);
+	LOGI("g_remoteIP=" << g_remoteIP << ", g_remotePort=" << g_remotePort << ", g_serverType=" << g_serverType 
+		<< ", g_maxClient=" << g_maxClient << ", g_sendType=" << g_sendType << ", g_intervalMs=" << g_intervalMs);
 
 
 
 	//! 启动调度器
 	CSchedule schedule;
-	schedule.Start(ip, port, type, maxClient, interval);
+	schedule.Start();
 
 
 	//main线程用于服务状态统计与输出

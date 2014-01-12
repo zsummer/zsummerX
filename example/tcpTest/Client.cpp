@@ -41,8 +41,6 @@ CClient::CClient(CProcess &proc, CTcpSocketPtr sockptr):m_process(proc)
 	m_sockptr = sockptr;
 	memset(&m_recving, 0, sizeof(m_recving));
 	memset(&m_sending, 0, sizeof(m_sending));
-	m_curSendLen = 0;
-	m_port = 0;
 }
 
 CClient::~CClient()
@@ -52,25 +50,63 @@ CClient::~CClient()
 		delete m_sendque.front();
 		m_sendque.pop();
 	}
+	LOGI("~CClient");
 	
 }
 
-void CClient::Initialize(bool bInitiative, unsigned int interval, std::string ip, unsigned short port)
+void CClient::Initialize()
 {
-	m_bInitiative = bInitiative;
-	m_nInterval = interval;
-	m_ip = ip;
-	m_port = port;
-	m_process.AddTotalOpen(1);
-	if (!m_bInitiative)
+	
+	if (g_serverType == 0)
 	{
 		DoRecv();
+		m_bEstablished = true;
+		m_process.AddTotalOpen(1);
 	}
 	else
 	{
-		m_sockptr->DoConnect(m_ip, m_port, std::bind(& CClient::OnConnected, shared_from_this(), std::placeholders::_1));
+		m_sockptr->DoConnect(g_remoteIP, g_remotePort, std::bind(& CClient::OnConnected, shared_from_this(), std::placeholders::_1));
 	}	
 }
+
+void CClient::SendOnce()
+{
+	if (shared_from_this().use_count() == 2)
+	{
+		LOGD("client is dead. no send again");
+		return;
+	}
+	if (g_sendType == 0 || g_sendType == 0)
+	{
+		DoSend(1, NOW_TIME, g_text);
+	}
+	else
+	{
+		size_t maxSize = 20 * 10000;
+		if (m_lastDelayTime < 2000)
+		{
+			DoSend(1, NOW_TIME, g_text);
+		}
+
+
+		if (g_intervalMs > 0)
+		{
+			m_process.GetZSummer().CreateTimer(g_intervalMs, std::bind(&CClient::SendOnce, shared_from_this()));
+		}
+		else
+		{
+			if (m_lastDelayTime < 2000)
+			{
+				m_process.GetZSummer().Post(std::bind(&CClient::SendOnce, shared_from_this()));
+			}
+			else
+			{
+				m_process.GetZSummer().CreateTimer(100, std::bind(&CClient::SendOnce, shared_from_this()));
+			}
+		}
+	}
+}
+
 void CClient::OnConnected(zsummer::network::ErrorCode ec)
 {
 	if (ec)
@@ -80,9 +116,11 @@ void CClient::OnConnected(zsummer::network::ErrorCode ec)
 	}
 	LOGD("OnConnected success");
 	DoRecv();
-	if (m_nInterval > 0)
+	m_bEstablished = true;
+	m_process.AddTotalOpen(1);
+	if (g_intervalMs > 0)
 	{
-		m_process.GetZSummer().CreateTimer(m_nInterval, std::bind(&CClient::SendOnce, shared_from_this()));
+		m_process.GetZSummer().CreateTimer(g_intervalMs, std::bind(&CClient::SendOnce, shared_from_this()));
 	}
 	else
 	{
@@ -93,7 +131,11 @@ void CClient::OnConnected(zsummer::network::ErrorCode ec)
 void CClient::DoRecv()
 {
 	m_recving._len = 0;
-	m_sockptr->DoRecv(m_recving._orgdata, (int)2, std::bind(&CClient::OnRecv, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
+	bool bSuccess = m_sockptr->DoRecv(m_recving._orgdata, (int)2, std::bind(&CClient::OnRecv, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
+	if (!bSuccess)
+	{
+		OnClose();
+	}
 }
 
 void CClient::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
@@ -152,26 +194,27 @@ void CClient::MessageEntry(zsummer::protocol4z::ReadStream & rs)
 			unsigned long long clientTick = 0;
 			m_recvTextCache.clear();
 			rs >> clientTick >> m_recvTextCache;
-			if (m_bInitiative)
+			if (g_serverType == 0)
 			{
-				unsigned long long now = NOW_TIME;
-				if (now < clientTick)
+				DoSend(protocolID, clientTick, m_recvTextCache.c_str());
+			}
+			else
+			{
+				unsigned long long tick = NOW_TIME;
+				if (tick < clientTick)
 				{
-					LOGE("now time[" << now << "] < last time[" << clientTick << "].");
+					LOGE("now time[" << tick << "] < last time[" << clientTick << "].");
 					throw std::runtime_error("now time < last time");
 				}
+				tick -= clientTick;
+				m_lastDelayTime = tick;
 				m_process.AddTotalEcho(1);
-				m_process.AddTotalEchoTime(now - clientTick);
-				if (m_nInterval == 0)
+				m_process.AddTotalEchoTime(tick);
+				if (g_sendType == 0)
 				{
 					SendOnce();
 				}
 			}
-			else
-			{
-				DoSend(protocolID, clientTick, m_recvTextCache.c_str());
-			}
-			
 		}
 		break;
 	default:
@@ -182,16 +225,7 @@ void CClient::MessageEntry(zsummer::protocol4z::ReadStream & rs)
 	}
 }
 
-void CClient::SendOnce()
-{
 
-	DoSend(1,NOW_TIME, g_text);
-	
-	if (m_bInitiative && m_nInterval > 0)
-	{
-		m_process.GetZSummer().CreateTimer(m_nInterval, std::bind(&CClient::SendOnce, shared_from_this()));
-	}
-}
 
 void CClient::DoSend(unsigned short protocolID, unsigned long long clientTick, const char* text)
 {

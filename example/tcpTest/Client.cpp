@@ -71,7 +71,7 @@ void CClient::Initialize()
 
 void CClient::SendOnce()
 {
-	if (shared_from_this().use_count() == 2)
+	if (!m_bEstablished)
 	{
 		LOGD("client is dead. no send again");
 		return;
@@ -292,5 +292,6 @@ void CClient::OnClose()
 {
 	LOGI("Client Closed!");
 	m_process.AddTotalClosed(1);
+	m_bEstablished = false;
 }
 

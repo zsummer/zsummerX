@@ -14,7 +14,7 @@ MIT开源 代码可以任意使用在任何场合.
   
 
 #编译需求  
-windows下VS2012或者以上版本  
+windows下VS2013或者以上版本  
 linux下g++4.7或者以上版本.  
 
 #编译方法  
@@ -26,7 +26,7 @@ make
 
 in windows:  
 cd zsummer_11x/example  
-use vs2012 open  zsummer_11x.sln  
+use vs2013 open  zsummer_11x.sln  
 
 
 # auther: 张亚伟 YaweiZhang  

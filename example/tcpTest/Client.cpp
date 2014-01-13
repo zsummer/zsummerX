@@ -40,7 +40,6 @@ CClient::CClient(CProcess &proc, CTcpSocketPtr sockptr):m_process(proc)
 {
 	m_sockptr = sockptr;
 	memset(&m_recving, 0, sizeof(m_recving));
-	memset(&m_sending, 0, sizeof(m_sending));
 }
 
 CClient::~CClient()
@@ -57,7 +56,7 @@ CClient::~CClient()
 void CClient::Initialize()
 {
 	
-	if (g_serverType == 0)
+	if (g_startType == 0)
 	{
 		DoRecv();
 		m_bEstablished = true;
@@ -76,19 +75,9 @@ void CClient::SendOnce()
 		LOGD("client is dead. no send again");
 		return;
 	}
-	if (g_sendType == 0 || g_sendType == 0)
+	DoSend(1, NOW_TIME, g_text);
+	if (g_sendType != 0 && g_sendType != 0)
 	{
-		DoSend(1, NOW_TIME, g_text);
-	}
-	else
-	{
-		size_t maxSize = 20 * 10000;
-		if (m_lastDelayTime < 2000)
-		{
-			DoSend(1, NOW_TIME, g_text);
-		}
-
-
 		if (g_intervalMs > 0)
 		{
 			m_process.GetZSummer().CreateTimer(g_intervalMs, std::bind(&CClient::SendOnce, shared_from_this()));
@@ -194,7 +183,7 @@ void CClient::MessageEntry(zsummer::protocol4z::ReadStream & rs)
 			unsigned long long clientTick = 0;
 			m_recvTextCache.clear();
 			rs >> clientTick >> m_recvTextCache;
-			if (g_serverType == 0)
+			if (g_startType == 0)
 			{
 				DoSend(protocolID, clientTick, m_recvTextCache.c_str());
 			}
@@ -237,7 +226,7 @@ void CClient::DoSend(unsigned short protocolID, unsigned long long clientTick, c
 
 void CClient::DoSend(char *buf, unsigned short len)
 {
-	if (m_sending._len != 0)
+	if (m_sendLen != 0)
 	{
 		Packet *pack = new Packet;
 		memcpy(pack->_orgdata, buf, len);
@@ -246,10 +235,10 @@ void CClient::DoSend(char *buf, unsigned short len)
 	}
 	else
 	{
-		memcpy(m_sending._orgdata, buf, len);
-		m_sending._len= len;
+		memcpy(m_sendBuff, buf, len);
+		m_sendLen = len;
 		m_curSendLen = 0;
-		m_sockptr->DoSend(m_sending._orgdata, m_sending._len, std::bind(&CClient::OnSend, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
+		m_sockptr->DoSend(m_sendBuff, m_sendLen, std::bind(&CClient::OnSend, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
 	}
 }
 
@@ -262,28 +251,33 @@ void CClient::OnSend(zsummer::network::ErrorCode ec,  int nSentLen)
 		return ;
 	}
 	m_curSendLen += nSentLen;
-	if (m_curSendLen < m_sending._len)
+	if (m_curSendLen < m_sendLen)
 	{
-		m_sockptr->DoSend(m_sending._orgdata+m_curSendLen, m_sending._len - m_curSendLen, std::bind(&CClient::OnSend, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
+		m_sockptr->DoSend(m_sendBuff+m_curSendLen, m_sendLen - m_curSendLen, std::bind(&CClient::OnSend, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
 	}
-	else if (m_curSendLen == m_sending._len)
+	else if (m_curSendLen == m_sendLen)
 	{
 		m_process.AddTotalSendCount(1);
 		m_process.AddTotalSendLen(m_curSendLen);
 		m_curSendLen = 0;
-		if (m_sendque.empty())
+		m_sendLen = 0;
+		if (!m_sendque.empty())
 		{
-			m_sending._len = 0;
-		}
-		else
-		{
-			Packet *pack = m_sendque.front();
-			m_sendque.pop();
-			memcpy(m_sending._orgdata, pack->_orgdata, pack->_len);
-			m_sending._len= pack->_len;
-			m_curSendLen = 0;
-			delete pack;
-			m_sockptr->DoSend(m_sending._orgdata, m_sending._len, std::bind(&CClient::OnSend, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
+			do
+			{
+				Packet *pack = m_sendque.front();
+				if (_SEND_BUF_LEN - m_sendLen < pack->_len)
+				{
+					break;
+				}
+				m_sendque.pop();
+				memcpy(m_sendBuff+m_sendLen, pack->_orgdata, pack->_len);
+				m_sendLen += pack->_len;
+				delete pack;
+
+			} while (!m_sendque.empty());
+			
+			m_sockptr->DoSend(m_sendBuff, m_sendLen, std::bind(&CClient::OnSend, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
 		}
 	}
 }

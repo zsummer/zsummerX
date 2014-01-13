@@ -61,7 +61,7 @@ void CSchedule::Start()
 		}
 	}
 	
-	if (g_serverType == 0)
+	if (g_startType == 0)
 	{
 		if (m_accept.OpenAccept(g_remoteIP.c_str(), g_remotePort))
 		{

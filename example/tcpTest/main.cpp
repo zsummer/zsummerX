@@ -45,7 +45,7 @@ using namespace zsummer::log4z;
 
 std::string g_remoteIP = "0.0.0.0";
 unsigned short g_remotePort = 81;
-unsigned short g_serverType = 0;  //0 listen, 1 connect
+unsigned short g_startType = 0;  //0 listen, 1 connect
 unsigned short g_maxClient = 1; //0 echo send, 1 direct send
 unsigned short g_sendType = 0; //0 echo send, 1 direct send
 unsigned int   g_intervalMs = 0; // send interval
@@ -65,11 +65,13 @@ int main(int argc, char* argv[])
 	signal( SIGQUIT, SIG_IGN );
 	signal( SIGCHLD, SIG_IGN);
 #endif
-	if (argc == 2 && strcmp(argv[1], "--help") == 0)
+	if (argc == 2 && 
+		(strcmp(argv[1], "--help") == 0 
+		|| strcmp(argv[1], "/?") == 0))
 	{
 		cout <<"please input like example:" << endl;
-		cout << "./tcpTest remoteIP=0.0.0.0 remotePort=81 serverType=0 maxClient=1 sendType=0 interval=0" << endl;
-		cout <<"serverType: 0 server, 1 client" << endl;
+		cout << "./tcpTest remoteIP=0.0.0.0 remotePort=81 startType=0 maxClient=1 sendType=0 interval=0" << endl;
+		cout <<"startType: 0 server, 1 client" << endl;
 		cout <<"maxClient: limite max" << endl;
 		cout <<"sendType: 0 echo send, 1 direct send" << endl;
 		cout <<"interval: send once interval" << endl;
@@ -85,7 +87,7 @@ int main(int argc, char* argv[])
 	}
 	if (argc > 3)
 	{
-		g_serverType = atoi(argv[3]);
+		g_startType = atoi(argv[3]);
 	}
 	if (argc > 4)
 	{
@@ -101,7 +103,7 @@ int main(int argc, char* argv[])
 	}
 
 	
-	if (g_serverType == 1)
+	if (g_startType == 0)
 	{
 		//! 启动日志服务
 		ILog4zManager::GetInstance()->Config("server.cfg");
@@ -113,7 +115,7 @@ int main(int argc, char* argv[])
 		ILog4zManager::GetInstance()->Config("client.cfg");
 		ILog4zManager::GetInstance()->Start();
 	}
-	LOGI("g_remoteIP=" << g_remoteIP << ", g_remotePort=" << g_remotePort << ", g_serverType=" << g_serverType 
+	LOGI("g_remoteIP=" << g_remoteIP << ", g_remotePort=" << g_remotePort << ", g_startType=" << g_startType 
 		<< ", g_maxClient=" << g_maxClient << ", g_sendType=" << g_sendType << ", g_intervalMs=" << g_intervalMs);
 
 

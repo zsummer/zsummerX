@@ -79,7 +79,9 @@ private:
 	std::queue<Packet *> m_sendque;
 
 	//! 当前写包
-	Packet m_sending;
+
+	char m_sendBuff[_SEND_BUF_LEN];
+	unsigned short m_sendLen = 0;
 	unsigned short m_curSendLen = 0;
 
 	unsigned long long m_lastDelayTime = 0; //最后一次收到echo消息的延迟时间

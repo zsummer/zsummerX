@@ -6,6 +6,9 @@ HISTORY for Protocol4z
  * VERSION 0.1.0 <DATE: 2013.07.04>
  * 	create the first project.  
  * 	support big-endian or little-endian
+ * VERSION 0.3.0 <DATE: 2014.03.13>
+ *  support user-defined header
+ *  WriteStream auto alloc memory
  * 
  */
    

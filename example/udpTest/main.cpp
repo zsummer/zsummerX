@@ -44,6 +44,7 @@
 #include <protocol4z/protocol4z.h>
 using namespace std;
 using namespace zsummer::network;
+using namespace zsummer::protocol4z;
 //! 消息包缓冲区大小
 #define _MSG_BUF_LEN	(1200)
 std::string g_fillString;
@@ -69,11 +70,11 @@ unsigned long long g_totalRecv;
 void doSend(const char *remoteIP, unsigned short remotePort, unsigned short protocolID, unsigned long long clientTick, PicnicPtr pic)
 {
 	pic->_reqTime = clientTick;
-	zsummer::protocol4z::WriteStream ws(pic->sendData, _MSG_BUF_LEN);
+	zsummer::protocol4z::WriteStream<> ws;
 	ws << protocolID; //protocol id
 	ws << pic->_reqTime; // local tick count
 	ws << g_fillString; // append text, fill the length protocol.
-	pic->sock.DoSendTo(pic->sendData, ws.GetWriteLen(), remoteIP, remotePort);
+	pic->sock.DoSendTo(ws.GetWriteStream(), ws.GetWriteLen(), remoteIP, remotePort);
 	g_totalSend++;
 };
 
@@ -85,11 +86,11 @@ void onRecv(ErrorCode ec, const char *remoteIP, unsigned short remotePort, int t
 		return;
 	}
 
-	int ret = zsummer::protocol4z::CheckBuffIntegrity(pic->recvData, translate, _MSG_BUF_LEN);
-	if (ret == 0)
+	std::pair<bool, DefaultStreamHeadTrait::Integer> ret = zsummer::protocol4z::CheckBuffIntegrity<DefaultStreamHeadTrait>(pic->recvData, translate, _MSG_BUF_LEN);
+	if (ret.first && ret.second == 0)
 	{
 		//! 解包
-		zsummer::protocol4z::ReadStream rs(pic->recvData, translate);
+		zsummer::protocol4z::ReadStream<> rs(pic->recvData, translate);
 		try
 		{
 			//协议流异常会被上层捕获并关闭连接

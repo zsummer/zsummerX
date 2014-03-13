@@ -90,9 +90,9 @@ const char g_text[] = "zsummer_11x:test text.........  zsummer_11x:test text....
 extern std::string g_remoteIP;
 extern unsigned short g_remotePort;
 extern unsigned short g_startType;  //0 listen, 1 connect
-extern unsigned short g_maxClient; //0 echo send, 1 direct send
+extern unsigned short g_maxClient; // client count
 extern unsigned short g_sendType; //0 echo send, 1 direct send
-extern unsigned int   g_intervalMs; // send interval
+extern unsigned int   g_intervalMs; // send interval ms
 
 
 #endif

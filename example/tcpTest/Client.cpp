@@ -35,6 +35,7 @@
  */
 
 #include "Client.h"
+using namespace zsummer::protocol4z;
 
 CClient::CClient(CProcess &proc, CTcpSocketPtr sockptr):m_process(proc)
 {
@@ -76,7 +77,7 @@ void CClient::SendOnce()
 		return;
 	}
 	DoSend(1, NOW_TIME, g_text);
-	if (g_sendType != 0 && g_sendType != 0)
+	if (g_sendType != 0)
 	{
 		if (g_intervalMs > 0)
 		{
@@ -138,22 +139,22 @@ void CClient::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 
 	m_recving._len += nRecvedLen;
 
-	int needRecv = zsummer::protocol4z::CheckBuffIntegrity(m_recving._orgdata, m_recving._len, _MSG_BUF_LEN);
-	if ( needRecv == -1)
+	std::pair<bool, DefaultStreamHeadTrait::Integer> ret = zsummer::protocol4z::CheckBuffIntegrity<DefaultStreamHeadTrait>(m_recving._orgdata, m_recving._len, _MSG_BUF_LEN);
+	if (!ret.first)
 	{
 		LOGD("killed socket: CheckBuffIntegrity error ");
 		m_sockptr->DoClose();
 		OnClose();
 		return;
 	}
-	if (needRecv > 0)
+	if (ret.second > 0)
 	{
-		m_sockptr->DoRecv(m_recving._orgdata+m_recving._len, needRecv, std::bind(&CClient::OnRecv, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
+		m_sockptr->DoRecv(m_recving._orgdata + m_recving._len, ret.second, std::bind(&CClient::OnRecv, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
 		return ;
 	}
 
 	//! 解包完成 进行消息处理
-	zsummer::protocol4z::ReadStream rs(m_recving._orgdata, m_recving._len);
+	zsummer::protocol4z::ReadStream<> rs(m_recving._orgdata, m_recving._len);
 	try
 	{
 		MessageEntry(rs);
@@ -171,7 +172,7 @@ void CClient::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 	DoRecv();
 }
 
-void CClient::MessageEntry(zsummer::protocol4z::ReadStream & rs)
+void CClient::MessageEntry(zsummer::protocol4z::ReadStream<> & rs)
 {
 	//协议流异常会被上层捕获并关闭连接
 	unsigned short protocolID = 0;
@@ -218,10 +219,9 @@ void CClient::MessageEntry(zsummer::protocol4z::ReadStream & rs)
 
 void CClient::DoSend(unsigned short protocolID, unsigned long long clientTick, const char* text)
 {
-	char buf[_MSG_BUF_LEN];
-	zsummer::protocol4z::WriteStream ws(buf, _MSG_BUF_LEN);
+	zsummer::protocol4z::WriteStream<> ws;
 	ws << protocolID << clientTick << text;
-	DoSend(buf, ws.GetWriteLen());
+	DoSend(ws.GetWriteStream(), ws.GetWriteLen());
 }
 
 void CClient::DoSend(char *buf, unsigned short len)

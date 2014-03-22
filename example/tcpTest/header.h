@@ -39,10 +39,12 @@
 
 #ifndef ZSUMMER_HEADER_H_
 #define ZSUMMER_HEADER_H_
-#include "../../network/tcpaccept.h"
-#include "../../network/zsummer.h"
-#include "../../network/tcpsocket.h"
-#include "../../network/udpsocket.h"
+
+#include <zsummer_11x/zsummer.h>
+#include <zsummer_11x/tcpaccept.h>
+#include <zsummer_11x/tcpsocket.h>
+#include <zsummer_11x/udpsocket.h>
+
 #include <iostream>
 #include <queue>
 #include <iomanip>

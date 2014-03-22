@@ -34,8 +34,10 @@
  * (end of COPYRIGHT)
  */
 
-#include "../zsummer.h"
-#include "tcpaccept_impl.h"
+
+#include <zsummer_11x/iocp/iocp_impl.h>
+#include <zsummer_11x/iocp/tcpaccept_impl.h>
+
 
 using namespace zsummer::network;
 CTcpAcceptImpl::CTcpAcceptImpl(CZSummer &summer)

@@ -37,7 +37,7 @@
 
 #ifndef _ZSUMMER_11X_TIMER_H_
 #define _ZSUMMER_11X_TIMER_H_
-#include "../common/common.h"
+#include "./common/common.h"
 
 
 namespace zsummer

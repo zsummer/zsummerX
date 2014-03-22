@@ -34,57 +34,28 @@
 * (end of COPYRIGHT)
 */
 
-
-
-#ifndef _ZSUMMER_11X_IOCP_IMPL_H_
-#define _ZSUMMER_11X_IOCP_IMPL_H_
-
-
+#ifndef _ZSUMMER_EPOLL_IMPL_H_
+#define _ZSUMMER_EPOLL_IMPL_H_
 #include "../common/common.h"
-#include "../timer/timer.h"
+#include "../timer.h"
 
 namespace zsummer
 {
 	namespace network
 	{
-		//! 消息泵, message loop.
 		class CZSummerImpl
 		{
 		public:
-
-			CZSummerImpl()
-			{
-				m_io = NULL;
-			}
-			~CZSummerImpl()
-			{
-			}
-			inline bool Initialize()
-			{
-				if (m_io != NULL)
-				{
-					LCF("iocp is craeted !");
-					return false;
-				}
-				m_io = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, NULL, 1);
-				if (!m_io)
-				{
-					LCF("CreateIoCompletionPort False!");
-					return false;
-				}
-				return true;
-			}
+			typedef std::vector<void*> MsgVct;
+			CZSummerImpl();
+			~CZSummerImpl();
+			bool Initialize();
 			void RunOnce();
+
 			template <typename handle>
 			inline void Post(const handle &h)
 			{
-				PostMsg(PCK_USER_DATA, h);
-			}
-
-			inline void PostMsg(POST_COM_KEY pck, const _OnPostHandler &handle)
-			{
-				_OnPostHandler *ptr = new _OnPostHandler(handle);
-				PostQueuedCompletionStatus(m_io, 0, pck,(LPOVERLAPPED)(ptr));
+				PostMsg(h);
 			}
 			inline unsigned long long CreateTimer(unsigned int delayms, const _OnTimerHandler &handle)
 			{
@@ -94,12 +65,24 @@ namespace zsummer
 			{
 				return m_timer.CancelTimer(timerID);
 			}
+
+
+
 		public:
-			//! IOCP句柄
-			HANDLE m_io;
+			void PostMsg(const _OnPostHandler &handle);
+
+		public:
+			int	m_epoll;
+			//! 网络消息
+			epoll_event m_events[5000];
+			//线程消息
+			int		m_sockpair[2];
+			tagRegister m_register;
+			MsgVct	m_msgs;
+			std::mutex	m_msglock;
+
+			//! timmer
 			CTimer m_timer;
-
-
 		};
 	}
 

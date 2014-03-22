@@ -34,10 +34,12 @@
  * (end of COPYRIGHT)
  */
 
-#include "epoll_impl.h"
-#include "tcpaccept_impl.h"
-#include "tcpsocket_impl.h"
-#include "udpsocket_impl.h"
+
+#include <zsummer_11x/epoll/epoll_impl.h>
+#include <zsummer_11x/epoll/tcpsocket_impl.h>
+#include <zsummer_11x/epoll/tcpaccept_impl.h>
+#include <zsummer_11x/epoll/udpsocket_impl.h>
+
 using namespace zsummer::network;
 
 

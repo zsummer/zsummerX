@@ -34,7 +34,7 @@
  * (end of COPYRIGHT)
  */
 
-#include "common.h"
+#include <zsummer_11x/common/common.h>
 //init socket env
 zsummer::network::CInitEnvironment appInitEnvironment;
 LoggerId g_coreID;

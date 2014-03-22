@@ -34,5 +34,77 @@
  * (end of COPYRIGHT)
  */
 
+#include <zsummer_11x/iocp/iocp_impl.h>
+#include <zsummer_11x/iocp/tcpsocket_impl.h>
+#include <zsummer_11x/iocp/tcpaccept_impl.h>
+#include <zsummer_11x/iocp/udpsocket_impl.h>
 
-#include "timer.h"
+
+using namespace zsummer::network;
+
+void CZSummerImpl::RunOnce()
+{
+	if (m_io == NULL)
+	{
+		LCF("Can't Run Once. server not initialize or initialize false.");
+		return;
+	}
+
+	DWORD dwTranceCount = 0;
+	ULONG_PTR uComKey = NULL;
+	LPOVERLAPPED pOverlapped = NULL;
+
+	BOOL bRet = GetQueuedCompletionStatus(m_io, &dwTranceCount, &uComKey, &pOverlapped, m_timer.GetNextExpireTime()/*INFINITE*/);
+
+	//检查定时器超时状态
+	{
+		m_timer.CheckTimer();
+		if (!bRet && !pOverlapped)
+		{
+			//TIMEOUT
+			return;
+		}
+	}
+	
+	//! 检查自定义通知
+	if (uComKey == PCK_USER_DATA)
+	{
+		_OnPostHandler * func = (_OnPostHandler*) pOverlapped;
+		(*func)();
+		delete func;
+		return;
+	}
+	
+	//! 处理来自网络的通知
+	
+	unsigned char type = HandlerFromOverlaped(pOverlapped)->_type;
+	switch (type)
+	{
+	case tagReqHandle::HANDLE_ACCEPT:
+		{
+			CTcpAcceptImpl *pKey = (CTcpAcceptImpl *) uComKey;
+			pKey->OnIOCPMessage(bRet);
+		}
+		break;
+	case tagReqHandle::HANDLE_RECV:
+	case tagReqHandle::HANDLE_SEND:
+	case tagReqHandle::HANDLE_CONNECT:
+		{
+			CTcpSocketImpl *pKey = (CTcpSocketImpl *) uComKey;
+			pKey->OnIOCPMessage(bRet, dwTranceCount, type);
+		}
+		break;
+	case tagReqHandle::HANDLE_SENDTO:
+	case tagReqHandle::HANDLE_RECVFROM:
+		{
+			CUdpSocketImpl * pKey = (CUdpSocketImpl*) uComKey;
+			pKey->OnIOCPMessage(bRet, dwTranceCount, type);
+		}
+		break;
+	default:
+		LCE("GetQueuedCompletionStatus undefined type=" << type);
+	}
+	
+}
+
+

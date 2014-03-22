@@ -34,8 +34,9 @@
  * (end of COPYRIGHT)
  */
 
-#include "udpsocket_impl.h"
-#include "../zsummer.h"
+#include <zsummer_11x/epoll/epoll_impl.h>
+#include <zsummer_11x/epoll/udpsocket_impl.h>
+
 using namespace zsummer::network;
 
 

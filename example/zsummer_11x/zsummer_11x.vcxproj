@@ -18,6 +18,26 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\common\common.cpp" />
+    <ClCompile Include="..\..\src\iocp\iocp_impl.cpp" />
+    <ClCompile Include="..\..\src\iocp\tcpaccept_impl.cpp" />
+    <ClCompile Include="..\..\src\iocp\tcpsocket_impl.cpp" />
+    <ClCompile Include="..\..\src\iocp\udpsocket_impl.cpp" />
+    <ClCompile Include="..\..\src\timer\timer.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\include\zsummer_11x\common\common.h" />
+    <ClInclude Include="..\..\include\zsummer_11x\iocp\iocp_impl.h" />
+    <ClInclude Include="..\..\include\zsummer_11x\iocp\tcpaccept_impl.h" />
+    <ClInclude Include="..\..\include\zsummer_11x\iocp\tcpsocket_impl.h" />
+    <ClInclude Include="..\..\include\zsummer_11x\iocp\udpsocket_impl.h" />
+    <ClInclude Include="..\..\include\zsummer_11x\tcpaccept.h" />
+    <ClInclude Include="..\..\include\zsummer_11x\tcpsocket.h" />
+    <ClInclude Include="..\..\include\zsummer_11x\timer.h" />
+    <ClInclude Include="..\..\include\zsummer_11x\udpsocket.h" />
+    <ClInclude Include="..\..\include\zsummer_11x\zsummer.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{06D64BC9-7AD1-40A1-835A-54BCC3ABFE39}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -92,7 +112,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../depends</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../depends;..\..\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -108,7 +128,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>../../depends</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../depends;..\..\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -124,7 +144,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../depends</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../depends;..\..\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <BrowseInformation>true</BrowseInformation>
     </ClCompile>
@@ -148,7 +168,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>../../depends</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../depends;..\..\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -157,26 +177,6 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\network\common\common.cpp" />
-    <ClCompile Include="..\..\network\iocp\iocp_impl.cpp" />
-    <ClCompile Include="..\..\network\iocp\tcpaccept_impl.cpp" />
-    <ClCompile Include="..\..\network\iocp\tcpsocket_impl.cpp" />
-    <ClCompile Include="..\..\network\iocp\udpsocket_impl.cpp" />
-    <ClCompile Include="..\..\network\timer\timer.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\network\common\common.h" />
-    <ClInclude Include="..\..\network\iocp\iocp_impl.h" />
-    <ClInclude Include="..\..\network\iocp\tcpaccept_impl.h" />
-    <ClInclude Include="..\..\network\iocp\tcpsocket_impl.h" />
-    <ClInclude Include="..\..\network\iocp\udpsocket_impl.h" />
-    <ClInclude Include="..\..\network\tcpaccept.h" />
-    <ClInclude Include="..\..\network\tcpsocket.h" />
-    <ClInclude Include="..\..\network\timer\timer.h" />
-    <ClInclude Include="..\..\network\udpsocket.h" />
-    <ClInclude Include="..\..\network\zsummer.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

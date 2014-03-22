@@ -4,23 +4,20 @@
     <ClCompile Include="..\..\depends\log4z\log4z.cpp">
       <Filter>log</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\network\common\common.cpp">
-      <Filter>network\common</Filter>
+    <ClCompile Include="..\..\src\epoll\epoll_impl.cpp">
+      <Filter>epoll</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\network\epoll\epoll_impl.cpp">
-      <Filter>network\impl</Filter>
+    <ClCompile Include="..\..\src\epoll\tcpaccept_impl.cpp">
+      <Filter>epoll</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\network\epoll\tcpaccept_impl.cpp">
-      <Filter>network\impl</Filter>
+    <ClCompile Include="..\..\src\epoll\tcpsocket_impl.cpp">
+      <Filter>epoll</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\network\epoll\tcpsocket_impl.cpp">
-      <Filter>network\impl</Filter>
+    <ClCompile Include="..\..\src\epoll\udpsocket_impl.cpp">
+      <Filter>epoll</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\network\timer\timer.cpp">
-      <Filter>network\timer</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\network\epoll\udpsocket_impl.cpp">
-      <Filter>network\impl</Filter>
+    <ClCompile Include="..\..\src\common\common.cpp">
+      <Filter>epoll</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -30,58 +27,28 @@
     <ClInclude Include="..\..\depends\protocol4z\protocol4z.h">
       <Filter>protocol</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\network\common\common.h">
-      <Filter>network\common</Filter>
+    <ClInclude Include="..\..\include\zsummer_11x\epoll\epoll_impl.h">
+      <Filter>epoll</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\network\zsummer.h">
-      <Filter>network\interface</Filter>
+    <ClInclude Include="..\..\include\zsummer_11x\epoll\tcpaccept_impl.h">
+      <Filter>epoll</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\network\udpsocket.h">
-      <Filter>network\interface</Filter>
+    <ClInclude Include="..\..\include\zsummer_11x\epoll\tcpsocket_impl.h">
+      <Filter>epoll</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\network\tcpsocket.h">
-      <Filter>network\interface</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\network\tcpaccept.h">
-      <Filter>network\interface</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\network\epoll\epoll_impl.h">
-      <Filter>network\impl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\network\epoll\tcpaccept_impl.h">
-      <Filter>network\impl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\network\epoll\tcpsocket_impl.h">
-      <Filter>network\impl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\network\timer\timer.h">
-      <Filter>network\timer</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\network\epoll\udpsocket_impl.h">
-      <Filter>network\impl</Filter>
+    <ClInclude Include="..\..\include\zsummer_11x\epoll\udpsocket_impl.h">
+      <Filter>epoll</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="log">
       <UniqueIdentifier>{02d03eaf-85db-4dd2-9262-51d4670d5d72}</UniqueIdentifier>
     </Filter>
-    <Filter Include="network">
-      <UniqueIdentifier>{1670c306-e1cc-4a8e-b20d-e1feac7c711b}</UniqueIdentifier>
-    </Filter>
     <Filter Include="protocol">
       <UniqueIdentifier>{6b011759-e949-4564-8601-174bc6f5f5bb}</UniqueIdentifier>
     </Filter>
-    <Filter Include="network\common">
-      <UniqueIdentifier>{c120ed60-881d-4ccd-bd00-4c82d1beca87}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="network\interface">
-      <UniqueIdentifier>{4384d924-e949-4d78-846b-4f8945c1a335}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="network\impl">
-      <UniqueIdentifier>{66f02dd1-764c-4d25-b3fd-0bed666121cf}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="network\timer">
-      <UniqueIdentifier>{6b642e2e-8710-4357-9d62-05460c6fd313}</UniqueIdentifier>
+    <Filter Include="epoll">
+      <UniqueIdentifier>{b788592e-3288-4971-9208-ec5b7f498c96}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

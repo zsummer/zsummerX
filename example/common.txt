@@ -1,6 +1,6 @@
 
 include_directories(${DEP_DIR})
-include_directories(${NET_DIR})
+include_directories(${INC_DIR})
 aux_source_directory(./ source)    
 
 link_libraries(zsummer_11x log4z pthread rt)

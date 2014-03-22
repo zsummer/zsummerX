@@ -146,26 +146,19 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\depends\log4z\log4z.cpp" />
-    <ClCompile Include="..\..\network\common\common.cpp" />
-    <ClCompile Include="..\..\network\epoll\epoll_impl.cpp" />
-    <ClCompile Include="..\..\network\epoll\tcpaccept_impl.cpp" />
-    <ClCompile Include="..\..\network\epoll\tcpsocket_impl.cpp" />
-    <ClCompile Include="..\..\network\epoll\udpsocket_impl.cpp" />
-    <ClCompile Include="..\..\network\timer\timer.cpp" />
+    <ClCompile Include="..\..\src\common\common.cpp" />
+    <ClCompile Include="..\..\src\epoll\epoll_impl.cpp" />
+    <ClCompile Include="..\..\src\epoll\tcpaccept_impl.cpp" />
+    <ClCompile Include="..\..\src\epoll\tcpsocket_impl.cpp" />
+    <ClCompile Include="..\..\src\epoll\udpsocket_impl.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\depends\log4z\log4z.h" />
     <ClInclude Include="..\..\depends\protocol4z\protocol4z.h" />
-    <ClInclude Include="..\..\network\common\common.h" />
-    <ClInclude Include="..\..\network\epoll\epoll_impl.h" />
-    <ClInclude Include="..\..\network\epoll\tcpaccept_impl.h" />
-    <ClInclude Include="..\..\network\epoll\tcpsocket_impl.h" />
-    <ClInclude Include="..\..\network\epoll\udpsocket_impl.h" />
-    <ClInclude Include="..\..\network\tcpaccept.h" />
-    <ClInclude Include="..\..\network\tcpsocket.h" />
-    <ClInclude Include="..\..\network\timer\timer.h" />
-    <ClInclude Include="..\..\network\udpsocket.h" />
-    <ClInclude Include="..\..\network\zsummer.h" />
+    <ClInclude Include="..\..\include\zsummer_11x\epoll\epoll_impl.h" />
+    <ClInclude Include="..\..\include\zsummer_11x\epoll\tcpaccept_impl.h" />
+    <ClInclude Include="..\..\include\zsummer_11x\epoll\tcpsocket_impl.h" />
+    <ClInclude Include="..\..\include\zsummer_11x\epoll\udpsocket_impl.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

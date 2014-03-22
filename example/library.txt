@@ -1,5 +1,6 @@
 
 include_directories(${DEP_DIR})
+include_directories(${INC_DIR})
 if (NOT CMAKE_BUILD_TYPE STREQUAL 'DEBUG')
   add_definitions(-Wall  -static -O2 -std=c++11 -DNODEBUG)
 else()

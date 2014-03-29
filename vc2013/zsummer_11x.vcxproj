@@ -19,24 +19,24 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\common\common.cpp" />
-    <ClCompile Include="..\..\src\iocp\iocp_impl.cpp" />
-    <ClCompile Include="..\..\src\iocp\tcpaccept_impl.cpp" />
-    <ClCompile Include="..\..\src\iocp\tcpsocket_impl.cpp" />
-    <ClCompile Include="..\..\src\iocp\udpsocket_impl.cpp" />
-    <ClCompile Include="..\..\src\timer\timer.cpp" />
+    <ClCompile Include="..\src\common\common.cpp" />
+    <ClCompile Include="..\src\iocp\iocp_impl.cpp" />
+    <ClCompile Include="..\src\iocp\tcpaccept_impl.cpp" />
+    <ClCompile Include="..\src\iocp\tcpsocket_impl.cpp" />
+    <ClCompile Include="..\src\iocp\udpsocket_impl.cpp" />
+    <ClCompile Include="..\src\timer\timer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\include\zsummer_11x\common\common.h" />
-    <ClInclude Include="..\..\include\zsummer_11x\iocp\iocp_impl.h" />
-    <ClInclude Include="..\..\include\zsummer_11x\iocp\tcpaccept_impl.h" />
-    <ClInclude Include="..\..\include\zsummer_11x\iocp\tcpsocket_impl.h" />
-    <ClInclude Include="..\..\include\zsummer_11x\iocp\udpsocket_impl.h" />
-    <ClInclude Include="..\..\include\zsummer_11x\tcpaccept.h" />
-    <ClInclude Include="..\..\include\zsummer_11x\tcpsocket.h" />
-    <ClInclude Include="..\..\include\zsummer_11x\timer.h" />
-    <ClInclude Include="..\..\include\zsummer_11x\udpsocket.h" />
-    <ClInclude Include="..\..\include\zsummer_11x\zsummer.h" />
+    <ClInclude Include="..\include\zsummer_11x\common\common.h" />
+    <ClInclude Include="..\include\zsummer_11x\iocp\iocp_impl.h" />
+    <ClInclude Include="..\include\zsummer_11x\iocp\tcpaccept_impl.h" />
+    <ClInclude Include="..\include\zsummer_11x\iocp\tcpsocket_impl.h" />
+    <ClInclude Include="..\include\zsummer_11x\iocp\udpsocket_impl.h" />
+    <ClInclude Include="..\include\zsummer_11x\tcpaccept.h" />
+    <ClInclude Include="..\include\zsummer_11x\tcpsocket.h" />
+    <ClInclude Include="..\include\zsummer_11x\timer.h" />
+    <ClInclude Include="..\include\zsummer_11x\udpsocket.h" />
+    <ClInclude Include="..\include\zsummer_11x\zsummer.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{06D64BC9-7AD1-40A1-835A-54BCC3ABFE39}</ProjectGuid>
@@ -88,22 +88,23 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>..\..\libs</OutDir>
-    <TargetName>$(ProjectName)_d</TargetName>
+    <OutDir>..\libs</OutDir>
+    <TargetName>$(ProjectName)_win32d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>..\..\libs</OutDir>
-    <TargetName>$(ProjectName)_64d</TargetName>
+    <OutDir>..\libs</OutDir>
+    <TargetName>$(ProjectName)_win64d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>..\..\libs</OutDir>
+    <OutDir>..\libs</OutDir>
+    <TargetName>$(ProjectName)_win32</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>..\..\libs</OutDir>
-    <TargetName>$(ProjectName)_64</TargetName>
+    <OutDir>..\libs</OutDir>
+    <TargetName>$(ProjectName)_win64</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -112,8 +113,8 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../depends;..\..\include</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalIncludeDirectories>../depends;..\include</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -127,8 +128,8 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>../../depends;..\..\include</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <AdditionalIncludeDirectories>../depends;..\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -144,9 +145,9 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../depends;..\..\include</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <BrowseInformation>true</BrowseInformation>
+      <AdditionalIncludeDirectories>../depends;..\include</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <BrowseInformation>false</BrowseInformation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -167,8 +168,8 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>../../depends;..\..\include</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <AdditionalIncludeDirectories>../depends;..\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

@@ -1,19 +1,23 @@
 
 include_directories(${DEP_DIR})
 include_directories(${INC_DIR})
-aux_source_directory(./ source)    
-
-link_libraries(zsummer_11x log4z pthread rt)
 link_directories(${LIB_DIR})
-if (NOT CMAKE_BUILD_TYPE STREQUAL 'DEBUG')
-  add_definitions(-Wall  -static -O2 -std=c++11 -DNODEBUG)
-  set(CMAKE_EXE_LINKER_FLAGS "-static -O2")
+
+aux_source_directory(./ source)    
+set(BINNAME ${PROJECT_NAME})
+if (NOT CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+  link_libraries(zsummer_11x log4z pthread rt)
+  add_definitions(-Wall -O2 -std=c++11 -DNODEBUG)
+  message("NAME=" ${BINNAME} " --RELEASE")
 else()
-  add_definitions(-Wall -g -ggdb -pg  -O0 -std=c++11)
-  set(CMAKE_EXE_LINKER_FLAGS "-pg")
+  link_libraries(zsummer_11x_d log4z_d pthread rt)
+  add_definitions(-Wall -g -ggdb -O0 -std=c++11)
+  set(BINNAME ${PROJECT_NAME}_d)
+  message("NAME=" ${BINNAME} " --DEBUG")
 endif()
-message("NAME=" ${PROJECT_NAME} ", LINKER FLAGS=" ${CMAKE_EXE_LINKER_FLAGS})
+
+
 set(EXECUTABLE_OUTPUT_PATH ${BIN_DIR})
-add_executable(${PROJECT_NAME} ${source})
+add_executable(${BINNAME} ${source})
 
 

@@ -13,20 +13,48 @@ MIT开源 代码可以任意使用在任何场合.
 完全异步的接口设计.  
   
 
-#编译需求  
+#编译要求  
 windows下VS2013或者以上版本  
 linux下g++4.7或者以上版本.  
 
-#编译方法  
-# build server & client  
-in linux:   
-cd zsummer_11x/example  
-cmake .  
+#compile in linux  
+###build log4z library  
+cd zsummer_11x/depends/log4z/g++/  
+cmake -DCMAKE_BUILD_TYPE=DEBUG .   
 make  
+###build zsummer_11x library  
+cd zsummer_11x/g++/  
+cmake -DCMAKE_BUILD_TYPE=DEBUG .   
+make  
+### build tcpTest & udpTest   
+cd zsummer_11x/example/  
+cmake -DCMAKE_BUILD_TYPE=DEBUG .   
+make   
+### runing tcpTest server   
+cd zsummer_11x/example/bin/  
+./tcpTest_d 0.0.0.0 81  
+### runing tcpTest client   
+cd zsummer_11x/example/bin/   
+./tcpTest_d 127.0.0.1 81 1 1  
+  
+#compile in windows   
+###build log4z library  
+cd zsummer_11x/depends/log4z/vc2005   
+compile log4z.vcxproj  
+###build zsummer_11x library  
+cd zsummer_11x/vc2013/  
+compile zsummer_11x.vcxproj  
+### build tcpTest & udpTest   
+cd zsummer_11x/example/  
+compile zsummer_11x.sln    
+### runing tcpTest server   
+cd zsummer_11x/example/bin/  
+tcpTest_win32d.exe 0.0.0.0 81  
+### runing tcpTest client   
+cd zsummer_11x/example/bin/   
+tcpTest_win32d.exe 127.0.0.1 81 1 1  
 
-in windows:  
-cd zsummer_11x/example  
-use vs2013 open  zsummer_11x.sln  
+ 
 
 
 # auther: 张亚伟 YaweiZhang  

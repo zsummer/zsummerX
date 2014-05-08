@@ -1,8 +1,8 @@
-Welcome to the ZSUMMER_11X wiki!  
+Welcome to the zsummerX wiki!  
   
 # introduction:  
-zsummer_11x是一款C++ 跨平台的 高性能的 轻量级的网络底层库, 支持TCP, UDP, 拥有完善的定时器机制与日志系统.    
-zsummer_11x相较于zsummer来说, 使用function+bind来代替原先的抽象类接口, 让库的使用更简洁灵活. 使用shared_ptr来控制对象的生命周期让代码在流程上更为简约.  
+zsummerX 是一款C++ 跨平台的 高性能的 轻量级的网络底层库, 支持TCP, UDP, 拥有完善的定时器机制与日志系统.    
+zsummerX 相较于zsummer来说, 使用function+bind来代替原先的抽象类接口, 让库的使用更简洁灵活. 使用shared_ptr来控制对象的生命周期让代码在流程上更为简约.  
 
 # 优点:    
 MIT开源 代码可以任意使用在任何场合.  
@@ -19,39 +19,39 @@ linux下g++4.7或者以上版本.
 
 #compile in linux  
 ###build log4z library  
-cd zsummer_11x/depends/log4z/g++/  
+cd zsummerX/depends/log4z/g++/  
 cmake -DCMAKE_BUILD_TYPE=DEBUG .   
 make  
-###build zsummer_11x library  
-cd zsummer_11x/g++/  
+###build zsummerX library  
+cd zsummerX/g++/  
 cmake -DCMAKE_BUILD_TYPE=DEBUG .   
 make  
 ### build tcpTest & udpTest   
-cd zsummer_11x/example/  
+cd zsummerX/example/  
 cmake -DCMAKE_BUILD_TYPE=DEBUG .   
 make   
 ### runing tcpTest server   
-cd zsummer_11x/example/bin/  
+cd zsummerX/example/bin/  
 ./tcpTest_d 0.0.0.0 81  
 ### runing tcpTest client   
-cd zsummer_11x/example/bin/   
+cd zsummerX/example/bin/   
 ./tcpTest_d 127.0.0.1 81 1 1  
   
 #compile in windows   
 ###build log4z library  
-cd zsummer_11x/depends/log4z/vc2005   
+cd zsummerX/depends/log4z/vc2005   
 compile log4z.vcxproj  
-###build zsummer_11x library  
-cd zsummer_11x/vc2013/  
-compile zsummer_11x.vcxproj  
+###build zsummerXlibrary  
+cd zsummerX/vc2013/  
+compile zsummerX.vcxproj  
 ### build tcpTest & udpTest   
-cd zsummer_11x/example/  
-compile zsummer_11x.sln    
+cd zsummerX/example/  
+compile zsummerX.sln    
 ### runing tcpTest server   
-cd zsummer_11x/example/bin/  
+cd zsummerX/example/bin/  
 tcpTest_win32d.exe 0.0.0.0 81  
 ### runing tcpTest client   
-cd zsummer_11x/example/bin/   
+cd zsummerX/example/bin/   
 tcpTest_win32d.exe 127.0.0.1 81 1 1  
 
  

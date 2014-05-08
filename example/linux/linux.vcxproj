@@ -155,10 +155,10 @@
   <ItemGroup>
     <ClInclude Include="..\..\depends\log4z\log4z.h" />
     <ClInclude Include="..\..\depends\protocol4z\protocol4z.h" />
-    <ClInclude Include="..\..\include\zsummer_11x\epoll\epoll_impl.h" />
-    <ClInclude Include="..\..\include\zsummer_11x\epoll\tcpaccept_impl.h" />
-    <ClInclude Include="..\..\include\zsummer_11x\epoll\tcpsocket_impl.h" />
-    <ClInclude Include="..\..\include\zsummer_11x\epoll\udpsocket_impl.h" />
+    <ClInclude Include="..\..\include\zsummerX\epoll\epoll_impl.h" />
+    <ClInclude Include="..\..\include\zsummerX\epoll\tcpaccept_impl.h" />
+    <ClInclude Include="..\..\include\zsummerX\epoll\tcpsocket_impl.h" />
+    <ClInclude Include="..\..\include\zsummerX\epoll\udpsocket_impl.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

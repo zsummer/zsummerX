@@ -47,34 +47,34 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\include\zsummer_11x\common\common.h">
+    <ClInclude Include="..\include\zsummerX\common\common.h">
       <Filter>include\common</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\zsummer_11x\iocp\iocp_impl.h">
+    <ClInclude Include="..\include\zsummerX\iocp\iocp_impl.h">
       <Filter>include\impl</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\zsummer_11x\iocp\tcpaccept_impl.h">
+    <ClInclude Include="..\include\zsummerX\iocp\tcpaccept_impl.h">
       <Filter>include\impl</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\zsummer_11x\iocp\tcpsocket_impl.h">
+    <ClInclude Include="..\include\zsummerX\iocp\tcpsocket_impl.h">
       <Filter>include\impl</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\zsummer_11x\iocp\udpsocket_impl.h">
+    <ClInclude Include="..\include\zsummerX\iocp\udpsocket_impl.h">
       <Filter>include\impl</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\zsummer_11x\tcpaccept.h">
+    <ClInclude Include="..\include\zsummerX\tcpaccept.h">
       <Filter>include\interface</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\zsummer_11x\tcpsocket.h">
+    <ClInclude Include="..\include\zsummerX\tcpsocket.h">
       <Filter>include\interface</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\zsummer_11x\udpsocket.h">
+    <ClInclude Include="..\include\zsummerX\udpsocket.h">
       <Filter>include\interface</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\zsummer_11x\zsummer.h">
+    <ClInclude Include="..\include\zsummerX\zsummer.h">
       <Filter>include\interface</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\zsummer_11x\timer.h">
+    <ClInclude Include="..\include\zsummerX\timer.h">
       <Filter>include\interface</Filter>
     </ClInclude>
   </ItemGroup>

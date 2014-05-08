@@ -27,20 +27,20 @@
     <ClInclude Include="Schedule.h">
       <Filter>main</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\zsummer_11x\tcpaccept.h">
-      <Filter>zsummer_11x\interface</Filter>
+    <ClInclude Include="..\..\include\zsummerX\tcpaccept.h">
+      <Filter>zsummerX\interface</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\zsummer_11x\tcpsocket.h">
-      <Filter>zsummer_11x\interface</Filter>
+    <ClInclude Include="..\..\include\zsummerX\tcpsocket.h">
+      <Filter>zsummerX\interface</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\zsummer_11x\udpsocket.h">
-      <Filter>zsummer_11x\interface</Filter>
+    <ClInclude Include="..\..\include\zsummerX\udpsocket.h">
+      <Filter>zsummerX\interface</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\zsummer_11x\zsummer.h">
-      <Filter>zsummer_11x\interface</Filter>
+    <ClInclude Include="..\..\include\zsummerX\zsummer.h">
+      <Filter>zsummerX\interface</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\zsummer_11x\timer.h">
-      <Filter>zsummer_11x\interface</Filter>
+    <ClInclude Include="..\..\include\zsummerX\timer.h">
+      <Filter>zsummerX\interface</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -61,10 +61,10 @@
     <Filter Include="main">
       <UniqueIdentifier>{eae75d06-8690-4446-9b92-dd83bc433026}</UniqueIdentifier>
     </Filter>
-    <Filter Include="zsummer_11x">
+    <Filter Include="zsummerX">
       <UniqueIdentifier>{ffdd01b2-2624-450d-a043-d12e1a690ece}</UniqueIdentifier>
     </Filter>
-    <Filter Include="zsummer_11x\interface">
+    <Filter Include="zsummerX\interface">
       <UniqueIdentifier>{7264f9df-b800-49cf-8a37-68b453ea3aea}</UniqueIdentifier>
     </Filter>
   </ItemGroup>

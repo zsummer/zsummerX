@@ -40,10 +40,10 @@
 #ifndef ZSUMMER_HEADER_H_
 #define ZSUMMER_HEADER_H_
 
-#include <zsummer_11x/zsummer.h>
-#include <zsummer_11x/tcpaccept.h>
-#include <zsummer_11x/tcpsocket.h>
-#include <zsummer_11x/udpsocket.h>
+#include <zsummerX/zsummer.h>
+#include <zsummerX/tcpaccept.h>
+#include <zsummerX/tcpsocket.h>
+#include <zsummerX/udpsocket.h>
 
 #include <iostream>
 #include <queue>
@@ -69,22 +69,22 @@ struct Packet
 typedef std::shared_ptr<Packet> PacketPtr;
 typedef std::shared_ptr<zsummer::network::CTcpSocket> CTcpSocketPtr;
 
-const char g_text[] = "zsummer_11x:test text.........  zsummer_11x:test text.........  " //64
-					  "zsummer_11x:test text.........  zsummer_11x:test text.........  " //
-					  "zsummer_11x:test text.........  zsummer_11x:test text.........  " //
-					  "zsummer_11x:test text.........  zsummer_11x:test text.........  " //
-					  "zsummer_11x:test text.........  zsummer_11x:test text.........  " //
-					  "zsummer_11x:test text.........  zsummer_11x:test text.........  " //
-					  "zsummer_11x:test text.........  zsummer_11x:test text.........  " //
-					  "zsummer_11x:test text.........  zsummer_11x:test text.........  " // *8
-					  "zsummer_11x:test text.........  zsummer_11x:test text.........  " //
-					  "zsummer_11x:test text.........  zsummer_11x:test text.........  " //
-					  "zsummer_11x:test text.........  zsummer_11x:test text.........  " //
-					  "zsummer_11x:test text.........  zsummer_11x:test text.........  " //
-					  "zsummer_11x:test text.........  zsummer_11x:test text.........  " //
-					  "zsummer_11x:test text.........  zsummer_11x:test text.........  " //
-					  "zsummer_11x:test text.........  zsummer_11x:test text.........  " //
-					  "zsummer_11x:test text.........  zsummer_11x:test text.........  "; // *16 =1024
+const char g_text[] = "zsummerX:test text.........  zsummerX:test text.........  " //64
+					  "zsummerX:test text.........  zsummerX:test text.........  " //
+					  "zsummerX:test text.........  zsummerX:test text.........  " //
+					  "zsummerX:test text.........  zsummerX:test text.........  " //
+					  "zsummerX:test text.........  zsummerX:test text.........  " //
+					  "zsummerX:test text.........  zsummerX:test text.........  " //
+					  "zsummerX:test text.........  zsummerX:test text.........  " //
+					  "zsummerX:test text.........  zsummerX:test text.........  " // *8
+					  "zsummerX:test text.........  zsummerX:test text.........  " //
+					  "zsummerX:test text.........  zsummerX:test text.........  " //
+					  "zsummerX:test text.........  zsummerX:test text.........  " //
+					  "zsummerX:test text.........  zsummerX:test text.........  " //
+					  "zsummerX:test text.........  zsummerX:test text.........  " //
+					  "zsummerX:test text.........  zsummerX:test text.........  " //
+					  "zsummerX:test text.........  zsummerX:test text.........  " //
+					  "zsummerX:test text.........  zsummerX:test text.........  "; // *16 =1024
 
 
 #define  NOW_TIME (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count())

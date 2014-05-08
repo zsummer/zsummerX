@@ -38,8 +38,8 @@
 //! mainÎÄ¼ş
 
 #include <signal.h>
-#include <zsummer_11x/zsummer.h>
-#include <zsummer_11x/udpsocket.h>
+#include <zsummerX/zsummer.h>
+#include <zsummerX/udpsocket.h>
 #include <log4z/log4z.h>
 #include <protocol4z/protocol4z.h>
 using namespace std;

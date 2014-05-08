@@ -1,9 +1,9 @@
 /*
- * ZSUMMER_11X License
+ * zsummerX License
  * -----------
  * 
- * ZSUMMER_11X is licensed under the terms of the MIT license reproduced below.
- * This means that ZSUMMER_11X is free software and can be used for both academic
+ * zsummerX is licensed under the terms of the MIT license reproduced below.
+ * This means that zsummerX is free software and can be used for both academic
  * and commercial purposes at absolutely no cost.
  * 
  * 
@@ -34,10 +34,10 @@
  * (end of COPYRIGHT)
  */
 
-#include <zsummer_11x/iocp/iocp_impl.h>
-#include <zsummer_11x/iocp/tcpsocket_impl.h>
-#include <zsummer_11x/iocp/tcpaccept_impl.h>
-#include <zsummer_11x/iocp/udpsocket_impl.h>
+#include <zsummerX/iocp/iocp_impl.h>
+#include <zsummerX/iocp/tcpsocket_impl.h>
+#include <zsummerX/iocp/tcpaccept_impl.h>
+#include <zsummerX/iocp/udpsocket_impl.h>
 
 
 using namespace zsummer::network;

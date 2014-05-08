@@ -1,9 +1,9 @@
 /*
- * ZSUMMER_11X License
+ * zsummerX License
  * -----------
  * 
- * ZSUMMER_11X is licensed under the terms of the MIT license reproduced below.
- * This means that ZSUMMER_11X is free software and can be used for both academic
+ * zsummerX is licensed under the terms of the MIT license reproduced below.
+ * This means that zsummerX is free software and can be used for both academic
  * and commercial purposes at absolutely no cost.
  * 
  * 
@@ -38,8 +38,8 @@
 
 
 
-#ifndef _ZSUMMER_11X_TCPSOCKET_H_
-#define _ZSUMMER_11X_TCPSOCKET_H_
+#ifndef _ZSUMMERX_TCPSOCKET_H_
+#define _ZSUMMERX_TCPSOCKET_H_
 #ifdef WIN32
 #include "iocp/tcpsocket_impl.h"
 #else

@@ -1,9 +1,9 @@
 /*
-* ZSUMMER_11X License
+* zsummerX License
 * -----------
 * 
-* ZSUMMER_11X is licensed under the terms of the MIT license reproduced below.
-* This means that ZSUMMER_11X is free software and can be used for both academic
+* zsummerX is licensed under the terms of the MIT license reproduced below.
+* This means that zsummerX is free software and can be used for both academic
 * and commercial purposes at absolutely no cost.
 * 
 * 
@@ -33,67 +33,51 @@
 * 
 * (end of COPYRIGHT)
 */
-#ifndef _ZSUMMER_11X_TCPSOCKET_IMPL_H_
-#define _ZSUMMER_11X_TCPSOCKET_IMPL_H_
+#ifndef _ZSUMMERX_TCPACCEPT_IMPL_H_
+#define _ZSUMMERX_TCPACCEPT_IMPL_H_
 
 #include "../common/common.h"
 #include "../zsummer.h"
+#include "../tcpsocket.h"
 namespace zsummer
 {
 	namespace network
 	{
-		class CTcpSocketImpl
+		class CTcpAcceptImpl
 		{
 		public:
 
-			CTcpSocketImpl();
-			~CTcpSocketImpl();
-			bool Initialize(CZSummer & summer);
-			inline bool GetPeerInfo(std::string& remoteIP, unsigned short &remotePort)
-			{
-				remoteIP = m_remoteIP;
-				remotePort = m_remotePort;
-			}
-			bool DoConnect(std::string remoteIP, unsigned short remotePort, const _OnConnectHandler & handler);
-			bool DoSend(char * buf, unsigned int len, const _OnSendHandler &handler);
-			bool DoRecv(char * buf, unsigned int len, const _OnRecvHandler & handler);
-			bool DoClose();
-		public:
-			bool AttachEstablishedSocket(SOCKET s, std::string remoteIP, unsigned short remotePort);
-			bool OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned char cType);
-		public:
-			//private
-			CZSummer *  m_summer;
-			SOCKET		m_socket;
-			std::string m_remoteIP;
-			unsigned short m_remotePort;
+			CTcpAcceptImpl(CZSummer &summer);
+			virtual ~CTcpAcceptImpl();
+			bool OpenAccept(const char * ip, unsigned short port);
+			bool DoAccept(CTcpSocketPtr& s, const _OnAcceptHandler &handler);
+			bool OnIOCPMessage(BOOL bSuccess);
 
-			//recv
-			tagReqHandle m_recvHandle;
-			WSABUF		 m_recvWSABuf;
-			_OnRecvHandler m_onRecvHandler;
+			//config
+			CZSummer	*m_summer;
 
 
-			//send
-			tagReqHandle m_sendHandle;
-			WSABUF		 m_sendWsaBuf;
-			_OnSendHandler m_onSendHandler;
+			std::string		m_ip;
+			short			m_port;
+			//listen
+			SOCKET			m_server;
+			SOCKADDR_IN		m_addr;
 
+			//client
+			SOCKET m_socket;
+			char m_recvBuf[200];
+			DWORD m_recvLen;
+			tagReqHandle m_handle;
+			_OnAcceptHandler m_onAcceptHandler;
+			CTcpSocketPtr m_client;
 
-			//connect
-			tagReqHandle m_connectHandle;
-			_OnConnectHandler m_onConnectHandler;
 			//status
-			bool m_isRecving;
-			bool m_isSending;
-			bool m_isConnecting;
+			bool m_bAccpetLock;
 			int m_nLinkStatus;
 		};
 	}
+
 }
-
-
-
 
 
 

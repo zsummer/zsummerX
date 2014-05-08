@@ -1,9 +1,9 @@
 /*
-* ZSUMMER_11X License
+* zsummerX License
 * -----------
 * 
-* ZSUMMER_11X is licensed under the terms of the MIT license reproduced below.
-* This means that ZSUMMER_11X is free software and can be used for both academic
+* zsummerX is licensed under the terms of the MIT license reproduced below.
+* This means that zsummerX is free software and can be used for both academic
 * and commercial purposes at absolutely no cost.
 * 
 * 
@@ -33,47 +33,73 @@
 * 
 * (end of COPYRIGHT)
 */
-#ifndef _ZSUMMER_11X_TCPACCEPT_IMPL_H_
-#define _ZSUMMER_11X_TCPACCEPT_IMPL_H_
+
+
+
+#ifndef _ZSUMMERX_IOCP_IMPL_H_
+#define _ZSUMMERX_IOCP_IMPL_H_
+
 
 #include "../common/common.h"
-#include "../zsummer.h"
-#include "../tcpsocket.h"
+#include "../timer.h"
+
 namespace zsummer
 {
 	namespace network
 	{
-		class CTcpAcceptImpl
+		//! ÏûÏ¢±Ã, message loop.
+		class CZSummerImpl
 		{
 		public:
 
-			CTcpAcceptImpl(CZSummer &summer);
-			virtual ~CTcpAcceptImpl();
-			bool OpenAccept(const char * ip, unsigned short port);
-			bool DoAccept(CTcpSocketPtr& s, const _OnAcceptHandler &handler);
-			bool OnIOCPMessage(BOOL bSuccess);
+			CZSummerImpl()
+			{
+				m_io = NULL;
+			}
+			~CZSummerImpl()
+			{
+			}
+			inline bool Initialize()
+			{
+				if (m_io != NULL)
+				{
+					LCF("iocp is craeted !");
+					return false;
+				}
+				m_io = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, NULL, 1);
+				if (!m_io)
+				{
+					LCF("CreateIoCompletionPort False!");
+					return false;
+				}
+				return true;
+			}
+			void RunOnce();
+			template <typename handle>
+			inline void Post(const handle &h)
+			{
+				PostMsg(PCK_USER_DATA, h);
+			}
 
-			//config
-			CZSummer	*m_summer;
+			inline void PostMsg(POST_COM_KEY pck, const _OnPostHandler &handle)
+			{
+				_OnPostHandler *ptr = new _OnPostHandler(handle);
+				PostQueuedCompletionStatus(m_io, 0, pck,(LPOVERLAPPED)(ptr));
+			}
+			inline unsigned long long CreateTimer(unsigned int delayms, const _OnTimerHandler &handle)
+			{
+				return m_timer.CreateTimer(delayms, handle);
+			}
+			inline bool CancelTimer(unsigned long long timerID)
+			{
+				return m_timer.CancelTimer(timerID);
+			}
+		public:
+			//! IOCP¾ä±ú
+			HANDLE m_io;
+			CTimer m_timer;
 
 
-			std::string		m_ip;
-			short			m_port;
-			//listen
-			SOCKET			m_server;
-			SOCKADDR_IN		m_addr;
-
-			//client
-			SOCKET m_socket;
-			char m_recvBuf[200];
-			DWORD m_recvLen;
-			tagReqHandle m_handle;
-			_OnAcceptHandler m_onAcceptHandler;
-			CTcpSocketPtr m_client;
-
-			//status
-			bool m_bAccpetLock;
-			int m_nLinkStatus;
 		};
 	}
 

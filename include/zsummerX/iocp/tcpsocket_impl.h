@@ -1,9 +1,9 @@
 /*
-* ZSUMMER_11X License
+* zsummerX License
 * -----------
 * 
-* ZSUMMER_11X is licensed under the terms of the MIT license reproduced below.
-* This means that ZSUMMER_11X is free software and can be used for both academic
+* zsummerX is licensed under the terms of the MIT license reproduced below.
+* This means that zsummerX is free software and can be used for both academic
 * and commercial purposes at absolutely no cost.
 * 
 * 
@@ -33,41 +33,61 @@
 * 
 * (end of COPYRIGHT)
 */
-#ifndef _ZSUMMER_11X_UDPSOCKET_IMPL_H_
-#define _ZSUMMER_11X_UDPSOCKET_IMPL_H_
+#ifndef _ZSUMMERX_TCPSOCKET_IMPL_H_
+#define _ZSUMMERX_TCPSOCKET_IMPL_H_
 
 #include "../common/common.h"
 #include "../zsummer.h"
-
 namespace zsummer
 {
 	namespace network
 	{
-		class CUdpSocketImpl
+		class CTcpSocketImpl
 		{
 		public:
-			CUdpSocketImpl();
-			~CUdpSocketImpl();
-			bool Initialize(CZSummer & summer, const char *localIP, unsigned short localPort);
-			bool DoSend(char * buf, unsigned int len, const char *dstip, unsigned short dstport);
+
+			CTcpSocketImpl();
+			~CTcpSocketImpl();
+			bool Initialize(CZSummer & summer);
+			inline bool GetPeerInfo(std::string& remoteIP, unsigned short &remotePort)
+			{
+				remoteIP = m_remoteIP;
+				remotePort = m_remotePort;
+			}
+			bool DoConnect(std::string remoteIP, unsigned short remotePort, const _OnConnectHandler & handler);
+			bool DoSend(char * buf, unsigned int len, const _OnSendHandler &handler);
+			bool DoRecv(char * buf, unsigned int len, const _OnRecvHandler & handler);
+			bool DoClose();
+		public:
+			bool AttachEstablishedSocket(SOCKET s, std::string remoteIP, unsigned short remotePort);
 			bool OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned char cType);
-			bool DoRecv(char * buf, unsigned int len, const _OnRecvFromHandler &handler);
 		public:
 			//private
-			CZSummer * m_summer;
-			
+			CZSummer *  m_summer;
 			SOCKET		m_socket;
-			SOCKADDR_IN	m_addr;
+			std::string m_remoteIP;
+			unsigned short m_remotePort;
 
 			//recv
 			tagReqHandle m_recvHandle;
 			WSABUF		 m_recvWSABuf;
-			sockaddr_in  m_recvFrom;
-			int			 m_recvFromLen;
-			_OnRecvFromHandler m_onRecvHander;
-			bool		 m_recvLock;
+			_OnRecvHandler m_onRecvHandler;
 
-			LINK_STATUS m_nLinkStatus;
+
+			//send
+			tagReqHandle m_sendHandle;
+			WSABUF		 m_sendWsaBuf;
+			_OnSendHandler m_onSendHandler;
+
+
+			//connect
+			tagReqHandle m_connectHandle;
+			_OnConnectHandler m_onConnectHandler;
+			//status
+			bool m_isRecving;
+			bool m_isSending;
+			bool m_isConnecting;
+			int m_nLinkStatus;
 		};
 	}
 }

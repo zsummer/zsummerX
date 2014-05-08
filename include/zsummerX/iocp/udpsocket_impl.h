@@ -1,9 +1,9 @@
 /*
-* ZSUMMER_11X License
+* zsummerX License
 * -----------
 * 
-* ZSUMMER_11X is licensed under the terms of the MIT license reproduced below.
-* This means that ZSUMMER_11X is free software and can be used for both academic
+* zsummerX is licensed under the terms of the MIT license reproduced below.
+* This means that zsummerX is free software and can be used for both academic
 * and commercial purposes at absolutely no cost.
 * 
 * 
@@ -33,77 +33,47 @@
 * 
 * (end of COPYRIGHT)
 */
-
-
-
-#ifndef _ZSUMMER_11X_IOCP_IMPL_H_
-#define _ZSUMMER_11X_IOCP_IMPL_H_
-
+#ifndef _ZSUMMERX_UDPSOCKET_IMPL_H_
+#define _ZSUMMERX_UDPSOCKET_IMPL_H_
 
 #include "../common/common.h"
-#include "../timer.h"
+#include "../zsummer.h"
 
 namespace zsummer
 {
 	namespace network
 	{
-		//! ÏûÏ¢±Ã, message loop.
-		class CZSummerImpl
+		class CUdpSocketImpl
 		{
 		public:
-
-			CZSummerImpl()
-			{
-				m_io = NULL;
-			}
-			~CZSummerImpl()
-			{
-			}
-			inline bool Initialize()
-			{
-				if (m_io != NULL)
-				{
-					LCF("iocp is craeted !");
-					return false;
-				}
-				m_io = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, NULL, 1);
-				if (!m_io)
-				{
-					LCF("CreateIoCompletionPort False!");
-					return false;
-				}
-				return true;
-			}
-			void RunOnce();
-			template <typename handle>
-			inline void Post(const handle &h)
-			{
-				PostMsg(PCK_USER_DATA, h);
-			}
-
-			inline void PostMsg(POST_COM_KEY pck, const _OnPostHandler &handle)
-			{
-				_OnPostHandler *ptr = new _OnPostHandler(handle);
-				PostQueuedCompletionStatus(m_io, 0, pck,(LPOVERLAPPED)(ptr));
-			}
-			inline unsigned long long CreateTimer(unsigned int delayms, const _OnTimerHandler &handle)
-			{
-				return m_timer.CreateTimer(delayms, handle);
-			}
-			inline bool CancelTimer(unsigned long long timerID)
-			{
-				return m_timer.CancelTimer(timerID);
-			}
+			CUdpSocketImpl();
+			~CUdpSocketImpl();
+			bool Initialize(CZSummer & summer, const char *localIP, unsigned short localPort);
+			bool DoSend(char * buf, unsigned int len, const char *dstip, unsigned short dstport);
+			bool OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned char cType);
+			bool DoRecv(char * buf, unsigned int len, const _OnRecvFromHandler &handler);
 		public:
-			//! IOCP¾ä±ú
-			HANDLE m_io;
-			CTimer m_timer;
+			//private
+			CZSummer * m_summer;
+			
+			SOCKET		m_socket;
+			SOCKADDR_IN	m_addr;
 
+			//recv
+			tagReqHandle m_recvHandle;
+			WSABUF		 m_recvWSABuf;
+			sockaddr_in  m_recvFrom;
+			int			 m_recvFromLen;
+			_OnRecvFromHandler m_onRecvHander;
+			bool		 m_recvLock;
 
+			LINK_STATUS m_nLinkStatus;
 		};
 	}
-
 }
+
+
+
 
 
 

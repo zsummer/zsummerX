@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.6)
-project(zsummer_11x)
+project(zsummerX)
 set(LIB_DIR ../libs)
 set(DEP_DIR ../depends)
 set(INC_DIR ../include)

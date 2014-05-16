@@ -323,6 +323,10 @@
 				RelativePath=".\test.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\TestBase.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Í·ÎÄ¼þ"

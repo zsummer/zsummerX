@@ -70,11 +70,11 @@ unsigned long long g_totalRecv;
 void doSend(const char *remoteIP, unsigned short remotePort, unsigned short protocolID, unsigned long long clientTick, PicnicPtr pic)
 {
 	pic->_reqTime = clientTick;
-	zsummer::protocol4z::WriteStream<> ws;
+	zsummer::protocol4z::WriteStream<DefaultStreamHeadTraits> ws;
 	ws << protocolID; //protocol id
 	ws << pic->_reqTime; // local tick count
 	ws << g_fillString; // append text, fill the length protocol.
-	pic->sock.DoSendTo(ws.GetWriteStream(), ws.GetWriteLen(), remoteIP, remotePort);
+	pic->sock.DoSendTo(ws.GetStream(), ws.GetStreamLen(), remoteIP, remotePort);
 	g_totalSend++;
 };
 
@@ -86,11 +86,11 @@ void onRecv(ErrorCode ec, const char *remoteIP, unsigned short remotePort, int t
 		return;
 	}
 
-	std::pair<bool, DefaultStreamHeadTrait::Integer> ret = zsummer::protocol4z::CheckBuffIntegrity<DefaultStreamHeadTrait>(pic->recvData, translate, _MSG_BUF_LEN);
+	std::pair<bool, DefaultStreamHeadTraits::Integer> ret = zsummer::protocol4z::CheckBuffIntegrity<DefaultStreamHeadTraits>(pic->recvData, translate, _MSG_BUF_LEN);
 	if (ret.first && ret.second == 0)
 	{
 		//! 解包
-		zsummer::protocol4z::ReadStream<> rs(pic->recvData, translate);
+		zsummer::protocol4z::ReadStream<DefaultStreamHeadTraits> rs(pic->recvData, translate);
 		try
 		{
 			//协议流异常会被上层捕获并关闭连接

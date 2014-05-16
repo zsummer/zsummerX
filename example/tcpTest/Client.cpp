@@ -139,7 +139,7 @@ void CClient::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 
 	m_recving._len += nRecvedLen;
 
-	std::pair<bool, DefaultStreamHeadTrait::Integer> ret = zsummer::protocol4z::CheckBuffIntegrity<DefaultStreamHeadTrait>(m_recving._orgdata, m_recving._len, _MSG_BUF_LEN);
+	std::pair<bool, zsummer::protocol4z::DefaultStreamHeadTraits::Integer> ret = zsummer::protocol4z::CheckBuffIntegrity<zsummer::protocol4z::DefaultStreamHeadTraits>(m_recving._orgdata, m_recving._len, _MSG_BUF_LEN);
 	if (!ret.first)
 	{
 		LOGD("killed socket: CheckBuffIntegrity error ");
@@ -154,7 +154,7 @@ void CClient::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 	}
 
 	//! 解包完成 进行消息处理
-	zsummer::protocol4z::ReadStream<> rs(m_recving._orgdata, m_recving._len);
+	zsummer::protocol4z::ReadStream<DefaultStreamHeadTraits> rs(m_recving._orgdata, m_recving._len);
 	try
 	{
 		MessageEntry(rs);
@@ -172,7 +172,7 @@ void CClient::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 	DoRecv();
 }
 
-void CClient::MessageEntry(zsummer::protocol4z::ReadStream<> & rs)
+void CClient::MessageEntry(zsummer::protocol4z::ReadStream<zsummer::protocol4z::DefaultStreamHeadTraits> & rs)
 {
 	//协议流异常会被上层捕获并关闭连接
 	unsigned short protocolID = 0;
@@ -219,9 +219,9 @@ void CClient::MessageEntry(zsummer::protocol4z::ReadStream<> & rs)
 
 void CClient::DoSend(unsigned short protocolID, unsigned long long clientTick, const char* text)
 {
-	zsummer::protocol4z::WriteStream<> ws;
+	zsummer::protocol4z::WriteStream<DefaultStreamHeadTraits> ws;
 	ws << protocolID << clientTick << text;
-	DoSend(ws.GetWriteStream(), ws.GetWriteLen());
+	DoSend(ws.GetStream(), ws.GetStreamLen());
 }
 
 void CClient::DoSend(char *buf, unsigned short len)

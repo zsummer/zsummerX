@@ -25,6 +25,9 @@
     <Filter Include="include\interface">
       <UniqueIdentifier>{39e1124e-006c-4e1f-b827-93c4aae1929e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\frame">
+      <UniqueIdentifier>{f45d965e-2242-40d3-b31e-94c6c0371c69}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\common\common.cpp">
@@ -44,6 +47,15 @@
     </ClCompile>
     <ClCompile Include="..\src\timer\timer.cpp">
       <Filter>src\timmer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\frame\MessageDispatch.cpp">
+      <Filter>src\frame</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\frame\TcpSession.cpp">
+      <Filter>src\frame</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\frame\TcpSessionManager.cpp">
+      <Filter>src\frame</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -75,6 +87,18 @@
       <Filter>include\interface</Filter>
     </ClInclude>
     <ClInclude Include="..\include\zsummerX\timer.h">
+      <Filter>include\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\zsummerX\FrameHeader.h">
+      <Filter>include\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\zsummerX\MessageDispatch.h">
+      <Filter>include\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\zsummerX\TcpSession.h">
+      <Filter>include\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\zsummerX\TcpSessionManager.h">
       <Filter>include\interface</Filter>
     </ClInclude>
   </ItemGroup>

@@ -4,4 +4,5 @@ set(BIN_DIR ${example_SOURCE_DIR}/bin)
 set(EXP_DIR ${example_SOURCE_DIR})
 add_subdirectory(tcpTest)
 add_subdirectory(udpTest)
+add_subdirectory(frameTest)
 

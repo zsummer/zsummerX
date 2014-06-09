@@ -84,14 +84,14 @@ CTcpSocketImpl::~CTcpSocketImpl()
 	}
 }
 
-bool CTcpSocketImpl::Initialize(CZSummer & summer)
+bool CTcpSocketImpl::Initialize(CZSummerPtr summer)
 {
 	if (m_nLinkStatus != LS_UNINITIALIZE)
 	{
 		LCE("CTcpSocketImpl::Initialize  LinkStatus != LS_UNINITIALIZE" );
 		return false;
 	}
-	m_summer = &summer;
+	m_summer = summer;
 	m_nLinkStatus = LS_WAITLINK;
 	return true;
 }

@@ -1,15 +1,15 @@
 /*
- * ZSUMMER License
+ * zsummerX License
  * -----------
  * 
- * ZSUMMER is licensed under the terms of the MIT license reproduced below.
- * This means that ZSUMMER is free software and can be used for both academic
+ * zsummerX is licensed under the terms of the MIT license reproduced below.
+ * This means that zsummerX is free software and can be used for both academic
  * and commercial purposes at absolutely no cost.
  * 
  * 
  * ===============================================================================
  * 
- * Copyright (C) 2010-2013 YaweiZhang <yawei_zhang@foxmail.com>.
+ * Copyright (C) 2010-2014 YaweiZhang <yawei_zhang@foxmail.com>.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -46,25 +46,26 @@ class CMessageDispatcher
 {
 private:
 	CMessageDispatcher(){}
-	typedef std::map<ProtocolID, std::vector<OnMessageFunction> > MapDispatch;
+	typedef std::map<ProtocolID, std::vector<OnSessionMessageFunction> > MapSessionDispatch;
+	typedef std::map<ProtocolID, std::vector<OnConnectorMessageFunction> > MapConnectorDispatch;
 public:
 	static CMessageDispatcher & getRef();
 	~CMessageDispatcher(){};
 
-	inline void RegisterSessionMessage(ProtocolID protocolID, const OnMessageFunction & msgfun){ m_mapSessionDispatch[protocolID].push_back(msgfun); }
-	inline void RegisterConnectorMessage(ProtocolID protocolID, const OnMessageFunction & msgfun){ m_mapConnectorDispatch[protocolID].push_back(msgfun); }
+	inline void RegisterSessionMessage(ProtocolID protocolID, const OnSessionMessageFunction & msgfun){ m_mapSessionDispatch[protocolID].push_back(msgfun); }
+	inline void RegisterConnectorMessage(ProtocolID protocolID, const OnConnectorMessageFunction & msgfun){ m_mapConnectorDispatch[protocolID].push_back(msgfun); }
 
 	inline void RegisterOnSessionEstablished(const OnSessionEstablished & fun){ m_vctOnSessionEstablished.push_back(fun); }
 	inline void RegisterOnSessionDisconnect(const OnSessionDisconnect & fun){ m_vctOnSessionDisconnect.push_back(fun); }
 	inline void RegisterOnConnectorEstablished(const OnConnectorEstablished & fun){ m_vctOnConnectorEstablished.push_back(fun); }
 	inline void REgisterOnConnectorDisconnect(const OnConnectorDisconnect & fun) { m_vctOnConnectorDisconnect.push_back(fun); }
 public:
-	inline void DispatchSessionMessage(SessionID sID, ProtocolID pID, ReadStreamPack & msg)
+	inline void DispatchSessionMessage(AccepterID aID, SessionID sID, ProtocolID pID, ReadStreamPack & msg)
 	{
-		MapDispatch::iterator iter = m_mapSessionDispatch.find(pID);
+		MapSessionDispatch::iterator iter = m_mapSessionDispatch.find(pID);
 		if (iter == m_mapSessionDispatch.end() || iter->second.empty())
 		{
-			LOGE("Entry SessionMessage Process Failed: UNKNOWN ProtocolID. SessionID=" << sID << ", ProtocolID=" << pID);
+			LOGE("Entry SessionMessage Process Failed: UNKNOWN ProtocolID. AccepterID=" << aID << ", SessionID=" << sID << ", ProtocolID=" << pID);
 			//error
 			return;
 		}
@@ -72,23 +73,23 @@ public:
 		{
 			try
 			{
-				LOGD("Entry SessionMessage Process: SessionID=" << sID << ", ProtocolID=" << pID);
-				(dis)(sID, pID, msg);
-				LOGD("Leave SessionMessage Process With Success: SessionID=" << sID << ", ProtocolID=" << pID);
+				LOGD("Entry SessionMessage Process: AccepterID=" << aID << ", SessionID=" << sID << ", ProtocolID=" << pID);
+				(dis)(aID, sID, pID, msg);
+				LOGD("Leave SessionMessage Process With Success: AccepterID=" << aID << ", SessionID=" << sID << ", ProtocolID=" << pID);
 			}
 			catch (std::runtime_error e)
 			{
-				LOGE("Leave SessionMessage Process With Runtime Error: SessionID=" << sID << ", ProtocolID=" << pID << ", Error Message=\"" << e.what() << "\"");
+				LOGE("Leave SessionMessage Process With Runtime Error: AccepterID=" << aID << ", SessionID=" << sID << ", ProtocolID=" << pID << ", Error Message=\"" << e.what() << "\"");
 			}
 			catch (...)
 			{
-				LOGE("Leave SessionMessage Process With Unknown Runtime Error: SessionID=" << sID << ", ProtocolID=" << pID);
+				LOGE("Leave SessionMessage Process With Unknown Runtime Error: AccepterID=" << aID << ", SessionID=" << sID << ", ProtocolID=" << pID);
 			}
 		}
 	}
 	inline void DispatchConnectorMessage(SessionID sID, ProtocolID pID, ReadStreamPack & msg)
 	{
-		MapDispatch::iterator iter = m_mapConnectorDispatch.find(pID);
+		MapConnectorDispatch::iterator iter = m_mapConnectorDispatch.find(pID);
 		if (iter == m_mapConnectorDispatch.end() || iter->second.empty())
 		{
 			LOGE("Entry ConnectorMessage Process Failed: UNKNOWN ProtocolID. SessionID=" << sID << ", ProtocolID=" << pID);
@@ -197,8 +198,8 @@ public:
 
 
 	private:
-		MapDispatch m_mapSessionDispatch;
-		MapDispatch m_mapConnectorDispatch;
+		MapSessionDispatch m_mapSessionDispatch;
+		MapConnectorDispatch m_mapConnectorDispatch;
 
 		std::vector<OnSessionEstablished> m_vctOnSessionEstablished;
 		std::vector<OnSessionDisconnect> m_vctOnSessionDisconnect;

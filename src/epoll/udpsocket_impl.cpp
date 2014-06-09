@@ -43,7 +43,6 @@ using namespace zsummer::network;
 
 CUdpSocketImpl::CUdpSocketImpl()
 {
-	m_summer = NULL;
 	m_register._event.data.ptr = &m_register;
 	m_register._event.events = 0;
 	m_register._fd = -1;
@@ -68,9 +67,9 @@ CUdpSocketImpl::~CUdpSocketImpl()
 		m_register._fd = -1;
 	}
 }
-bool  CUdpSocketImpl::Initialize(CZSummer & summer, const char *localIP, unsigned short localPort)
+bool  CUdpSocketImpl::Initialize(CZSummerPtr summer, const char *localIP, unsigned short localPort)
 {
-	if (m_summer != NULL)
+	if (!m_summer)
 	{
 		LCE("CUdpSocketImpl socket is aready used, m_ios not is NULL. this=" << this);
 		return false;
@@ -80,7 +79,7 @@ bool  CUdpSocketImpl::Initialize(CZSummer & summer, const char *localIP, unsigne
 		LCE("CUdpSocketImpl socket is aready used, _fd not is -1. this=" << this << ", fd=" << m_register._fd);
 		return false;
 	}
-	m_summer = &summer;
+	m_summer = summer;
 	m_register._ptr = this;
 	m_register._fd = socket(AF_INET, SOCK_DGRAM, 0);
 	m_register._linkstat = LS_WAITLINK;

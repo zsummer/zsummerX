@@ -70,7 +70,7 @@ namespace zsummer
 {
 	namespace network
 	{
-		class CZSummer
+		class CZSummer :public std::enable_shared_from_this<CZSummer>
 		{
 		public:
 			CZSummer(){}
@@ -108,6 +108,8 @@ namespace zsummer
 		private:
 			CZSummerImpl m_impl;
 		};
+
+		typedef std::shared_ptr<CZSummer> CZSummerPtr;
 
 	};
 	

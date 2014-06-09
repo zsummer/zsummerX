@@ -1,15 +1,15 @@
 /*
- * ZSUMMER License
+ * zsummerX License
  * -----------
  * 
- * ZSUMMER is licensed under the terms of the MIT license reproduced below.
- * This means that ZSUMMER is free software and can be used for both academic
+ * zsummerX is licensed under the terms of the MIT license reproduced below.
+ * This means that zsummerX is free software and can be used for both academic
  * and commercial purposes at absolutely no cost.
  * 
  * 
  * ===============================================================================
  * 
- * Copyright (C) 2010-2013 YaweiZhang <yawei_zhang@foxmail.com>.
+ * Copyright (C) 2010-2014 YaweiZhang <yawei_zhang@foxmail.com>.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -39,15 +39,17 @@
 
 #include "Process.h"
 
-CSchedule::CSchedule():m_accept( m_summer)
+CSchedule::CSchedule()
 {
+	m_summer = zsummer::network::CZSummerPtr(new zsummer::network::CZSummer());
+	m_accept = zsummer::network::CTcpAcceptPtr(new zsummer::network::CTcpAccept(m_summer));
 }
 
 
 void CSchedule::Start()
 {
 
-	if (!m_summer.Initialize())
+	if (!m_summer->Initialize())
 	{
 		return ;
 	}
@@ -63,13 +65,13 @@ void CSchedule::Start()
 	
 	if (g_startType == 0)
 	{
-		if (m_accept.OpenAccept(g_remoteIP.c_str(), g_remotePort))
+		if (m_accept->OpenAccept(g_remoteIP.c_str(), g_remotePort))
 		{
 			LOGI("open server port [" << g_remotePort << "] success");
 		}
 		CTcpSocketPtr s(new zsummer::network::CTcpSocket());
 		s->Initialize(m_process[m_iCurProcess]->GetZSummer());
-		m_accept.DoAccept(s, std::bind(&CSchedule::OnAccept, this, std::placeholders::_1, std::placeholders::_2, m_process[m_iCurProcess]));
+		m_accept->DoAccept(s, std::bind(&CSchedule::OnAccept, this, std::placeholders::_1, std::placeholders::_2, m_process[m_iCurProcess]));
 	}
 	else
 	{
@@ -89,7 +91,7 @@ void CSchedule::Run()
 
 	while (m_bRunning)
 	{
-		m_summer.RunOnce();
+		m_summer->RunOnce();
 	}
 }
 
@@ -105,7 +107,7 @@ void CSchedule::doConnect(unsigned int maxClient)
 		m_iCurProcess = m_iCurProcess%(int)m_process.size();
 		if (i >= 100 && maxClient > 100)
 		{
-			m_summer.CreateTimer(1000, std::bind(&CSchedule::doConnect, this, maxClient - i));
+			m_summer->CreateTimer(1000, std::bind(&CSchedule::doConnect, this, maxClient - i));
 			break;
 		}
 	}
@@ -139,6 +141,6 @@ void CSchedule::OnAccept(zsummer::network::ErrorCode ec, CTcpSocketPtr sockptr, 
 	m_iCurProcess = m_iCurProcess%(int)m_process.size();
 	CTcpSocketPtr s(new zsummer::network::CTcpSocket());
 	s->Initialize(m_process[m_iCurProcess]->GetZSummer());
-	m_accept.DoAccept(s, std::bind(&CSchedule::OnAccept, this, std::placeholders::_1, std::placeholders::_2, m_process[m_iCurProcess]));
+	m_accept->DoAccept(s, std::bind(&CSchedule::OnAccept, this, std::placeholders::_1, std::placeholders::_2, m_process[m_iCurProcess]));
 }
 

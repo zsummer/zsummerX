@@ -1,9 +1,9 @@
 /*
-* ZSUMMER_11X License
+* zsummerX License
 * -----------
 * 
-* ZSUMMER_11X is licensed under the terms of the MIT license reproduced below.
-* This means that ZSUMMER_11X is free software and can be used for both academic
+* zsummerX is licensed under the terms of the MIT license reproduced below.
+* This means that zsummerX is free software and can be used for both academic
 * and commercial purposes at absolutely no cost.
 * 
 * 
@@ -53,12 +53,12 @@ namespace zsummer
 			// const char * remoteIP, unsigned short remotePort, nTranslate
 			CUdpSocketImpl();
 			~CUdpSocketImpl();
-			bool Initialize(CZSummer & summer, const char *localIP, unsigned short localPort);
+			bool Initialize(CZSummerPtr summer, const char *localIP, unsigned short localPort);
 			bool DoRecv(char * buf, unsigned int len, const _OnRecvFromHandler& handler);
 			bool DoSend(char * buf, unsigned int len, const char *dstip, unsigned short dstport);
 			bool OnEPOLLMessage(int type, int flag);
 		public:
-			CZSummer * m_summer;
+			CZSummerPtr m_summer;
 			tagRegister m_register;
 
 			_OnRecvFromHandler m_onRecvFromHandler;

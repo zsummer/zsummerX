@@ -1,15 +1,15 @@
 /*
- * ZSUMMER License
+ * zsummerX License
  * -----------
  * 
- * ZSUMMER is licensed under the terms of the MIT license reproduced below.
- * This means that ZSUMMER is free software and can be used for both academic
+ * zsummerX is licensed under the terms of the MIT license reproduced below.
+ * This means that zsummerX is free software and can be used for both academic
  * and commercial purposes at absolutely no cost.
  * 
  * 
  * ===============================================================================
  * 
- * Copyright (C) 2010-2013 YaweiZhang <yawei_zhang@foxmail.com>.
+ * Copyright (C) 2010-2014 YaweiZhang <yawei_zhang@foxmail.com>.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -46,29 +46,35 @@ class CTcpSessionManager
 	CTcpSessionManager();
 public:
 	static CTcpSessionManager & getRef();
+public:
 	bool Start();
 	void Stop();
 	void Run();
-	//!
-
+public:
 	template<class H>
 	void Post(const H &h){m_summer->Post(h);}
+public:
 	template <class H>
 	unsigned long long CreateTimer(unsigned int delayms, const H &h){ return m_summer->CreateTimer(delayms, h); }
 	bool CancelTimer(unsigned long long timerID){ return m_summer->CancelTimer(timerID); }
-
+public:
 	SessionID AddConnector(const tagConnctorConfigTraits &traits);
 	AccepterID AddAcceptor(const tagAcceptorConfigTraits &traits);
-	bool BindEstablishedSocketPtr(CTcpSocketPtr sockptr);
+	bool BindEstablishedSocketPtr(CTcpSocketPtr sockptr, AccepterID aID);
+public:
 	void SendOrgConnectorData(SessionID sID, const char * orgData, unsigned int orgDataLen);
+	void SendConnectorData(SessionID sID, ProtocolID pID, const char * userData, unsigned int userDataLen);
+
 	void SendOrgSessionData(SessionID sID, const char * orgData, unsigned int orgDataLen);
+	void SendSessionData(SessionID sID, ProtocolID pID, const char * userData, unsigned int userDataLen);
+
 	void KickSession(SessionID sID);
 	void BreakConnector(SessionID sID);
 private:
 	friend class CTcpSession;
 	void OnSessionClose(SessionID sID);
 	void OnConnectorStatus(SessionID connectorID, bool bConnected, CTcpSessionPtr connector);
-	void OnAcceptNewClient(zsummer::network::ErrorCode ec, CTcpSocketPtr s, CTcpAcceptPtr accepter);
+	void OnAcceptNewClient(zsummer::network::ErrorCode ec, CTcpSocketPtr s, CTcpAcceptPtr accepter, AccepterID aID);
 private:
 
 	bool  m_bRunning = true;

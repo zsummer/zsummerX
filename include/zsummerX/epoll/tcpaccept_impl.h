@@ -1,9 +1,9 @@
 /*
-* ZSUMMER_11X License
+* zsummerX License
 * -----------
 * 
-* ZSUMMER_11X is licensed under the terms of the MIT license reproduced below.
-* This means that ZSUMMER_11X is free software and can be used for both academic
+* zsummerX is licensed under the terms of the MIT license reproduced below.
+* This means that zsummerX is free software and can be used for both academic
 * and commercial purposes at absolutely no cost.
 * 
 * 
@@ -51,7 +51,7 @@ namespace zsummer
 		class CTcpAcceptImpl
 		{
 		public:
-			CTcpAcceptImpl(CZSummer &summer);
+			CTcpAcceptImpl(CZSummerPtr summer);
 			~CTcpAcceptImpl();
 			bool Initialize();
 			bool OpenAccept(const char * ip, unsigned short port);
@@ -61,7 +61,7 @@ namespace zsummer
 
 			void OnPostClose();
 
-			CZSummer 		*m_summer;
+			CZSummerPtr 		m_summer;
 			std::string		m_ip;
 			short			m_port;
 

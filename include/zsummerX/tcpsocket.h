@@ -56,7 +56,7 @@ namespace zsummer
 			~CTcpSocket(){}
 
 			//! 初始化,  把当前socket绑定到指定的zsummer上.
-			inline bool Initialize(CZSummer & summer)
+			inline bool Initialize(CZSummerPtr summer)
 			{
 				return m_impl.Initialize(summer);
 			}
@@ -111,6 +111,7 @@ namespace zsummer
 			CTcpSocketImpl m_impl;
 			unsigned long long m_userData;
 		};
+		typedef std::shared_ptr<CTcpSocket> CTcpSocketPtr;
 	};
 	
 };

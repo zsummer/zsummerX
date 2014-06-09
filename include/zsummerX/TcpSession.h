@@ -1,15 +1,15 @@
 /*
- * ZSUMMER License
+ * zsummerX License
  * -----------
  * 
- * ZSUMMER is licensed under the terms of the MIT license reproduced below.
- * This means that ZSUMMER is free software and can be used for both academic
+ * zsummerX is licensed under the terms of the MIT license reproduced below.
+ * This means that zsummerX is free software and can be used for both academic
  * and commercial purposes at absolutely no cost.
  * 
  * 
  * ===============================================================================
  * 
- * Copyright (C) 2010-2013 YaweiZhang <yawei_zhang@foxmail.com>.
+ * Copyright (C) 2010-2014 YaweiZhang <yawei_zhang@foxmail.com>.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -56,7 +56,7 @@ class CTcpSession : public std::enable_shared_from_this<CTcpSession>
 public:
 	CTcpSession();
 	~CTcpSession();
-	void BindTcpSocketPrt(CTcpSocketPtr sockptr, SessionID sessionID, bool isConnector);
+	void BindTcpSocketPrt(CTcpSocketPtr sockptr, SessionID sessionID, bool isConnector, AccepterID aID=0);
 	
 	void DoConnect(const tagConnctorConfigTraits & traits);
 	void DoRecv();
@@ -82,6 +82,7 @@ private:
 
 	SessionID m_sessionID;
 	bool m_isConnector = false;
+	AccepterID m_acceptID = 0;
 	
 	//! ¶Á°ü
 	tagMSGPack m_recving = {0};

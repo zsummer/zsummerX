@@ -40,9 +40,9 @@
 
 
 using namespace zsummer::network;
-CTcpAcceptImpl::CTcpAcceptImpl(CZSummer &summer)
+CTcpAcceptImpl::CTcpAcceptImpl(CZSummerPtr summer)
 {
-	m_summer = &summer;
+	m_summer = summer;
 	//listen
 	m_server = INVALID_SOCKET;
 	memset(&m_addr, 0, sizeof(m_addr));

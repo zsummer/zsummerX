@@ -48,11 +48,12 @@ namespace zsummer
 
 			CTcpSocketImpl();
 			~CTcpSocketImpl();
-			bool Initialize(CZSummer & summer);
+			bool Initialize(CZSummerPtr summer);
 			inline bool GetPeerInfo(std::string& remoteIP, unsigned short &remotePort)
 			{
 				remoteIP = m_remoteIP;
 				remotePort = m_remotePort;
+				return true;
 			}
 			bool DoConnect(std::string remoteIP, unsigned short remotePort, const _OnConnectHandler & handler);
 			bool DoSend(char * buf, unsigned int len, const _OnSendHandler &handler);
@@ -63,7 +64,7 @@ namespace zsummer
 			bool OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned char cType);
 		public:
 			//private
-			CZSummer *  m_summer;
+			CZSummerPtr  m_summer;
 			SOCKET		m_socket;
 			std::string m_remoteIP;
 			unsigned short m_remotePort;

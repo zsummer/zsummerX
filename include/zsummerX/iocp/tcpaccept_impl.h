@@ -47,14 +47,14 @@ namespace zsummer
 		{
 		public:
 
-			CTcpAcceptImpl(CZSummer &summer);
+			CTcpAcceptImpl(CZSummerPtr summer);
 			virtual ~CTcpAcceptImpl();
 			bool OpenAccept(const char * ip, unsigned short port);
 			bool DoAccept(CTcpSocketPtr& s, const _OnAcceptHandler &handler);
 			bool OnIOCPMessage(BOOL bSuccess);
 
 			//config
-			CZSummer	*m_summer;
+			CZSummerPtr m_summer;
 
 
 			std::string		m_ip;

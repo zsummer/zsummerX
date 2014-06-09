@@ -44,10 +44,10 @@ using namespace zsummer::network;
 
 
 
-CTcpAcceptImpl::CTcpAcceptImpl(CZSummer &summer)
+CTcpAcceptImpl::CTcpAcceptImpl(CZSummerPtr summer)
 {
 	m_port = 0;
-	m_summer = &summer;
+	m_summer = summer;
 	m_isAcceptLock = false;
 	m_register._event.data.ptr = &m_register;
 	m_register._event.events = 0;
@@ -76,7 +76,7 @@ bool CTcpAcceptImpl::Initialize()
 
 bool CTcpAcceptImpl::OpenAccept(const char * ip, unsigned short port)
 {
-	if (m_summer == NULL)
+	if (!m_summer)
 	{
 		LCE("m_summer not bind!");
 		return false;

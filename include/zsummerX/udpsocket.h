@@ -53,7 +53,7 @@ namespace zsummer
 		public:
 			CUdpSocket(){}
 			~CUdpSocket(){}
-			bool Initialize(CZSummer &summer, const char *localIP, unsigned short localPort = 0)
+			bool Initialize(CZSummerPtr summer, const char *localIP, unsigned short localPort = 0)
 			{
 				return m_impl.Initialize(summer, localIP, localPort);
 			}

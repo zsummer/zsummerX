@@ -48,13 +48,13 @@ namespace zsummer
 		public:
 			CUdpSocketImpl();
 			~CUdpSocketImpl();
-			bool Initialize(CZSummer & summer, const char *localIP, unsigned short localPort);
+			bool Initialize(CZSummerPtr summer, const char *localIP, unsigned short localPort);
 			bool DoSend(char * buf, unsigned int len, const char *dstip, unsigned short dstport);
 			bool OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned char cType);
 			bool DoRecv(char * buf, unsigned int len, const _OnRecvFromHandler &handler);
 		public:
 			//private
-			CZSummer * m_summer;
+			CZSummerPtr m_summer;
 			
 			SOCKET		m_socket;
 			SOCKADDR_IN	m_addr;

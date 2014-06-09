@@ -1,15 +1,15 @@
 /*
- * ZSUMMER License
+ * zsummerX License
  * -----------
  * 
- * ZSUMMER is licensed under the terms of the MIT license reproduced below.
- * This means that ZSUMMER is free software and can be used for both academic
+ * zsummerX is licensed under the terms of the MIT license reproduced below.
+ * This means that zsummerX is free software and can be used for both academic
  * and commercial purposes at absolutely no cost.
  * 
  * 
  * ===============================================================================
  * 
- * Copyright (C) 2010-2013 YaweiZhang <yawei_zhang@foxmail.com>.
+ * Copyright (C) 2010-2014 YaweiZhang <yawei_zhang@foxmail.com>.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -53,9 +53,9 @@ public:
 	//! 线程
 	void Run();
 	//!
-	inline zsummer::network::CZSummer & GetZSummer(){return m_summer;}
+	inline zsummer::network::CZSummerPtr GetZSummer(){return m_summer;}
 private:
-	zsummer::network::CZSummer m_summer;
+	zsummer::network::CZSummerPtr m_summer;
 	std::thread	 m_thread;
 	bool  m_bRunning = true;
 
@@ -64,7 +64,7 @@ public:
 	template<class H>
 	void Post(const H &h)
 	{
-		m_summer.Post(h);
+		m_summer->Post(h);
 	}
 	//接收一个socket
 	void RecvSocketPtr(std::shared_ptr<zsummer::network::CTcpSocket> sockptr);

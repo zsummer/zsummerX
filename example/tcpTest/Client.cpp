@@ -1,15 +1,15 @@
 /*
- * ZSUMMER License
+ * zsummerX License
  * -----------
  * 
- * ZSUMMER is licensed under the terms of the MIT license reproduced below.
- * This means that ZSUMMER is free software and can be used for both academic
+ * zsummerX is licensed under the terms of the MIT license reproduced below.
+ * This means that zsummerX is free software and can be used for both academic
  * and commercial purposes at absolutely no cost.
  * 
  * 
  * ===============================================================================
  * 
- * Copyright (C) 2010-2013 YaweiZhang <yawei_zhang@foxmail.com>.
+ * Copyright (C) 2010-2014 YaweiZhang <yawei_zhang@foxmail.com>.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -81,17 +81,17 @@ void CClient::SendOnce()
 	{
 		if (g_intervalMs > 0)
 		{
-			m_process.GetZSummer().CreateTimer(g_intervalMs, std::bind(&CClient::SendOnce, shared_from_this()));
+			m_process.GetZSummer()->CreateTimer(g_intervalMs, std::bind(&CClient::SendOnce, shared_from_this()));
 		}
 		else
 		{
 			if (m_lastDelayTime < 2000)
 			{
-				m_process.GetZSummer().Post(std::bind(&CClient::SendOnce, shared_from_this()));
+				m_process.GetZSummer()->Post(std::bind(&CClient::SendOnce, shared_from_this()));
 			}
 			else
 			{
-				m_process.GetZSummer().CreateTimer(100, std::bind(&CClient::SendOnce, shared_from_this()));
+				m_process.GetZSummer()->CreateTimer(100, std::bind(&CClient::SendOnce, shared_from_this()));
 			}
 		}
 	}
@@ -110,7 +110,7 @@ void CClient::OnConnected(zsummer::network::ErrorCode ec)
 	m_process.AddTotalOpen(1);
 	if (g_intervalMs > 0)
 	{
-		m_process.GetZSummer().CreateTimer(g_intervalMs, std::bind(&CClient::SendOnce, shared_from_this()));
+		m_process.GetZSummer()->CreateTimer(g_intervalMs, std::bind(&CClient::SendOnce, shared_from_this()));
 	}
 	else
 	{

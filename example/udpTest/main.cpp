@@ -1,9 +1,9 @@
 /*
- * ZSUMMER License
+ * zsummerX License
  * -----------
  * 
- * ZSUMMER is licensed under the terms of the MIT license reproduced below.
- * This means that ZSUMMER is free software and can be used for both academic
+ * zsummerX is licensed under the terms of the MIT license reproduced below.
+ * This means that zsummerX is free software and can be used for both academic
  * and commercial purposes at absolutely no cost.
  * 
  * 
@@ -179,8 +179,8 @@ int main(int argc, char* argv[])
 	}
 	LOGI("ip=" << ip << ", port=" << port << ", type=" << g_type << ", maxClients=" << maxClient);
 	
-	zsummer::network::CZSummer summer;
-	summer.Initialize();
+	zsummer::network::CZSummerPtr summer(new zsummer::network::CZSummer());
+	summer->Initialize();
 
 	g_fillString.resize(1000, 'z');
 	g_totalEcho = 0;
@@ -217,7 +217,7 @@ int main(int argc, char* argv[])
 				std::placeholders::_3,
 				std::placeholders::_4,
 				picc));
-			summer.CreateTimer(rand()%1000+1000,std::bind(doSend,ip.c_str(), port, 1, NOW_TIME, picc));
+			summer->CreateTimer(rand()%1000+1000,std::bind(doSend,ip.c_str(), port, 1, NOW_TIME, picc));
 		}
 
 	}
@@ -238,12 +238,12 @@ int main(int argc, char* argv[])
 		nLast[2] = g_totalSend;
 		nLast[3] = g_totalRecv;
 
-		summer.CreateTimer(5*1000, doTimer);
+		summer->CreateTimer(5*1000, doTimer);
 	};
-	summer.CreateTimer(5*1000, doTimer);
+	summer->CreateTimer(5*1000, doTimer);
 	do
 	{
-		summer.RunOnce();
+		summer->RunOnce();
 	} while (true);
 	return 0;
 }

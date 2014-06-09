@@ -73,19 +73,19 @@ CUdpSocketImpl::~CUdpSocketImpl()
 	}
 }
 
-bool CUdpSocketImpl::Initialize(CZSummer & summer, const char *localIP, unsigned short localPort)
+bool CUdpSocketImpl::Initialize(CZSummerPtr summer, const char *localIP, unsigned short localPort)
 {
 	if (m_socket != INVALID_SOCKET)
 	{
 		LCF("CUdpSocket: socket is aread used , socket=" << (unsigned int)m_socket);
 		return false;
 	}	
-	if (m_summer != NULL)
+	if (m_summer)
 	{
-		LCF("CUdpSocket: socket is aread used, m_summer =" << m_summer << ", socket=" << (unsigned int)m_socket);
+		LCF("CUdpSocket: socket is aread used, m_summer =" << m_summer.get() << ", socket=" << (unsigned int)m_socket);
 		return false;
 	}
-	m_summer = &summer;
+	m_summer = summer;
 	m_socket = WSASocket(AF_INET, SOCK_DGRAM, IPPROTO_UDP, NULL, 0, WSA_FLAG_OVERLAPPED);
 	if (m_socket == INVALID_SOCKET)
 	{

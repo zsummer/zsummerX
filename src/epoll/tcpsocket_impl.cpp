@@ -43,7 +43,6 @@ using namespace zsummer::network;
 
 CTcpSocketImpl::CTcpSocketImpl()
 {
-	m_summer = NULL;
 	m_register._event.data.ptr = &m_register;
 	m_register._event.events = 0;
 	m_register._fd = -1;
@@ -77,14 +76,14 @@ CTcpSocketImpl::~CTcpSocketImpl()
 	}
 }
 
- bool CTcpSocketImpl::Initialize(CZSummer & summer)
+ bool CTcpSocketImpl::Initialize(CZSummerPtr summer)
 {
 	if (m_register._linkstat != LS_UNINITIALIZE)
 	{
 		LCF("CTcpSocketImpl::Initialize linkstat != LS_UNINITIALIZE");
 		return false;
 	}
-	m_summer = &summer;
+	m_summer = summer;
 	m_register._linkstat = LS_WAITLINK;
 	return true;
 }

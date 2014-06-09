@@ -1,15 +1,15 @@
 /*
- * ZSUMMER License
+ * zsummerX License
  * -----------
  * 
- * ZSUMMER is licensed under the terms of the MIT license reproduced below.
- * This means that ZSUMMER is free software and can be used for both academic
+ * zsummerX is licensed under the terms of the MIT license reproduced below.
+ * This means that zsummerX is free software and can be used for both academic
  * and commercial purposes at absolutely no cost.
  * 
  * 
  * ===============================================================================
  * 
- * Copyright (C) 2010-2013 YaweiZhang <yawei_zhang@foxmail.com>.
+ * Copyright (C) 2010-2014 YaweiZhang <yawei_zhang@foxmail.com>.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -61,12 +61,16 @@ CTcpSession::~CTcpSession()
 	
 }
 
-void CTcpSession::BindTcpSocketPrt(CTcpSocketPtr sockptr, SessionID sessionID, bool isConnector)
+void CTcpSession::BindTcpSocketPrt(CTcpSocketPtr sockptr, SessionID sessionID, bool isConnector, AccepterID aID)
 {
 	CleanSession();
 	m_sockptr = sockptr;
 	m_sessionID = sessionID;
 	m_isConnector = isConnector;
+	if (! m_isConnector)
+	{
+		m_acceptID = aID;
+	}
 }
 
 void CTcpSession::CleanSession(bool isCleanWithoutMsgPack)
@@ -193,7 +197,7 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 		}
 		else
 		{
-			CMessageDispatcher::getRef().DispatchSessionMessage(m_sessionID, protocolID, rs);
+			CMessageDispatcher::getRef().DispatchSessionMessage(m_acceptID, m_sessionID, protocolID, rs);
 		}
 		
 		

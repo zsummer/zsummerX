@@ -1,15 +1,15 @@
 /*
- * ZSUMMER License
+ * zsummerX License
  * -----------
  * 
- * ZSUMMER is licensed under the terms of the MIT license reproduced below.
- * This means that ZSUMMER is free software and can be used for both academic
+ * zsummerX is licensed under the terms of the MIT license reproduced below.
+ * This means that zsummerX is free software and can be used for both academic
  * and commercial purposes at absolutely no cost.
  * 
  * 
  * ===============================================================================
  * 
- * Copyright (C) 2010-2013 YaweiZhang <yawei_zhang@foxmail.com>.
+ * Copyright (C) 2010-2014 YaweiZhang <yawei_zhang@foxmail.com>.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -69,12 +69,13 @@ int main(int argc, char* argv[])
 		(strcmp(argv[1], "--help") == 0 
 		|| strcmp(argv[1], "/?") == 0))
 	{
-		cout <<"please input like example:" << endl;
-		cout << "./tcpTest remoteIP=0.0.0.0 remotePort=81 startType=0 maxClient=1 sendType=0 interval=0" << endl;
-		cout <<"startType: 0 server, 1 client" << endl;
-		cout <<"maxClient: limite max" << endl;
-		cout <<"sendType: 0 echo send, 1 direct send" << endl;
-		cout <<"interval: send once interval" << endl;
+		cout << "please input like example:" << endl;
+		cout << "tcpTest remoteIP remotePort startType maxClient sendType interval" << endl;
+		cout << "./tcpTest 0.0.0.0 81 0" << endl;
+		cout << "startType: 0 server, 1 client" << endl;
+		cout << "maxClient: limite max" << endl;
+		cout << "sendType: 0 echo send, 1 direct send" << endl;
+		cout << "interval: send once interval" << endl;
 		return 0;
 	}
 	if (argc > 1)

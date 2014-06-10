@@ -70,6 +70,7 @@ void CTcpSession::BindTcpSocketPrt(CTcpSocketPtr sockptr, SessionID sessionID, b
 	if (! m_isConnector)
 	{
 		m_acceptID = aID;
+		m_heartbeatID = CTcpSessionManager::getRef().CreateTimer(HEARTBEART_INTERVAL, std::bind(&CTcpSession::OnHeartbeat, shared_from_this()));
 	}
 }
 
@@ -94,44 +95,28 @@ void CTcpSession::CleanSession(bool isCleanWithoutMsgPack)
 void CTcpSession::DoConnect(const tagConnctorConfigTraits & traits)
 {
 	m_sockptr->DoConnect(traits.remoteIP, traits.remotePort, std::bind(&CTcpSession::OnConnected, shared_from_this(), std::placeholders::_1, traits));
-	LOGI("DoConnected : traits.reconnect=" << traits.reconnect
-		<< ", traits.reconnectInterval=" << traits.reconnectInterval
-		<< ", traits.remoteIP=" << traits.remoteIP
-		<< ", traits.remotePort=" << traits.remotePort
-		);
+	LOGI("DoConnected : traits=" << traits);
 }
 
 void CTcpSession::OnConnected(zsummer::network::ErrorCode ec, const tagConnctorConfigTraits & traits)
 {
-	if (ec && (!traits.reconnect || traits.reconnectMaxCount == 0))
+	if (ec/* && traits.reconnectMaxCount == 0*/)
 	{
 		LOGE("OnConnected failed. ec=" << ec 
-			<< ", traits.reconnect=" << traits.reconnect 
-			<< ", traits.reconnectInterval=" << traits.reconnectInterval
-			<< ", traits.remoteIP=" << traits.remoteIP
-			<< ", traits.remotePort=" << traits.remotePort
-			);
+			<< ",  traits=" << traits);
 		CTcpSessionManager::getRef().OnConnectorStatus(m_sessionID, false, shared_from_this());
 		return;
 	}
-	else if (ec)
-	{
-		LOGE("OnConnected failed. ec=" << ec
-			<< ", traits.reconnect=" << traits.reconnect
-			<< ", traits.reconnectInterval=" << traits.reconnectInterval
-			<< ", traits.remoteIP=" << traits.remoteIP
-			<< ", traits.remotePort=" << traits.remotePort
-			);
-		tagConnctorConfigTraits t = traits;
-		t.reconnectMaxCount--;
-		CTcpSessionManager::getRef().CreateTimer(traits.reconnectInterval, std::bind(&CTcpSession::DoConnect, shared_from_this(), t));
-		return;
-	}
-	LOGI("OnConnected success. traits.reconnect=" << traits.reconnect
-		<< ", traits.reconnectInterval=" << traits.reconnectInterval
-		<< ", traits.remoteIP=" << traits.remoteIP
-		<< ", traits.remotePort=" << traits.remotePort
-		);
+// 	else if (ec)
+// 	{
+// 		LOGE("OnConnected failed. ec=" << ec
+// 			<< ",  traits=" << traits);
+// 		tagConnctorConfigTraits t = traits;
+// 		t.reconnectMaxCount--;
+// 		CTcpSessionManager::getRef().CreateTimer(traits.reconnectInterval, std::bind(&CTcpSession::DoConnect, shared_from_this(), t));
+// 		return;
+// 	}
+	LOGI("OnConnected success.  traits=" << traits);
 	//用户在该回调中发送的第一包会跑到发送堆栈的栈顶. 适用于建立会话后的一些服务状态信息更新的情况, 但如果还有其他包 则会放在栈底.
 	CTcpSessionManager::getRef().OnConnectorStatus(m_sessionID, true, shared_from_this());
 	if (m_sending.bufflen == 0 && !m_sendque.empty())
@@ -142,6 +127,7 @@ void CTcpSession::OnConnected(zsummer::network::ErrorCode ec, const tagConnctorC
 		m_freeCache.push(m_sendque.front());
 		m_sendque.pop();
 	}
+	m_heartbeatID = CTcpSessionManager::getRef().CreateTimer(HEARTBEART_INTERVAL, std::bind(&CTcpSession::OnHeartbeat, shared_from_this()));
 	
 	DoRecv();
 }
@@ -158,6 +144,7 @@ void CTcpSession::DoRecv()
 void CTcpSession::Close()
 {
 	m_sockptr->DoClose();
+	m_heartbeatID = 0;
 }
 
 void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
@@ -176,7 +163,6 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 	{
 		LOGD("killed socket: CheckBuffIntegrity error ");
 		m_sockptr->DoClose();
-		OnClose();
 		return;
 	}
 	if (ret.second > 0)
@@ -297,16 +283,38 @@ void CTcpSession::OnSend(zsummer::network::ErrorCode ec,  int nSentLen)
 	}
 }
 
+void CTcpSession::OnHeartbeat()
+{
+	if (m_isConnector)
+	{
+		CMessageDispatcher::getRef().DispatchOnConnectorHeartbeat(m_sessionID);
+	}
+	else
+	{
+		CMessageDispatcher::getRef().DispatchOnSessionHeartbeat(m_acceptID, m_sessionID);
+	}
+	if (m_heartbeatID != 0)
+	{
+		m_heartbeatID = CTcpSessionManager::getRef().CreateTimer(HEARTBEART_INTERVAL, std::bind(&CTcpSession::OnHeartbeat, shared_from_this()));
+	}
+}
+
 void CTcpSession::OnClose()
 {
 	LOGI("Client Closed!");
+	if (m_heartbeatID >0)
+	{
+		CTcpSessionManager::getRef().CancelTimer(m_heartbeatID);
+		m_heartbeatID = 0;
+	}
+	
 	if (m_isConnector)
 	{
 		CTcpSessionManager::getRef().OnConnectorStatus(m_sessionID, false, shared_from_this());
 	}
 	else
 	{
-		CTcpSessionManager::getRef().OnSessionClose(m_sessionID);
+		CTcpSessionManager::getRef().OnSessionClose(m_acceptID, m_sessionID);
 	}
 	
 }

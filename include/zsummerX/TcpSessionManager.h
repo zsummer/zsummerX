@@ -60,32 +60,32 @@ public:
 public:
 	SessionID AddConnector(const tagConnctorConfigTraits &traits);
 	AccepterID AddAcceptor(const tagAcceptorConfigTraits &traits);
+
 	bool BindEstablishedSocketPtr(CTcpSocketPtr sockptr, AccepterID aID);
 public:
-	void SendOrgConnectorData(SessionID sID, const char * orgData, unsigned int orgDataLen);
-	void SendConnectorData(SessionID sID, ProtocolID pID, const char * userData, unsigned int userDataLen);
+	void SendOrgConnectorData(ConnectorID cID, const char * orgData, unsigned int orgDataLen);
+	void SendConnectorData(ConnectorID cID, ProtocolID pID, const char * userData, unsigned int userDataLen);
 
-	void SendOrgSessionData(SessionID sID, const char * orgData, unsigned int orgDataLen);
-	void SendSessionData(SessionID sID, ProtocolID pID, const char * userData, unsigned int userDataLen);
+	void SendOrgSessionData(AccepterID aID, SessionID sID, const char * orgData, unsigned int orgDataLen);
+	void SendSessionData(AccepterID aID, SessionID sID, ProtocolID pID, const char * userData, unsigned int userDataLen);
 
-	void KickSession(SessionID sID);
-	void BreakConnector(SessionID sID);
+	void KickSession(AccepterID aID, SessionID sID);
+	void BreakConnector(ConnectorID cID);
 private:
 	friend class CTcpSession;
-	void OnSessionClose(SessionID sID);
-	void OnConnectorStatus(SessionID connectorID, bool bConnected, CTcpSessionPtr connector);
+	void OnSessionClose(AccepterID aID, SessionID sID);
+	void OnConnectorStatus(ConnectorID connectorID, bool bConnected, CTcpSessionPtr connector);
 	void OnAcceptNewClient(zsummer::network::ErrorCode ec, CTcpSocketPtr s, CTcpAcceptPtr accepter, AccepterID aID);
 private:
 
 	bool  m_bRunning = true;
 	SessionID m_lastSessionID = 0;
-	SessionID m_lastConnectorID = 0;
-	SessionID m_lastAcceptorID = 0;
+
 
 	CZSummerPtr m_summer;
-	std::map<SessionID, CTcpSessionPtr> m_mapTcpSessionPtr;
-	std::map<SessionID, CTcpSessionPtr> m_mapConnectorPtr;
-	std::map<SessionID, tagConnctorConfigTraits> m_mapConnectorConfig;
+	std::map<AccepterID, std::map<SessionID, CTcpSessionPtr> > m_mapTcpSessionPtr;
+	std::map<ConnectorID, CTcpSessionPtr> m_mapConnectorPtr;
+	std::map<ConnectorID, tagConnctorConfigTraits> m_mapConnectorConfig;
 	std::map<AccepterID, tagAcceptorConfigTraits> m_mapAccepterConfig;
 	std::map<AccepterID, CTcpAcceptPtr> m_mapAccepterPtr;
 public:

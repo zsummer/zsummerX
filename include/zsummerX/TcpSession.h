@@ -56,7 +56,7 @@ class CTcpSession : public std::enable_shared_from_this<CTcpSession>
 public:
 	CTcpSession();
 	~CTcpSession();
-	void BindTcpSocketPrt(CTcpSocketPtr sockptr, SessionID sessionID, bool isConnector, AccepterID aID=0);
+	void BindTcpSocketPrt(CTcpSocketPtr sockptr, SessionID sessionID, bool isConnector, AccepterID aID=InvalidAccepterID);
 	
 	void DoConnect(const tagConnctorConfigTraits & traits);
 	void DoRecv();
@@ -73,6 +73,7 @@ private:
 	
 	void OnSend(zsummer::network::ErrorCode ec,  int nSentLen);
 
+	void OnHeartbeat();
 	
 	void OnClose();
 
@@ -80,9 +81,11 @@ private:
 	CTcpSocketPtr  m_sockptr;
 
 
-	SessionID m_sessionID;
+	SessionID m_sessionID = InvalidSeesionID;
 	bool m_isConnector = false;
-	AccepterID m_acceptID = 0;
+	AccepterID m_acceptID = InvalidAccepterID;
+
+	zsummer::network::TimerID m_heartbeatID = 0;
 	
 	//! ¶Á°ü
 	tagMSGPack m_recving = {0};

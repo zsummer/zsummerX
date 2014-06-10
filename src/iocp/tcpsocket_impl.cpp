@@ -41,7 +41,6 @@
 using namespace zsummer::network;
 CTcpSocketImpl::CTcpSocketImpl()
 {
-	m_summer = NULL;
 	m_socket = INVALID_SOCKET;
 	m_nLinkStatus = LS_UNINITIALIZE;
 	m_remoteIP = "";
@@ -99,7 +98,7 @@ bool CTcpSocketImpl::Initialize(CZSummerPtr summer)
 
 bool CTcpSocketImpl::AttachEstablishedSocket(SOCKET s, std::string remoteIP, unsigned short remotePort)
 {
-	if (m_summer == NULL)
+	if (!m_summer)
 	{
 		LCF("CTcpSocket::AttachEstablishedSocket m_summer pointer uninitialize.socket=" << (unsigned int) m_socket);
 		return false;
@@ -130,7 +129,7 @@ typedef  BOOL (PASCAL  *ConnectEx)(  SOCKET s,  const struct sockaddr* name,  in
 
 bool CTcpSocketImpl::DoConnect(std::string remoteIP, unsigned short remotePort, const _OnConnectHandler & handler)
 {
-	if (m_summer == NULL)
+	if (!m_summer)
 	{
 		LCF("CTcpSocket::DoConnect m_summer pointer uninitialize.socket=" << (unsigned int) m_socket);
 		return false;
@@ -208,7 +207,7 @@ bool CTcpSocketImpl::DoConnect(std::string remoteIP, unsigned short remotePort, 
 
 bool CTcpSocketImpl::DoSend(char * buf, unsigned int len, const _OnSendHandler &handler)
 {
-	if (m_summer == NULL)
+	if (!m_summer)
 	{
 		LCF("CTcpSocket::DoSend m_summer pointer uninitialize.socket=" << (unsigned int) m_socket);
 		return false;
@@ -250,7 +249,7 @@ bool CTcpSocketImpl::DoSend(char * buf, unsigned int len, const _OnSendHandler &
 
 bool CTcpSocketImpl::DoRecv(char * buf, unsigned int len, const _OnRecvHandler & handler)
 {
-	if (m_summer == NULL)
+	if (!m_summer)
 	{
 		LCF("CTcpSocket::DoRecv m_summer pointer uninitialize.socket=" << (unsigned int) m_socket);
 		return false;

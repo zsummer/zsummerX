@@ -111,7 +111,7 @@ bool  CUdpSocketImpl::Initialize(CZSummerPtr summer, const char *localIP, unsign
 
 bool CUdpSocketImpl::DoSend(char * buf, unsigned int len, const char *dstip, unsigned short dstport)
 {
-	if (m_summer == NULL)
+	if (!m_summer)
 	{
 		LCE("CUdpSocketImpl::DoSend()" << this << " IIOServer not bind!");
 		return false;
@@ -132,7 +132,7 @@ bool CUdpSocketImpl::DoSend(char * buf, unsigned int len, const char *dstip, uns
 
 bool CUdpSocketImpl::DoRecv(char * buf, unsigned int len, const _OnRecvFromHandler& handler)
 {
-	if (m_summer == NULL)
+	if (!m_summer)
 	{
 		LCE("CUdpSocketImpl::DoRecv()" << this << " IIOServer not bind!");
 		return false;

@@ -43,7 +43,6 @@ using namespace zsummer::network;
 
 CUdpSocketImpl::CUdpSocketImpl()
 {
-	m_summer = NULL;
 	m_socket=INVALID_SOCKET;
 	memset(&m_addr, 0, sizeof(m_addr));
 
@@ -121,7 +120,7 @@ bool CUdpSocketImpl::Initialize(CZSummerPtr summer, const char *localIP, unsigne
 
 bool CUdpSocketImpl::DoSend(char * buf, unsigned int len, const char *dstip, unsigned short dstport)
 {
-	if (m_summer == NULL)
+	if (!m_summer)
 	{
 		LCF("CUdpSocketImpl::DoSend IIOServer pointer uninitialize.socket=" << (unsigned int) m_socket);
 		return false;
@@ -149,7 +148,7 @@ bool CUdpSocketImpl::DoSend(char * buf, unsigned int len, const char *dstip, uns
 
 bool CUdpSocketImpl::DoRecv(char * buf, unsigned int len, const _OnRecvFromHandler& handler)
 {
-	if (m_summer == NULL)
+	if (!m_summer)
 	{
 		LCF("CUdpSocketImpl::DoRecv IIOServer pointer uninitialize.socket=" << (unsigned int) m_socket);
 		return false;

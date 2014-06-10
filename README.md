@@ -12,24 +12,26 @@ MIT开源 代码可以任意使用在任何场合.
 每个IOSERVER都可以无限制挂靠的connecter角色, accepter角色与clienter角色 充分应对各种复杂的网络使用场景并充分发挥多核性能.    
 完全异步的接口设计.  
   
-
+原始接口文件如下:  
+zsummer.h  
+tcpaccept.h  
+tcpsocket.h  
+udpsocket.h  
+高级网络接口:(不支持HTTP XML等不定长封包协议)  
+FrameHeader.h  
+MessageDispatch.h  
+TcpSessionManager.h  
+  
 #编译要求  
 windows下VS2013或者以上版本  
 linux下g++4.7或者以上版本.  
 
 #compile in linux  
-###build log4z library  
-cd zsummerX/depends/log4z/g++/  
+### build   
+cd zsummerX/  
 cmake -DCMAKE_BUILD_TYPE=DEBUG .   
 make  
-###build zsummerX library  
-cd zsummerX/g++/  
-cmake -DCMAKE_BUILD_TYPE=DEBUG .   
-make  
-### build tcpTest & udpTest   
-cd zsummerX/example/  
-cmake -DCMAKE_BUILD_TYPE=DEBUG .   
-make   
+
 ### runing tcpTest server   
 cd zsummerX/example/bin/  
 ./tcpTest_d 0.0.0.0 81  
@@ -38,15 +40,9 @@ cd zsummerX/example/bin/
 ./tcpTest_d 127.0.0.1 81 1 1  
   
 #compile in windows   
-###build log4z library  
-cd zsummerX/depends/log4z/vc2005   
-compile log4z.vcxproj  
-###build zsummerXlibrary  
+###build zsummerX  
 cd zsummerX/vc2013/  
 compile zsummerX.vcxproj  
-### build tcpTest & udpTest   
-cd zsummerX/example/  
-compile zsummerX.sln    
 ### runing tcpTest server   
 cd zsummerX/example/bin/  
 tcpTest_win32d.exe 0.0.0.0 81  

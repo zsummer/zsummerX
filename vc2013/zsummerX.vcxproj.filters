@@ -28,6 +28,9 @@
     <Filter Include="src\frame">
       <UniqueIdentifier>{f45d965e-2242-40d3-b31e-94c6c0371c69}</UniqueIdentifier>
     </Filter>
+    <Filter Include="include\timer">
+      <UniqueIdentifier>{546cc95f-872f-4528-b9f4-6e253d6c2862}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\common\common.cpp">
@@ -48,13 +51,13 @@
     <ClCompile Include="..\src\timer\timer.cpp">
       <Filter>src\timmer</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\frame\MessageDispatch.cpp">
+    <ClCompile Include="..\src\frame\FrameMessageDispatch.cpp">
       <Filter>src\frame</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\frame\TcpSession.cpp">
+    <ClCompile Include="..\src\frame\FrameTcpSession.cpp">
       <Filter>src\frame</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\frame\TcpSessionManager.cpp">
+    <ClCompile Include="..\src\frame\FrameTcpSessionManager.cpp">
       <Filter>src\frame</Filter>
     </ClCompile>
   </ItemGroup>
@@ -86,19 +89,19 @@
     <ClInclude Include="..\include\zsummerX\zsummer.h">
       <Filter>include\interface</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\zsummerX\timer.h">
-      <Filter>include\interface</Filter>
+    <ClInclude Include="..\include\zsummerX\timer\timer.h">
+      <Filter>include\timer</Filter>
     </ClInclude>
     <ClInclude Include="..\include\zsummerX\FrameHeader.h">
       <Filter>include\interface</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\zsummerX\MessageDispatch.h">
+    <ClInclude Include="..\include\zsummerX\FrameMessageDispatch.h">
       <Filter>include\interface</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\zsummerX\TcpSession.h">
+    <ClInclude Include="..\include\zsummerX\FrameTcpSession.h">
       <Filter>include\interface</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\zsummerX\TcpSessionManager.h">
+    <ClInclude Include="..\include\zsummerX\FrameTcpSessionManager.h">
       <Filter>include\interface</Filter>
     </ClInclude>
   </ItemGroup>

@@ -41,7 +41,7 @@
 
 
 #include "../common/common.h"
-#include "../timer.h"
+#include "../timer/timer.h"
 
 namespace zsummer
 {

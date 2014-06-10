@@ -39,8 +39,8 @@
 
 
 #include <zsummerX/FrameHeader.h>
-#include <zsummerX/TcpSessionManager.h>
-#include <zsummerX/MessageDispatch.h>
+#include <zsummerX/FrameTcpSessionManager.h>
+#include <zsummerX/FrameMessageDispatch.h>
 using namespace zsummer::log4z;
 
 std::string g_remoteIP = "0.0.0.0";

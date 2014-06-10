@@ -70,6 +70,7 @@ namespace zsummer
 {
 	namespace network
 	{
+		typedef unsigned long long TimerID;
 		class CZSummer :public std::enable_shared_from_this<CZSummer>
 		{
 		public:
@@ -94,11 +95,11 @@ namespace zsummer
 			//handle: std::function<void(unsigned long long)>
 			//unsigned long long : timer ID
 			template<typename H>
-			inline unsigned long long CreateTimer(unsigned int delayms, const H &h)
+			inline TimerID CreateTimer(unsigned int delayms, const H &h)
 			{
 				return m_impl.CreateTimer(delayms, h);
 			}
-			inline bool CancelTimer(unsigned long long timerID)
+			inline bool CancelTimer(TimerID timerID)
 			{
 				return m_impl.CancelTimer(timerID);
 			}

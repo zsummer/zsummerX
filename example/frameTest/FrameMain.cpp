@@ -225,6 +225,7 @@ int main(int argc, char* argv[])
 		traits.aID = 1;
 		traits.listenPort = 81;
 		traits.maxSessions = 1;
+		traits.whitelistIP.push_back("127.0.");
 		CTcpSessionManager::getRef().AddAcceptor(traits);
 	}
 	CTcpSessionManager::getRef().Run();

@@ -94,7 +94,7 @@ void CTcpSessionManager::OnAcceptNewClient(zsummer::network::ErrorCode ec, CTcpS
 	s->GetPeerInfo(remoteIP, remotePort);
 	if (!iter->second.whitelistIP.empty())
 	{
-		bool checkSucess = true;
+		bool checkSucess = false;
 		for (auto white : iter->second.whitelistIP)
 		{
 			if (remoteIP.size() >= white.size())
@@ -106,14 +106,21 @@ void CTcpSessionManager::OnAcceptNewClient(zsummer::network::ErrorCode ec, CTcpS
 				}
 			}
 		}
-		LOGI("Accept New Client Check Whitelist " << (checkSucess ? "Sucess. " : "failed. ") << "remoteAdress=" << remoteIP << ":" << remotePort
-			<< ", trais=" << iter->second);
+
 		if (!checkSucess)
 		{
+			LOGW("Accept New Client Check Whitelist Failed remoteAdress=" << remoteIP << ":" << remotePort
+				<< ", trais=" << iter->second);
+
 			CTcpSocketPtr newclient(new zsummer::network::CTcpSocket);
 			newclient->Initialize(m_summer);
 			accepter->DoAccept(newclient, std::bind(&CTcpSessionManager::OnAcceptNewClient, this, std::placeholders::_1, std::placeholders::_2, accepter, aID));
 			return;
+		}
+		else
+		{
+			LOGI("Accept New Client Check Whitelist Success remoteAdress=" << remoteIP << ":" << remotePort
+				<< ", trais=" << iter->second);
 		}
 	}
 	

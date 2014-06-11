@@ -37,7 +37,9 @@
 #include <zsummerX/FrameTcpSession.h>
 #include <zsummerX/FrameTcpSessionManager.h>
 #include <zsummerX/FrameMessageDispatch.h>
+
 using namespace zsummer::protocol4z;
+
 
 CTcpSession::CTcpSession()
 {
@@ -57,32 +59,22 @@ CTcpSession::~CTcpSession()
 		delete m_freeCache.front();
 		m_freeCache.pop();
 	}
-	LOGI("~CTcpSession");
-	
+	m_sockptr.reset();
+	LOGI("~CTcpSession. global _g_totalCreatedCTcpSocketObjs=" << zsummer::network::_g_totalCreatedCTcpSocketObjs << ", _g_totalClosedCTcpSocketObjs=" << zsummer::network::_g_totalClosedCTcpSocketObjs);
 }
-
-void CTcpSession::BindTcpSocketPrt(CTcpSocketPtr sockptr, SessionID sessionID, bool isConnector, AccepterID aID)
-{
-	CleanSession();
-	m_sockptr = sockptr;
-	m_sessionID = sessionID;
-	m_isConnector = isConnector;
-	if (! m_isConnector)
-	{
-		m_acceptID = aID;
-		m_heartbeatID = CTcpSessionManager::getRef().CreateTimer(HEARTBEART_INTERVAL, std::bind(&CTcpSession::OnHeartbeat, shared_from_this()));
-	}
-}
-
-void CTcpSession::CleanSession(bool isCleanWithoutMsgPack)
+void CTcpSession::CleanSession(bool isCleanAllData)
 {
 	m_sockptr.reset();
-	m_sessionID = 0;
-	m_isConnector = false;
+	m_sessionID = InvalidSeesionID;
+	m_acceptID = InvalidAccepterID;
+	m_connectorID = InvalidConnectorID;
+	m_heartbeatID = InvalidTimerID;
+
+
 	m_recving.bufflen = 0;
 	m_sending.bufflen = 0;
 	m_sendingCurIndex = 0;
-	if (isCleanWithoutMsgPack)
+	if (isCleanAllData)
 	{
 		while (!m_sendque.empty())
 		{
@@ -92,59 +84,80 @@ void CTcpSession::CleanSession(bool isCleanWithoutMsgPack)
 	}
 }
 
-void CTcpSession::DoConnect(const tagConnctorConfigTraits & traits)
+bool CTcpSession::BindTcpSocketPrt(CTcpSocketPtr sockptr, AccepterID aID, SessionID sID)
 {
-	m_sockptr->DoConnect(traits.remoteIP, traits.remotePort, std::bind(&CTcpSession::OnConnected, shared_from_this(), std::placeholders::_1, traits));
-	LOGI("DoConnected : traits=" << traits);
+	CleanSession(true);
+	m_sockptr = sockptr;
+	m_sessionID = sID;
+	m_acceptID = aID;
+	if (!DoRecv())
+	{
+		LOGW("BindTcpSocketPrt Failed.");
+		return false;
+	}
+	m_heartbeatID = CTcpSessionManager::getRef().CreateTimer(HEARTBEART_INTERVAL, std::bind(&CTcpSession::OnHeartbeat, shared_from_this()));
+	return true;
 }
+
+void CTcpSession::BindTcpConnectorPrt(CTcpSocketPtr sockptr, const tagConnctorConfigTraits & traits)
+{
+	CleanSession(traits.reconnectCleanAllData);
+	m_sockptr = sockptr;
+	m_connectorID = traits.cID;
+
+	bool connectRet = m_sockptr->DoConnect(traits.remoteIP, traits.remotePort, 
+		std::bind(&CTcpSession::OnConnected, shared_from_this(), std::placeholders::_1, traits));
+	if (!connectRet)
+	{
+		LOGF("DoConnected Failed: traits=" << traits);
+		return ;
+	}
+	LOGI("DoConnected : traits=" << traits);
+	return ;
+}
+
+
+
 
 void CTcpSession::OnConnected(zsummer::network::ErrorCode ec, const tagConnctorConfigTraits & traits)
 {
-	if (ec/* && traits.reconnectMaxCount == 0*/)
+	if (ec)
 	{
 		LOGE("OnConnected failed. ec=" << ec 
 			<< ",  traits=" << traits);
-		CTcpSessionManager::getRef().OnConnectorStatus(m_sessionID, false, shared_from_this());
+		CTcpSessionManager::getRef().OnConnectorStatus(traits.cID, false, shared_from_this());
 		return;
 	}
-// 	else if (ec)
-// 	{
-// 		LOGE("OnConnected failed. ec=" << ec
-// 			<< ",  traits=" << traits);
-// 		tagConnctorConfigTraits t = traits;
-// 		t.reconnectMaxCount--;
-// 		CTcpSessionManager::getRef().CreateTimer(traits.reconnectInterval, std::bind(&CTcpSession::DoConnect, shared_from_this(), t));
-// 		return;
-// 	}
 	LOGI("OnConnected success.  traits=" << traits);
-	//用户在该回调中发送的第一包会跑到发送堆栈的栈顶. 适用于建立会话后的一些服务状态信息更新的情况, 但如果还有其他包 则会放在栈底.
-	CTcpSessionManager::getRef().OnConnectorStatus(m_sessionID, true, shared_from_this());
-	if (m_sending.bufflen == 0 && !m_sendque.empty())
+	
+	if (!DoRecv())
 	{
-		memcpy(m_sending.buff, m_sendque.front()->buff, m_sendque.front()->bufflen);
-		m_sending.bufflen = m_sendque.front()->bufflen;
-		m_sendingCurIndex = 0;
-		m_freeCache.push(m_sendque.front());
-		m_sendque.pop();
+		OnClose();
+		return;
 	}
 	m_heartbeatID = CTcpSessionManager::getRef().CreateTimer(HEARTBEART_INTERVAL, std::bind(&CTcpSession::OnHeartbeat, shared_from_this()));
 	
-	DoRecv();
-}
-
-void CTcpSession::DoRecv()
-{
-	m_recving.bufflen = 0;
-	bool recvRet = m_sockptr->DoRecv(m_recving.buff, FrameStreamTraits::HeadLen, std::bind(&CTcpSession::OnRecv, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
-	if (!recvRet)
+	//用户在该回调中发送的第一包会跑到发送堆栈的栈顶.
+	CTcpSessionManager::getRef().OnConnectorStatus(m_connectorID, true, shared_from_this());
+	if (m_sending.bufflen == 0 && !m_sendque.empty())
 	{
-		OnClose();
+		tagMSGPack tmp = *m_sendque.front();
+		m_freeCache.push(m_sendque.front());
+		DoSend(tmp.buff, tmp.bufflen);
 	}
 }
+
+bool CTcpSession::DoRecv()
+{
+	m_recving.bufflen = 0;
+	return m_sockptr->DoRecv(m_recving.buff, FrameStreamTraits::HeadLen, std::bind(&CTcpSession::OnRecv, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
+}
+
 void CTcpSession::Close()
 {
 	m_sockptr->DoClose();
-	m_heartbeatID = 0;
+	CTcpSessionManager::getRef().CancelTimer(m_heartbeatID);
+	m_heartbeatID = InvalidTimerID;
 }
 
 void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
@@ -163,6 +176,7 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 	{
 		LOGD("killed socket: CheckBuffIntegrity error ");
 		m_sockptr->DoClose();
+		OnClose();
 		return;
 	}
 	if (ret.second > 0)
@@ -177,16 +191,14 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 		ReadStreamPack rs(m_recving.buff, m_recving.bufflen);
 		ProtocolID protocolID = 0;
 		rs >> protocolID;
-		if (m_isConnector)
+		if (m_connectorID != InvalidConnectorID)
 		{
-			CMessageDispatcher::getRef().DispatchConnectorMessage(m_sessionID, protocolID, rs);
+			CMessageDispatcher::getRef().DispatchConnectorMessage(m_connectorID, protocolID, rs);
 		}
-		else
+		else if (m_sessionID != InvalidSeesionID && m_acceptID != InvalidAccepterID)
 		{
 			CMessageDispatcher::getRef().DispatchSessionMessage(m_acceptID, m_sessionID, protocolID, rs);
 		}
-		
-		
 	}
 	catch (std::runtime_error e)
 	{
@@ -196,7 +208,10 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 		return ;
 	}
 
-	DoRecv();
+	if (!DoRecv())
+	{
+		OnClose();
+	}
 }
 
 void CTcpSession::DoSend(const char *buf, unsigned int len)
@@ -206,7 +221,7 @@ void CTcpSession::DoSend(const char *buf, unsigned int len)
 		tagMSGPack *pack = NULL;
 		if (m_freeCache.empty())
 		{
-			pack = new tagMSGPack(0);
+			pack = new tagMSGPack();
 		}
 		else
 		{
@@ -225,7 +240,7 @@ void CTcpSession::DoSend(const char *buf, unsigned int len)
 		bool sendRet = m_sockptr->DoSend(m_sending.buff, m_sending.bufflen, std::bind(&CTcpSession::OnSend, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
 		if (!sendRet)
 		{
-			OnClose();
+			LOGW("Send Failed");
 		}
 	}
 }
@@ -236,7 +251,6 @@ void CTcpSession::OnSend(zsummer::network::ErrorCode ec,  int nSentLen)
 	if (ec)
 	{
 		LOGD("remote socket closed");
-		OnClose();
 		return ;
 	}
 	m_sendingCurIndex += nSentLen;
@@ -245,7 +259,8 @@ void CTcpSession::OnSend(zsummer::network::ErrorCode ec,  int nSentLen)
 		bool sendRet = m_sockptr->DoSend(m_sending.buff + m_sendingCurIndex, m_sending.bufflen - m_sendingCurIndex, std::bind(&CTcpSession::OnSend, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
 		if (!sendRet)
 		{
-			OnClose();
+			LOGW("Send Failed");
+			return;
 		}
 		
 	}
@@ -277,7 +292,8 @@ void CTcpSession::OnSend(zsummer::network::ErrorCode ec,  int nSentLen)
 			bool sendRet = m_sockptr->DoSend(m_sending.buff, m_sending.bufflen, std::bind(&CTcpSession::OnSend, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
 			if (!sendRet)
 			{
-				OnClose();
+				LOGW("Send Failed");
+				return;
 			}
 		}
 	}
@@ -285,37 +301,42 @@ void CTcpSession::OnSend(zsummer::network::ErrorCode ec,  int nSentLen)
 
 void CTcpSession::OnHeartbeat()
 {
-	if (m_isConnector)
+	if (m_connectorID != InvalidConnectorID)
 	{
-		CMessageDispatcher::getRef().DispatchOnConnectorHeartbeat(m_sessionID);
+		CTcpSessionManager::getRef().Post(std::bind(&CMessageDispatcher::DispatchOnConnectorHeartbeat, &CMessageDispatcher::getRef(), m_connectorID));
+	}
+	else if (m_sessionID != InvalidSeesionID && m_acceptID != InvalidAccepterID)
+	{
+		CTcpSessionManager::getRef().Post(std::bind(&CMessageDispatcher::DispatchOnSessionHeartbeat, &CMessageDispatcher::getRef(), m_acceptID, m_sessionID));
 	}
 	else
 	{
-		CMessageDispatcher::getRef().DispatchOnSessionHeartbeat(m_acceptID, m_sessionID);
+		LOGE("Unknown heartbeat");
 	}
-	if (m_heartbeatID != 0)
+	if (m_heartbeatID == InvalidTimerID)
 	{
-		m_heartbeatID = CTcpSessionManager::getRef().CreateTimer(HEARTBEART_INTERVAL, std::bind(&CTcpSession::OnHeartbeat, shared_from_this()));
+		return;
 	}
+	m_heartbeatID = CTcpSessionManager::getRef().CreateTimer(HEARTBEART_INTERVAL, std::bind(&CTcpSession::OnHeartbeat, shared_from_this()));
+	
 }
 
 void CTcpSession::OnClose()
 {
 	LOGI("Client Closed!");
-	if (m_heartbeatID >0)
+	if (m_heartbeatID != InvalidTimerID)
 	{
 		CTcpSessionManager::getRef().CancelTimer(m_heartbeatID);
-		m_heartbeatID = 0;
+		m_heartbeatID = InvalidTimerID;
 	}
 	
-	if (m_isConnector)
+	if (m_connectorID != InvalidConnectorID)
 	{
-		CTcpSessionManager::getRef().OnConnectorStatus(m_sessionID, false, shared_from_this());
+		CTcpSessionManager::getRef().OnConnectorStatus(m_connectorID, false, shared_from_this());
 	}
-	else
+	else if (m_sessionID != InvalidSeesionID && m_acceptID != InvalidAccepterID)
 	{
 		CTcpSessionManager::getRef().OnSessionClose(m_acceptID, m_sessionID);
 	}
-	
 }
 

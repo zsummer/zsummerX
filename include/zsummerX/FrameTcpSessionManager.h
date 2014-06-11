@@ -55,7 +55,7 @@ public:
 	void Post(const H &h){m_summer->Post(h);}
 public:
 	template <class H>
-	unsigned long long CreateTimer(unsigned int delayms, const H &h){ return m_summer->CreateTimer(delayms, h); }
+	zsummer::network::TimerID CreateTimer(unsigned int delayms, const H &h){ return m_summer->CreateTimer(delayms, h); }
 	bool CancelTimer(unsigned long long timerID){ return m_summer->CancelTimer(timerID); }
 public:
 	SessionID AddConnector(const tagConnctorConfigTraits &traits);
@@ -74,7 +74,7 @@ public:
 private:
 	friend class CTcpSession;
 	void OnSessionClose(AccepterID aID, SessionID sID);
-	void OnConnectorStatus(ConnectorID connectorID, bool bConnected, CTcpSessionPtr connector);
+	void OnConnectorStatus(ConnectorID connectorID, bool bConnected, CTcpSessionPtr session);
 	void OnAcceptNewClient(zsummer::network::ErrorCode ec, CTcpSocketPtr s, CTcpAcceptPtr accepter, AccepterID aID);
 private:
 

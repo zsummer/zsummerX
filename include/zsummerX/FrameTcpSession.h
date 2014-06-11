@@ -44,9 +44,8 @@
 
 struct tagMSGPack
 {
-	tagMSGPack(unsigned int l){ bufflen = l; }
 	char buff[MSG_BUFF_MAX_LEN];
-	unsigned int bufflen;
+	unsigned int bufflen = 0;
 };
 
 
@@ -56,14 +55,15 @@ class CTcpSession : public std::enable_shared_from_this<CTcpSession>
 public:
 	CTcpSession();
 	~CTcpSession();
-	void BindTcpSocketPrt(CTcpSocketPtr sockptr, SessionID sessionID, bool isConnector, AccepterID aID=InvalidAccepterID);
-	
-	void DoConnect(const tagConnctorConfigTraits & traits);
-	void DoRecv();
+	bool BindTcpSocketPrt(CTcpSocketPtr sockptr, AccepterID aID, SessionID sID);
+	void BindTcpConnectorPrt(CTcpSocketPtr sockptr, const tagConnctorConfigTraits & traits);
 	void DoSend(const char *buf, unsigned int len);
 	void Close();
 private:
-	void CleanSession(bool isCleanWithoutMsgPack = true);
+
+	bool DoRecv();
+
+	void CleanSession(bool isCleanAllData);
 
 	void OnConnected(zsummer::network::ErrorCode ec, const tagConnctorConfigTraits & traits);
 
@@ -79,19 +79,24 @@ private:
 
 
 	CTcpSocketPtr  m_sockptr;
-
-
 	SessionID m_sessionID = InvalidSeesionID;
-	bool m_isConnector = false;
 	AccepterID m_acceptID = InvalidAccepterID;
+	ConnectorID m_connectorID = InvalidConnectorID;
 
-	zsummer::network::TimerID m_heartbeatID = 0;
+	zsummer::network::TimerID m_heartbeatID = InvalidTimerID;
+
+	enum SessionStatus
+	{
+		SS_UNINITILIZE,
+		SS_ESTABLISHED,
+		SS_CLOSED,
+	};
 	
 	//! 读包
-	tagMSGPack m_recving = {0};
+	tagMSGPack m_recving;
 
 
-	tagMSGPack m_sending = { 0 };
+	tagMSGPack m_sending;
 	unsigned int m_sendingCurIndex = 0;
 	//! 写包队列
 	std::queue<tagMSGPack *> m_sendque;

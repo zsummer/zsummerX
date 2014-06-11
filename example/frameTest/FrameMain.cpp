@@ -134,36 +134,37 @@ int main(int argc, char* argv[])
 		time_t remoteLastHeartbeat = time(NULL);
 		auto connectedfun = [](ConnectorID cID)
 		{
+			LOGI("send to ConnectorID=" << cID << ", msg=hello");
 			WriteStreamPack ws;
 			ws << _RequestSequence << "hello";
 			CTcpSessionManager::getRef().SendOrgConnectorData(cID, ws.GetStream(), ws.GetStreamLen());
-			LOGI("send to ConnectorID=" << cID << ", protocolID=23, msg=hello");
 		};
 		auto MyHeartbeat = [&remoteLastHeartbeat](ConnectorID cID)
 		{
 			time_t now = time(NULL);
 			if (now - remoteLastHeartbeat > HEARTBEART_INTERVAL / 1000 * 2)
 			{
+				LOGW("Connector check heartbeat timeout. Connector=" << cID);
 				CTcpSessionManager::getRef().BreakConnector(cID);
-				LOGW("Connector heartbeat timeout. Connector=" << cID);
 				return;
 			}
+			LOGI("send  heartbeat");
 			WriteStreamPack ws;
 			ws << _Heartbeat;
 			CTcpSessionManager::getRef().SendOrgConnectorData(cID, ws.GetStream(), ws.GetStreamLen());
-			LOGI("send  heartbeat");
 		};
 		auto msg_Heartbeat_fun = [&remoteLastHeartbeat](ConnectorID cID, ProtocolID pID, ReadStreamPack & rs)
 		{
-			remoteLastHeartbeat = time(NULL);
 			LOGI("on remote heartbeat");
+			remoteLastHeartbeat = time(NULL);
 		};
 		auto msg_ResultSequence_fun = [](ConnectorID cID, ProtocolID pID, ReadStreamPack & rs)
 		{
 			std::string msg;
 			rs >> msg;
-			LOGI("recv ConnectorID = " << cID << ", ProtocolID = " << pID << ", msg = " << msg);
-			CTcpSessionManager::getRef().BreakConnector(cID);
+			LOGI("recv ConnectorID = " << cID << ", msg = " << msg);
+			LOGI("break connector");
+			//CTcpSessionManager::getRef().BreakConnector(cID);
 		};
 
 
@@ -179,7 +180,7 @@ int main(int argc, char* argv[])
 		traits.remoteIP = "127.0.0.1";
 		traits.remotePort = 81;
 		traits.reconnectInterval = 5000;
-		traits.reconnectMaxCount = 0;
+		traits.reconnectMaxCount = 5;
 		CTcpSessionManager::getRef().AddConnector(traits);
 
 	}
@@ -191,31 +192,32 @@ int main(int argc, char* argv[])
 			time_t now = time(NULL);
 			if (now - remoteLastHeartbeat > HEARTBEART_INTERVAL / 1000 * 2)
 			{
+				LOGW("session heartbeat timeout. AccepterID=" << aID << ", SessionID=" << sID);
 				CTcpSessionManager::getRef().KickSession(aID, sID);
-				LOGW("Connector heartbeat timeout. AccepterID=" << aID << ", SessionID=" <<sID);
 				return;
 			}
+			LOGI("send  heartbeat");
 			WriteStreamPack ws;
 			ws << _Heartbeat;
 			CTcpSessionManager::getRef().SendOrgSessionData(aID, sID, ws.GetStream(), ws.GetStreamLen());
-			LOGI("send  heartbeat");
 		};
 
 		auto msg_Heartbeat_fun = [&remoteLastHeartbeat](AccepterID aID, SessionID sID, ProtocolID pID, ReadStreamPack & rs)
 		{
-			remoteLastHeartbeat = time(NULL);
 			LOGI("on remote heartbeat");
+			remoteLastHeartbeat = time(NULL);
 		};
 		OnSessionMessageFunction msg_RequestSequence_fun = [](AccepterID aID, SessionID sID, ProtocolID pID, ReadStreamPack & rs)
 		{
 			std::string msg;
 			rs >> msg;
-			LOGI("recv SessionID = " << sID << ", ProtocolID = " << pID << ", msg = " << msg);
+			LOGI("recv SessionID = " << sID << ", msg = " << msg);
 			msg += " echo";
+			LOGI("send echo AcceptID = " << aID << ", SessionID = " << sID  << ", msg = " << msg);
 			WriteStreamPack ws;
 			ws << _ResultSequence << msg;
 			CTcpSessionManager::getRef().SendOrgSessionData(aID, sID, ws.GetStream(), ws.GetStreamLen());
-			LOGI("send echo AcceptID = " << aID << ", SessionID = " << sID << ", ProtocolID = " << 24 << ", msg = " << msg);
+			
 		};
 		CMessageDispatcher::getRef().RegisterOnMySessionHeartbeatTimer(MyHeartbeat);
 		CMessageDispatcher::getRef().RegisterSessionMessage(_Heartbeat, msg_Heartbeat_fun);

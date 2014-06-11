@@ -40,6 +40,7 @@
 
 #ifndef _ZSUMMERX_TCPSOCKET_H_
 #define _ZSUMMERX_TCPSOCKET_H_
+#include <atomic>
 #ifdef WIN32
 #include "iocp/tcpsocket_impl.h"
 #else
@@ -49,11 +50,21 @@ namespace zsummer
 {
 	namespace network
 	{
+		extern std::atomic_uint _g_totalCreatedCTcpSocketObjs;
+		extern std::atomic_uint _g_totalClosedCTcpSocketObjs;
+
+
 		class CTcpSocket
 		{
 		public:
-			CTcpSocket():m_userData(0){}
-			~CTcpSocket(){}
+			CTcpSocket():m_userData(0)
+			{
+				_g_totalCreatedCTcpSocketObjs++;
+			}
+			~CTcpSocket()
+			{
+				_g_totalClosedCTcpSocketObjs++;
+			}
 
 			//! 初始化,  把当前socket绑定到指定的zsummer上.
 			inline bool Initialize(CZSummerPtr summer)
@@ -113,6 +124,8 @@ namespace zsummer
 		};
 		typedef std::shared_ptr<CTcpSocket> CTcpSocketPtr;
 	};
+
+
 	
 };
 

@@ -136,7 +136,7 @@ bool CTcpSocketImpl::DoConnect(std::string remoteIP, unsigned short remotePort, 
 	}
 	if (m_nLinkStatus != LS_WAITLINK)
 	{
-		LCF("CTcpSocket::DoConnect socket already used or not initilize. socket="<<(unsigned int) m_socket);
+		LCW("CTcpSocket::DoConnect socket already used or not initilize. socket=" << (unsigned int)m_socket);
 		return false;
 	}
 	if (m_isConnecting)
@@ -214,7 +214,7 @@ bool CTcpSocketImpl::DoSend(char * buf, unsigned int len, const _OnSendHandler &
 	}
 	if (m_nLinkStatus != LS_ESTABLISHED)
 	{
-		LCF("CTcpSocket::DoSend socket status != LS_ESTABLISHED. socket="<<(unsigned int) m_socket);
+		LCW("CTcpSocket::DoSend socket status != LS_ESTABLISHED. socket=" << (unsigned int)m_socket);
 		return false;
 	}
 	if (m_isSending)
@@ -256,7 +256,7 @@ bool CTcpSocketImpl::DoRecv(char * buf, unsigned int len, const _OnRecvHandler &
 	}
 	if (m_nLinkStatus != LS_ESTABLISHED)
 	{
-		LCF("CTcpSocket::DoRecv socket status != LS_ESTABLISHED. socket="<<(unsigned int) m_socket);
+		LCW("CTcpSocket::DoRecv socket status != LS_ESTABLISHED. socket="<<(unsigned int) m_socket);
 		return false;
 	}
 	if (m_isRecving)

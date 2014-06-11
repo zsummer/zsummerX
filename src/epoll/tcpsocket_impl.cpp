@@ -177,7 +177,7 @@ bool CTcpSocketImpl::DoSend(char * buf, unsigned int len, const _OnSendHandler &
 	}
 	if (m_register._linkstat != LS_ESTABLISHED)
 	{
-		LCE("CTcpSocketImpl::DoRecv()" << this << "  _linkstat not REG_ESTABLISHED_TCP!");
+		LCW("CTcpSocketImpl::DoRecv()" << this << "  _linkstat not REG_ESTABLISHED_TCP!");
 		return false;
 	}
 	if (len == 0)
@@ -226,7 +226,7 @@ bool CTcpSocketImpl::DoRecv(char * buf, unsigned int len, const _OnRecvHandler &
 	}
 	if (m_register._linkstat != LS_ESTABLISHED)
 	{
-		LCE("CTcpSocketImpl::DoRecv()" << this << "  type not REG_ESTABLISHED_TCP!");
+		LCW("CTcpSocketImpl::DoRecv()" << this << "  type not REG_ESTABLISHED_TCP!");
 		return false;
 	}
 	if (len == 0 )

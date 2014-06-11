@@ -71,6 +71,7 @@ namespace zsummer
 	namespace network
 	{
 		typedef unsigned long long TimerID;
+#define  InvalidTimerID 0
 		class CZSummer :public std::enable_shared_from_this<CZSummer>
 		{
 		public:

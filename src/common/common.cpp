@@ -33,7 +33,7 @@
  * 
  * (end of COPYRIGHT)
  */
-
+#include <atomic>
 #include <zsummerX/common/common.h>
 //init socket env
 zsummer::network::CInitEnvironment appInitEnvironment;
@@ -65,3 +65,11 @@ zsummer::network::CInitEnvironment::~CInitEnvironment()
 #endif
 }
 
+namespace zsummer
+{
+	namespace network
+	{
+		std::atomic_uint _g_totalCreatedCTcpSocketObjs;
+		std::atomic_uint _g_totalClosedCTcpSocketObjs;
+	};
+};

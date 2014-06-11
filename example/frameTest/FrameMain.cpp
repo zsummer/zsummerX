@@ -118,7 +118,7 @@ int main(int argc, char* argv[])
 	}
 	LOGI("g_remoteIP=" << g_remoteIP << ", g_remotePort=" << g_remotePort << ", g_startType=" << g_startType 
 		<< ", g_maxClient=" << g_maxClient << ", g_sendType=" << g_sendType << ", g_intervalMs=" << g_intervalMs);
-
+//	ILog4zManager::GetInstance()->SetLoggerLevel(LOG4Z_MAIN_LOGGER_ID, LOG_LEVEL_INFO);
 
 
 	CTcpSessionManager::getRef().Start();
@@ -163,8 +163,27 @@ int main(int argc, char* argv[])
 			std::string msg;
 			rs >> msg;
 			LOGI("recv ConnectorID = " << cID << ", msg = " << msg);
-			LOGI("break connector");
+			
+			//break check
+			//LOGI("break connector");
 			//CTcpSessionManager::getRef().BreakConnector(cID);
+
+			//echo check
+// 			WriteStreamPack ws;
+// 			std::string testStr;
+// 			testStr.resize(1024, 's');
+// 			ws << _RequestSequence << testStr;
+// 			CTcpSessionManager::getRef().SendOrgConnectorData(cID, ws.GetStream(), ws.GetStreamLen());
+// 			static unsigned int g_total = 0;
+// 			g_total++;
+// 			static unsigned long long g_lasttime = NOW_TIME;
+// 			if (NOW_TIME - g_lasttime > 5000)
+// 			{
+// 				LOGI("per second=" << g_total / 5.0);
+// 				g_total = 0;
+// 				g_lasttime = NOW_TIME;
+// 			}
+			
 		};
 
 
@@ -180,7 +199,7 @@ int main(int argc, char* argv[])
 		traits.remoteIP = "127.0.0.1";
 		traits.remotePort = 81;
 		traits.reconnectInterval = 5000;
-		traits.reconnectMaxCount = 5;
+		traits.reconnectMaxCount = 0;
 		CTcpSessionManager::getRef().AddConnector(traits);
 
 	}

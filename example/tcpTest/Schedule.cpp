@@ -130,11 +130,13 @@ void CSchedule::OnAccept(zsummer::network::ErrorCode ec, CTcpSocketPtr sockptr, 
 	if (allOpen - allClosed > g_maxClient )
 	{
 		LOGW("OnAccept success but current links is too many.");
-		return;
+	}
+	else
+	{
+		LOGD("OnAccept one socket");
+		process->Post(std::bind(&CProcess::RecvSocketPtr, process, sockptr));
 	}
 
-	LOGD("OnAccept one socket");
-	process->Post(std::bind(&CProcess::RecvSocketPtr, process, sockptr));
 
 
 	m_iCurProcess++;

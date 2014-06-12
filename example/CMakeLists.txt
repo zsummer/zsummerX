@@ -5,4 +5,4 @@ set(EXP_DIR ${example_SOURCE_DIR})
 add_subdirectory(tcpTest)
 add_subdirectory(udpTest)
 add_subdirectory(frameTest)
-
+add_subdirectory(frameStressTest)

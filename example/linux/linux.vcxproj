@@ -118,7 +118,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../depends</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\github\zsummerX\trunk\include;../../depends</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -155,6 +155,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\depends\log4z\log4z.h" />
     <ClInclude Include="..\..\depends\protocol4z\protocol4z.h" />
+    <ClInclude Include="..\..\include\zsummerX\common\common.h" />
     <ClInclude Include="..\..\include\zsummerX\epoll\epoll_impl.h" />
     <ClInclude Include="..\..\include\zsummerX\epoll\tcpaccept_impl.h" />
     <ClInclude Include="..\..\include\zsummerX\epoll\tcpsocket_impl.h" />

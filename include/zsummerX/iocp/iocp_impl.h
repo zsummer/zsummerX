@@ -63,13 +63,13 @@ namespace zsummer
 			{
 				if (m_io != NULL)
 				{
-					LCF("iocp is craeted !");
+					LCF("CZSummerImpl::RunOnce[this0x" << this << "] iocp is craeted !" << GetZSummerImplStatus());
 					return false;
 				}
 				m_io = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, NULL, 1);
 				if (!m_io)
 				{
-					LCF("CreateIoCompletionPort False!");
+					LCF("CZSummerImpl::RunOnce[this0x" << this << "] CreateIoCompletionPort False!" << GetZSummerImplStatus());
 					return false;
 				}
 				return true;
@@ -93,6 +93,12 @@ namespace zsummer
 			inline bool CancelTimer(unsigned long long timerID)
 			{
 				return m_timer.CancelTimer(timerID);
+			}
+			std::string GetZSummerImplStatus()
+			{
+				std::stringstream os;
+				os << " CZSummerImpl Status: m_iocp=" << m_io << ", current total timer=" << m_timer.GetTimersCount();
+				return os.str();
 			}
 		public:
 			//! IOCP¾ä±ú

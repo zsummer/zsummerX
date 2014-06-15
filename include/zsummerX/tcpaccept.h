@@ -50,7 +50,7 @@ namespace zsummer
 		class CTcpAccept
 		{
 		public:
-			CTcpAccept(CZSummerPtr summer) :m_impl(summer){}
+			CTcpAccept(CZSummerPtr summer){ m_impl.Initialize(summer); }
 			~CTcpAccept(){}
 			bool OpenAccept(const char * ip, unsigned short port)
 			{

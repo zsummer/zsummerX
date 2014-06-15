@@ -128,6 +128,7 @@ namespace zsummer
 					
 				}
 			}
+			inline std::map<unsigned long long, _OnTimerHandler* >::size_type GetTimersCount(){ return m_queTimer.size(); }
 		private:
 			//! ¶¨Ê±Æ÷
 			std::map<unsigned long long, _OnTimerHandler* > m_queTimer;

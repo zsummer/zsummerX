@@ -44,15 +44,9 @@ using namespace zsummer::network;
 
 
 
-CTcpAcceptImpl::CTcpAcceptImpl(CZSummerPtr summer)
+CTcpAcceptImpl::CTcpAcceptImpl()
 {
-	m_port = 0;
-	m_summer = summer;
-	m_isAcceptLock = false;
 	m_register._event.data.ptr = &m_register;
-	m_register._event.events = 0;
-	m_register._fd = -1;
-	m_register._linkstat = LS_UNINITIALIZE;
 	m_register._ptr = this;
 	m_register._type = tagRegister::REG_TCP_ACCEPT;
 }
@@ -60,38 +54,46 @@ CTcpAcceptImpl::CTcpAcceptImpl(CZSummerPtr summer)
 
 CTcpAcceptImpl::~CTcpAcceptImpl()
 {
-	if (m_register._fd != -1)
+	if (m_register._fd != InvalideFD)
 	{
 		close(m_register._fd);
-		m_register._fd = -1;
+		m_register._fd = InvalideFD;
 	}
 }
-
-bool CTcpAcceptImpl::Initialize()
+std::string CTcpAcceptImpl::GetAcceptImplStatus()
 {
+	std::stringstream os;
+	os << " CTcpAcceptImpl:Status m_summer=" << m_summer.use_count() << ", m_listenIP=" << m_listenIP
+		<< ", m_listenPort=" << m_listenPort << ", m_onAcceptHandler=" << (bool)m_onAcceptHandler
+		<< ", m_client=" << m_client.use_count() << "m_register=" << m_register;
+	return os.str();
+}
+bool CTcpAcceptImpl::Initialize(CZSummerPtr summer)
+{
+	m_summer = summer;
 	m_register._linkstat = LS_WAITLINK;
 	return true;
 }
 
 
-bool CTcpAcceptImpl::OpenAccept(const char * ip, unsigned short port)
+bool CTcpAcceptImpl::OpenAccept(std::string listenIP, unsigned short listenPort)
 {
 	if (!m_summer)
 	{
-		LCE("m_summer not bind!");
+		LCE("CTcpAcceptImpl::OpenAccept[this0x" << this << "] m_summer not bind!" << GetAcceptImplStatus());
 		return false;
 	}
 
-	if (m_register._fd != -1)
+	if (m_register._fd != InvalideFD)
 	{
-		LCF("accept fd is aready used!");
+		LCF("CTcpAcceptImpl::OpenAccept[this0x" << this << "] accept fd is aready used!" << GetAcceptImplStatus());
 		return false;
 	}
 
 	m_register._fd = socket(AF_INET, SOCK_STREAM, 0);
-	if (m_register._fd == -1)
+	if (m_register._fd == InvalideFD)
 	{
-		LCF("socket create err errno =" << strerror(errno));
+		LCF("CTcpAcceptImpl::OpenAccept[this0x" << this << "] listen socket create err errno =" << strerror(errno) << GetAcceptImplStatus());
 		return false;
 	}
 
@@ -102,83 +104,91 @@ bool CTcpAcceptImpl::OpenAccept(const char * ip, unsigned short port)
 	int bReuse = 1;
 	if (setsockopt(m_register._fd, SOL_SOCKET, SO_REUSEADDR,  &bReuse, sizeof(bReuse)) != 0)
 	{
-		LCW("socket set reuse fail! errno=" << strerror(errno));
+		LCW("CTcpAcceptImpl::OpenAccept[this0x" << this << "] listen socket set reuse fail! errno=" << strerror(errno) << GetAcceptImplStatus());
 	}
 
 
 	m_addr.sin_family = AF_INET;
-	m_addr.sin_addr.s_addr = inet_addr(ip);
-	m_addr.sin_port = htons(port);
+	m_addr.sin_addr.s_addr = inet_addr(listenIP.c_str());
+	m_addr.sin_port = htons(listenPort);
 	if (bind(m_register._fd, (sockaddr *) &m_addr, sizeof(m_addr)) != 0)
 	{
-		LCF("socket bind err, errno=" << strerror(errno));
+		LCF("CTcpAcceptImpl::OpenAccept[this0x" << this << "] listen socket bind err, errno=" << strerror(errno) << GetAcceptImplStatus());
 		close(m_register._fd);
-		m_register._fd = -1;
+		m_register._fd = InvalideFD;
 		return false;
 	}
 
 	if (listen(m_register._fd, 200) != 0)
 	{
-		LCF("socket listen err, errno=" << strerror(errno));
+		LCF("CTcpAcceptImpl::OpenAccept[this0x" << this << "] listen socket listen err, errno=" << strerror(errno) << GetAcceptImplStatus());
 		close(m_register._fd);
-		m_register._fd = -1;
+		m_register._fd = InvalideFD;
 		return false;
 	}
 
-	if (epoll_ctl(m_summer->m_impl.m_epoll, EPOLL_CTL_ADD, m_register._fd, &m_register._event) != 0)
+	if (!m_summer->m_impl.RegisterEvent(EPOLL_CTL_ADD, m_register))
 	{
-		LCF(" EPOLL_CTL_ADD err!  errno=" << strerror(errno));
+		LCF("CTcpAcceptImpl::OpenAccept[this0x" << this << "] listen socket register error." << GetAcceptImplStatus());
 		return false;
 	}
-
+	m_register._linkstat = LS_ESTABLISHED;
 	return true;
 }
+
 bool CTcpAcceptImpl::DoAccept(CTcpSocketPtr &s, const _OnAcceptHandler &handle)
 {
-	if (m_isAcceptLock)
+	if (m_onAcceptHandler)
 	{
-		LCF(" socket DoAccept err, dumplicate DoAccept");
+		LCF("CTcpAcceptImpl::DoAccept[this0x" << this << "] err, dumplicate DoAccept" << GetAcceptImplStatus());
 		return false;
 	}
+	if (m_register._linkstat != LS_ESTABLISHED)
+	{
+		LCF("CTcpAcceptImpl::DoAccept[this0x" << this << "] err, _linkstat not work state" << GetAcceptImplStatus());
+		return false;
+	}
+	
 	m_register._event.events = EPOLLIN;
-	if (epoll_ctl(m_summer->m_impl.m_epoll, EPOLL_CTL_MOD, m_register._fd, &m_register._event) != 0)
+	if (!m_summer->m_impl.RegisterEvent(EPOLL_CTL_MOD, m_register))
 	{
-		LCF("EPOLL_CTL_MOD!  errno=" << strerror(errno));
-		return false;
-	}
-	m_onAcceptHandler = handle;
-	m_client = s;
-	m_isAcceptLock = true;
-	return true;
-}
-bool CTcpAcceptImpl::OnEPOLLMessage(bool bSuccess)
-{
-	//
-	if (!m_isAcceptLock)
-	{
-		LCF("unkown error.  errno=" << strerror(errno));
+		LCF("CTcpAcceptImpl::DoAccept[this0x" << this << "] err, _linkstat not work state" << GetAcceptImplStatus());
 		return false;
 	}
 
-	m_isAcceptLock = false;
+	m_onAcceptHandler = handle;
+	m_client = s;
+	return true;
+}
+void CTcpAcceptImpl::OnEPOLLMessage(bool bSuccess)
+{
+	//
+	if (!m_onAcceptHandler)
+	{
+		LCF("CTcpAcceptImpl::DoAccept[this0x" << this << "] err, dumplicate DoAccept" << GetAcceptImplStatus());
+		return ;
+	}
+	if (m_register._linkstat != LS_ESTABLISHED)
+	{
+		LCF("CTcpAcceptImpl::DoAccept[this0x" << this << "] err, _linkstat not work state" << GetAcceptImplStatus());
+		return ;
+	}
+
 	_OnAcceptHandler onAccept;
 	onAccept.swap(m_onAcceptHandler);
 	CTcpSocketPtr ps(m_client);
 	m_client.reset();
 	m_register._event.events = 0;
-	if (epoll_ctl(m_summer->m_impl.m_epoll, EPOLL_CTL_MOD, m_register._fd, &m_register._event) != 0)
-	{
-		LCF("EPOLL_CTL_MOD!  errno=" << strerror(errno));
-	}
+	m_summer->m_impl.RegisterEvent(EPOLL_CTL_MOD, m_register);
+
 	if (!bSuccess)
 	{
-		LCF("accept EPOLLERR, errno=" << strerror(errno));
+		LCF("CTcpAcceptImpl::DoAccept[this0x" << this << "]  EPOLLERR, errno=" << strerror(errno) << GetAcceptImplStatus());
 		onAccept(EC_ERROR, ps);
-		return false;
+		return ;
 	}
 	else
 	{
-		LCD("INFO: onaccept on link");
 		sockaddr_in cltaddr;
 		memset(&cltaddr, 0, sizeof(cltaddr));
 		socklen_t len = sizeof(cltaddr);
@@ -187,10 +197,10 @@ bool CTcpAcceptImpl::OnEPOLLMessage(bool bSuccess)
 		{
 			if (errno != EAGAIN && errno != EWOULDBLOCK)
 			{
-				LCE("ERR: accept -1, errno=" << strerror(errno));
+				LCE("CTcpAcceptImpl::DoAccept[this0x" << this << "] ERR: accept return -1, errno=" << strerror(errno) << GetAcceptImplStatus());
 			}
 			onAccept(EC_ERROR, ps);
-			return false;
+			return ;
 		}
 
 		SetNonBlock(s);
@@ -199,18 +209,16 @@ bool CTcpAcceptImpl::OnEPOLLMessage(bool bSuccess)
 		ps->m_impl.AttachEstablishedSocket(s,inet_ntoa(cltaddr.sin_addr), ntohs(cltaddr.sin_port));
 		onAccept(EC_SUCCESS, ps);
 	}
-	return true;
+	return ;
 }
 
 bool CTcpAcceptImpl::Close()
 {
-	if (epoll_ctl(m_summer->m_impl.m_epoll, EPOLL_CTL_DEL, m_register._fd, &m_register._event) != 0)
-	{
-		LCF(" EPOLL_CTL_DEL err!  errno=" << strerror(errno));
-	}
+	m_onAcceptHandler = nullptr;
+	m_summer->m_impl.RegisterEvent(EPOLL_CTL_DEL, m_register);
 	shutdown(m_register._fd, SHUT_RDWR);
 	close(m_register._fd);
-	m_register._fd = -1;
+	m_register._fd = InvalideFD;
 	return true;
 }
 

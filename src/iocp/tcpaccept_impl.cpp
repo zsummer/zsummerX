@@ -40,9 +40,9 @@
 
 
 using namespace zsummer::network;
-CTcpAcceptImpl::CTcpAcceptImpl(CZSummerPtr summer)
+CTcpAcceptImpl::CTcpAcceptImpl()
 {
-	m_summer = summer;
+	
 	//listen
 	m_server = INVALID_SOCKET;
 	memset(&m_addr, 0, sizeof(m_addr));
@@ -57,7 +57,6 @@ CTcpAcceptImpl::CTcpAcceptImpl(CZSummerPtr summer)
 	memset(&m_handle, 0, sizeof(m_handle));
 
 	//status
-	m_bAccpetLock = false;
 	m_nLinkStatus = LS_UNINITIALIZE;
 }
 CTcpAcceptImpl::~CTcpAcceptImpl()
@@ -74,10 +73,21 @@ CTcpAcceptImpl::~CTcpAcceptImpl()
 	}
 }
 
-
+bool CTcpAcceptImpl::Initialize(CZSummerPtr summer)
+{
+	m_summer = summer;
+	return true;
+}
 
 bool CTcpAcceptImpl::OpenAccept(const char * ip, unsigned short port)
 {
+	if (!m_summer)
+	{
+		LCF("CTcpAccept m_summer is nullptr!  ip=" << ip << ", port=" << port);
+		assert(0);
+		return false;
+	}
+
 	if (m_server != INVALID_SOCKET)
 	{
 		LCF("CTcpAccept socket is arealy used!  ip=" << ip << ", port=" << port);
@@ -133,7 +143,7 @@ bool CTcpAcceptImpl::OpenAccept(const char * ip, unsigned short port)
 
 bool CTcpAcceptImpl::DoAccept(CTcpSocketPtr & s, const _OnAcceptHandler& handler)
 {
-	if (m_bAccpetLock)
+	if (m_onAcceptHandler)
 	{
 		LCF("DoAccept err, aready DoAccept  ip=" << m_ip << ", port=" << m_port);
 		return false;
@@ -166,12 +176,10 @@ bool CTcpAcceptImpl::DoAccept(CTcpSocketPtr & s, const _OnAcceptHandler& handler
 		}
 	}
 	m_onAcceptHandler = handler;
-	m_bAccpetLock = true;;
 	return true;
 }
 bool CTcpAcceptImpl::OnIOCPMessage(BOOL bSuccess)
 {
-	m_bAccpetLock = false;
 	_OnAcceptHandler onAccept;
 	onAccept.swap(m_onAcceptHandler);
 	if (bSuccess)

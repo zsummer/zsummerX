@@ -46,7 +46,7 @@ void CZSummerImpl::RunOnce()
 {
 	if (m_io == NULL)
 	{
-		LCF("Can't Run Once. server not initialize or initialize false.");
+		LCF("CZSummerImpl::RunOnce[this0x" << this << "] Can't Run Once. server not initialize or initialize false." << GetZSummerImplStatus());
 		return;
 	}
 
@@ -102,7 +102,7 @@ void CZSummerImpl::RunOnce()
 		}
 		break;
 	default:
-		LCE("GetQueuedCompletionStatus undefined type=" << type);
+		LCE("CZSummerImpl::RunOnce[this0x" << this << "]GetQueuedCompletionStatus undefined type=" << type << GetZSummerImplStatus());
 	}
 	
 }

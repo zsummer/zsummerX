@@ -46,7 +46,7 @@ namespace zsummer
 		class CZSummerImpl
 		{
 		public:
-			typedef std::vector<void*> MsgVct;
+			typedef std::vector<void*> MessageStack;
 			CZSummerImpl();
 			~CZSummerImpl();
 			bool Initialize();
@@ -55,7 +55,7 @@ namespace zsummer
 			template <typename handle>
 			inline void Post(const handle &h)
 			{
-				PostMsg(h);
+				PostMessage(h);
 			}
 			inline unsigned long long CreateTimer(unsigned int delayms, const _OnTimerHandler &handle)
 			{
@@ -66,20 +66,20 @@ namespace zsummer
 				return m_timer.CancelTimer(timerID);
 			}
 
-
-
 		public:
-			void PostMsg(const _OnPostHandler &handle);
-
-		public:
-			int	m_epoll;
+			bool RegisterEvent(int op, tagRegister &reg);
+			void PostMessage(const _OnPostHandler &handle);
+		private:
+			std::string GetZSummerImplStatus();
+		private:
+			int	m_epoll = InvalideFD;
 			//! 网络消息
-			epoll_event m_events[5000];
+			epoll_event m_events[5000] = {};
 			//线程消息
-			int		m_sockpair[2];
+			int		m_sockpair[2] = {};
 			tagRegister m_register;
-			MsgVct	m_msgs;
-			std::mutex	m_msglock;
+			MessageStack m_stackMessages;
+			std::mutex	 m_stackMessagesLock;
 
 			//! timmer
 			CTimer m_timer;

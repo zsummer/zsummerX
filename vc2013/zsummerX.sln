@@ -33,6 +33,10 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "boost_ping_pong", "..\example\boost_ping_pong\boost_ping_pong.vcxproj", "{E8D36731-AACA-4D6F-9CD7-E11CA4D71ED8}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "frameStressTest", "..\example\frameStressTest\frameStressTest.vcxproj", "{EA950C2B-48CB-4FEC-81E8-4CED27BAB732}"
+	ProjectSection(ProjectDependencies) = postProject
+		{78726622-CC7B-4CE6-B836-5A124171104C} = {78726622-CC7B-4CE6-B836-5A124171104C}
+		{06D64BC9-7AD1-40A1-835A-54BCC3ABFE39} = {06D64BC9-7AD1-40A1-835A-54BCC3ABFE39}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

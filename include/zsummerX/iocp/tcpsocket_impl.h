@@ -61,13 +61,14 @@ namespace zsummer
 			bool DoClose();
 		public:
 			bool AttachEstablishedSocket(SOCKET s, std::string remoteIP, unsigned short remotePort);
-			bool OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned char cType);
+			void OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned char cType);
+			std::string GetTcpSocketImplStatus();
 		public:
 			//private
 			CZSummerPtr  m_summer;
-			SOCKET		m_socket;
+			SOCKET		m_socket = INVALID_SOCKET;
 			std::string m_remoteIP;
-			unsigned short m_remotePort;
+			unsigned short m_remotePort = 0;
 
 			//recv
 			tagReqHandle m_recvHandle;
@@ -85,10 +86,7 @@ namespace zsummer
 			tagReqHandle m_connectHandle;
 			_OnConnectHandler m_onConnectHandler;
 			//status
-			bool m_isRecving;
-			bool m_isSending;
-			bool m_isConnecting;
-			int m_nLinkStatus;
+			int m_nLinkStatus = LS_UNINITIALIZE;
 		};
 	}
 }

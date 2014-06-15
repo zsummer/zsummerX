@@ -51,27 +51,26 @@ namespace zsummer
 		class CTcpAcceptImpl
 		{
 		public:
-			CTcpAcceptImpl(CZSummerPtr summer);
+			CTcpAcceptImpl();
 			~CTcpAcceptImpl();
-			bool Initialize();
-			bool OpenAccept(const char * ip, unsigned short port);
+			bool Initialize(CZSummerPtr summer);
+			bool OpenAccept(std::string listenIP, unsigned short listenPort);
 			bool DoAccept(CTcpSocketPtr &s, const _OnAcceptHandler &handle);
-			bool OnEPOLLMessage(bool bSuccess);
+			void OnEPOLLMessage(bool bSuccess);
 			bool Close();
 
-			void OnPostClose();
-
+		private:
+			std::string GetAcceptImplStatus();
+		private:
 			CZSummerPtr 		m_summer;
-			std::string		m_ip;
-			short			m_port;
+			std::string		m_listenIP;
+			short			m_listenPort = 0;
 
 			sockaddr_in		m_addr;
 
 			tagRegister m_register; //! epoll ×¢²áÊÂ¼þ
 			_OnAcceptHandler m_onAcceptHandler;
 			CTcpSocketPtr  m_client;
-
-			bool	m_isAcceptLock;
 
 		};
 	}

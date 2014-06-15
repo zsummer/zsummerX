@@ -41,10 +41,6 @@
 using namespace zsummer::network;
 CTcpSocketImpl::CTcpSocketImpl()
 {
-	m_socket = INVALID_SOCKET;
-	m_nLinkStatus = LS_UNINITIALIZE;
-	m_remoteIP = "";
-	m_remotePort = 0;
 	//recv
 	memset(&m_recvHandle, 0, sizeof(m_recvHandle));
 	m_recvHandle._type = tagReqHandle::HANDLE_RECV;
@@ -60,34 +56,42 @@ CTcpSocketImpl::CTcpSocketImpl()
 	//connect
 	memset(&m_connectHandle, 0, sizeof(m_connectHandle));
 	m_connectHandle._type = tagReqHandle::HANDLE_CONNECT;
-
-	//status
-	m_isRecving = false;
-	m_isSending = false;
-	m_isConnecting = false;
-	
 }
 
 
 CTcpSocketImpl::~CTcpSocketImpl()
 {
+	if (m_onConnectHandler || m_onRecvHandler || m_onSendHandler)
+	{
+		LCE("CTcpSocketImpl::~CTcpSocketImpl[" << this << "] Destruct CTcpSocketImpl Error. socket handle not invalid and some request was not completed. " << GetTcpSocketImplStatus());
+	}	
 	if (m_socket != INVALID_SOCKET)
 	{
-		if (m_isConnecting || m_isRecving || m_isSending)
-		{
-			LCE("Destruct CTcpSocketImpl Error. socket handle not invalid and some request was not completed. socket=" 
-				<< (unsigned int)m_socket << ", m_isConnecting=" << m_isConnecting << ", m_isRecving=" << m_isRecving << ", m_isSending=" << m_isSending);
-		}
+
 		closesocket(m_socket);
 		m_socket = INVALID_SOCKET;
 	}
+}
+
+std::string CTcpSocketImpl::GetTcpSocketImplStatus()
+{
+	std::stringstream os;
+	os << " CTcpSocketImpl Status: m_summer.use_count()=" << m_summer.use_count() << ", m_socket=" << m_socket
+		<< ", m_remoteIP=" << m_remoteIP << ", m_remotePort=" << m_remotePort
+		<< ", m_recvHandle=" << m_recvHandle << ", m_recvWSABuf[0x" << m_recvWSABuf.buf << "," << m_recvWSABuf.len
+		<< "], m_onRecvHandler=" << (bool)m_onRecvHandler << ", m_sendHandle=" << m_sendHandle
+		<< ", m_sendWsaBuf[0x" << m_sendWsaBuf.buf << "," << m_sendWsaBuf.len << "], m_onSendHandler=" << (bool)m_onSendHandler
+		<< ", m_connectHandle=" << m_connectHandle << ", m_onConnectHandler=" << (bool)m_onConnectHandler
+		<< ", m_nLinkStatus=" << m_nLinkStatus << ", Notes: HANDLE_ACCEPT=0, HANDLE_RECV,HANDLE_SEND,HANDLE_CONNECT,HANDLE_RECVFROM,HANDLE_SENDTO=5"
+		<< " LS_UNINITIALIZE=0,	LS_WAITLINK,LS_ESTABLISHED,LS_CLOSED";
+	return os.str();
 }
 
 bool CTcpSocketImpl::Initialize(CZSummerPtr summer)
 {
 	if (m_nLinkStatus != LS_UNINITIALIZE)
 	{
-		LCE("CTcpSocketImpl::Initialize  LinkStatus != LS_UNINITIALIZE" );
+		LCE("CTcpSocketImpl::Initialize[" << this << "] LinkStatus != LS_UNINITIALIZE" << GetTcpSocketImplStatus());
 		return false;
 	}
 	m_summer = summer;
@@ -100,18 +104,18 @@ bool CTcpSocketImpl::AttachEstablishedSocket(SOCKET s, std::string remoteIP, uns
 {
 	if (!m_summer)
 	{
-		LCF("CTcpSocket::AttachEstablishedSocket m_summer pointer uninitialize.socket=" << (unsigned int) m_socket);
+		LCF("CTcpSocketImpl::AttachEstablishedSocket[" << this << "] m_summer pointer uninitialize." << GetTcpSocketImplStatus());
 		return false;
 	}
 	if (m_nLinkStatus != LS_WAITLINK)
 	{
-		LCF("CTcpSocket::AttachEstablishedSocket socket already used or not initilize. socket="<<(unsigned int) m_socket);
+		LCF("CTcpSocketImpl::AttachEstablishedSocket[" << this << "] socket already used or not initilize. " << GetTcpSocketImplStatus());
 		return false;
 	}
 	m_socket = s;
 	if (CreateIoCompletionPort((HANDLE)m_socket, m_summer->m_impl.m_io, (ULONG_PTR)this, 1) == NULL)
 	{
-		LCE("CTcpSocket::AttachEstablishedSocket bind socket to IOCP error. socket="<< (unsigned int) m_socket << ", ERRCODE=" << GetLastError());
+		LCE("CTcpSocketImpl::AttachEstablishedSocket[" << this << "] bind socket to IOCP error.  ERRCODE=" << GetLastError() << GetTcpSocketImplStatus());
 		closesocket(m_socket);
 		m_socket = INVALID_SOCKET;
 		return false;
@@ -131,24 +135,24 @@ bool CTcpSocketImpl::DoConnect(std::string remoteIP, unsigned short remotePort, 
 {
 	if (!m_summer)
 	{
-		LCF("CTcpSocket::DoConnect m_summer pointer uninitialize.socket=" << (unsigned int) m_socket);
+		LCF("CTcpSocketImpl::DoConnect[" << this << "] m_summer pointer uninitialize." << GetTcpSocketImplStatus());
 		return false;
 	}
 	if (m_nLinkStatus != LS_WAITLINK)
 	{
-		LCW("CTcpSocket::DoConnect socket already used or not initilize. socket=" << (unsigned int)m_socket);
+		LCW("CTcpSocketImpl::DoConnect[" << this << "] socket already used or not initilize. " << GetTcpSocketImplStatus());
 		return false;
 	}
-	if (m_isConnecting)
+	if (m_onConnectHandler)
 	{
-		LCF("CTcpSocket::DoConnect socket is connecting. socket="<<(unsigned int) m_socket);
+		LCF("CTcpSocketImpl::DoConnect[" << this << "] socket is connecting." << GetTcpSocketImplStatus());
 		return false;
 	}
 	
 	m_socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
 	if (m_socket == INVALID_SOCKET)
 	{
-		LCE("CTcpSocket::DoConnect socket create error! ERRCODE=" << WSAGetLastError());
+		LCE("CTcpSocketImpl::DoConnect[" << this << "] socket create error! ERRCODE=" << WSAGetLastError() << GetTcpSocketImplStatus());
 		return false;
 	}
 
@@ -157,13 +161,13 @@ bool CTcpSocketImpl::DoConnect(std::string remoteIP, unsigned short remotePort, 
 	localAddr.sin_family = AF_INET;
 	if (bind(m_socket, (sockaddr *) &localAddr, sizeof(SOCKADDR_IN)) != 0)
 	{
-		LCE("CTcpSocket::DoConnect bind local addr error!  socket=" << (unsigned int)m_socket << ", ERRCODE=" << WSAGetLastError());
+		LCE("CTcpSocketImpl::DoConnect[" << this << "] bind local addr error! ERRCODE=" << WSAGetLastError() << GetTcpSocketImplStatus());
 		return false;
 	}
 
 	if (CreateIoCompletionPort((HANDLE)m_socket, m_summer->m_impl.m_io, (ULONG_PTR)this, 1) == NULL)
 	{
-		LCE("CTcpSocket::DoConnect bind socket to IOCP error. socket="<< (unsigned int) m_socket << ", ERRCODE=" << GetLastError());
+		LCE("CTcpSocketImpl::DoConnect[" << this << "] bind socket to IOCP error. ERRCODE=" << GetLastError() << GetTcpSocketImplStatus());
 		closesocket(m_socket);
 		m_socket = INVALID_SOCKET;
 		return false;
@@ -175,7 +179,7 @@ bool CTcpSocketImpl::DoConnect(std::string remoteIP, unsigned short remotePort, 
 	DWORD dwSize = 0;
 	if (WSAIoctl(m_socket, SIO_GET_EXTENSION_FUNCTION_POINTER, &gid, sizeof(gid), &lpConnectEx, sizeof(lpConnectEx), &dwSize, NULL, NULL) != 0)
 	{
-		LCE("Get ConnectEx pointer err!  socket="<< (unsigned int) m_socket <<", ERRCODE= "<< WSAGetLastError());
+		LCE("CTcpSocketImpl::DoConnect[" << this << "] Get ConnectEx pointer err!  ERRCODE= " << WSAGetLastError() << GetTcpSocketImplStatus());
 		return false;
 	}
 	m_remoteIP = remoteIP;
@@ -192,13 +196,12 @@ bool CTcpSocketImpl::DoConnect(std::string remoteIP, unsigned short remotePort, 
 	{
 		if (WSAGetLastError() != ERROR_IO_PENDING)
 		{
-			LCE("CTcpSocket::DoConnect DoConnect failed and ERRCODE!=ERROR_IO_PENDING, socket="<< (unsigned int) m_socket << ", ERRCODE=" << WSAGetLastError());
+			LCE("CTcpSocketImpl::DoConnect[" << this << "] DoConnect failed and ERRCODE!=ERROR_IO_PENDING, ERRCODE=" << WSAGetLastError() << GetTcpSocketImplStatus());
 			return false;
 		}
 
 	}
 	m_onConnectHandler = handler;
-	m_isConnecting = true;
 	return true;
 }
 
@@ -209,22 +212,22 @@ bool CTcpSocketImpl::DoSend(char * buf, unsigned int len, const _OnSendHandler &
 {
 	if (!m_summer)
 	{
-		LCF("CTcpSocket::DoSend m_summer pointer uninitialize.socket=" << (unsigned int) m_socket);
+		LCF("CTcpSocketImpl::DoSend[" << this << "] m_summer pointer uninitialize." << GetTcpSocketImplStatus());
 		return false;
 	}
 	if (m_nLinkStatus != LS_ESTABLISHED)
 	{
-		LCW("CTcpSocket::DoSend socket status != LS_ESTABLISHED. socket=" << (unsigned int)m_socket);
+		LCW("CTcpSocketImpl::DoSend[" << this << "] socket status != LS_ESTABLISHED." << GetTcpSocketImplStatus());
 		return false;
 	}
-	if (m_isSending)
+	if (m_onSendHandler)
 	{
-		LCF("CTcpSocket::DoSend socket is sending. socket="<<(unsigned int) m_socket);
+		LCF("CTcpSocketImpl::DoSend[" << this << "] socket is sending." << GetTcpSocketImplStatus());
 		return false;
 	}
 	if (len == 0)
 	{
-		LCF("CTcpSocket::DoSend length is 0. socket="<<(unsigned int) m_socket);
+		LCF("CTcpSocketImpl::DoSend[" << this << "] length is 0." << GetTcpSocketImplStatus());
 		return false;
 	}
 
@@ -235,14 +238,13 @@ bool CTcpSocketImpl::DoSend(char * buf, unsigned int len, const _OnSendHandler &
 	{
 		if (WSAGetLastError() != WSA_IO_PENDING)
 		{
-			LCD("CTcpSocket::DoSend DoSend failed and ERRCODE!=ERROR_IO_PENDING, socket="<< (unsigned int) m_socket << ", ERRCODE=" << WSAGetLastError());
+			LCD("CTcpSocketImpl::DoSend[" << this << "] DoSend failed and ERRCODE!=ERROR_IO_PENDING ERRCODE=" << WSAGetLastError() << GetTcpSocketImplStatus());
 			m_sendWsaBuf.buf = nullptr;
 			m_sendWsaBuf.len = 0;
 			return false;
 		}
 	}
 	m_onSendHandler = handler;
-	m_isSending = true;
 	return true;
 }
 
@@ -251,22 +253,22 @@ bool CTcpSocketImpl::DoRecv(char * buf, unsigned int len, const _OnRecvHandler &
 {
 	if (!m_summer)
 	{
-		LCF("CTcpSocket::DoRecv m_summer pointer uninitialize.socket=" << (unsigned int) m_socket);
+		LCF("CTcpSocketImpl::DoRecv[" << this << "] m_summer pointer uninitialize." << GetTcpSocketImplStatus());
 		return false;
 	}
 	if (m_nLinkStatus != LS_ESTABLISHED)
 	{
-		LCW("CTcpSocket::DoRecv socket status != LS_ESTABLISHED. socket="<<(unsigned int) m_socket);
+		LCW("CTcpSocketImpl::DoRecv[" << this << "] socket status != LS_ESTABLISHED. " << GetTcpSocketImplStatus());
 		return false;
 	}
-	if (m_isRecving)
+	if (m_onRecvHandler)
 	{
-		LCF("CTcpSocket::DoRecv socket is recving. socket="<<(unsigned int) m_socket);
+		LCF("CTcpSocketImpl::DoRecv[" << this << "] socket is recving. " << GetTcpSocketImplStatus());
 		return false;
 	}
 	if (len == 0)
 	{
-		LCF("CTcpSocket::DoRecv length is 0. socket="<<(unsigned int) m_socket);
+		LCF("CTcpSocketImpl::DoRecv[" << this << "] length is 0." << GetTcpSocketImplStatus());
 		return false;
 	}
 
@@ -280,22 +282,20 @@ bool CTcpSocketImpl::DoRecv(char * buf, unsigned int len, const _OnRecvHandler &
 	{
 		if (WSAGetLastError() != WSA_IO_PENDING)
 		{
-			LCD("CTcpSocket::DoRecv DoRecv failed and ERRCODE!=ERROR_IO_PENDING, socket="<< (unsigned int) m_socket << ", ERRCODE=" << WSAGetLastError());
+			LCD("CTcpSocketImpl::DoRecv[" << this << "] DoRecv failed and ERRCODE!=ERROR_IO_PENDING, ERRCODE=" << WSAGetLastError() << GetTcpSocketImplStatus());
 			m_recvWSABuf.buf = nullptr;
 			m_recvWSABuf.len = 0;
 			return false;
 		}
 	}
 	m_onRecvHandler = handler;
-	m_isRecving = true;
 	return true;
 }
 
-bool CTcpSocketImpl::OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned char cType)
+void CTcpSocketImpl::OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned char cType)
 {
 	if (cType == tagReqHandle::HANDLE_CONNECT)
 	{
-		m_isConnecting = false;
 		_OnConnectHandler onConnect;
 		onConnect.swap(m_onConnectHandler);
 		if (bSuccess)
@@ -305,7 +305,7 @@ bool CTcpSocketImpl::OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned 
 				BOOL bTrue = TRUE;
 				if (setsockopt(m_socket,IPPROTO_TCP, TCP_NODELAY, (char*)&bTrue, sizeof(bTrue)) != 0)
 				{
-					LCW("setsockopt TCP_NODELAY fail!  last err=" << WSAGetLastError() );
+					LCW("CTcpSocketImpl::OnIOCPMessage[" << this << "] setsockopt TCP_NODELAY fail!  last err=" << WSAGetLastError() << GetTcpSocketImplStatus());
 				}
 			}
 			onConnect(ErrorCode::EC_SUCCESS);
@@ -316,7 +316,7 @@ bool CTcpSocketImpl::OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned 
 			m_socket = INVALID_SOCKET;
 			onConnect(ErrorCode::EC_ERROR);
 		}
-		return true;
+		return ;
 	}
 
 
@@ -324,38 +324,65 @@ bool CTcpSocketImpl::OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned 
 	if (cType == tagReqHandle::HANDLE_RECV)
 	{
 		//server side active close.
-		m_isRecving = false;
 		_OnRecvHandler onRecv;
 		onRecv.swap(m_onRecvHandler);
 		if (!bSuccess)
 		{
-			onRecv(ErrorCode::EC_REMOTE_HANGUP, dwTranceCount);
-			return true;
+			if (onRecv)
+			{
+				if (m_onSendHandler)
+				{
+					m_onSendHandler = nullptr;
+				}
+				onRecv(ErrorCode::EC_REMOTE_HANGUP, dwTranceCount);
+				return;
+			}
+			return;
 		}
 		// client side active closed
 		if (dwTranceCount == 0)
 		{
-			onRecv(ErrorCode::EC_REMOTE_CLOSED, dwTranceCount);
-			return true;
+			if (onRecv)
+			{
+				if (m_onSendHandler)
+				{
+					m_onSendHandler = nullptr;
+				}
+				onRecv(ErrorCode::EC_REMOTE_CLOSED, dwTranceCount);
+				return;
+			}
+			return;
 		}
-		onRecv(ErrorCode::EC_SUCCESS, dwTranceCount);
-		return true;
+		if (onRecv)
+		{
+			onRecv(ErrorCode::EC_SUCCESS, dwTranceCount);
+			return;
+		}
+		return;
 	}
-	if (cType == tagReqHandle::HANDLE_SEND)
+	else if (cType == tagReqHandle::HANDLE_SEND)
 	{
 		//server side active close.
-		m_isSending = false;
 		_OnSendHandler onSend;
 		onSend.swap(m_onSendHandler);
 		if (!bSuccess)
 		{
-			onSend(ErrorCode::EC_REMOTE_HANGUP,dwTranceCount);
-			return true;
+			if (onSend)
+			{
+				if (m_onRecvHandler)
+				{
+					m_onRecvHandler = nullptr;
+				}
+				onSend(ErrorCode::EC_REMOTE_HANGUP, dwTranceCount);
+			}
+			return;
 		}
-		onSend(ErrorCode::EC_SUCCESS, dwTranceCount);
-		return true;
+		if (onSend)
+		{
+			onSend(ErrorCode::EC_SUCCESS, dwTranceCount);
+		}
+		return ;
 	}
-	return true;
 }
 
 
@@ -369,11 +396,11 @@ bool CTcpSocketImpl::DoClose()
 	}
 	else if (m_nLinkStatus == LS_UNINITIALIZE)
 	{
-		LCW("CTcpSocket::Close(),  socket status = LS_UNINITIALIZE, socket=" << (unsigned int) m_socket);
+		LCW("CTcpSocketImpl::DoClose[" << this << "] socket status = LS_UNINITIALIZE " << GetTcpSocketImplStatus());
 	}
 	else if (m_nLinkStatus == LS_CLOSED)
 	{
-		LCW("CTcpSocket::Close(),  socket status = LS_CLOSED, socket=" << (unsigned int) m_socket);
+		LCW("CTcpSocketImpl::DoClose[" << this << "] socket status = LS_CLOSED" << GetTcpSocketImplStatus());
 	}
 	return true;
 }

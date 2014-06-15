@@ -46,9 +46,6 @@ using namespace zsummer::network;
 
 CZSummerImpl::CZSummerImpl()
 {
-	m_epoll = -1;
-	m_sockpair[0] = 0;
-	m_sockpair[1] = 0;
 }
 
 CZSummerImpl::~CZSummerImpl()
@@ -60,60 +57,74 @@ CZSummerImpl::~CZSummerImpl()
 
 bool CZSummerImpl::Initialize()
 {
+	if (m_epoll != InvalideFD)
+	{
+		LCF("CZSummerImpl::Initialize[this0x"<<this <<"] epoll is created ! " << GetZSummerImplStatus());
+		return false;
+	}
+	m_epoll = epoll_create(1);
+	if (m_epoll == InvalideFD)
+	{
+		LCF("CZSummerImpl::Initialize[this0x" << this << "] create epoll err errno=" << strerror(errno) << GetZSummerImplStatus());
+		return false;
+	}
+
+	if (socketpair(AF_LOCAL, SOCK_STREAM, 0, m_sockpair) != 0)
+	{
+		LCF("CZSummerImpl::Initialize[this0x" << this << "] create socketpair.  errno=" << strerror(errno) << GetZSummerImplStatus());
+		return false;
+	}
+	SetNonBlock(m_sockpair[0]);
+	SetNonBlock(m_sockpair[1]);
+	SetNoDelay(m_sockpair[0]);
+	SetNoDelay(m_sockpair[1]);
+
+	m_register._event.data.ptr = &m_register;
+	m_register._event.events = EPOLLIN;
+	m_register._fd = m_sockpair[1];
+	m_register._linkstat = LS_ESTABLISHED;
+	m_register._ptr = this;
+	m_register._type = tagRegister::REG_ZSUMMER;
+
+	if (!RegisterEvent(EPOLL_CTL_ADD, m_register))
+	{
+		LCF("CZSummerImpl::Initialize[this0x" << this << "] EPOLL_CTL_ADD m_socketpair error. " << GetZSummerImplStatus());
+		return false;
+	}
 	
-
-	if (m_epoll != -1)
-	{
-		LCF("epoll is created !");
-		return false;
-	}
-	m_epoll = epoll_create(200);
-	if (m_epoll == -1)
-	{
-		LCF("create epoll err errno=" << strerror(errno));
-		return false;
-	}
-	{
-		if (socketpair(AF_LOCAL, SOCK_STREAM, 0, m_sockpair) != 0)
-		{
-			LCF("create socketpair.  errno=" << strerror(errno));
-			return false;
-		}
-		SetNonBlock(m_sockpair[0]);
-		SetNonBlock(m_sockpair[1]);
-		SetNoDelay(m_sockpair[0]);
-		SetNoDelay(m_sockpair[1]);
-
-		m_register._event.data.ptr = &m_register;
-		m_register._event.events = EPOLLIN;
-		m_register._fd = m_sockpair[1];
-		m_register._linkstat = LS_ESTABLISHED;
-		m_register._ptr = this;
-		m_register._type = tagRegister::REG_ZSUMMER;
-
-
-		if (epoll_ctl(m_epoll, EPOLL_CTL_ADD, m_sockpair[1], &m_register._event) != 0)
-		{
-			LCF("epoll_ctl add socketpair failed .  errno=" << errno);
-			return false;
-		}
-	}
-
 	return true;
 }
 
+bool CZSummerImpl::RegisterEvent(int op, tagRegister & reg)
+{
+	if (epoll_ctl(m_epoll, op, reg._fd, &reg._event) != 0)
+	{
+		return false;
+	}
+	return true;
+}
 
-
-void CZSummerImpl::PostMsg(const _OnPostHandler &handle)
+void CZSummerImpl::PostMessage(const _OnPostHandler &handle)
 {
 	_OnPostHandler * pHandler = new _OnPostHandler(handle);
-	m_msglock.lock();
-	m_msgs.push_back(pHandler);
-	m_msglock.unlock();
+	m_stackMessagesLock.lock();
+	m_stackMessages.push_back(pHandler);
+	m_stackMessagesLock.unlock();
 	char c='0';
 	send(m_sockpair[0], &c, 1, 0);
 }
 
+std::string CZSummerImpl::GetZSummerImplStatus()
+{
+	std::stringstream os;
+	m_stackMessagesLock.lock();
+	MessageStack::size_type msgSize = m_stackMessages.size();
+	m_stackMessagesLock.unlock();
+	os << " CZSummerImpl Status: m_epoll=" << m_epoll << ", m_sockpair[2]={" << m_sockpair[0] << "," << m_sockpair[1] << "}"
+		<< " m_stackMessages.size()=" << msgSize << ", current total timer=" << m_timer.GetTimersCount()
+		<< " m_register=" << m_register;
+	return os.str();
+}
 
 void CZSummerImpl::RunOnce()
 {
@@ -122,7 +133,7 @@ void CZSummerImpl::RunOnce()
 	{
 		if (errno != EINTR)
 		{
-			LCD(" epoll_wait err!  errno=" <<strerror(errno));
+			LCD("CZSummerImpl::RunOnce[this0x" << this << "]  epoll_wait err!  errno=" << strerror(errno) << GetZSummerImplStatus());
 			return; //! error
 		}
 		return;
@@ -145,14 +156,14 @@ void CZSummerImpl::RunOnce()
 			char buf[1000];
 			while (recv(pReg->_fd, buf, 1000, 0) > 0);
 
-			MsgVct msgs;
-			m_msglock.lock();
-			msgs.swap(m_msgs);
-			m_msglock.unlock();
+			MessageStack msgs;
+			m_stackMessagesLock.lock();
+			msgs.swap(m_stackMessages);
+			m_stackMessagesLock.unlock();
 
-			for (auto iter = msgs.begin(); iter != msgs.end(); ++iter)
+			for (auto pfunc : msgs)
 			{
-				_OnPostHandler * p = (_OnPostHandler*)(*iter);
+				_OnPostHandler * p = (_OnPostHandler*)pfunc;
 				(*p)();
 				delete p;
 			}
@@ -164,7 +175,7 @@ void CZSummerImpl::RunOnce()
 			{
 				pKey->OnEPOLLMessage(true);
 			}
-			if (eventflag & EPOLLERR || eventflag & EPOLLHUP)
+			else if (eventflag & EPOLLERR || eventflag & EPOLLHUP)
 			{
 				pKey->OnEPOLLMessage(false);
 			}
@@ -181,7 +192,7 @@ void CZSummerImpl::RunOnce()
 		}
 		else
 		{
-			LCE("check register event type failed !!  type=" << pReg->_type);
+			LCE("CZSummerImpl::RunOnce[this0x" << this << "] check register event type failed !!  type=" << pReg->_type << GetZSummerImplStatus());
 		}
 			
 	}

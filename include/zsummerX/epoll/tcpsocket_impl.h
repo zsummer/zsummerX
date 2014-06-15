@@ -68,30 +68,28 @@ namespace zsummer
 
 			void OnPostClose();
 
-			bool OnEPOLLMessage(int type, int flag);
+			void OnEPOLLMessage(int type, int flag);
 			bool AttachEstablishedSocket(int s, std::string remoteIP, unsigned short remotePort);
 
-		public:
+		private:
+			std::string GetSocketStatus();
+		private:
 			CZSummerPtr m_summer;
 			std::string m_remoteIP;
-			unsigned short m_remotePort;
+			unsigned short m_remotePort = 0;
 			tagRegister m_register;
 			
 			
 			_OnConnectHandler m_onConnectHandler;
 
-			
-
-
 			_OnRecvHandler m_onRecvHandler;
-			unsigned int m_iRecvLen;
-			char	*	 m_pRecvBuf;
-			bool		 m_isRecvLock;
+			unsigned int m_iRecvLen = 0;
+			char	*	 m_pRecvBuf = NULL;
+
 
 			_OnSendHandler m_onSendHandler;
-			unsigned int m_iSendLen;
-			char *		 m_pSendBuf;
-			bool		 m_isSendLock;
+			unsigned int m_iSendLen = 0;
+			char *		 m_pSendBuf = NULL;
 		};
 	}
 

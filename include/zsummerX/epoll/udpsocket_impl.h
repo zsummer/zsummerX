@@ -64,7 +64,6 @@ namespace zsummer
 			_OnRecvFromHandler m_onRecvFromHandler;
 			unsigned int m_iRecvLen;
 			char	*	 m_pRecvBuf;
-			bool		m_isRecvFromLock;
 		};
 	}
 

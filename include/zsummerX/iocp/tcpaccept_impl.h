@@ -47,8 +47,9 @@ namespace zsummer
 		{
 		public:
 
-			CTcpAcceptImpl(CZSummerPtr summer);
-			virtual ~CTcpAcceptImpl();
+			CTcpAcceptImpl();
+			~CTcpAcceptImpl();
+			bool Initialize(CZSummerPtr summer);
 			bool OpenAccept(const char * ip, unsigned short port);
 			bool DoAccept(CTcpSocketPtr& s, const _OnAcceptHandler &handler);
 			bool OnIOCPMessage(BOOL bSuccess);
@@ -58,21 +59,20 @@ namespace zsummer
 
 
 			std::string		m_ip;
-			short			m_port;
+			unsigned short			m_port = 0;
 			//listen
-			SOCKET			m_server;
+			SOCKET			m_server = INVALID_SOCKET;
 			SOCKADDR_IN		m_addr;
 
 			//client
-			SOCKET m_socket;
+			SOCKET m_socket = INVALID_SOCKET;
 			char m_recvBuf[200];
-			DWORD m_recvLen;
+			DWORD m_recvLen = 0;
 			tagReqHandle m_handle;
 			_OnAcceptHandler m_onAcceptHandler;
 			CTcpSocketPtr m_client;
 
 			//status
-			bool m_bAccpetLock;
 			int m_nLinkStatus;
 		};
 	}

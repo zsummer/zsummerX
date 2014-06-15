@@ -39,6 +39,9 @@
     <ClInclude Include="..\..\include\zsummerX\epoll\udpsocket_impl.h">
       <Filter>epoll</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\zsummerX\common\common.h">
+      <Filter>epoll</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="log">

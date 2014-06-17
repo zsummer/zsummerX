@@ -57,7 +57,7 @@ tcpTest_win32d.exe 127.0.0.1 81 1 1
  
 
 
-# auther: 张亚伟 YaweiZhang  
+# auther: YaweiZhang  
 Web Site: www.zsummer.net  
 mail: yawei_zhang@foxmail.com  
 github: https://github.com/zsummer

@@ -78,9 +78,9 @@ std::string CTcpSocketImpl::GetTcpSocketImplStatus()
 	std::stringstream os;
 	os << " CTcpSocketImpl Status: m_summer.use_count()=" << m_summer.use_count() << ", m_socket=" << m_socket
 		<< ", m_remoteIP=" << m_remoteIP << ", m_remotePort=" << m_remotePort
-		<< ", m_recvHandle=" << m_recvHandle << ", m_recvWSABuf[0x" << m_recvWSABuf.buf << "," << m_recvWSABuf.len
+		<< ", m_recvHandle=" << m_recvHandle << ", m_recvWSABuf[0x" << (void*)m_recvWSABuf.buf << "," << m_recvWSABuf.len
 		<< "], m_onRecvHandler=" << (bool)m_onRecvHandler << ", m_sendHandle=" << m_sendHandle
-		<< ", m_sendWsaBuf[0x" << m_sendWsaBuf.buf << "," << m_sendWsaBuf.len << "], m_onSendHandler=" << (bool)m_onSendHandler
+		<< ", m_sendWsaBuf[0x" << (void*)m_sendWsaBuf.buf << "," << m_sendWsaBuf.len << "], m_onSendHandler=" << (bool)m_onSendHandler
 		<< ", m_connectHandle=" << m_connectHandle << ", m_onConnectHandler=" << (bool)m_onConnectHandler
 		<< ", m_nLinkStatus=" << m_nLinkStatus << ", Notes: HANDLE_ACCEPT=0, HANDLE_RECV,HANDLE_SEND,HANDLE_CONNECT,HANDLE_RECVFROM,HANDLE_SENDTO=5"
 		<< " LS_UNINITIALIZE=0,	LS_WAITLINK,LS_ESTABLISHED,LS_CLOSED";

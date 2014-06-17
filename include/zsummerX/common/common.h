@@ -236,7 +236,7 @@ namespace zsummer
 		{
 			   t<< "RegisterEvent Info: epoll_event.events[" << reg._event.events
 				   << "] _type[" << (int)reg._type << "] _linkstat[" << (int)reg._linkstat
-				<< "] _fd[" << reg._fd << "] _ptr[" << reg._ptr
+				<< "] _fd[" << reg._fd << "] _ptr[" << (void*)reg._ptr
 				<< "] Notes: REG_INVALID[" << tagRegister::REG_INVALID << "] REG_ZSUMMER[" << tagRegister::REG_ZSUMMER
 				<< "] REG_TCP_SOCKET[" << tagRegister::REG_TCP_SOCKET << "] REG_TCP_ACCEPT[" << tagRegister::REG_TCP_ACCEPT 
 				<< "] REG_UDP_SOCKET[" << tagRegister::REG_UDP_SOCKET

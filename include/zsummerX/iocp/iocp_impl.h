@@ -94,10 +94,10 @@ namespace zsummer
 			{
 				return m_timer.CancelTimer(timerID);
 			}
-			std::string GetZSummerImplStatus()
+			inline std::string GetZSummerImplStatus()
 			{
 				std::stringstream os;
-				os << " CZSummerImpl Status: m_iocp=" << m_io << ", current total timer=" << m_timer.GetTimersCount();
+				os << " CZSummerImpl Status: m_iocp=" << (void*)m_io << ", current total timer=" << m_timer.GetTimersCount();
 				return os.str();
 			}
 		public:

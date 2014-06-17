@@ -47,6 +47,158 @@ std::string g_remoteIP = "0.0.0.0";
 unsigned short g_remotePort = 81;
 unsigned short g_startType = 0;  //0 listen, 1 connect
 unsigned short g_maxClient = 1; //0 echo send, 1 direct send
+unsigned short g_sendType = 0; //0 echo send, 1 direct send
+unsigned int   g_intervalMs = 0; // send interval
+
+//test protocols, IDs
+static const ProtocolID _Heartbeat = 1000;
+static const ProtocolID _RequestSequence = 1001;
+static const ProtocolID _ResultSequence = 1002;
+
+std::string g_testStr;
+
+unsigned long long g_totalEchoCount = 0;
+unsigned long long g_lastEchoCount = 0;
+unsigned long long g_totalSendCount = 0;
+unsigned long long g_totalRecvCount = 0;
+
+void MonitorFunc()
+{
+	LOGI("per seconds Echos Count=" << (g_lastEchoCount - g_totalEchoCount) / 5
+		<< ", g_totalSendCount[" << g_totalSendCount << "] g_totalRecvCount[" << g_totalRecvCount << "]");
+	g_totalEchoCount = g_lastEchoCount;
+	CTcpSessionManager::getRef().CreateTimer(5000, MonitorFunc);
+};
+
+class CStressClient
+{
+public:
+	CStressClient()
+	{
+		CMessageDispatcher::getRef().RegisterOnConnectorEstablished(std::bind(&CStressClient::OnConnected,this, std::placeholders::_1));
+		CMessageDispatcher::getRef().RegisterOnMyConnectorHeartbeatTimer(std::bind(&CStressClient::Heartbeat, this, std::placeholders::_1));
+		CMessageDispatcher::getRef().RegisterConnectorMessage(_Heartbeat, 
+			std::bind(&CStressClient::msg_Heartbeat_fun, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+		CMessageDispatcher::getRef().RegisterConnectorMessage(_ResultSequence, 
+			std::bind(&CStressClient::msg_ResultSequence_fun, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+		CMessageDispatcher::getRef().RegisterOnConnectorDisconnect(std::bind(&CStressClient::OnConnectDisconnect, this, std::placeholders::_1));
+		
+	}
+	void OnConnected (ConnectorID cID)
+	{
+		LOGI("OnConnected. ConnectorID=" << cID );
+		WriteStreamPack ws;
+		ws << _RequestSequence << "hello";
+		CTcpSessionManager::getRef().SendOrgConnectorData(cID, ws.GetStream(), ws.GetStreamLen());
+		g_totalSendCount++;
+		if (g_sendType != 0 && g_intervalMs > 0)
+		{
+			m_timerID = CTcpSessionManager::getRef().CreateTimer(g_intervalMs, std::bind(&CStressClient::SendFunc, this, cID));
+		}
+	};
+	void OnConnectDisconnect(ConnectorID cID)
+	{
+		CTcpSessionManager::getRef().CancelTimer(m_timerID);
+		m_timerID = InvalidTimerID;
+	}
+
+	void Heartbeat(ConnectorID cID)
+	{
+		time_t now = time(NULL);
+		if (now - m_remoteLastHeartbeat > HEARTBEART_INTERVAL / 1000 * 3)
+		{
+			LOGW("Connector check heartbeat timeout. Connector=" << cID);
+			CTcpSessionManager::getRef().BreakConnector(cID);
+			return;
+		}
+		LOGI("send  heartbeat");
+		WriteStreamPack ws;
+		ws << _Heartbeat;
+		CTcpSessionManager::getRef().SendOrgConnectorData(cID, ws.GetStream(), ws.GetStreamLen());
+	};
+	void msg_Heartbeat_fun (ConnectorID cID, ProtocolID pID, ReadStreamPack & rs)
+	{
+		LOGI("on remote heartbeat");
+		m_remoteLastHeartbeat = time(NULL);
+	};
+	void msg_ResultSequence_fun(ConnectorID cID, ProtocolID pID, ReadStreamPack & rs)
+	{
+		std::string msg;
+		rs >> msg;
+		g_totalRecvCount++;
+
+		if (g_sendType == 0 || g_intervalMs == 0) //echo send
+		{
+			WriteStreamPack ws;
+			ws << _RequestSequence << g_testStr;
+			CTcpSessionManager::getRef().SendOrgConnectorData(cID, ws.GetStream(), ws.GetStreamLen());
+			g_totalSendCount++;
+		}
+		g_lastEchoCount++;
+	};
+	void SendFunc(ConnectorID cID)
+	{
+		if (g_totalSendCount - g_totalRecvCount < 10000)
+		{
+			WriteStreamPack ws;
+			ws << _RequestSequence << g_testStr;
+			CTcpSessionManager::getRef().SendOrgConnectorData(cID, ws.GetStream(), ws.GetStreamLen());
+			g_totalSendCount++;
+		}
+		m_timerID = CTcpSessionManager::getRef().CreateTimer(g_intervalMs, std::bind(&CStressClient::SendFunc, this, cID));
+	};
+private:
+	time_t m_remoteLastHeartbeat = time(NULL);
+	zsummer::network::TimerID m_timerID = InvalidTimerID;
+};
+
+class CStressServer
+{
+public:
+	CStressServer()
+	{
+		CMessageDispatcher::getRef().RegisterOnMySessionHeartbeatTimer(std::bind(&CStressServer::Heartbeat, this, std::placeholders::_1, std::placeholders::_2));
+		CMessageDispatcher::getRef().RegisterSessionMessage(_Heartbeat, 
+			std::bind(&CStressServer::msg_Heartbeat_fun, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+		CMessageDispatcher::getRef().RegisterSessionMessage(_RequestSequence, 
+			std::bind(&CStressServer::msg_RequestSequence_fun, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+	}
+	void Heartbeat(AccepterID aID, SessionID sID)
+	{
+		time_t now = time(NULL);
+		if (now - m_remoteLastHeartbeat > HEARTBEART_INTERVAL / 1000 * 3)
+		{
+			LOGW("session heartbeat timeout. AccepterID=" << aID << ", SessionID=" << sID);
+			CTcpSessionManager::getRef().KickSession(aID, sID);
+			return;
+		}
+		LOGI("send  heartbeat");
+		WriteStreamPack ws;
+		ws << _Heartbeat;
+		CTcpSessionManager::getRef().SendOrgSessionData(aID, sID, ws.GetStream(), ws.GetStreamLen());
+	};
+
+	void msg_Heartbeat_fun(AccepterID aID, SessionID sID, ProtocolID pID, ReadStreamPack & rs)
+	{
+		LOGI("on remote heartbeat");
+		m_remoteLastHeartbeat = time(NULL);
+	};
+	void msg_RequestSequence_fun (AccepterID aID, SessionID sID, ProtocolID pID, ReadStreamPack & rs)
+	{
+		std::string msg;
+		rs >> msg;
+		g_totalRecvCount++;
+		msg += " echo";
+		WriteStreamPack ws;
+		ws << _ResultSequence << msg;
+		CTcpSessionManager::getRef().SendOrgSessionData(aID, sID, ws.GetStream(), ws.GetStreamLen());
+		g_lastEchoCount++;
+		g_totalSendCount++;
+	};
+
+private:
+	time_t m_remoteLastHeartbeat = time(NULL);
+};
 
 int main(int argc, char* argv[])
 {
@@ -67,170 +219,69 @@ int main(int argc, char* argv[])
 		(strcmp(argv[1], "--help") == 0 
 		|| strcmp(argv[1], "/?") == 0))
 	{
-		cout <<"please input like example:" << endl;
-		cout << "tcpTest remoteIP remotePort startType maxClient" << endl;
+		cout << "please input like example:" << endl;
+		cout << "tcpTest remoteIP remotePort startType maxClient sendType interval" << endl;
 		cout << "./tcpTest 0.0.0.0 81 0" << endl;
 		cout << "startType: 0 server, 1 client" << endl;
-		cout <<"maxClient: limit max" << endl;
+		cout << "maxClient: limit max" << endl;
+		cout << "sendType: 0 echo send, 1 direct send" << endl;
+		cout << "interval: send once interval" << endl;
 		return 0;
 	}
 	if (argc > 1)
-	{
 		g_remoteIP = argv[1];
-	}
 	if (argc > 2)
-	{
 		g_remotePort = atoi(argv[2]);
-	}
 	if (argc > 3)
-	{
 		g_startType = atoi(argv[3]);
-	}
 	if (argc > 4)
-	{
 		g_maxClient = atoi(argv[4]);
-	}
+	if (argc > 5)
+		g_sendType = atoi(argv[5]);
+	if (argc > 6)
+		g_intervalMs = atoi(argv[6]);
 
-
-	
 	if (g_startType == 0)
-	{
-		//! 启动日志服务
 		ILog4zManager::GetInstance()->Config("server.cfg");
-		ILog4zManager::GetInstance()->Start();
-	}
 	else
-	{
-		//! 启动日志服务
 		ILog4zManager::GetInstance()->Config("client.cfg");
-		ILog4zManager::GetInstance()->Start();
-	}
-	LOGI("g_remoteIP=" << g_remoteIP << ", g_remotePort=" << g_remotePort << ", g_startType=" << g_startType 
-		<< ", g_maxClient=" << g_maxClient);
+	ILog4zManager::GetInstance()->Start();
+
+	LOGI("g_remoteIP=" << g_remoteIP << ", g_remotePort=" << g_remotePort << ", g_startType=" << g_startType
+		<< ", g_maxClient=" << g_maxClient << ", g_sendType=" << g_sendType << ", g_intervalMs=" << g_intervalMs);
+
+
 	ILog4zManager::GetInstance()->SetLoggerLevel(LOG4Z_MAIN_LOGGER_ID, LOG_LEVEL_INFO);
 
 
 	CTcpSessionManager::getRef().Start();
 
-	//test protocols, IDs
-	static const ProtocolID _Heartbeat = 1000;
-	static const ProtocolID _RequestSequence = 1001;
-	static const ProtocolID _ResultSequence = 1002;
-	
-	std::string testStr;
-	testStr.resize(1024, 's');
+	g_testStr.resize(1024, 's');
 
+	CTcpSessionManager::getRef().CreateTimer(5000, MonitorFunc);
+
+	CStressClient client;
+	CStressServer server;
 	if (g_startType) //client
 	{
-		time_t remoteLastHeartbeat = time(NULL);
-		auto connectedfun = [](ConnectorID cID)
+		for (int i = 0; i < g_maxClient; ++i)
 		{
-			LOGI("send to ConnectorID=" << cID << ", msg=hello");
-			WriteStreamPack ws;
-			ws << _RequestSequence << "hello";
-			CTcpSessionManager::getRef().SendOrgConnectorData(cID, ws.GetStream(), ws.GetStreamLen());
-		};
-		auto MyHeartbeat = [&remoteLastHeartbeat](ConnectorID cID)
-		{
-			time_t now = time(NULL);
-			if (now - remoteLastHeartbeat > HEARTBEART_INTERVAL / 1000 * 2)
-			{
-				LOGW("Connector check heartbeat timeout. Connector=" << cID);
-				CTcpSessionManager::getRef().BreakConnector(cID);
-				return;
-			}
-			LOGI("send  heartbeat");
-			WriteStreamPack ws;
-			ws << _Heartbeat;
-			CTcpSessionManager::getRef().SendOrgConnectorData(cID, ws.GetStream(), ws.GetStreamLen());
-		};
-		auto msg_Heartbeat_fun = [&remoteLastHeartbeat](ConnectorID cID, ProtocolID pID, ReadStreamPack & rs)
-		{
-			LOGI("on remote heartbeat");
-			remoteLastHeartbeat = time(NULL);
-		};
-
-
-		auto msg_ResultSequence_fun = [&testStr](ConnectorID cID, ProtocolID pID, ReadStreamPack & rs)
-		{
-			std::string msg;
-			rs >> msg;
-
-
-			WriteStreamPack ws;
-			ws << _RequestSequence << testStr;
-			CTcpSessionManager::getRef().SendOrgConnectorData(cID, ws.GetStream(), ws.GetStreamLen());
-			static unsigned int g_total = 0;
-			g_total++;
-			static unsigned long long g_lasttime = NOW_TIME;
-			if (NOW_TIME - g_lasttime > 5000)
-			{
-				LOGI("per second=" << g_total / 5.0);
-				g_total = 0;
-				g_lasttime = NOW_TIME;
-			}
-			
-		};
-
-
-		CMessageDispatcher::getRef().RegisterOnConnectorEstablished(connectedfun);
-		CMessageDispatcher::getRef().RegisterOnMyConnectorHeartbeatTimer(MyHeartbeat);
-		CMessageDispatcher::getRef().RegisterConnectorMessage(_Heartbeat, msg_Heartbeat_fun);
-		CMessageDispatcher::getRef().RegisterConnectorMessage(_ResultSequence, msg_ResultSequence_fun);
-
-
-
-		tagConnctorConfigTraits traits;
-		traits.cID = 1;
-		traits.remoteIP = "127.0.0.1";
-		traits.remotePort = 81;
-		traits.reconnectInterval = 5000;
-		traits.reconnectMaxCount = 0;
-		CTcpSessionManager::getRef().AddConnector(traits);
-
+			tagConnctorConfigTraits traits;
+			traits.cID = InvalidConnectorID+1+i;
+			traits.remoteIP = g_remoteIP;
+			traits.remotePort = g_remotePort;
+			traits.reconnectInterval = 5000;
+			traits.reconnectMaxCount = 50;
+			CTcpSessionManager::getRef().AddConnector(traits);
+		}
 	}
 	else
 	{
-		time_t remoteLastHeartbeat = time(NULL);
-		auto MyHeartbeat = [&remoteLastHeartbeat](AccepterID aID, SessionID sID)
-		{
-			time_t now = time(NULL);
-			if (now - remoteLastHeartbeat > HEARTBEART_INTERVAL / 1000 * 2)
-			{
-				LOGW("session heartbeat timeout. AccepterID=" << aID << ", SessionID=" << sID);
-				CTcpSessionManager::getRef().KickSession(aID, sID);
-				return;
-			}
-			LOGI("send  heartbeat");
-			WriteStreamPack ws;
-			ws << _Heartbeat;
-			CTcpSessionManager::getRef().SendOrgSessionData(aID, sID, ws.GetStream(), ws.GetStreamLen());
-		};
-
-		auto msg_Heartbeat_fun = [&remoteLastHeartbeat](AccepterID aID, SessionID sID, ProtocolID pID, ReadStreamPack & rs)
-		{
-			LOGI("on remote heartbeat");
-			remoteLastHeartbeat = time(NULL);
-		};
-		OnSessionMessageFunction msg_RequestSequence_fun = [](AccepterID aID, SessionID sID, ProtocolID pID, ReadStreamPack & rs)
-		{
-			std::string msg;
-			rs >> msg;
-			msg += " echo";
-			WriteStreamPack ws;
-			ws << _ResultSequence << msg;
-			CTcpSessionManager::getRef().SendOrgSessionData(aID, sID, ws.GetStream(), ws.GetStreamLen());
-			
-		};
-		CMessageDispatcher::getRef().RegisterOnMySessionHeartbeatTimer(MyHeartbeat);
-		CMessageDispatcher::getRef().RegisterSessionMessage(_Heartbeat, msg_Heartbeat_fun);
-		CMessageDispatcher::getRef().RegisterSessionMessage(_RequestSequence, msg_RequestSequence_fun);
-
 		tagAcceptorConfigTraits traits;
 		traits.aID = 1;
-		traits.listenPort = 81;
-		traits.maxSessions = 1;
-		traits.whitelistIP.push_back("127.0.");
+		traits.listenPort = g_remotePort;
+		traits.maxSessions = g_maxClient;
+		//traits.whitelistIP.push_back("127.0.");
 		CTcpSessionManager::getRef().AddAcceptor(traits);
 	}
 	CTcpSessionManager::getRef().Run();

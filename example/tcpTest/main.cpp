@@ -73,7 +73,7 @@ int main(int argc, char* argv[])
 		cout << "tcpTest remoteIP remotePort startType maxClient sendType interval" << endl;
 		cout << "./tcpTest 0.0.0.0 81 0" << endl;
 		cout << "startType: 0 server, 1 client" << endl;
-		cout << "maxClient: limite max" << endl;
+		cout << "maxClient: limit max" << endl;
 		cout << "sendType: 0 echo send, 1 direct send" << endl;
 		cout << "interval: send once interval" << endl;
 		return 0;

@@ -127,11 +127,10 @@ int main(int argc, char* argv[])
 	static const ProtocolID _Heartbeat = 1000;
 	static const ProtocolID _RequestSequence = 1001;
 	static const ProtocolID _ResultSequence = 1002;
-	
+	time_t remoteLastHeartbeat = time(NULL);
 
 	if (g_startType) //client
 	{
-		time_t remoteLastHeartbeat = time(NULL);
 		auto connectedfun = [](ConnectorID cID)
 		{
 			LOGI("send to ConnectorID=" << cID << ", msg=hello");
@@ -164,26 +163,6 @@ int main(int argc, char* argv[])
 			rs >> msg;
 			LOGI("recv ConnectorID = " << cID << ", msg = " << msg);
 			
-			//break check
-			//LOGI("break connector");
-			//CTcpSessionManager::getRef().BreakConnector(cID);
-
-			//echo check
-// 			WriteStreamPack ws;
-// 			std::string testStr;
-// 			testStr.resize(1024, 's');
-// 			ws << _RequestSequence << testStr;
-// 			CTcpSessionManager::getRef().SendOrgConnectorData(cID, ws.GetStream(), ws.GetStreamLen());
-// 			static unsigned int g_total = 0;
-// 			g_total++;
-// 			static unsigned long long g_lasttime = NOW_TIME;
-// 			if (NOW_TIME - g_lasttime > 5000)
-// 			{
-// 				LOGI("per second=" << g_total / 5.0);
-// 				g_total = 0;
-// 				g_lasttime = NOW_TIME;
-// 			}
-			
 		};
 
 
@@ -201,11 +180,11 @@ int main(int argc, char* argv[])
 		traits.reconnectInterval = 5000;
 		traits.reconnectMaxCount = 0;
 		CTcpSessionManager::getRef().AddConnector(traits);
+		CTcpSessionManager::getRef().Run();
 
 	}
 	else
 	{
-		time_t remoteLastHeartbeat = time(NULL);
 		auto MyHeartbeat = [&remoteLastHeartbeat](AccepterID aID, SessionID sID)
 		{
 			time_t now = time(NULL);
@@ -248,8 +227,9 @@ int main(int argc, char* argv[])
 		traits.maxSessions = 1;
 		traits.whitelistIP.push_back("127.0.");
 		CTcpSessionManager::getRef().AddAcceptor(traits);
+		CTcpSessionManager::getRef().Run();
 	}
-	CTcpSessionManager::getRef().Run();
+	
 
 	return 0;
 }

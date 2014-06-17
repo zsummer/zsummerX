@@ -136,7 +136,7 @@ typedef std::shared_ptr<CWorkManager> CWorkManagerPtr;
 #define  NOW_TIME (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count())
 
 #define MSG_BUFF_MAX_LEN 64*1024 //底层通讯最大协议长度
-#define HEARTBEART_INTERVAL 15000 //本地心跳间隔 毫秒
+#define HEARTBEART_INTERVAL 30000 //本地心跳间隔 毫秒
 
 struct FrameStreamTraits
 {

@@ -138,7 +138,7 @@ public:
 	};
 	void SendFunc(ConnectorID cID)
 	{
-		if (g_totalSendCount - g_totalRecvCount < 10000)
+		if (g_totalSendCount - g_totalRecvCount < 1000)
 		{
 			WriteStreamPack ws;
 			ws << _RequestSequence << g_testStr;
@@ -252,6 +252,7 @@ int main(int argc, char* argv[])
 
 
 	ILog4zManager::GetInstance()->SetLoggerLevel(LOG4Z_MAIN_LOGGER_ID, LOG_LEVEL_INFO);
+	ILog4zManager::GetInstance()->SetLoggerDisplay(LOG4Z_MAIN_LOGGER_ID, false);
 
 
 	CTcpSessionManager::getRef().Start();

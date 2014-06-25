@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.6)
-project(log4z)
+project(protocol4z)
 
 set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "")
 
@@ -23,13 +23,12 @@ else(WIN32)
     add_definitions(-Wall -g -ggdb -O0 )
     set(LIB_SUFFIX "_d")
   else()
-    add_definitions(-Wall -O2 -DNDEBUG)
+    add_definitions(-Wall -O2 -DNDEBUG )
     set(LIB_SUFFIX "")
   endif()
 endif(WIN32)
 
-SET(LOG4Z_LIB_OUT_PATH ${log4z_SOURCE_DIR}/lib)
-SET(LOG4Z_BIN_OUT_PATH ${log4z_SOURCE_DIR}/test/bin)
+SET(PROTOCOL4Z_BIN_OUT_PATH ${protocol4z_SOURCE_DIR}/test/bin)
 
 add_subdirectory(g++)
 add_subdirectory(test)

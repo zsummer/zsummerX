@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 2.6)
 project(libzsummerX)
-set(LIB_NAME zsummerX)
 
 
 aux_source_directory(${SRC_DIR}/common COMMON)
@@ -8,35 +7,17 @@ if(WIN32)
 aux_source_directory(${SRC_DIR}/iocp NETWORK)
 else()
 aux_source_directory(${SRC_DIR}/epoll NETWORK)
-endif()
+endif(WIN32)
 aux_source_directory(${SRC_DIR}/timer TIMER)
 aux_source_directory(${SRC_DIR}/frame FRAME)
+
 set(source  ${COMMON} ${NETWORK} ${TIMER} ${FRAME})
 
-if (WIN32)
- if(CMAKE_GENERATOR STREQUAL "Visual Studio 12")
-  if (NOT CMAKE_BUILD_TYPE STREQUAL "DEBUG")
-   set(LIB_NAME ${PROJECT_NAME}_win32)
-  else()
-   set(LIB_NAME ${PROJECT_NAME}_win32d)
-  endif()
- else(CMAKE_GENERATOR STREQUAL "Visual Studio 12 Win64")
-  if (NOT CMAKE_BUILD_TYPE STREQUAL "DEBUG")
-   set(LIB_NAME ${PROJECT_NAME}_win64)
-  else()
-   set(LIB_NAME ${PROJECT_NAME}_win64d)
-  endif()
- endif()
-else()
- if (CMAKE_BUILD_TYPE STREQUAL "DEBUG")
-   add_definitions(-Wall -g -ggdb -O0 -std=c++11)
-   set(LIB_NAME ${LIB_NAME}_d)
- else()
-   add_definitions(-Wall -O2 -std=c++11 -DNODEBUG)
- endif()
-endif()
+set(LIBRARY_OUTPUT_PATH, ${ZSUMMERX_LIBS_DIR})
 
-message("LIB_NAME=" ${LIB_NAME} ", LINKER FLAGS=" ${CMAKE_EXE_LINKER_FLAGS})
+add_library(${ZSUMMERX_LIB_NAME}${LIB_SUFFIX} STATIC ${source})
 
-add_library(${LIB_NAME} STATIC ${source})
-
+install(TARGETS ${ZSUMMERX_LIB_NAME}${LIB_SUFFIX} 
+	LIBRARY DESTINATION lib
+	ARCHIVE DESTINATION lib)
+install(DIRECTORY ${zsummerX_SOURCE_DIR}/include/zsummerX  DESTINATION include)

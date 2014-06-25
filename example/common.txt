@@ -1,35 +1,19 @@
 
 
+
 aux_source_directory(./ source)    
-set(BINNAME ${PROJECT_NAME})
-if(NOT WIN32)
- if (NOT CMAKE_BUILD_TYPE STREQUAL "DEBUG")
-   link_libraries(zsummerX log4z pthread rt)
-   add_definitions(-Wall -O2 -std=c++11 -DNODEBUG)
- else()
-   link_libraries(zsummerX_d log4z_d pthread rt)
-   add_definitions(-Wall -g -ggdb -O0 -std=c++11)
-   set(BINNAME ${PROJECT_NAME}_d)
- endif()
-else()
- message(STATUS ${CMAKE_GENERATOR})
- if(CMAKE_GENERATOR STREQUAL "Visual Studio 12")
-  if (NOT CMAKE_BUILD_TYPE STREQUAL "DEBUG")
-    link_libraries(libzsummerX_win32 liblog4z_win32)
-  else()
-    link_libraries(libzsummerX_win32d liblog4z_win32d)
-  endif()
- else(CMAKE_GENERATOR STREQUAL "Visual Studio 12 Win64")
-  if (NOT CMAKE_BUILD_TYPE STREQUAL "DEBUG")
-    link_libraries(libzsummerX_win64 liblog4z_win64)
-  else()
-    link_libraries(libzsummerX_win64d liblog4z_win64d)
-  endif()
- endif()
-endif()
+set(BINNAME ${PROJECT_NAME}${LIB_SUFFIX})
 
 
 set(EXECUTABLE_OUTPUT_PATH ${BIN_DIR})
+
 add_executable(${BINNAME} ${source})
+
+if(WIN32)
+  target_link_libraries(${BINNAME} zsummerX${LIB_SUFFIX} log4z${LIB_SUFFIX})
+else()
+  target_link_libraries(${BINNAME} zsummerX${LIB_SUFFIX} log4z${LIB_SUFFIX} pthread rt)
+endif()
+
 
 

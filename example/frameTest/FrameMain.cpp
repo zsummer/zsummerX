@@ -34,8 +34,9 @@
  * (end of COPYRIGHT)
  */
 
-//! zsummer的测试服务模块(对应zsummer底层网络封装的上层设计测试服务) 可视为服务端架构中的 gateway服务/agent服务/前端服务, 特点是高并发高吞吐量
-//! main文件
+
+//! zsummerX的测试文件
+//! 该测试提供最简单的监听,建立连接,收发数据的 客户端和服务端实例代码.
 
 
 #include <zsummerX/FrameHeader.h>
@@ -45,26 +46,11 @@ using namespace zsummer::log4z;
 
 std::string g_remoteIP = "0.0.0.0";
 unsigned short g_remotePort = 81;
-unsigned short g_startType = 0;  //0 listen, 1 connect
-unsigned short g_maxClient = 1; //0 echo send, 1 direct send
-unsigned short g_sendType = 0; //0 echo send, 1 direct send
-unsigned int   g_intervalMs = 0; // send interval
+unsigned short g_startIsConnector = 0;  //0 listen, 1 connect
+
 
 int main(int argc, char* argv[])
 {
-
-#ifndef _WIN32
-	//! linux下需要屏蔽的一些信号
-	signal( SIGHUP, SIG_IGN );
-	signal( SIGALRM, SIG_IGN ); 
-	signal( SIGPIPE, SIG_IGN );
-	signal( SIGXCPU, SIG_IGN );
-	signal( SIGXFSZ, SIG_IGN );
-	signal( SIGPROF, SIG_IGN ); 
-	signal( SIGVTALRM, SIG_IGN );
-	signal( SIGQUIT, SIG_IGN );
-	signal( SIGCHLD, SIG_IGN);
-#endif
 	if (argc == 2 && 
 		(strcmp(argv[1], "--help") == 0 
 		|| strcmp(argv[1], "/?") == 0))
@@ -73,9 +59,6 @@ int main(int argc, char* argv[])
 		cout << "tcpTest remoteIP remotePort startType maxClient sendType interval" << endl;
 		cout << "./tcpTest 0.0.0.0 81 0" << endl;
 		cout << "startType: 0 server, 1 client" << endl;
-		cout <<"maxClient: limite max" << endl;
-		cout <<"sendType: 0 echo send, 1 direct send" << endl;
-		cout <<"interval: send once interval" << endl;
 		return 0;
 	}
 	if (argc > 1)
@@ -88,23 +71,11 @@ int main(int argc, char* argv[])
 	}
 	if (argc > 3)
 	{
-		g_startType = atoi(argv[3]);
-	}
-	if (argc > 4)
-	{
-		g_maxClient = atoi(argv[4]);
-	}
-	if (argc > 5)
-	{
-		g_sendType = atoi(argv[5]);
-	}
-	if (argc > 6)
-	{
-		g_intervalMs = atoi(argv[6]);
+		g_startIsConnector = atoi(argv[3]);
 	}
 
 	
-	if (g_startType == 0)
+	if (!g_startIsConnector)
 	{
 		//! 启动日志服务
 		ILog4zManager::GetInstance()->Config("server.cfg");
@@ -116,21 +87,21 @@ int main(int argc, char* argv[])
 		ILog4zManager::GetInstance()->Config("client.cfg");
 		ILog4zManager::GetInstance()->Start();
 	}
-	LOGI("g_remoteIP=" << g_remoteIP << ", g_remotePort=" << g_remotePort << ", g_startType=" << g_startType 
-		<< ", g_maxClient=" << g_maxClient << ", g_sendType=" << g_sendType << ", g_intervalMs=" << g_intervalMs);
-//	ILog4zManager::GetInstance()->SetLoggerLevel(LOG4Z_MAIN_LOGGER_ID, LOG_LEVEL_INFO);
+	LOGI("g_remoteIP=" << g_remoteIP << ", g_remotePort=" << g_remotePort << ", g_startIsConnector=" << g_startIsConnector );
 
 
+	//! step 1. 开启Manager.
 	CTcpSessionManager::getRef().Start();
 
-	//test protocols, IDs
-	static const ProtocolID _Heartbeat = 1000;
+
+	//! 定义协议号
 	static const ProtocolID _RequestSequence = 1001;
 	static const ProtocolID _ResultSequence = 1002;
-	time_t remoteLastHeartbeat = time(NULL);
 
-	if (g_startType) //client
+
+	if (g_startIsConnector) //client
 	{
+		//响应连接成功事件
 		auto connectedfun = [](ConnectorID cID)
 		{
 			LOGI("send to ConnectorID=" << cID << ", msg=hello");
@@ -138,41 +109,21 @@ int main(int argc, char* argv[])
 			ws << _RequestSequence << "hello";
 			CTcpSessionManager::getRef().SendOrgConnectorData(cID, ws.GetStream(), ws.GetStreamLen());
 		};
-		auto MyHeartbeat = [&remoteLastHeartbeat](ConnectorID cID)
-		{
-			time_t now = time(NULL);
-			if (now - remoteLastHeartbeat > HEARTBEART_INTERVAL / 1000 * 2)
-			{
-				LOGW("Connector check heartbeat timeout. Connector=" << cID);
-				CTcpSessionManager::getRef().BreakConnector(cID);
-				return;
-			}
-			LOGI("send  heartbeat");
-			WriteStreamPack ws;
-			ws << _Heartbeat;
-			CTcpSessionManager::getRef().SendOrgConnectorData(cID, ws.GetStream(), ws.GetStreamLen());
-		};
-		auto msg_Heartbeat_fun = [&remoteLastHeartbeat](ConnectorID cID, ProtocolID pID, ReadStreamPack & rs)
-		{
-			LOGI("on remote heartbeat");
-			remoteLastHeartbeat = time(NULL);
-		};
+
+		//响应消息_ResultSequence
 		auto msg_ResultSequence_fun = [](ConnectorID cID, ProtocolID pID, ReadStreamPack & rs)
 		{
 			std::string msg;
 			rs >> msg;
 			LOGI("recv ConnectorID = " << cID << ", msg = " << msg);
-			
 		};
 
-
-		CMessageDispatcher::getRef().RegisterOnConnectorEstablished(connectedfun);
-		CMessageDispatcher::getRef().RegisterOnMyConnectorHeartbeatTimer(MyHeartbeat);
-		CMessageDispatcher::getRef().RegisterConnectorMessage(_Heartbeat, msg_Heartbeat_fun);
-		CMessageDispatcher::getRef().RegisterConnectorMessage(_ResultSequence, msg_ResultSequence_fun);
+		//! 注册事件和消息
+		CMessageDispatcher::getRef().RegisterOnConnectorEstablished(connectedfun); //!注册连接成功处理函数
+		CMessageDispatcher::getRef().RegisterConnectorMessage(_ResultSequence, msg_ResultSequence_fun);//!注册消息
 
 
-
+		//添加一个connector
 		tagConnctorConfigTraits traits;
 		traits.cID = 1;
 		traits.remoteIP = "127.0.0.1";
@@ -180,31 +131,14 @@ int main(int argc, char* argv[])
 		traits.reconnectInterval = 5000;
 		traits.reconnectMaxCount = 0;
 		CTcpSessionManager::getRef().AddConnector(traits);
-		CTcpSessionManager::getRef().Run();
 
+		//! step 2 启动主循环
+		CTcpSessionManager::getRef().Run();
 	}
 	else
 	{
-		auto MyHeartbeat = [&remoteLastHeartbeat](AccepterID aID, SessionID sID)
-		{
-			time_t now = time(NULL);
-			if (now - remoteLastHeartbeat > HEARTBEART_INTERVAL / 1000 * 2)
-			{
-				LOGW("session heartbeat timeout. AccepterID=" << aID << ", SessionID=" << sID);
-				CTcpSessionManager::getRef().KickSession(aID, sID);
-				return;
-			}
-			LOGI("send  heartbeat");
-			WriteStreamPack ws;
-			ws << _Heartbeat;
-			CTcpSessionManager::getRef().SendOrgSessionData(aID, sID, ws.GetStream(), ws.GetStreamLen());
-		};
 
-		auto msg_Heartbeat_fun = [&remoteLastHeartbeat](AccepterID aID, SessionID sID, ProtocolID pID, ReadStreamPack & rs)
-		{
-			LOGI("on remote heartbeat");
-			remoteLastHeartbeat = time(NULL);
-		};
+		//响应消息_RequestSequence
 		OnSessionMessageFunction msg_RequestSequence_fun = [](AccepterID aID, SessionID sID, ProtocolID pID, ReadStreamPack & rs)
 		{
 			std::string msg;
@@ -217,16 +151,19 @@ int main(int argc, char* argv[])
 			CTcpSessionManager::getRef().SendOrgSessionData(aID, sID, ws.GetStream(), ws.GetStreamLen());
 			
 		};
-		CMessageDispatcher::getRef().RegisterOnMySessionHeartbeatTimer(MyHeartbeat);
-		CMessageDispatcher::getRef().RegisterSessionMessage(_Heartbeat, msg_Heartbeat_fun);
-		CMessageDispatcher::getRef().RegisterSessionMessage(_RequestSequence, msg_RequestSequence_fun);
 
+
+		CMessageDispatcher::getRef().RegisterSessionMessage(_RequestSequence, msg_RequestSequence_fun); //注册消息
+
+		//添加监听器
 		tagAcceptorConfigTraits traits;
 		traits.aID = 1;
 		traits.listenPort = 81;
 		traits.maxSessions = 1;
 		traits.whitelistIP.push_back("127.0.");
 		CTcpSessionManager::getRef().AddAcceptor(traits);
+
+		//! step 2 启动主循环
 		CTcpSessionManager::getRef().Run();
 	}
 	

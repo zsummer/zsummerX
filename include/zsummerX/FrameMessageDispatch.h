@@ -50,18 +50,19 @@ private:
 	typedef std::map<ProtocolID, OnConnectorMessageFunction> MapConnectorDispatch;
 public:
 	static CMessageDispatcher & getRef();
+	static CMessageDispatcher * getPtr(){ return &getRef(); }
 	~CMessageDispatcher(){};
 
 	inline void RegisterSessionMessage(ProtocolID protocolID, const OnSessionMessageFunction & msgfun){ m_mapSessionDispatch[protocolID] = msgfun; }
 	inline void RegisterConnectorMessage(ProtocolID protocolID, const OnConnectorMessageFunction & msgfun){ m_mapConnectorDispatch[protocolID] = msgfun; }
 
-	inline void RegisterOnSessionEstablished(const OnSessionEstablished & fun){ m_onSessionEstablished = fun; }
-	inline void RegisterOnSessionDisconnect(const OnSessionDisconnect & fun){ m_onSessionDisconnect = fun; }
-	inline void RegisterOnConnectorEstablished(const OnConnectorEstablished & fun){ m_onConnectorEstablished = fun; }
-	inline void RegisterOnConnectorDisconnect(const OnConnectorDisconnect & fun) { m_onConnectorDisconnect = fun; }
+	inline void RegisterOnSessionEstablished(const OnSessionEstablished & fun){m_vctOnSessionEstablished.push_back(fun); }
+	inline void RegisterOnSessionDisconnect(const OnSessionDisconnect & fun){ m_vctOnSessionDisconnect.push_back(fun); }
+	inline void RegisterOnConnectorEstablished(const OnConnectorEstablished & fun){ m_vctOnConnectorEstablished.push_back(fun); }
+	inline void RegisterOnConnectorDisconnect(const OnConnectorDisconnect & fun) { m_vctOnConnectorDisconnect.push_back(fun); }
 
-	inline void RegisterOnMySessionHeartbeatTimer(const OnMySessionHeartbeatTimer & fun) { m_onSessionHeartbeat = fun; }
-	inline void RegisterOnMyConnectorHeartbeatTimer(const OnMyConnectorHeartbeatTimer &fun){ m_onConnectorHeartbeat = fun; }
+	inline void RegisterOnMySessionHeartbeatTimer(const OnMySessionHeartbeatTimer & fun) { m_vctOnSessionHeartbeat.push_back(fun); }
+	inline void RegisterOnMyConnectorHeartbeatTimer(const OnMyConnectorHeartbeatTimer &fun){ m_vctOnConnectorHeartbeat.push_back(fun); }
 public:
 	inline void DispatchSessionMessage(AccepterID aID, SessionID sID, ProtocolID pID, ReadStreamPack & msg)
 	{
@@ -114,145 +115,167 @@ public:
 
 	inline void DispatchOnSessionEstablished(AccepterID aID, SessionID sID)
 	{
-		if (!m_onSessionEstablished)
+		if (m_vctOnSessionEstablished.empty())
 		{
 			return;
 		}
-		try
+		for (auto &fun : m_vctOnSessionEstablished)
 		{
-			LOGD("Entry OnSessionEstablished SessionID=" << sID);
-			m_onSessionEstablished(aID, sID);
-			LOGD("Leave OnSessionEstablished SessionID=" << sID);
+			try
+			{
+				LOGD("Entry OnSessionEstablished SessionID=" << sID);
+				fun(aID, sID);
+				LOGD("Leave OnSessionEstablished SessionID=" << sID);
+			}
+
+			catch (std::runtime_error e)
+			{
+				LOGE("Leave OnSessionEstablished Runtime Error: SessionID=" << sID << ", Error Message=\"" << e.what() << "\"");
+			}
+			catch (...)
+			{
+				LOGE("Leave OnSessionEstablished Unknown Runtime Error: SessionID=" << sID);
+			}
 		}
-		catch (std::runtime_error e)
-		{
-			LOGE("Leave OnSessionEstablished Runtime Error: SessionID=" << sID << ", Error Message=\"" << e.what() << "\"");
-		}
-		catch (...)
-		{
-			LOGE("Leave OnSessionEstablished Unknown Runtime Error: SessionID=" << sID);
-		}
+		
+
 	}
 	inline void DispatchOnSessionDisconnect(AccepterID aID, SessionID sID)
 	{
-		if (!m_onSessionDisconnect)
+		if (m_vctOnSessionDisconnect.empty())
 		{
 			return;
 		}
-		try
+		for (auto & fun : m_vctOnSessionDisconnect)
 		{
-			LOGD("Entry OnSessionDisconnect SessionID=" << sID);
-			m_onSessionDisconnect(aID, sID);
-			LOGD("Leave OnSessionDisconnect SessionID=" << sID);
-		}
-		catch (std::runtime_error e)
-		{
-			LOGE("Leave OnSessionDisconnect Runtime Error: SessionID=" << sID << ", Error Message=\"" << e.what() << "\"");
-		}
-		catch (...)
-		{
-			LOGE("Leave OnSessionDisconnect Unknown Runtime Error: SessionID=" << sID);
+			try
+			{
+				LOGD("Entry OnSessionDisconnect SessionID=" << sID);
+				fun(aID, sID);
+				LOGD("Leave OnSessionDisconnect SessionID=" << sID);
+			}
+			catch (std::runtime_error e)
+			{
+				LOGE("Leave OnSessionDisconnect Runtime Error: SessionID=" << sID << ", Error Message=\"" << e.what() << "\"");
+			}
+			catch (...)
+			{
+				LOGE("Leave OnSessionDisconnect Unknown Runtime Error: SessionID=" << sID);
+			}
 		}
 	}
 	inline void DispatchOnConnectorEstablished(ConnectorID cID)
 	{
-		if (!m_onConnectorEstablished)
+		if (m_vctOnConnectorEstablished.empty())
 		{
 			return;
 		}
-		try
+		for (auto & fun : m_vctOnConnectorEstablished)
 		{
-			LOGD("Entry OnConnectorEstablished ConnectorID=" << cID);
-			m_onConnectorEstablished(cID);
-			LOGD("Leave OnConnectorEstablished ConnectorID=" << cID);
-		}
-		catch (std::runtime_error e)
-		{
-			LOGE("Leave OnConnectorEstablished Runtime Error: ConnectorID=" << cID << ", Error Message=\"" << e.what() << "\"");
-		}
-		catch (...)
-		{
-			LOGE("Leave OnConnectorEstablished With Unknown Runtime Error: ConnectorID=" << cID);
+			try
+			{
+				LOGD("Entry OnConnectorEstablished ConnectorID=" << cID);
+				fun(cID);
+				LOGD("Leave OnConnectorEstablished ConnectorID=" << cID);
+			}
+			catch (std::runtime_error e)
+			{
+				LOGE("Leave OnConnectorEstablished Runtime Error: ConnectorID=" << cID << ", Error Message=\"" << e.what() << "\"");
+			}
+			catch (...)
+			{
+				LOGE("Leave OnConnectorEstablished With Unknown Runtime Error: ConnectorID=" << cID);
+			}
 		}
 	}
+
 	inline void DispatchOnConnectorDisconnect(ConnectorID cID)
 	{
-		if (!m_onConnectorDisconnect)
+		if (m_vctOnConnectorDisconnect.empty())
 		{
 			return;
 		}
-		try
+		for (auto & fun : m_vctOnConnectorDisconnect)
 		{
-			LOGD("Entry OnConnectorDisconnect ConnectorID=" << cID);
-			m_onConnectorDisconnect(cID);
-			LOGD("Leave OnConnectorDisconnect Success: ConnectorID=" << cID);
-		}
-		catch (std::runtime_error e)
-		{
-			LOGE("Leave OnConnectorDisconnect Runtime Error: ConnectorID=" << cID << ", Error Message=\"" << e.what() << "\"");
-		}
-		catch (...)
-		{
-			LOGE("Leave OnConnectorDisconnect Unknown Runtime Error: ConnectorID=" << cID);
+			try
+			{
+				LOGD("Entry OnConnectorDisconnect ConnectorID=" << cID);
+				fun(cID);
+				LOGD("Leave OnConnectorDisconnect Success: ConnectorID=" << cID);
+			}
+			catch (std::runtime_error e)
+			{
+				LOGE("Leave OnConnectorDisconnect Runtime Error: ConnectorID=" << cID << ", Error Message=\"" << e.what() << "\"");
+			}
+			catch (...)
+			{
+				LOGE("Leave OnConnectorDisconnect Unknown Runtime Error: ConnectorID=" << cID);
+			}
 		}
 	}
 
 	inline void DispatchOnSessionHeartbeat(AccepterID aID, SessionID sID)
 	{
-		if (!m_onSessionHeartbeat)
+		if (m_vctOnSessionHeartbeat.empty())
 		{
 			return;
 		}
-		try
+		for (auto & fun: m_vctOnSessionHeartbeat)
 		{
-			LOGD("Entry OnMySessionHeartbeatTimer SessionID=" << sID);
-			m_onSessionHeartbeat(aID, sID);
-			LOGD("Leave OnMySessionHeartbeatTimer SessionID=" << sID);
-		}
-		catch (std::runtime_error e)
-		{
-			LOGE("Leave OnMySessionHeartbeatTimer Runtime Error: SessionID=" << sID << ", Error Message=\"" << e.what() << "\"");
-		}
-		catch (...)
-		{
-			LOGE("Leave OnMySessionHeartbeatTimer Unknown Runtime Error: SessionID=" << sID);
+			try
+			{
+				LOGD("Entry OnMySessionHeartbeatTimer SessionID=" << sID);
+				fun(aID, sID);
+				LOGD("Leave OnMySessionHeartbeatTimer SessionID=" << sID);
+			}
+			catch (std::runtime_error e)
+			{
+				LOGE("Leave OnMySessionHeartbeatTimer Runtime Error: SessionID=" << sID << ", Error Message=\"" << e.what() << "\"");
+			}
+			catch (...)
+			{
+				LOGE("Leave OnMySessionHeartbeatTimer Unknown Runtime Error: SessionID=" << sID);
+			}
 		}
 	}
 
 	inline void DispatchOnConnectorHeartbeat(ConnectorID cID)
 	{
-		if (!m_onConnectorHeartbeat)
+		if (m_vctOnConnectorHeartbeat.empty())
 		{
 			return;
 		}
-		try
+		for (auto & fun : m_vctOnConnectorHeartbeat)
 		{
-			LOGD("Entry OnMyConnectorHeartbeatTimer ConnectorID=" << cID);
-			m_onConnectorHeartbeat(cID);
-			LOGD("Leave OnMyConnectorHeartbeatTimer Success: ConnectorID=" << cID);
+			try
+			{
+				LOGD("Entry OnMyConnectorHeartbeatTimer ConnectorID=" << cID);
+				fun(cID);
+				LOGD("Leave OnMyConnectorHeartbeatTimer Success: ConnectorID=" << cID);
+			}
+			catch (std::runtime_error e)
+			{
+				LOGE("Leave OnMyConnectorHeartbeatTimer Runtime Error: ConnectorID=" << cID << ", Error Message=\"" << e.what() << "\"");
+			}
+			catch (...)
+			{
+				LOGE("Leave OnMyConnectorHeartbeatTimer Unknown Runtime Error: ConnectorID=" << cID);
+			}
 		}
-		catch (std::runtime_error e)
-		{
-			LOGE("Leave OnMyConnectorHeartbeatTimer Runtime Error: ConnectorID=" << cID << ", Error Message=\"" << e.what() << "\"");
-		}
-		catch (...)
-		{
-			LOGE("Leave OnMyConnectorHeartbeatTimer Unknown Runtime Error: ConnectorID=" << cID);
-		}
+		
 	}
 
 	private:
 		MapSessionDispatch m_mapSessionDispatch;
 		MapConnectorDispatch m_mapConnectorDispatch;
 
-		OnSessionEstablished m_onSessionEstablished;
-		OnSessionDisconnect m_onSessionDisconnect;
-		OnConnectorEstablished m_onConnectorEstablished;
-		OnConnectorDisconnect m_onConnectorDisconnect;
+		std::vector<OnSessionEstablished> m_vctOnSessionEstablished;
+		std::vector<OnSessionDisconnect> m_vctOnSessionDisconnect;
+		std::vector<OnConnectorEstablished> m_vctOnConnectorEstablished;
+		std::vector<OnConnectorDisconnect> m_vctOnConnectorDisconnect;
 
-		OnMySessionHeartbeatTimer m_onSessionHeartbeat;
-		OnMyConnectorHeartbeatTimer m_onConnectorHeartbeat;
-
+		std::vector<OnMySessionHeartbeatTimer> m_vctOnSessionHeartbeat;
+		std::vector<OnMyConnectorHeartbeatTimer> m_vctOnConnectorHeartbeat;
 };
 
 #endif

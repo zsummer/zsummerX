@@ -41,28 +41,35 @@
 #include "FrameHeader.h"
 class CTcpSession;
 typedef  std::shared_ptr<CTcpSession> CTcpSessionPtr;
+
 class CTcpSessionManager
 {
+private:
 	CTcpSessionManager();
-public:
+
+public://!获取单例
 	static CTcpSessionManager & getRef();
+	static CTcpSessionManager * getPtr(){ return &getRef(); };
 public:
 	bool Start();
 	void Stop();
 	void Run();
-public:
+
+public://!如果多线程调用该类接口 需要通过Post转换调用线程.
 	template<class H>
 	void Post(const H &h){m_summer->Post(h);}
-public:
+
+public://! 创建和取消定时器
 	template <class H>
 	zsummer::network::TimerID CreateTimer(unsigned int delayms, const H &h){ return m_summer->CreateTimer(delayms, h); }
 	bool CancelTimer(unsigned long long timerID){ return m_summer->CancelTimer(timerID); }
-public:
+
+public://! 添加Connector或者Acceptor. 不限个数
 	SessionID AddConnector(const tagConnctorConfigTraits &traits);
 	AccepterID AddAcceptor(const tagAcceptorConfigTraits &traits);
 
-	bool BindEstablishedSocketPtr(CTcpSocketPtr sockptr, AccepterID aID);
-public:
+	
+public://! 发送消息和主动断开
 	void SendOrgConnectorData(ConnectorID cID, const char * orgData, unsigned int orgDataLen);
 	void SendConnectorData(ConnectorID cID, ProtocolID pID, const char * userData, unsigned int userDataLen);
 
@@ -71,13 +78,14 @@ public:
 
 	void KickSession(AccepterID aID, SessionID sID);
 	void BreakConnector(ConnectorID cID);
+
 private:
 	friend class CTcpSession;
 	void OnSessionClose(AccepterID aID, SessionID sID);
 	void OnConnectorStatus(ConnectorID connectorID, bool bConnected, CTcpSessionPtr session);
 	void OnAcceptNewClient(zsummer::network::ErrorCode ec, CTcpSocketPtr s, CTcpAcceptPtr accepter, AccepterID aID);
+	bool BindEstablishedSocketPtr(CTcpSocketPtr sockptr, AccepterID aID);
 private:
-
 	bool  m_bRunning = true;
 	SessionID m_lastSessionID = 0;
 

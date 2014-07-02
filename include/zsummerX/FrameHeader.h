@@ -34,7 +34,7 @@
  * (end of COPYRIGHT)
  */
 
-//! zsummer的测试服务模块(对应zsummer底层网络封装的上层设计测试服务) 可视为服务端架构中的 gateway服务/agent服务/前端服务, 特点是高并发高吞吐量
+
 //! 公共头文件
 
 #ifndef ZSUMMER_HEADER_H_
@@ -53,6 +53,9 @@
 #include <log4z/log4z.h>
 #include <protocol4z/protocol4z.h>
 using namespace std;
+
+//! frame封装在网络部分使用单例模式, 如果需要使用多线程 需要在业务层由用户开辟线程池处理, 并需要配合CTcpSessionManager的Post接口.
+//! 如果需要在zsummerX的网络部分使用多线程 请参考tcpTest实例调用zsummerX的原始接口实现.
 
 
 //! ID类型和无效状态数值定义
@@ -77,19 +80,7 @@ struct tagAcceptorConfigTraits
 	std::vector<std::string> whitelistIP;
 };
 
-//! print log
-template<class OS>
-OS & operator <<(OS & os, const tagAcceptorConfigTraits & traits)
-{
-	os << "[AccepterID=" << traits.aID << "; listenIP=" << traits.listenIP << "; listenPort=" << traits.listenPort
-		<< "; maxSessions=" << traits.maxSessions << "; whitelistIP=";
-	for (auto x : traits.whitelistIP)
-	{
-		os << x << ",";
-	}
-	os << "]";
-	return os;
-}
+
 
 //连接器配置
 struct tagConnctorConfigTraits
@@ -103,52 +94,50 @@ struct tagConnctorConfigTraits
 	unsigned int curReconnectCount = 0; // interval use
 };
 
-//! print log
-template<class OS>
-OS & operator <<(OS & os, const tagConnctorConfigTraits & traits)
-{
-	os << "[ConnectorID=" << traits.cID << "; remoteIP=" << traits.remoteIP << "; remotePort=" << traits.remotePort
-		<< "; reconnectMaxCount=" << traits.reconnectMaxCount << "; reconnectInterval=" << traits.reconnectInterval;
-	return os;
-}
+
 
 
 //类型定义
 //----------------------------------------
 class CTcpSession;
-class CWorkManager;
 
 typedef std::shared_ptr<zsummer::network::CTcpSocket> CTcpSocketPtr;
 typedef std::shared_ptr<zsummer::network::CTcpAccept> CTcpAcceptPtr;
 typedef std::shared_ptr<zsummer::network::CZSummer> CZSummerPtr;
 typedef std::shared_ptr<CTcpSession> CTcpSessionPtr;
-typedef std::shared_ptr<CWorkManager> CWorkManagerPtr;
-
-
-
-
-
-
-
 
 
 //public method
 #define  NOW_TIME (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count())
 
-#define MSG_BUFF_MAX_LEN 64*1024 //底层通讯最大协议长度
-#define HEARTBEART_INTERVAL 30000 //本地心跳间隔 毫秒
 
-struct FrameStreamTraits
+//如果需要更改协议长度 在包含该头文件之前使用宏定义替换该默认数值
+#ifndef MSG_BUFF_MAX_LEN
+#define MSG_BUFF_MAX_LEN 64*1024 //底层通讯最大协议长度
+#endif
+
+//如果需要更改心跳间隔 在包含该头文件之前使用宏定义替换该默认数值
+#ifndef HEARTBEART_INTERVAL
+#define HEARTBEART_INTERVAL 30000 //本地心跳间隔 毫秒
+#endif
+
+//如果需要更改包头协议 在包含该头文件之前使用宏定义替换该默认Straits
+#ifndef FrameStreamTraits
+#define FrameStreamTraits FrameStreamTraitsDefault
+struct FrameStreamTraitsDefault
 {
-	typedef unsigned int Integer; //User-Defined Integer Type must in [unsigned char, unsigned short, unsigned int, unsigned long long].
-	const static Integer PreOffset = 0; //User-Defined 
-	const static Integer PostOffset = 0; //User-Defined 
-	const static Integer MaxPackLen = (Integer)MSG_BUFF_MAX_LEN; //User-Defined. example:  Integer = unsigned short(-1) ==>(65535)
-	const static bool	 PackLenIsContainHead = true; //User-Defined 
-	const static zsummer::protocol4z::ZSummer_EndianType EndianType = zsummer::protocol4z::LittleEndian;//User-Defined 
-	const static Integer IntegerTypeSize = sizeof(Integer); // Don't Touch. PackLenSize and sizeof(Integer) must be equal. 
-	const static Integer HeadLen = PreOffset + IntegerTypeSize + PostOffset; //Don't Touch. Head Length.
+	typedef unsigned int Integer;
+	const static Integer PreOffset = 0;  
+	const static Integer PostOffset = 0;  
+	const static Integer MaxPackLen = (Integer)MSG_BUFF_MAX_LEN; 
+	const static bool	 PackLenIsContainHead = true; 
+	const static zsummer::protocol4z::ZSummer_EndianType EndianType = zsummer::protocol4z::LittleEndian; 
+	const static Integer IntegerTypeSize = sizeof(Integer);
+	const static Integer HeadLen = PreOffset + IntegerTypeSize + PostOffset; 
 };
+#endif
+
+
 
 typedef zsummer::protocol4z::ReadStream<FrameStreamTraits> ReadStreamPack;
 typedef zsummer::protocol4z::WriteStream<FrameStreamTraits> WriteStreamPack;
@@ -167,8 +156,28 @@ typedef std::function < void(AccepterID, SessionID) > OnMySessionHeartbeatTimer;
 typedef std::function < void(ConnectorID) > OnMyConnectorHeartbeatTimer;
 
 
+//! print log
+template<class OS>
+OS & operator <<(OS & os, const tagAcceptorConfigTraits & traits)
+{
+	os << "[AccepterID=" << traits.aID << "; listenIP=" << traits.listenIP << "; listenPort=" << traits.listenPort
+		<< "; maxSessions=" << traits.maxSessions << "; whitelistIP=";
+	for (auto x : traits.whitelistIP)
+	{
+		os << x << ",";
+	}
+	os << "]";
+	return os;
+}
 
-
+//! print log
+template<class OS>
+OS & operator <<(OS & os, const tagConnctorConfigTraits & traits)
+{
+	os << "[ConnectorID=" << traits.cID << "; remoteIP=" << traits.remoteIP << "; remotePort=" << traits.remotePort
+		<< "; reconnectMaxCount=" << traits.reconnectMaxCount << "; reconnectInterval=" << traits.reconnectInterval;
+	return os;
+}
 
 #endif
 

@@ -34,170 +34,257 @@
  * (end of COPYRIGHT)
  */
 
-//! zsummer的测试服务模块(对应zsummer底层网络封装的上层设计测试服务) 可视为服务端架构中的 gateway服务/agent服务/前端服务, 特点是高并发高吞吐量
-//! main文件
+
+//! frame模块压力测试
+//! frame封装在网络部分使用单例模式, 如果需要使用多线程 需要在业务层由用户开辟线程池处理.
+//! 如果需要在zsummerX的网络部分使用多线程 请参考tcpTest实例调用zsummerX的原始接口实现.
 
 
 #include <zsummerX/FrameHeader.h>
 #include <zsummerX/FrameTcpSessionManager.h>
 #include <zsummerX/FrameMessageDispatch.h>
+#include <unordered_map>
 using namespace zsummer::log4z;
 
-std::string g_remoteIP = "0.0.0.0";
-unsigned short g_remotePort = 81;
-unsigned short g_startType = 0;  //0 listen, 1 connect
-unsigned short g_maxClient = 1; //0 echo send, 1 direct send
-unsigned short g_sendType = 0; //0 echo send, 1 direct send
-unsigned int   g_intervalMs = 0; // send interval
+//! 默认启动参数
+std::string g_remoteIP = "0.0.0.0"; //如果作为服务端来使用 这里是监听地址
+unsigned short g_remotePort = 81; //同上
+unsigned short g_startType = 0;  //0 作为服务器启动, 1 作为客户端启动
+unsigned short g_maxClient = 1; //如果是服务端 这里是限制客户端的个数 超出的会被踢掉, 如果是客户端 这里是启动的客户端总数.
+unsigned short g_sendType = 0; //0 ping-pong test, 1 flood test
+unsigned int   g_intervalMs = 0; // 如果是flood test, 这里的间隔应该大于0, 单位是毫秒.
 
-//test protocols, IDs
-static const ProtocolID _Heartbeat = 1000;
-static const ProtocolID _RequestSequence = 1001;
-static const ProtocolID _ResultSequence = 1002;
 
+
+//! g_testStr用来在压力测试中发送统一大小的消息.
 std::string g_testStr;
 
+//!收发包测试统计数据
 unsigned long long g_totalEchoCount = 0;
 unsigned long long g_lastEchoCount = 0;
 unsigned long long g_totalSendCount = 0;
 unsigned long long g_totalRecvCount = 0;
-
 void MonitorFunc()
 {
-	LOGI("per seconds Echos Count=" << (g_lastEchoCount - g_totalEchoCount) / 5
+	LOGI("per seconds Echos Count=" << (g_totalEchoCount - g_lastEchoCount) / 5
 		<< ", g_totalSendCount[" << g_totalSendCount << "] g_totalRecvCount[" << g_totalRecvCount << "]");
-	g_totalEchoCount = g_lastEchoCount;
+	g_lastEchoCount = g_totalEchoCount;
 	CTcpSessionManager::getRef().CreateTimer(5000, MonitorFunc);
 };
 
-class CStressClient
+/*
+* 测试代码中定义了4个协议 用来实现心跳机制和echo发包.
+* ECHO包是两个协议号 一个用来客户端发送 一个用来服务端回复.
+*/
+#define C2S_HEARTBEAT ProtocolID(10000)
+#define S2C_HEARTBEAT ProtocolID(10000)
+
+#define C2S_ECHO_REQ ProtocolID(10002)
+#define S2C_ECHO_ACK ProtocolID(10003)
+
+/*管理连接状态
+*在这个测试代码中 把服务端和客户端的心跳管理都放在了这个一个类中.
+* 该心跳机制实现策略是:
+*  在连接建立事件触发时 初始化心跳时间戳
+*  在收到对方心跳消息后更新时间戳
+*  在本地心跳定时器触发时检测时间(同时发送心跳给对方)
+*  在连接断开事件触发后清除时间戳
+*
+* 该心跳策略在本测试代码中是单向的 因此上面定义的协议号相同 这个并不影响.
+* 如果需要在心跳包携带额外的数据, 例如检测时间延迟, 则可以把心跳包改为REQ-ACK形式(添加一个ACK即可). 在REQ中发送本地时间 在ACK时候检测时间差.
+*/
+class CStressHeartBeatManager
 {
 public:
-	CStressClient()
+	CStressHeartBeatManager()
 	{
-		CMessageDispatcher::getRef().RegisterOnConnectorEstablished(std::bind(&CStressClient::OnConnected,this, std::placeholders::_1));
-		CMessageDispatcher::getRef().RegisterOnMyConnectorHeartbeatTimer(std::bind(&CStressClient::Heartbeat, this, std::placeholders::_1));
-		CMessageDispatcher::getRef().RegisterConnectorMessage(_Heartbeat, 
-			std::bind(&CStressClient::msg_Heartbeat_fun, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-		CMessageDispatcher::getRef().RegisterConnectorMessage(_ResultSequence, 
-			std::bind(&CStressClient::msg_ResultSequence_fun, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-		CMessageDispatcher::getRef().RegisterOnConnectorDisconnect(std::bind(&CStressClient::OnConnectDisconnect, this, std::placeholders::_1));
-		
+		//! 注册事件和消息
+		CMessageDispatcher::getRef().RegisterOnConnectorEstablished(std::bind(&CStressHeartBeatManager::OnConnecotrConnected, this,
+			std::placeholders::_1));
+		CMessageDispatcher::getRef().RegisterOnMyConnectorHeartbeatTimer(std::bind(&CStressHeartBeatManager::OnConnecotrHeartbeatTimer, this,
+			std::placeholders::_1));
+		CMessageDispatcher::getRef().RegisterOnConnectorDisconnect(std::bind(&CStressHeartBeatManager::OnConnecotrDisconnect, this,
+			std::placeholders::_1));
+		CMessageDispatcher::getRef().RegisterConnectorMessage(S2C_HEARTBEAT, std::bind(&CStressHeartBeatManager::OnMsgServerHeartbeat, this,
+			std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+
+
+		CMessageDispatcher::getRef().RegisterOnSessionEstablished(std::bind(&CStressHeartBeatManager::OnSessionEstablished, this,
+			std::placeholders::_1, std::placeholders::_2));
+		CMessageDispatcher::getRef().RegisterOnMySessionHeartbeatTimer(std::bind(&CStressHeartBeatManager::OnSessionHeartbeatTimer, this,
+			std::placeholders::_1, std::placeholders::_2));
+		CMessageDispatcher::getRef().RegisterOnSessionDisconnect(std::bind(&CStressHeartBeatManager::OnSessionDisconnect, this,
+			std::placeholders::_1, std::placeholders::_2));
+		CMessageDispatcher::getRef().RegisterSessionMessage(C2S_HEARTBEAT, std::bind(&CStressHeartBeatManager::OnMsgConnectorHeartbeat, this,
+			std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 	}
+	
+	void OnConnecotrConnected(ConnectorID cID)
+	{
+		m_connectorHB[cID] = time(NULL);
+		LOGI("connect sucess. cID=" << cID);
+	}
+	void OnConnecotrHeartbeatTimer(ConnectorID cID)
+	{
+		auto iter = m_connectorHB.find(cID);
+		if (iter == m_connectorHB.end() || time(NULL) - iter->second > HEARTBEART_INTERVAL/1000*2)
+		{
+			LOGI("server  lost. cID=" << cID << ", timeout=" << time(NULL) - iter->second);
+			CTcpSessionManager::getRef().BreakConnector(cID);
+		}
+		WriteStreamPack pack;
+		pack << C2S_HEARTBEAT;
+		CTcpSessionManager::getRef().SendOrgConnectorData(cID, pack.GetStream(), pack.GetStreamLen());
+	}
+	void OnConnecotrDisconnect(ConnectorID cID)
+	{
+		m_connectorHB.erase(cID);
+		LOGI("Disconnect. cID=" << cID);
+	}
+
+	void OnMsgServerHeartbeat(ConnectorID cID, ProtocolID pID, ReadStreamPack & pack)
+	{
+		auto iter = m_connectorHB.find(cID);
+		if (iter != m_connectorHB.end())
+		{
+			iter->second = time(NULL);
+		}
+	}
+
+	void OnSessionEstablished(AccepterID aID, SessionID sID)
+	{
+		m_sessionHB[sID] = time(NULL);
+		LOGI("remote session connected. sID=" << sID);
+	}
+	void OnSessionHeartbeatTimer(AccepterID aID, SessionID sID)
+	{
+		auto iter = m_sessionHB.find(sID);
+		if (iter == m_sessionHB.end() || time(NULL) - iter->second > HEARTBEART_INTERVAL/1000 * 2)
+		{
+			LOGI("remote session lost. sID=" << sID << ", timeout=" << time(NULL) - iter->second);
+			CTcpSessionManager::getRef().KickSession(aID, sID);
+		}
+		WriteStreamPack pack;
+		pack << S2C_HEARTBEAT;
+		CTcpSessionManager::getRef().SendOrgSessionData(aID, sID, pack.GetStream(), pack.GetStreamLen());
+	}
+	void OnSessionDisconnect(AccepterID aID, SessionID sID)
+	{
+		LOGI("remote session Disconnect. sID=" << sID );
+		m_sessionHB.erase(sID);
+	}
+	void OnMsgConnectorHeartbeat(AccepterID aID, SessionID sID, ProtocolID pID, ReadStreamPack & pack)
+	{
+		auto iter = m_sessionHB.find(sID);
+		if (iter != m_sessionHB.end())
+		{
+			iter->second = time(NULL);
+		}
+	}
+
+protected:
+
+private:
+	//! 注册的事件是针对所有session or connector的 因此在事件触发时候 要去查找对应的心跳信息
+	std::unordered_map<SessionID, time_t> m_sessionHB;
+	std::unordered_map<ConnectorID, time_t> m_connectorHB;
+};
+
+
+/* 测试客户端handler类
+* 如果启动客户端用来做ping-pong压力测试, 则流程不存在定时器 流程如下 
+*  在connector成功后发送第一个send包(ping), 然后在每次recv的时候(pong)向服务器send包(pong).
+* 如果启动客户端用来做flood压力测试, 则每个连接都需要创建一个定时器 流程如下
+*  在connector成功后 send定时器启动, 并以指定定时器间隔时间持续send.
+*/
+class CStressClientHandler
+{
+public:
+	CStressClientHandler()
+	{
+		CMessageDispatcher::getRef().RegisterOnConnectorEstablished(std::bind(&CStressClientHandler::OnConnected, this, std::placeholders::_1));
+		CMessageDispatcher::getRef().RegisterConnectorMessage(S2C_ECHO_ACK,
+			std::bind(&CStressClientHandler::msg_ResultSequence_fun, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+		CMessageDispatcher::getRef().RegisterOnConnectorDisconnect(std::bind(&CStressClientHandler::OnConnectDisconnect, this, std::placeholders::_1));
+	}
+
 	void OnConnected (ConnectorID cID)
 	{
 		LOGI("OnConnected. ConnectorID=" << cID );
 		WriteStreamPack ws;
-		ws << _RequestSequence << "hello";
+		ws << C2S_ECHO_REQ << "client request one REQ.";
 		CTcpSessionManager::getRef().SendOrgConnectorData(cID, ws.GetStream(), ws.GetStreamLen());
 		g_totalSendCount++;
 		if (g_sendType != 0 && g_intervalMs > 0)
 		{
-			m_timerID = CTcpSessionManager::getRef().CreateTimer(g_intervalMs, std::bind(&CStressClient::SendFunc, this, cID));
+			CTcpSessionManager::getRef().CreateTimer(g_intervalMs, std::bind(&CStressClientHandler::SendFunc, this, cID));
+			m_sessionStatus[cID] = true;
 		}
 	};
 	void OnConnectDisconnect(ConnectorID cID)
 	{
-		CTcpSessionManager::getRef().CancelTimer(m_timerID);
-		m_timerID = InvalidTimerID;
+		m_sessionStatus[cID] = false;
 	}
 
-	void Heartbeat(ConnectorID cID)
-	{
-		time_t now = time(NULL);
-		if (now - m_remoteLastHeartbeat > HEARTBEART_INTERVAL / 1000 * 3)
-		{
-			LOGW("Connector check heartbeat timeout. Connector=" << cID);
-			CTcpSessionManager::getRef().BreakConnector(cID);
-			return;
-		}
-		LOGI("send  heartbeat");
-		WriteStreamPack ws;
-		ws << _Heartbeat;
-		CTcpSessionManager::getRef().SendOrgConnectorData(cID, ws.GetStream(), ws.GetStreamLen());
-	};
-	void msg_Heartbeat_fun (ConnectorID cID, ProtocolID pID, ReadStreamPack & rs)
-	{
-		LOGI("on remote heartbeat");
-		m_remoteLastHeartbeat = time(NULL);
-	};
 	void msg_ResultSequence_fun(ConnectorID cID, ProtocolID pID, ReadStreamPack & rs)
 	{
 		std::string msg;
 		rs >> msg;
 		g_totalRecvCount++;
+		g_totalEchoCount++;
 
 		if (g_sendType == 0 || g_intervalMs == 0) //echo send
 		{
 			WriteStreamPack ws;
-			ws << _RequestSequence << g_testStr;
+			ws << C2S_ECHO_REQ << g_testStr;
 			CTcpSessionManager::getRef().SendOrgConnectorData(cID, ws.GetStream(), ws.GetStreamLen());
 			g_totalSendCount++;
 		}
-		g_lastEchoCount++;
 	};
 	void SendFunc(ConnectorID cID)
 	{
-		if (g_totalSendCount - g_totalRecvCount < 1000)
+		if (g_totalSendCount - g_totalRecvCount < 10000)
 		{
 			WriteStreamPack ws;
-			ws << _RequestSequence << g_testStr;
+			ws << C2S_ECHO_REQ << g_testStr;
 			CTcpSessionManager::getRef().SendOrgConnectorData(cID, ws.GetStream(), ws.GetStreamLen());
 			g_totalSendCount++;
 		}
-		m_timerID = CTcpSessionManager::getRef().CreateTimer(g_intervalMs, std::bind(&CStressClient::SendFunc, this, cID));
+		if (m_sessionStatus[cID])
+		{
+			CTcpSessionManager::getRef().CreateTimer(g_intervalMs, std::bind(&CStressClientHandler::SendFunc, this, cID));
+		}
 	};
 private:
-	time_t m_remoteLastHeartbeat = time(NULL);
-	zsummer::network::TimerID m_timerID = InvalidTimerID;
+	std::unordered_map<ConnectorID, bool> m_sessionStatus;
 };
 
-class CStressServer
+
+/*
+* 服务端handler类
+* 服务端逻辑较为简单 只要收到消息包 立刻echo回去就可以.
+*/
+class CStressServerHandler
 {
 public:
-	CStressServer()
+	CStressServerHandler()
 	{
-		CMessageDispatcher::getRef().RegisterOnMySessionHeartbeatTimer(std::bind(&CStressServer::Heartbeat, this, std::placeholders::_1, std::placeholders::_2));
-		CMessageDispatcher::getRef().RegisterSessionMessage(_Heartbeat, 
-			std::bind(&CStressServer::msg_Heartbeat_fun, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
-		CMessageDispatcher::getRef().RegisterSessionMessage(_RequestSequence, 
-			std::bind(&CStressServer::msg_RequestSequence_fun, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+		CMessageDispatcher::getRef().RegisterSessionMessage(C2S_ECHO_REQ,
+			std::bind(&CStressServerHandler::msg_RequestSequence_fun, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 	}
-	void Heartbeat(AccepterID aID, SessionID sID)
-	{
-		time_t now = time(NULL);
-		if (now - m_remoteLastHeartbeat > HEARTBEART_INTERVAL / 1000 * 3)
-		{
-			LOGW("session heartbeat timeout. AccepterID=" << aID << ", SessionID=" << sID);
-			CTcpSessionManager::getRef().KickSession(aID, sID);
-			return;
-		}
-		LOGI("send  heartbeat");
-		WriteStreamPack ws;
-		ws << _Heartbeat;
-		CTcpSessionManager::getRef().SendOrgSessionData(aID, sID, ws.GetStream(), ws.GetStreamLen());
-	};
 
-	void msg_Heartbeat_fun(AccepterID aID, SessionID sID, ProtocolID pID, ReadStreamPack & rs)
-	{
-		LOGI("on remote heartbeat");
-		m_remoteLastHeartbeat = time(NULL);
-	};
 	void msg_RequestSequence_fun (AccepterID aID, SessionID sID, ProtocolID pID, ReadStreamPack & rs)
 	{
 		std::string msg;
 		rs >> msg;
-		g_totalRecvCount++;
 		msg += " echo";
 		WriteStreamPack ws;
-		ws << _ResultSequence << msg;
+		ws << S2C_ECHO_ACK << msg;
 		CTcpSessionManager::getRef().SendOrgSessionData(aID, sID, ws.GetStream(), ws.GetStreamLen());
-		g_lastEchoCount++;
+		g_totalEchoCount++;
 		g_totalSendCount++;
+		g_totalRecvCount++;
 	};
-
-private:
-	time_t m_remoteLastHeartbeat = time(NULL);
 };
 
 int main(int argc, char* argv[])
@@ -252,7 +339,7 @@ int main(int argc, char* argv[])
 
 
 	ILog4zManager::GetInstance()->SetLoggerLevel(LOG4Z_MAIN_LOGGER_ID, LOG_LEVEL_INFO);
-	ILog4zManager::GetInstance()->SetLoggerDisplay(LOG4Z_MAIN_LOGGER_ID, false);
+
 
 
 	CTcpSessionManager::getRef().Start();
@@ -261,10 +348,15 @@ int main(int argc, char* argv[])
 
 	CTcpSessionManager::getRef().CreateTimer(5000, MonitorFunc);
 
-	CStressClient client;
-	CStressServer server;
+	//创建心跳管理handler的实例 只要创建即可, 构造函数中会注册对应事件
+	CStressHeartBeatManager statusManager;
+
+	//这里创建服务handler和客户端handler 根据启动参数不同添加不同角色.
+	CStressClientHandler client;
+	CStressServerHandler server;
 	if (g_startType) //client
 	{
+		//添加多个connector.
 		for (int i = 0; i < g_maxClient; ++i)
 		{
 			tagConnctorConfigTraits traits;
@@ -278,6 +370,7 @@ int main(int argc, char* argv[])
 	}
 	else
 	{
+		//添加acceptor
 		tagAcceptorConfigTraits traits;
 		traits.aID = 1;
 		traits.listenPort = g_remotePort;
@@ -285,6 +378,8 @@ int main(int argc, char* argv[])
 		//traits.whitelistIP.push_back("127.0.");
 		CTcpSessionManager::getRef().AddAcceptor(traits);
 	}
+
+	//启动主循环.
 	CTcpSessionManager::getRef().Run();
 
 	return 0;

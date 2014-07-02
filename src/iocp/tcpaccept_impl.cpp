@@ -54,7 +54,6 @@ CTcpAcceptImpl::CTcpAcceptImpl()
 	memset(m_recvBuf, 0, sizeof(m_recvBuf));
 	
 	m_recvLen = 0;
-	memset(&m_handle, 0, sizeof(m_handle));
 
 	//status
 	m_nLinkStatus = LS_UNINITIALIZE;
@@ -202,17 +201,12 @@ bool CTcpAcceptImpl::OnIOCPMessage(BOOL bSuccess)
 		int tmp2 = 0;
 		GetAcceptExSockaddrs(m_recvBuf, m_recvLen, sizeof(SOCKADDR_IN)+16, sizeof(SOCKADDR_IN)+16, &paddr1, &tmp1, &paddr2, &tmp2);
 		m_client->m_impl.AttachEstablishedSocket(m_socket, inet_ntoa(((sockaddr_in*)paddr2)->sin_addr), ntohs(((sockaddr_in*)paddr2)->sin_port));
-		m_socket = INVALID_SOCKET;
-		CTcpSocketPtr ps(m_client);
-		m_client.reset();
-		onAccept(EC_SUCCESS,ps);
+		onAccept(EC_SUCCESS, m_client);
 	}
 	else
 	{
-		CTcpSocketPtr ps(m_client);
-		m_client.reset();
 		LCW("Accept Fail,  retry doAccept ... ip=" << m_ip << ", port=" << m_port);
-		onAccept(EC_ERROR, ps);
+		onAccept(EC_ERROR, m_client);
 	}
 	return true;
 }

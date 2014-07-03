@@ -10,6 +10,8 @@
 #define  NOW_TIME (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count())
 
 using namespace std;
+using namespace zsummer::protocol4z;
+
 #define PACK_LEN 1024
 int main(int argc, char* argv[])
 {
@@ -48,12 +50,12 @@ int main(int argc, char* argv[])
 	};
 	auto sendOnce=[&](SocketPtr client)
 	{
-		zsummer::protocol4z::WriteStream ws(buffSend, PACK_LEN);
+		WriteStream<DefaultStreamHeadTraits> ws(buffSend, PACK_LEN);
 		ws << (unsigned short) 1; //protocol id
 		ws <<(unsigned long long) NOW_TIME; // local tick count
 		ws << fillstring; // append text, fill the length protocol.
-		client->async_write_some(boost::asio::buffer(buffSend, ws.GetWriteLen()), 
-					std::bind(onSend, std::placeholders::_1, std::placeholders::_2, 0, ws.GetWriteLen(), client));
+		client->async_write_some(boost::asio::buffer(ws.GetStream(), ws.GetStreamLen()), 
+					std::bind(onSend, std::placeholders::_1, std::placeholders::_2, 0, ws.GetStreamLen(), client));
 	};
 	std::function<void (const boost::system::error_code&,std::size_t, std::size_t, SocketPtr)> onRecv=
 		[&](const boost::system::error_code& ec,std::size_t trans, std::size_t curRecv, SocketPtr client)
@@ -64,21 +66,21 @@ int main(int argc, char* argv[])
 			return;
 		}
 		curRecv += trans;
-		int needRecv = zsummer::protocol4z::CheckBuffIntegrity(buffRecv, curRecv, PACK_LEN);
-		if ( needRecv == -1)
+		std::pair<bool, typename DefaultStreamHeadTraits::Integer> ret = CheckBuffIntegrity<DefaultStreamHeadTraits>(buffRecv, curRecv, PACK_LEN);
+		if (!ret.first)
 		{
 			cout <<"killed socket: CheckBuffIntegrity error " <<endl;
 			return ;
 		}
-		if (needRecv > 0)
+		if (ret.second > 0)
 		{
-			client->async_read_some(boost::asio::buffer(buffRecv+curRecv, needRecv), 
+			client->async_read_some(boost::asio::buffer(buffRecv+curRecv, ret.second), 
 				std::bind(onRecv, std::placeholders::_1, std::placeholders::_2, curRecv, client));
 			return ;
 		}
 
 		//! 解包完成 进行消息处理
-		zsummer::protocol4z::ReadStream rs(buffRecv, curRecv);
+		ReadStream<DefaultStreamHeadTraits> rs(buffRecv, curRecv);
 		try
 		{
 			//协议流异常会被上层捕获并关闭连接

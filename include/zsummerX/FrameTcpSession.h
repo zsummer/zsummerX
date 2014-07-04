@@ -42,12 +42,17 @@
 #include "FrameHeader.h"
 
 
-struct tagMSGPack
+struct MessagePack
 {
-	char buff[MSG_BUFF_MAX_LEN];
+	char buff[MSG_MAX_LEN];
 	unsigned int bufflen = 0;
 };
 
+struct MessageChunk
+{
+	char buff[SEND_RECV_CHUNK_SIZE];
+	unsigned int bufflen = 0;
+};
 
 
 class CTcpSession : public std::enable_shared_from_this<CTcpSession>
@@ -93,14 +98,14 @@ private:
 	};
 	
 	//! 读包
-	tagMSGPack m_recving;
+	MessageChunk m_recving;
 
 
-	tagMSGPack m_sending;
+	MessageChunk m_sending;
 	unsigned int m_sendingCurIndex = 0;
 	//! 写包队列
-	std::queue<tagMSGPack *> m_sendque;
-	std::queue<tagMSGPack*> m_freeCache;
+	std::queue<MessagePack *> m_sendque;
+	std::queue<MessagePack *> m_freeCache;
 };
 
 #endif

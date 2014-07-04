@@ -154,12 +154,19 @@ inline ZSummer_EndianType __LocalEndianType();
 //! get the residue length of packet  on the information received.
 //////////////////////////////////////////////////////////////////////////
 
-//! return: 
-//! pair.first: false:error, 
-//!             true: success, and pair.second:
-//!								0:integrated, >0: the residue length of a integrated packet.
+
+enum INTEGRITY_RET_TYPE
+{
+	IRT_SUCCESS = 0,
+	IRT_SHORTAGE = 1,
+	IRT_CORRUPTION = 2,
+};
+//! return value:
+//! first: IRT_SUCCESS data integrity. second: current integrity data lenght.
+//! first: IRT_SHORTAGE data not integrity. second: shortage lenght.
+//! first: IRT_CORRUPTION data corruption. second: data lenght
 template<class StreamHeadTrait>
-inline std::pair<bool, typename StreamHeadTrait::Integer> 
+inline std::pair<INTEGRITY_RET_TYPE, typename StreamHeadTrait::Integer>
 CheckBuffIntegrity(const char * buff, typename StreamHeadTrait::Integer curBuffLen, 
 typename StreamHeadTrait::Integer maxBuffLen /*= StreamHeadTrait::MaxPackLen*/);
 
@@ -595,13 +602,15 @@ void IntegerToStream(Integer integer, char *stream)
 //////////////////////////////////////////////////////////////////////////
 //! implement 
 //////////////////////////////////////////////////////////////////////////
+
+
 template<class StreamHeadTrait>
-inline std::pair<bool, typename StreamHeadTrait::Integer> CheckBuffIntegrity(const char * buff, typename StreamHeadTrait::Integer curBuffLen, typename StreamHeadTrait::Integer maxBuffLen)
+inline std::pair<INTEGRITY_RET_TYPE, typename StreamHeadTrait::Integer> CheckBuffIntegrity(const char * buff, typename StreamHeadTrait::Integer curBuffLen, typename StreamHeadTrait::Integer maxBuffLen)
 {
 	//! 检查包头是否完整
 	if (curBuffLen < StreamHeadTrait::HeadLen)
 	{
-		return std::make_pair(true, StreamHeadTrait::HeadLen - curBuffLen);
+		return std::make_pair(IRT_SHORTAGE, StreamHeadTrait::HeadLen - curBuffLen);
 	}
 
 	//! 获取包长度
@@ -612,24 +621,24 @@ inline std::pair<bool, typename StreamHeadTrait::Integer> CheckBuffIntegrity(con
 		packLen += StreamHeadTrait::HeadLen;
 		if (packLen < oldInteger) //over range
 		{
-			return std::make_pair(false, curBuffLen);
+			return std::make_pair(IRT_CORRUPTION, curBuffLen);
 		}
 	}
 
 	//! check
 	if (packLen > maxBuffLen)
 	{
-		return std::make_pair(false, curBuffLen);
+		return std::make_pair(IRT_CORRUPTION, curBuffLen);
 	}
 	if (packLen == curBuffLen)
 	{
-		return std::make_pair(true, (typename StreamHeadTrait::Integer)0);
+		return std::make_pair(IRT_SUCCESS, packLen);
 	}
 	if (packLen < curBuffLen)
 	{
-		return std::make_pair(true, 0);
+		return std::make_pair(IRT_SUCCESS, packLen);
 	}
-	return std::make_pair(true, packLen - curBuffLen);
+	return std::make_pair(IRT_SHORTAGE, packLen - curBuffLen);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -643,7 +652,7 @@ WriteStream<StreamHeadTrait, AllocType>::WriteStream(Integer maxStreamLen, bool 
 	m_maxStreamLen = maxStreamLen;
 	m_cursor = StreamHeadTrait::HeadLen;
 	m_bNoWrite = bNoWrite;
-	Integer reserveSize = sizeof(Integer) == 1 ? 255 : 1024;
+	Integer reserveSize = sizeof(Integer) == 1 ? 255 : 1200;
 	if (reserveSize < StreamHeadTrait::HeadLen)
 	{
 		reserveSize = StreamHeadTrait::HeadLen;

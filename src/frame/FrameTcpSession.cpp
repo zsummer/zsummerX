@@ -141,16 +141,17 @@ void CTcpSession::OnConnected(zsummer::network::ErrorCode ec, const tagConnctorC
 	CTcpSessionManager::getRef().OnConnectorStatus(m_connectorID, true, shared_from_this());
 	if (m_sending.bufflen == 0 && !m_sendque.empty())
 	{
-		tagMSGPack tmp = *m_sendque.front();
-		m_freeCache.push(m_sendque.front());
-		DoSend(tmp.buff, tmp.bufflen);
+		MessagePack *tmp = m_sendque.front();
+		m_sendque.pop();
+		DoSend(tmp->buff, tmp->bufflen);
+		tmp->bufflen = 0;
+		m_freeCache.push(tmp);
 	}
 }
 
 bool CTcpSession::DoRecv()
 {
-	m_recving.bufflen = 0;
-	return m_sockptr->DoRecv(m_recving.buff, FrameStreamTraits::HeadLen, std::bind(&CTcpSession::OnRecv, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
+	return m_sockptr->DoRecv(m_recving.buff, SEND_RECV_CHUNK_SIZE - m_recving.bufflen, std::bind(&CTcpSession::OnRecv, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
 }
 
 void CTcpSession::Close()
@@ -171,43 +172,57 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 
 	m_recving.bufflen += nRecvedLen;
 
-	std::pair<bool, FrameStreamTraits::Integer> ret = zsummer::protocol4z::CheckBuffIntegrity<FrameStreamTraits>(m_recving.buff, m_recving.bufflen, MSG_BUFF_MAX_LEN);
-	if (!ret.first)
+	//分包优化处理
+	
+	unsigned int usedIndex = 0;
+	do 
 	{
-		LOGD("killed socket: CheckBuffIntegrity error ");
-		m_sockptr->DoClose();
-		OnClose();
-		return;
-	}
-	if (ret.second > 0)
-	{
-		m_sockptr->DoRecv(m_recving.buff + m_recving.bufflen, ret.second, std::bind(&CTcpSession::OnRecv, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
-		return ;
-	}
-
-
-	try
-	{
-		ReadStreamPack rs(m_recving.buff, m_recving.bufflen);
-		ProtocolID protocolID = 0;
-		rs >> protocolID;
-		if (m_connectorID != InvalidConnectorID)
+		auto ret = zsummer::protocol4z::CheckBuffIntegrity<FrameStreamTraits>(m_recving.buff + usedIndex, m_recving.bufflen - usedIndex, SEND_RECV_CHUNK_SIZE - usedIndex);
+		if (ret.first == zsummer::protocol4z::IRT_CORRUPTION)
 		{
-			CMessageDispatcher::getRef().DispatchConnectorMessage(m_connectorID, protocolID, rs);
+			LOGD("killed socket: CheckBuffIntegrity error ");
+			m_sockptr->DoClose();
+			OnClose();
+			return;
 		}
-		else if (m_sessionID != InvalidSeesionID && m_acceptID != InvalidAccepterID)
+		if (ret.first == zsummer::protocol4z::IRT_SHORTAGE)
 		{
-			CMessageDispatcher::getRef().DispatchSessionMessage(m_acceptID, m_sessionID, protocolID, rs);
+			break;
+		}
+		try
+		{
+			ReadStreamPack rs(m_recving.buff + usedIndex, ret.second);
+			ProtocolID protocolID = 0;
+			rs >> protocolID;
+			if (m_connectorID != InvalidConnectorID)
+			{
+				CMessageDispatcher::getRef().DispatchConnectorMessage(m_connectorID, protocolID, rs);
+			}
+			else if (m_sessionID != InvalidSeesionID && m_acceptID != InvalidAccepterID)
+			{
+				CMessageDispatcher::getRef().DispatchSessionMessage(m_acceptID, m_sessionID, protocolID, rs);
+			}
+		}
+		catch (std::runtime_error e)
+		{
+			LOGW("MessageEntry catch one exception: " << e.what());
+			m_sockptr->DoClose();
+			OnClose();
+			return;
+		}
+		usedIndex += ret.second;
+	} while (true);
+	
+	
+	if (usedIndex > 0)
+	{
+		m_recving.bufflen = m_recving.bufflen - usedIndex;
+		if (m_recving.bufflen > 0)
+		{
+			memmove(m_recving.buff, m_recving.buff + usedIndex, m_recving.bufflen);
 		}
 	}
-	catch (std::runtime_error e)
-	{
-		LOGD("MessageEntry catch one exception: "<< e.what() );
-		m_sockptr->DoClose();
-		OnClose();
-		return ;
-	}
-
+	
 	if (!DoRecv())
 	{
 		OnClose();
@@ -218,10 +233,10 @@ void CTcpSession::DoSend(const char *buf, unsigned int len)
 {
 	if (m_sending.bufflen != 0)
 	{
-		tagMSGPack *pack = NULL;
+		MessagePack *pack = NULL;
 		if (m_freeCache.empty())
 		{
-			pack = new tagMSGPack();
+			pack = new MessagePack();
 		}
 		else
 		{
@@ -272,7 +287,7 @@ void CTcpSession::OnSend(zsummer::network::ErrorCode ec,  int nSentLen)
 		{
 			do
 			{
-				tagMSGPack *pack = m_sendque.front();
+				MessagePack *pack = m_sendque.front();
 				m_sendque.pop();
 				memcpy(m_sending.buff + m_sending.bufflen, pack->buff, pack->bufflen);
 				m_sending.bufflen += pack->bufflen;
@@ -283,7 +298,7 @@ void CTcpSession::OnSend(zsummer::network::ErrorCode ec,  int nSentLen)
 				{
 					break;
 				}
-				if (MSG_BUFF_MAX_LEN - m_sending.bufflen < m_sendque.front()->bufflen)
+				if (SEND_RECV_CHUNK_SIZE - m_sending.bufflen < m_sendque.front()->bufflen)
 				{
 					break;
 				}

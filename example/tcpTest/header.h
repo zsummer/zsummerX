@@ -69,7 +69,7 @@ struct Packet
 typedef std::shared_ptr<Packet> PacketPtr;
 typedef std::shared_ptr<zsummer::network::CTcpSocket> CTcpSocketPtr;
 
-const char g_text[] = "zsummerX:test text.........  zsummerX:test text.........  " //64
+static std::string g_text = "zsummerX:test text.........  zsummerX:test text.........  " //64
 					  "zsummerX:test text.........  zsummerX:test text.........  " //
 					  "zsummerX:test text.........  zsummerX:test text.........  " //
 					  "zsummerX:test text.........  zsummerX:test text.........  " //

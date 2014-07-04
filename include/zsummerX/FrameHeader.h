@@ -110,10 +110,15 @@ typedef std::shared_ptr<CTcpSession> CTcpSessionPtr;
 //public method
 #define  NOW_TIME (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count())
 
+//接收包缓冲大小
+#ifndef SEND_RECV_CHUNK_SIZE
+#define SEND_RECV_CHUNK_SIZE 64*1024
+#endif
+
 
 //如果需要更改协议长度 在包含该头文件之前使用宏定义替换该默认数值
-#ifndef MSG_BUFF_MAX_LEN
-#define MSG_BUFF_MAX_LEN 64*1024 //底层通讯最大协议长度
+#ifndef MSG_MAX_LEN
+#define MSG_MAX_LEN 64*1024 //底层通讯最大协议长度
 #endif
 
 //如果需要更改心跳间隔 在包含该头文件之前使用宏定义替换该默认数值
@@ -129,7 +134,7 @@ struct FrameStreamTraitsDefault
 	typedef unsigned int Integer;
 	const static Integer PreOffset = 0;  
 	const static Integer PostOffset = 0;  
-	const static Integer MaxPackLen = (Integer)MSG_BUFF_MAX_LEN; 
+	const static Integer MaxPackLen = (Integer)MSG_MAX_LEN; 
 	const static bool	 PackLenIsContainHead = true; 
 	const static zsummer::protocol4z::ZSummer_EndianType EndianType = zsummer::protocol4z::LittleEndian; 
 	const static Integer IntegerTypeSize = sizeof(Integer);

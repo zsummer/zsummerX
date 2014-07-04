@@ -139,15 +139,15 @@ void CClient::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 
 	m_recving._len += nRecvedLen;
 
-	std::pair<bool, zsummer::protocol4z::DefaultStreamHeadTraits::Integer> ret = zsummer::protocol4z::CheckBuffIntegrity<zsummer::protocol4z::DefaultStreamHeadTraits>(m_recving._orgdata, m_recving._len, _MSG_BUF_LEN);
-	if (!ret.first)
+	auto ret = zsummer::protocol4z::CheckBuffIntegrity<zsummer::protocol4z::DefaultStreamHeadTraits>(m_recving._orgdata, m_recving._len, _MSG_BUF_LEN);
+	if (ret.first == zsummer::protocol4z::IRT_CORRUPTION )
 	{
 		LOGD("killed socket: CheckBuffIntegrity error ");
 		m_sockptr->DoClose();
 		OnClose();
 		return;
 	}
-	if (ret.second > 0)
+	if (ret.first == zsummer::protocol4z::IRT_SHORTAGE)
 	{
 		m_sockptr->DoRecv(m_recving._orgdata + m_recving._len, ret.second, std::bind(&CClient::OnRecv, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
 		return ;
@@ -186,7 +186,7 @@ void CClient::MessageEntry(zsummer::protocol4z::ReadStream<zsummer::protocol4z::
 			rs >> clientTick >> m_recvTextCache;
 			if (g_startType == 0)
 			{
-				DoSend(protocolID, clientTick, m_recvTextCache.c_str());
+				DoSend(protocolID, clientTick, m_recvTextCache);
 			}
 			else
 			{
@@ -217,7 +217,7 @@ void CClient::MessageEntry(zsummer::protocol4z::ReadStream<zsummer::protocol4z::
 
 
 
-void CClient::DoSend(unsigned short protocolID, unsigned long long clientTick, const char* text)
+void CClient::DoSend(unsigned short protocolID, unsigned long long clientTick, const std::string& text)
 {
 	zsummer::protocol4z::WriteStream<DefaultStreamHeadTraits> ws;
 	ws << protocolID << clientTick << text;

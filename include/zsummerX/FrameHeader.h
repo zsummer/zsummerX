@@ -118,7 +118,7 @@ typedef std::shared_ptr<CTcpSession> CTcpSessionPtr;
 
 //如果需要更改协议长度 在包含该头文件之前使用宏定义替换该默认数值
 #ifndef MSG_MAX_LEN
-#define MSG_MAX_LEN 64*1024 //底层通讯最大协议长度
+#define MSG_MAX_LEN 8*1024 //底层通讯最大协议长度
 #endif
 
 //如果需要更改心跳间隔 在包含该头文件之前使用宏定义替换该默认数值

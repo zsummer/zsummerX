@@ -66,13 +66,13 @@ int main(int argc, char* argv[])
 			return;
 		}
 		curRecv += trans;
-		std::pair<bool, typename DefaultStreamHeadTraits::Integer> ret = CheckBuffIntegrity<DefaultStreamHeadTraits>(buffRecv, curRecv, PACK_LEN);
-		if (!ret.first)
+		auto ret = CheckBuffIntegrity<DefaultStreamHeadTraits>(buffRecv, curRecv, PACK_LEN);
+		if (ret.first == zsummer::protocol4z::IRT_CORRUPTION)
 		{
 			cout <<"killed socket: CheckBuffIntegrity error " <<endl;
 			return ;
 		}
-		if (ret.second > 0)
+		if (ret.first == zsummer::protocol4z::IRT_SHORTAGE)
 		{
 			client->async_read_some(boost::asio::buffer(buffRecv+curRecv, ret.second), 
 				std::bind(onRecv, std::placeholders::_1, std::placeholders::_2, curRecv, client));

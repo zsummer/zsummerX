@@ -318,11 +318,11 @@ void CTcpSession::OnHeartbeat()
 {
 	if (m_connectorID != InvalidConnectorID)
 	{
-		CTcpSessionManager::getRef().Post(std::bind(&CMessageDispatcher::DispatchOnConnectorHeartbeat, &CMessageDispatcher::getRef(), m_connectorID));
+		CMessageDispatcher::getRef().DispatchOnConnectorHeartbeat(m_connectorID);
 	}
 	else if (m_sessionID != InvalidSeesionID && m_acceptID != InvalidAccepterID)
 	{
-		CTcpSessionManager::getRef().Post(std::bind(&CMessageDispatcher::DispatchOnSessionHeartbeat, &CMessageDispatcher::getRef(), m_acceptID, m_sessionID));
+		CMessageDispatcher::getRef().DispatchOnSessionHeartbeat(m_acceptID, m_sessionID);
 	}
 	else
 	{

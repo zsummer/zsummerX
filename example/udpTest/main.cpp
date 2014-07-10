@@ -86,8 +86,8 @@ void onRecv(ErrorCode ec, const char *remoteIP, unsigned short remotePort, int t
 		return;
 	}
 
-	std::pair<bool, DefaultStreamHeadTraits::Integer> ret = zsummer::protocol4z::CheckBuffIntegrity<DefaultStreamHeadTraits>(pic->recvData, translate, _MSG_BUF_LEN);
-	if (ret.first && ret.second == 0)
+	auto ret = zsummer::protocol4z::CheckBuffIntegrity<DefaultStreamHeadTraits>(pic->recvData, translate, _MSG_BUF_LEN);
+	if (ret.first == IRT_SUCCESS)
 	{
 		//! ½â°ü
 		zsummer::protocol4z::ReadStream<DefaultStreamHeadTraits> rs(pic->recvData, translate);

@@ -360,7 +360,7 @@ int main(int argc, char* argv[])
 		for (int i = 0; i < g_maxClient; ++i)
 		{
 			tagConnctorConfigTraits traits;
-			traits.cID = InvalidConnectorID+1+i;
+			traits.cID = i;
 			traits.remoteIP = g_remoteIP;
 			traits.remotePort = g_remotePort;
 			traits.reconnectInterval = 5000;

@@ -44,7 +44,7 @@
 
 struct MessagePack
 {
-	char buff[MSG_MAX_LEN];
+	char buff[FrameStreamTraits::MaxPackLen];
 	unsigned int bufflen = 0;
 };
 

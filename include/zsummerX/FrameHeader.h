@@ -60,13 +60,13 @@ using namespace std;
 
 //! ID类型和无效状态数值定义
 typedef unsigned int SessionID;
-#define InvalidSeesionID 0
+const SessionID InvalidSeesionID = -1;
 typedef unsigned int AccepterID;
-#define InvalidAccepterID 0
+const AccepterID InvalidAccepterID = -1;
 typedef unsigned int ConnectorID;
-#define InvalidConnectorID 0
-typedef unsigned int ProtocolID;
-#define InvalidProtocolID 0
+const ConnectorID InvalidConnectorID = -1;
+typedef unsigned short ProtocolID;
+const ProtocolID InvalidProtocolID = -1;
 
 
 
@@ -111,36 +111,27 @@ typedef std::shared_ptr<CTcpSession> CTcpSessionPtr;
 #define  NOW_TIME (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count())
 
 //接收包缓冲大小
-#ifndef SEND_RECV_CHUNK_SIZE
-#define SEND_RECV_CHUNK_SIZE 64*1024
-#endif
+const unsigned int SEND_RECV_CHUNK_SIZE = 64 * 1024 -1;
 
 
-//如果需要更改协议长度 在包含该头文件之前使用宏定义替换该默认数值
-#ifndef MSG_MAX_LEN
-#define MSG_MAX_LEN 8*1024 //底层通讯最大协议长度
-#endif
 
-//如果需要更改心跳间隔 在包含该头文件之前使用宏定义替换该默认数值
-#ifndef HEARTBEART_INTERVAL
-#define HEARTBEART_INTERVAL 30000 //本地心跳间隔 毫秒
-#endif
+//心跳间隔
+const unsigned int HEARTBEART_INTERVAL = 30000; //毫秒
 
-//如果需要更改包头协议 在包含该头文件之前使用宏定义替换该默认Straits
-#ifndef FrameStreamTraits
-#define FrameStreamTraits FrameStreamTraitsDefault
-struct FrameStreamTraitsDefault
+
+//包头特性
+struct FrameStreamTraits
 {
-	typedef unsigned int Integer;
+	typedef unsigned short Integer;
 	const static Integer PreOffset = 0;  
 	const static Integer PostOffset = 0;  
-	const static Integer MaxPackLen = (Integer)MSG_MAX_LEN; 
+	const static Integer MaxPackLen = (Integer)16*1024; 
 	const static bool	 PackLenIsContainHead = true; 
 	const static zsummer::protocol4z::ZSummer_EndianType EndianType = zsummer::protocol4z::LittleEndian; 
 	const static Integer IntegerTypeSize = sizeof(Integer);
 	const static Integer HeadLen = PreOffset + IntegerTypeSize + PostOffset; 
 };
-#endif
+
 
 
 

@@ -54,7 +54,9 @@ public:
 	~CMessageDispatcher(){};
 
 	inline void RegisterSessionMessage(ProtocolID protocolID, const OnSessionMessageFunction & msgfun){ m_mapSessionDispatch[protocolID] = msgfun; }
+	inline void RegisterSessionMessage(const OnSessionMessageFunction & msgfun){ m_funDefaultSessionDispatch = msgfun; }
 	inline void RegisterConnectorMessage(ProtocolID protocolID, const OnConnectorMessageFunction & msgfun){ m_mapConnectorDispatch[protocolID] = msgfun; }
+	inline void RegisterConnectorMessage(const OnConnectorMessageFunction & msgfun){ m_funDefaultConnectorDispatch = msgfun; }
 
 	inline void RegisterOnSessionEstablished(const OnSessionEstablished & fun){m_vctOnSessionEstablished.push_back(fun); }
 	inline void RegisterOnSessionDisconnect(const OnSessionDisconnect & fun){ m_vctOnSessionDisconnect.push_back(fun); }
@@ -67,7 +69,7 @@ public:
 	inline void DispatchSessionMessage(AccepterID aID, SessionID sID, ProtocolID pID, ReadStreamPack & msg)
 	{
 		MapSessionDispatch::iterator iter = m_mapSessionDispatch.find(pID);
-		if (iter == m_mapSessionDispatch.end())
+		if (iter == m_mapSessionDispatch.end() && m_funDefaultSessionDispatch == nullptr)
 		{
 			LOGE("Entry OnSessionMessage[" <<pID <<"] Failed: UNKNOWN ProtocolID. AccepterID=" << aID << ", SessionID=" << sID << ", ProtocolID=" << pID);
 			//error
@@ -76,7 +78,14 @@ public:
 		try
 		{
 			LOGD("Entry OnSessionMessage[" << pID << "] AccepterID=" << aID << ", SessionID=" << sID);
-			(iter->second)(aID, sID, pID, msg);
+			if (iter != m_mapSessionDispatch.end())
+			{
+				(iter->second)(aID, sID, pID, msg);
+			}
+			else
+			{
+				m_funDefaultSessionDispatch(aID, sID, pID, msg);
+			}
 			LOGD("Leave OnSessionMessage[" << pID << "] AccepterID=" << aID << ", SessionID=" << sID);
 		}
 		catch (std::runtime_error e)
@@ -91,7 +100,7 @@ public:
 	inline void DispatchConnectorMessage(ConnectorID cID, ProtocolID pID, ReadStreamPack & msg)
 	{
 		MapConnectorDispatch::iterator iter = m_mapConnectorDispatch.find(pID);
-		if (iter == m_mapConnectorDispatch.end())
+		if (iter == m_mapConnectorDispatch.end() && m_funDefaultConnectorDispatch == nullptr)
 		{
 			LOGE("Entry ConnectorMessage[" <<pID <<"] Failed: UNKNOWN ProtocolID. ConnectorID=" << cID << ", ProtocolID=" << pID);
 			//error
@@ -100,7 +109,14 @@ public:
 		try
 		{
 			LOGD("Entry OnConnectorMessage[" << pID << "] ConnectorID=" << cID);
-			(iter->second)(cID, pID, msg);
+			if (iter != m_mapConnectorDispatch.end())
+			{
+				(iter->second)(cID, pID, msg);
+			}
+			else
+			{
+				m_funDefaultConnectorDispatch(cID, pID, msg);
+			}
 			LOGD("Leave OnConnectorMessage[" <<pID <<"] ConnectorID=" << cID);
 		}
 		catch (std::runtime_error e)
@@ -267,7 +283,9 @@ public:
 
 	private:
 		MapSessionDispatch m_mapSessionDispatch;
+		OnSessionMessageFunction m_funDefaultSessionDispatch;
 		MapConnectorDispatch m_mapConnectorDispatch;
+		OnConnectorMessageFunction m_funDefaultConnectorDispatch;
 
 		std::vector<OnSessionEstablished> m_vctOnSessionEstablished;
 		std::vector<OnSessionDisconnect> m_vctOnSessionDisconnect;

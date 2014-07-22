@@ -191,6 +191,21 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 		}
 		try
 		{
+			bool bOrgReturn = false;
+			if (m_connectorID != InvalidConnectorID)
+			{
+				bOrgReturn = CMessageDispatcher::getRef().DispatchOrgConnectorMessage(m_connectorID, m_recving.buff + usedIndex, ret.second);
+			}
+			else if (m_sessionID != InvalidSeesionID && m_acceptID != InvalidAccepterID)
+			{
+				bOrgReturn = CMessageDispatcher::getRef().DispatchOrgSessionMessage(m_acceptID, m_sessionID, m_recving.buff + usedIndex, ret.second);
+			}
+			if (! bOrgReturn)
+			{
+				//break dispatch.
+				break;
+			}
+			
 			ReadStreamPack rs(m_recving.buff + usedIndex, ret.second);
 			ProtocolID protocolID = 0;
 			rs >> protocolID;

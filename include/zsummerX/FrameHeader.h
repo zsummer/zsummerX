@@ -138,16 +138,23 @@ struct FrameStreamTraits
 typedef zsummer::protocol4z::ReadStream<FrameStreamTraits> ReadStreamPack;
 typedef zsummer::protocol4z::WriteStream<FrameStreamTraits> WriteStreamPack;
 
+//!注册原始消息的封包 如果存在回调并且回调的返回值为false则直接处理下一个封包.
+typedef std::function < bool(AccepterID, SessionID, const char * /*blockBegin*/, typename FrameStreamTraits::Integer /*blockSize*/) > OnSessionOrgMessageFunction;
+typedef std::function < bool(ConnectorID, const char * /*blockBegin*/, typename FrameStreamTraits::Integer /*blockSize*/) > OnConnectorOrgMessageFunction;
+
+//!注册消息
 typedef std::function < void(AccepterID, SessionID, ProtocolID, ReadStreamPack &) > OnSessionMessageFunction;
 typedef std::function < void(ConnectorID, ProtocolID, ReadStreamPack &) > OnConnectorMessageFunction;
 
-
+//注册事件
 typedef std::function < void(AccepterID, SessionID) > OnSessionEstablished;
 typedef std::function < void(ConnectorID) > OnConnectorEstablished;
 
+//注册事件
 typedef std::function < void(AccepterID, SessionID) > OnSessionDisconnect;
 typedef std::function < void(ConnectorID) > OnConnectorDisconnect;
 
+//注册心跳
 typedef std::function < void(AccepterID, SessionID) > OnMySessionHeartbeatTimer;
 typedef std::function < void(ConnectorID) > OnMyConnectorHeartbeatTimer;
 

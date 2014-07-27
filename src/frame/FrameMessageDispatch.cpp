@@ -36,7 +36,7 @@
 
 #include <zsummerX/FrameHeader.h>
 #include <zsummerX/FrameMessageDispatch.h>
-using namespace zsummer::protocol4z;
+using namespace zsummer::proto4z;
 
 CMessageDispatcher & CMessageDispatcher::getRef()
 {

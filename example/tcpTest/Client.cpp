@@ -35,7 +35,7 @@
  */
 
 #include "Client.h"
-using namespace zsummer::protocol4z;
+using namespace zsummer::proto4z;
 
 CClient::CClient(CProcess &proc, CTcpSocketPtr sockptr):m_process(proc)
 {
@@ -139,22 +139,22 @@ void CClient::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 
 	m_recving._len += nRecvedLen;
 
-	auto ret = zsummer::protocol4z::CheckBuffIntegrity<zsummer::protocol4z::DefaultStreamHeadTraits>(m_recving._orgdata, m_recving._len, _MSG_BUF_LEN);
-	if (ret.first == zsummer::protocol4z::IRT_CORRUPTION )
+	auto ret = zsummer::proto4z::CheckBuffIntegrity<zsummer::proto4z::DefaultStreamHeadTraits>(m_recving._orgdata, m_recving._len, _MSG_BUF_LEN);
+	if (ret.first == zsummer::proto4z::IRT_CORRUPTION)
 	{
 		LOGD("killed socket: CheckBuffIntegrity error ");
 		m_sockptr->DoClose();
 		OnClose();
 		return;
 	}
-	if (ret.first == zsummer::protocol4z::IRT_SHORTAGE)
+	if (ret.first == zsummer::proto4z::IRT_SHORTAGE)
 	{
 		m_sockptr->DoRecv(m_recving._orgdata + m_recving._len, ret.second, std::bind(&CClient::OnRecv, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
 		return ;
 	}
 
 	//! 解包完成 进行消息处理
-	zsummer::protocol4z::ReadStream<DefaultStreamHeadTraits> rs(m_recving._orgdata, m_recving._len);
+	zsummer::proto4z::ReadStream<DefaultStreamHeadTraits> rs(m_recving._orgdata, m_recving._len);
 	try
 	{
 		MessageEntry(rs);
@@ -172,7 +172,7 @@ void CClient::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 	DoRecv();
 }
 
-void CClient::MessageEntry(zsummer::protocol4z::ReadStream<zsummer::protocol4z::DefaultStreamHeadTraits> & rs)
+void CClient::MessageEntry(zsummer::proto4z::ReadStream<zsummer::proto4z::DefaultStreamHeadTraits> & rs)
 {
 	//协议流异常会被上层捕获并关闭连接
 	unsigned short protocolID = 0;
@@ -219,7 +219,7 @@ void CClient::MessageEntry(zsummer::protocol4z::ReadStream<zsummer::protocol4z::
 
 void CClient::DoSend(unsigned short protocolID, unsigned long long clientTick, const std::string& text)
 {
-	zsummer::protocol4z::WriteStream<DefaultStreamHeadTraits> ws;
+	zsummer::proto4z::WriteStream<DefaultStreamHeadTraits> ws;
 	ws << protocolID << clientTick << text;
 	DoSend(ws.GetStream(), ws.GetStreamLen());
 }

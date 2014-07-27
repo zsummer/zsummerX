@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<ProtoTraits>
+  <MinNo>30000</MinNo>
+  <MaxNo>32000</MaxNo>
+  <UseLog4z>1</UseLog4z>
+</ProtoTraits>
+
+<Proto>
+
+  <!-- 支持枚举类型 如下是示例代码-->
+  <enum name="ServerType" desc="服务类型">
+    <member name="DBServer" value="0"  desc=""/>
+    <member name="GameServer" value="1"  desc=""/>
+    <member name="BattleServer"  value="2" desc=""/>
+    <member name="CenterServer" value="3"  desc=""/>
+    <member name="AgentServer"  value="4" desc=""/>
+  </enum>
+
+  <!-- 支持结构体类型 如下是示例代码-->
+  <struct name="AuthInfo" desc="认证信息">
+    <member name="user" type="string"   desc=""/>
+    <member name="pwd"  type="string" desc=""/>
+  </struct>
+
+  <!-- 支持数据类型 如下是示例代码-->
+  <array name="intVct" type="int" desc=""/>
+  
+  <!-- 支持KV数据类型 如下是示例代码-->
+  <map name="MapUserAuth" key="string" value="AuthInfo" desc=""/>
+  
+  <!-- 支持协议类型, 可自动生成对应的ID号和结构体类型 如下是示例代码-->
+	<proto from="XS" to="OS" name="ServerInitNotify" desc= "服务初始化通知">
+    <member name="info" type="AuthInfo"   desc=""/>
+  </proto>
+	<proto from="XS" to="OS" name="StopServer" desc= "服务关闭通知" >
+  </proto>
+	<proto from="XS" to="OS" name="ServerPulse" desc= "服务心跳" >
+  </proto>
+
+  
+</Proto>

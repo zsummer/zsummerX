@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.6)
-project(protocol4z)
+project(proto4z)
 
 set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "")
 
@@ -28,7 +28,7 @@ else(WIN32)
   endif()
 endif(WIN32)
 
-SET(PROTOCOL4Z_BIN_OUT_PATH ${protocol4z_SOURCE_DIR}/test/bin)
+SET(PROTO4Z_BIN_OUT_PATH ${proto4z_SOURCE_DIR}/test/bin)
 
 add_subdirectory(g++)
 add_subdirectory(test)

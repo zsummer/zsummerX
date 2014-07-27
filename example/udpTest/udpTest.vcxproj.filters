@@ -9,9 +9,6 @@
     <ClInclude Include="..\..\depends\log4z\log4z.h">
       <Filter>log</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\depends\protocol4z\protocol4z.h">
-      <Filter>protocol</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\zsummerX\tcpaccept.h">
       <Filter>zsummerX\interface</Filter>
     </ClInclude>
@@ -26,6 +23,9 @@
     </ClInclude>
     <ClInclude Include="..\..\include\zsummerX\timer.h">
       <Filter>zsummerX\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\depends\proto4z\proto4z.h">
+      <Filter>protocol</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

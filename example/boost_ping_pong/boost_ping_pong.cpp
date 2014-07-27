@@ -5,12 +5,12 @@
 #include <boost/asio.hpp>
 #include <iostream>
 #include <stdio.h>
-#include "../../depends/protocol4z/protocol4z.h"
+#include "../../depends/proto4z/proto4z.h"
 #include <chrono>
 #define  NOW_TIME (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count())
 
 using namespace std;
-using namespace zsummer::protocol4z;
+using namespace zsummer::proto4z;
 
 #define PACK_LEN 1024
 int main(int argc, char* argv[])
@@ -67,12 +67,12 @@ int main(int argc, char* argv[])
 		}
 		curRecv += trans;
 		auto ret = CheckBuffIntegrity<DefaultStreamHeadTraits>(buffRecv, curRecv, PACK_LEN);
-		if (ret.first == zsummer::protocol4z::IRT_CORRUPTION)
+		if (ret.first == zsummer::proto4z::IRT_CORRUPTION)
 		{
 			cout <<"killed socket: CheckBuffIntegrity error " <<endl;
 			return ;
 		}
-		if (ret.first == zsummer::protocol4z::IRT_SHORTAGE)
+		if (ret.first == zsummer::proto4z::IRT_SHORTAGE)
 		{
 			client->async_read_some(boost::asio::buffer(buffRecv+curRecv, ret.second), 
 				std::bind(onRecv, std::placeholders::_1, std::placeholders::_2, curRecv, client));

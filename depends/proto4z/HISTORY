@@ -1,4 +1,4 @@
-HISTORY for Protocol4z
+HISTORY for proto4z
    
 /* 
  * UPDATES LOG
@@ -9,7 +9,7 @@ HISTORY for Protocol4z
  * VERSION 0.3.0 <DATE: 2014.03.17>
  *  support user-defined header
  *  WriteStream support auto alloc memory or attach exist memory
- *  protocol4z support stl container
+ *  proto4z support stl container
  * VERSION 0.4.0 <DATE: 2014.05.16>
  *  Add some useful interface method
  * 

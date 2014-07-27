@@ -51,7 +51,7 @@
 #include <string.h>
 #include <signal.h>
 #include <log4z/log4z.h>
-#include <protocol4z/protocol4z.h>
+#include <proto4z/proto4z.h>
 using namespace std;
 
 

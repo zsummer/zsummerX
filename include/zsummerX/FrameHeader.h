@@ -51,7 +51,7 @@
 #include <string.h>
 #include <signal.h>
 #include <log4z/log4z.h>
-#include <protocol4z/protocol4z.h>
+#include <proto4z/proto4z.h>
 using namespace std;
 
 //! frame封装在网络部分使用单例模式, 如果需要使用多线程 需要在业务层由用户开辟线程池处理, 并需要配合CTcpSessionManager的Post接口.
@@ -127,7 +127,7 @@ struct FrameStreamTraits
 	const static Integer PostOffset = 0;  
 	const static Integer MaxPackLen = (Integer)16*1024; 
 	const static bool	 PackLenIsContainHead = true; 
-	const static zsummer::protocol4z::ZSummer_EndianType EndianType = zsummer::protocol4z::LittleEndian; 
+	const static zsummer::proto4z::ZSummer_EndianType EndianType = zsummer::proto4z::LittleEndian;
 	const static Integer IntegerTypeSize = sizeof(Integer);
 	const static Integer HeadLen = PreOffset + IntegerTypeSize + PostOffset; 
 };
@@ -135,8 +135,8 @@ struct FrameStreamTraits
 
 
 
-typedef zsummer::protocol4z::ReadStream<FrameStreamTraits> ReadStreamPack;
-typedef zsummer::protocol4z::WriteStream<FrameStreamTraits> WriteStreamPack;
+typedef zsummer::proto4z::ReadStream<FrameStreamTraits> ReadStreamPack;
+typedef zsummer::proto4z::WriteStream<FrameStreamTraits> WriteStreamPack;
 
 //!注册原始消息的封包 如果存在回调并且回调的返回值为false则直接处理下一个封包.
 typedef std::function < bool(AccepterID, SessionID, const char * /*blockBegin*/, typename FrameStreamTraits::Integer /*blockSize*/) > OnSessionOrgMessageFunction;

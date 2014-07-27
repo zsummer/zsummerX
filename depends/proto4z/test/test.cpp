@@ -1,10 +1,10 @@
 //! yawei_zhang@foxmail.com
 
-#include "../protocol4z.h"
+#include "../proto4z.h"
 #include <iostream>
 #include <stdio.h>
 using namespace std;
-using namespace zsummer::protocol4z;
+using namespace zsummer::proto4z;
 
 #include "TestBase.h"
 

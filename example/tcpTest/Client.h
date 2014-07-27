@@ -55,7 +55,7 @@ private:
 
 	void DoRecv();
 	void OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen);
-	void MessageEntry(zsummer::protocol4z::ReadStream<zsummer::protocol4z::DefaultStreamHeadTraits> & rs);
+	void MessageEntry(zsummer::proto4z::ReadStream<zsummer::proto4z::DefaultStreamHeadTraits> & rs);
 
 
 

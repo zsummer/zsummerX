@@ -38,7 +38,7 @@
 #include <zsummerX/FrameTcpSessionManager.h>
 #include <zsummerX/FrameMessageDispatch.h>
 
-using namespace zsummer::protocol4z;
+using namespace zsummer::proto4z;
 
 
 CTcpSession::CTcpSession()
@@ -177,15 +177,15 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 	unsigned int usedIndex = 0;
 	do 
 	{
-		auto ret = zsummer::protocol4z::CheckBuffIntegrity<FrameStreamTraits>(m_recving.buff + usedIndex, m_recving.bufflen - usedIndex, SEND_RECV_CHUNK_SIZE - usedIndex);
-		if (ret.first == zsummer::protocol4z::IRT_CORRUPTION)
+		auto ret = zsummer::proto4z::CheckBuffIntegrity<FrameStreamTraits>(m_recving.buff + usedIndex, m_recving.bufflen - usedIndex, SEND_RECV_CHUNK_SIZE - usedIndex);
+		if (ret.first == zsummer::proto4z::IRT_CORRUPTION)
 		{
 			LOGD("killed socket: CheckBuffIntegrity error ");
 			m_sockptr->DoClose();
 			OnClose();
 			return;
 		}
-		if (ret.first == zsummer::protocol4z::IRT_SHORTAGE)
+		if (ret.first == zsummer::proto4z::IRT_SHORTAGE)
 		{
 			break;
 		}

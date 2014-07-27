@@ -1,9 +1,9 @@
 /*
- * Protocol4z License
+ * proto4z License
  * -----------
  * 
- * Protocol4z is licensed under the terms of the MIT license reproduced below.
- * This means that Protocol4z is free software and can be used for both academic
+ * proto4z is licensed under the terms of the MIT license reproduced below.
+ * This means that proto4z is free software and can be used for both academic
  * and commercial purposes at absolutely no cost.
  * 
  * 
@@ -58,14 +58,14 @@
  * VERSION 0.3.0 <DATE: 2014.03.17>
  *  support user-defined header
  *  WriteStream support auto alloc memory or attach exist memory
- *  protocol4z support stl container
+ *  proto4z support stl container
  * VERSION 0.4.0 <DATE: 2014.05.16>
  *  Add some useful interface method
  * 
  */
 #pragma once
-#ifndef _PROTOCOL4Z_H_
-#define _PROTOCOL4Z_H_
+#ifndef _PROTO4Z_H_
+#define _PROTO4Z_H_
 
 #include <string.h>
 #include <string>
@@ -84,11 +84,11 @@
 #ifndef _ZSUMMER_BEGIN
 #define _ZSUMMER_BEGIN namespace zsummer {
 #endif  
-#ifndef _ZSUMMER_PROTOCOL4Z_BEGIN
-#define _ZSUMMER_PROTOCOL4Z_BEGIN namespace protocol4z {
+#ifndef _ZSUMMER_PROTO4Z_BEGIN
+#define _ZSUMMER_PROTO4Z_BEGIN namespace proto4z {
 #endif
 _ZSUMMER_BEGIN
-_ZSUMMER_PROTOCOL4Z_BEGIN
+_ZSUMMER_PROTO4Z_BEGIN
 
 
 enum ZSummer_EndianType
@@ -985,11 +985,11 @@ inline void ReadStream<StreamHeadTrait>::SkipOriginalData(Integer unit)
 #ifndef _ZSUMMER_END
 #define _ZSUMMER_END }
 #endif  
-#ifndef _ZSUMMER_PROTOCOL4Z_END
-#define _ZSUMMER_PROTOCOL4Z_END }
+#ifndef _ZSUMMER_PROTO4Z_END
+#define _ZSUMMER_PROTO4Z_END }
 #endif
 
-_ZSUMMER_PROTOCOL4Z_END
+_ZSUMMER_PROTO4Z_END
 _ZSUMMER_END
 
 #endif

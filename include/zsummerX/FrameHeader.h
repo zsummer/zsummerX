@@ -50,6 +50,7 @@
 #include <iomanip>
 #include <string.h>
 #include <signal.h>
+#include <unordered_map>
 #include <log4z/log4z.h>
 #include <proto4z/proto4z.h>
 using namespace std;
@@ -70,6 +71,7 @@ const ProtocolID InvalidProtocolID = -1;
 
 
 
+
 //! 监听器配置
 struct tagAcceptorConfigTraits
 {
@@ -78,6 +80,12 @@ struct tagAcceptorConfigTraits
 	unsigned short listenPort = 81;
 	unsigned int maxSessions = 5000;
 	std::vector<std::string> whitelistIP;
+};
+
+struct tagAcceptorInfo
+{
+	unsigned long long totalAcceptCount = 0; //累计接收客户端连接请求
+	unsigned long long currentLinked = 0; //当前客户端并发个数
 };
 
 
@@ -91,7 +99,12 @@ struct tagConnctorConfigTraits
 	unsigned int reconnectMaxCount = 0; // try reconnect max count
 	unsigned int reconnectInterval =5000; //million seconds;
 	bool         reconnectCleanAllData = true ;//clean all data when reconnect;
-	unsigned int curReconnectCount = 0; // interval use
+};
+
+struct tagConnctorInfo
+{
+	unsigned long long totalConnectCount = 0; //累计连接次数
+	unsigned long long curReconnectCount = 0; //当前重连次数
 };
 
 

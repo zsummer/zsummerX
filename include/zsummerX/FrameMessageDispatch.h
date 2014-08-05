@@ -46,8 +46,8 @@ class CMessageDispatcher
 {
 private:
 	CMessageDispatcher(){}
-	typedef std::map<ProtocolID, OnSessionMessageFunction> MapSessionDispatch;
-	typedef std::map<ProtocolID, OnConnectorMessageFunction> MapConnectorDispatch;
+	typedef std::unordered_map<ProtocolID, OnSessionMessageFunction> MapSessionDispatch;
+	typedef std::unordered_map<ProtocolID, OnConnectorMessageFunction> MapConnectorDispatch;
 public:
 	static CMessageDispatcher & getRef();
 	static CMessageDispatcher * getPtr(){ return &getRef(); }

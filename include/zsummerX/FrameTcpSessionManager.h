@@ -65,7 +65,7 @@ public://! 创建和取消定时器
 	bool CancelTimer(unsigned long long timerID){ return m_summer->CancelTimer(timerID); }
 
 public://! 添加Connector或者Acceptor. 不限个数
-	SessionID AddConnector(const tagConnctorConfigTraits &traits);
+	SessionID AddConnector(const tagConnctorConfigTraits & traits);
 	AccepterID AddAcceptor(const tagAcceptorConfigTraits &traits);
 
 	
@@ -91,11 +91,13 @@ private:
 
 
 	CZSummerPtr m_summer;
-	std::map<AccepterID, std::map<SessionID, CTcpSessionPtr> > m_mapTcpSessionPtr;
-	std::map<ConnectorID, CTcpSessionPtr> m_mapConnectorPtr;
-	std::map<ConnectorID, tagConnctorConfigTraits> m_mapConnectorConfig;
-	std::map<AccepterID, tagAcceptorConfigTraits> m_mapAccepterConfig;
-	std::map<AccepterID, CTcpAcceptPtr> m_mapAccepterPtr;
+	typedef unsigned long long MergeBigID;
+#define MERGEBIGID(aID, sID) ( ((MergeBigID)aID << 32)  | sID )
+	std::unordered_map<MergeBigID, CTcpSessionPtr> m_mapTcpSessionPtr;
+	std::unordered_map<ConnectorID, CTcpSessionPtr> m_mapConnectorPtr;
+	std::unordered_map<ConnectorID, std::pair<tagConnctorConfigTraits, tagConnctorInfo> > m_mapConnectorConfig;
+	std::unordered_map<AccepterID, std::pair<tagAcceptorConfigTraits, tagAcceptorInfo> > m_mapAccepterConfig;
+	std::unordered_map<AccepterID, CTcpAcceptPtr> m_mapAccepterPtr;
 public:
 };
 

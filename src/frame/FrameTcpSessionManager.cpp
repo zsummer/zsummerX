@@ -83,7 +83,7 @@ AccepterID CTcpSessionManager::AddAcceptor(const tagAcceptorConfigTraits &traits
 		LOGE("AddAcceptor confilict AccecptID. traits=" << traits);
 		return InvalidAccepterID;
 	}
-	m_mapAccepterConfig[traits.aID] = traits;
+	m_mapAccepterConfig[traits.aID].first = traits;
 	CTcpAcceptPtr accepter(new zsummer::network::CTcpAccept(m_summer));
 	if (!accepter->OpenAccept(traits.listenIP.c_str(), traits.listenPort))
 	{
@@ -107,7 +107,7 @@ void CTcpSessionManager::OnAcceptNewClient(zsummer::network::ErrorCode ec, CTcpS
 	}
 	if (ec)
 	{
-		LOGE("DoAccept Result Error. ec=" << ec << ", traits=" << iter->second);
+		LOGE("DoAccept Result Error. ec=" << ec << ", traits=" << iter->second.first);
 		return;
 	}
 	
@@ -119,10 +119,10 @@ void CTcpSessionManager::OnAcceptNewClient(zsummer::network::ErrorCode ec, CTcpS
 	
 	//! check white list
 	//! ---------------------
-	if (!iter->second.whitelistIP.empty())
+	if (!iter->second.first.whitelistIP.empty())
 	{
 		bool checkSucess = false;
-		for (auto white : iter->second.whitelistIP)
+		for (auto white : iter->second.first.whitelistIP)
 		{
 			if (remoteIP.size() >= white.size())
 			{
@@ -137,7 +137,7 @@ void CTcpSessionManager::OnAcceptNewClient(zsummer::network::ErrorCode ec, CTcpS
 		if (!checkSucess)
 		{
 			LOGW("Accept New Client Check Whitelist Failed remoteAdress=" << remoteIP << ":" << remotePort
-				<< ", trais=" << iter->second);
+				<< ", trais=" << iter->second.first);
 
 			CTcpSocketPtr newclient(new zsummer::network::CTcpSocket);
 			newclient->Initialize(m_summer);
@@ -147,21 +147,23 @@ void CTcpSessionManager::OnAcceptNewClient(zsummer::network::ErrorCode ec, CTcpS
 		else
 		{
 			LOGI("Accept New Client Check Whitelist Success remoteAdress=" << remoteIP << ":" << remotePort
-				<< ", trais=" << iter->second);
+				<< ", trais=" << iter->second.first);
 		}
 	}
 	
 	//! check Max Sessions
-	auto currentSessions = m_mapTcpSessionPtr[iter->second.aID].size();
-	if (currentSessions > iter->second.maxSessions)
+
+	if (iter->second.second.currentLinked >= iter->second.first.maxSessions)
 	{
 		LOGW("Accept New Client. Too Many Sessions And The new socket will closed. remoteAddress=" << remoteIP << ":" << remotePort 
-			<< ", Aready linked sessions = " << currentSessions << ", trais=" << iter->second);
+			<< ", Aready linked sessions = " << iter->second.second.currentLinked << ", trais=" << iter->second.first);
 	}
 	else
 	{
 		LOGD("Accept New Client. Accept new Sessions. The new socket  remoteAddress=" << remoteIP << ":" << remotePort 
-			<< ", Aready linked sessions = " << currentSessions << ", trais=" << iter->second);
+			<< ", Aready linked sessions = " << iter->second.second.currentLinked << ", trais=" << iter->second.first);
+		iter->second.second.currentLinked++;
+		iter->second.second.totalAcceptCount++;
 		BindEstablishedSocketPtr(s, aID);
 	}
 	
@@ -180,7 +182,7 @@ bool CTcpSessionManager::BindEstablishedSocketPtr(CTcpSocketPtr sockptr, Accepte
 	{
 		return false;
 	}
-	m_mapTcpSessionPtr[aID][m_lastSessionID] = session;
+	m_mapTcpSessionPtr[MERGEBIGID(aID,m_lastSessionID)] = session;
 	Post(std::bind(&CMessageDispatcher::DispatchOnSessionEstablished, &CMessageDispatcher::getRef(), aID, m_lastSessionID));
 	return true;
 }
@@ -188,9 +190,8 @@ bool CTcpSessionManager::BindEstablishedSocketPtr(CTcpSocketPtr sockptr, Accepte
 
 void CTcpSessionManager::KickSession(AccepterID aID, SessionID sID)
 {
-	auto &mapSessionPtr = m_mapTcpSessionPtr[aID];
-	auto iter = mapSessionPtr.find(sID);
-	if (iter == mapSessionPtr.end())
+	auto iter = m_mapTcpSessionPtr.find(MERGEBIGID(aID, sID));
+	if (iter == m_mapTcpSessionPtr.end())
 	{
 		LOGW("KickSession NOT FOUND SessionID. AccepterID=" << aID << ", SessionID=" << sID);
 		return;
@@ -200,23 +201,24 @@ void CTcpSessionManager::KickSession(AccepterID aID, SessionID sID)
 
 void CTcpSessionManager::OnSessionClose(AccepterID aID, SessionID sID)
 {
-	m_mapTcpSessionPtr[aID].erase(sID);
+	m_mapTcpSessionPtr.erase(MERGEBIGID(aID, sID));
+	m_mapAccepterConfig[aID].second.currentLinked--;
 	CMessageDispatcher::getRef().DispatchOnSessionDisconnect(aID, sID);
 }
 
 
-SessionID CTcpSessionManager::AddConnector(const tagConnctorConfigTraits &traits)
+SessionID CTcpSessionManager::AddConnector(const tagConnctorConfigTraits & traits)
 {
 	if (m_mapConnectorConfig.find(traits.cID) != m_mapConnectorConfig.end() || traits.cID == InvalidConnectorID)
 	{
 		LOGE("AddConnector confilict ConnectorID. ConnectorID=" << traits.cID << ", remoteAdress=" << traits.remoteIP << ":" << traits.remotePort);
 		return traits.cID;
 	}
-	m_mapConnectorConfig[traits.cID] = traits;
+	m_mapConnectorConfig[traits.cID].first = traits;
 	CTcpSocketPtr sockPtr(new zsummer::network::CTcpSocket());
 	sockPtr->Initialize(m_summer);
 	CTcpSessionPtr sessionPtr(new CTcpSession());
-	sessionPtr->BindTcpConnectorPrt(sockPtr, traits);
+	sessionPtr->BindTcpConnectorPrt(sockPtr, m_mapConnectorConfig[traits.cID]);
 	return traits.cID;
 }
 
@@ -234,7 +236,7 @@ void CTcpSessionManager::BreakConnector(ConnectorID cID)
 
 void CTcpSessionManager::OnConnectorStatus(ConnectorID connectorID, bool bConnected, CTcpSessionPtr session)
 {
-	std::map<SessionID, tagConnctorConfigTraits>::iterator config = m_mapConnectorConfig.find(connectorID);
+	auto config = m_mapConnectorConfig.find(connectorID);
 	if (config == m_mapConnectorConfig.end())
 	{
 		LOGE("Unkwon Connector. Not Found ConnectorID=" << connectorID);
@@ -243,13 +245,14 @@ void CTcpSessionManager::OnConnectorStatus(ConnectorID connectorID, bool bConnec
 	if (bConnected)
 	{
 		m_mapConnectorPtr[connectorID] = session;
-		config->second.curReconnectCount = 0;
+		config->second.second.curReconnectCount = 0;
+		config->second.second.totalConnectCount++;
 		Post(std::bind(&CMessageDispatcher::DispatchOnConnectorEstablished, &CMessageDispatcher::getRef(), connectorID));
 		return;
 	}
 
 
-	std::map<SessionID, CTcpSessionPtr>::iterator iter = m_mapConnectorPtr.find(connectorID);
+	auto iter = m_mapConnectorPtr.find(connectorID);
 	if (!bConnected && iter != m_mapConnectorPtr.end())
 	{
 		m_mapConnectorPtr.erase(connectorID);
@@ -257,27 +260,27 @@ void CTcpSessionManager::OnConnectorStatus(ConnectorID connectorID, bool bConnec
 	}
 
 	if (!bConnected
-		&& config->second.reconnectMaxCount > 0
-		&& config->second.curReconnectCount < config->second.reconnectMaxCount)
+		&& config->second.second.curReconnectCount > 0
+		&& config->second.second.curReconnectCount < config->second.first.reconnectMaxCount)
 	{
-		config->second.curReconnectCount++;
+		config->second.second.curReconnectCount++;
 
 		CTcpSocketPtr sockPtr(new zsummer::network::CTcpSocket());
 		sockPtr->Initialize(m_summer);
 
 		static const bool EnableFastConnect = false;//fast reconnect.  Be careful of remote server access denied.
-		if (config->second.curReconnectCount == 1 && EnableFastConnect)
+		if (config->second.second.curReconnectCount == 1 && EnableFastConnect)
 		{
 			Post(std::bind(&CTcpSession::BindTcpConnectorPrt, session, sockPtr, config->second));
 		}
 		else
 		{
-			CreateTimer(config->second.reconnectInterval, std::bind(&CTcpSession::BindTcpConnectorPrt, session, sockPtr, config->second));
+			CreateTimer(config->second.first.reconnectInterval, std::bind(&CTcpSession::BindTcpConnectorPrt, session, sockPtr, config->second));
 		}
 	}
-	else if (config->second.reconnectMaxCount > 0)
+	else if (config->second.first.reconnectMaxCount > 0)
 	{
-		LOGE("Try Reconnect Failed. End Try. Traits=" << config->second);
+		LOGE("Try Reconnect Failed. End Try. Traits=" << config->second.first);
 	}
 }
 
@@ -302,9 +305,8 @@ void CTcpSessionManager::SendConnectorData(ConnectorID cID, ProtocolID pID, cons
 
 void CTcpSessionManager::SendOrgSessionData(AccepterID aID, SessionID sID, const char * orgData, unsigned int orgDataLen)
 {
-	auto &mapSessionPtr = m_mapTcpSessionPtr[aID];
-	auto iter = mapSessionPtr.find(sID);
-	if (iter == mapSessionPtr.end())
+	auto iter = m_mapTcpSessionPtr.find(MERGEBIGID(aID, sID));
+	if (iter == m_mapTcpSessionPtr.end())
 	{
 		LOGW("SendOrgSessionData NOT FOUND SessionID. AccepterID=" << aID << ", SessionID=" << sID);
 		return;

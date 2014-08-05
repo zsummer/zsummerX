@@ -99,36 +99,36 @@ bool CTcpSession::BindTcpSocketPrt(CTcpSocketPtr sockptr, AccepterID aID, Sessio
 	return true;
 }
 
-void CTcpSession::BindTcpConnectorPrt(CTcpSocketPtr sockptr, const tagConnctorConfigTraits & traits)
+void CTcpSession::BindTcpConnectorPrt(CTcpSocketPtr sockptr, const std::pair<tagConnctorConfigTraits, tagConnctorInfo> & config)
 {
-	CleanSession(traits.reconnectCleanAllData);
+	CleanSession(config.first.reconnectCleanAllData);
 	m_sockptr = sockptr;
-	m_connectorID = traits.cID;
+	m_connectorID = config.first.cID;
 
-	bool connectRet = m_sockptr->DoConnect(traits.remoteIP, traits.remotePort, 
-		std::bind(&CTcpSession::OnConnected, shared_from_this(), std::placeholders::_1, traits));
+	bool connectRet = m_sockptr->DoConnect(config.first.remoteIP, config.first.remotePort,
+		std::bind(&CTcpSession::OnConnected, shared_from_this(), std::placeholders::_1, config));
 	if (!connectRet)
 	{
-		LOGF("DoConnected Failed: traits=" << traits);
+		LOGF("DoConnected Failed: traits=" << config.first);
 		return ;
 	}
-	LOGI("DoConnected : traits=" << traits);
+	LOGI("DoConnected : traits=" << config.first);
 	return ;
 }
 
 
 
 
-void CTcpSession::OnConnected(zsummer::network::ErrorCode ec, const tagConnctorConfigTraits & traits)
+void CTcpSession::OnConnected(zsummer::network::ErrorCode ec, const std::pair<tagConnctorConfigTraits, tagConnctorInfo> & config)
 {
 	if (ec)
 	{
 		LOGE("OnConnected failed. ec=" << ec 
-			<< ",  traits=" << traits);
-		CTcpSessionManager::getRef().OnConnectorStatus(traits.cID, false, shared_from_this());
+			<< ",  config=" << config.first);
+		CTcpSessionManager::getRef().OnConnectorStatus(config.first.cID, false, shared_from_this());
 		return;
 	}
-	LOGI("OnConnected success.  traits=" << traits);
+	LOGI("OnConnected success.  config=" << config.first);
 	
 	if (!DoRecv())
 	{

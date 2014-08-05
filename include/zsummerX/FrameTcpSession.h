@@ -61,7 +61,7 @@ public:
 	CTcpSession();
 	~CTcpSession();
 	bool BindTcpSocketPrt(CTcpSocketPtr sockptr, AccepterID aID, SessionID sID);
-	void BindTcpConnectorPrt(CTcpSocketPtr sockptr, const tagConnctorConfigTraits & traits);
+	void BindTcpConnectorPrt(CTcpSocketPtr sockptr, const std::pair<tagConnctorConfigTraits, tagConnctorInfo> & config);
 	void DoSend(const char *buf, unsigned int len);
 	void Close();
 private:
@@ -70,7 +70,7 @@ private:
 
 	void CleanSession(bool isCleanAllData);
 
-	void OnConnected(zsummer::network::ErrorCode ec, const tagConnctorConfigTraits & traits);
+	void OnConnected(zsummer::network::ErrorCode ec, const std::pair<tagConnctorConfigTraits, tagConnctorInfo> & config);
 
 	
 	void OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen);

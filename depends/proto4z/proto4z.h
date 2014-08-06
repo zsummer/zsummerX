@@ -9,7 +9,7 @@
  * 
  * ===============================================================================
  * 
- * Copyright (C) 2013-2013 YaweiZhang <yawei_zhang@foxmail.com>.
+ * Copyright (C) 2013-2014 YaweiZhang <yawei_zhang@foxmail.com>.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -61,6 +61,8 @@
  *  proto4z support stl container
  * VERSION 0.4.0 <DATE: 2014.05.16>
  *  Add some useful interface method
+ * VERSION 0.5.0 <DATE: 2014.08.06>
+ *  Add static buff for optimize
  * 
  */
 #pragma once
@@ -176,6 +178,15 @@ typename StreamHeadTrait::Integer maxBuffLen /*= StreamHeadTrait::MaxPackLen*/);
 //////////////////////////////////////////////////////////////////////////
 //StreamHeadTrait: User-Defined like DefaultStreamHeadTrait
 //AllocType: inner allocate memory used this, default use std::allocator<char>
+
+enum UserBuffType
+{
+	UBT_INVALIDE = 0,
+	UBT_ATTACH, // attach exist buff.
+	UBT_AUTO, //use std::string
+	UBT_STATIC_AUTO, //use static std::string
+};
+
 template<class StreamHeadTrait/*=DefaultStreamHeadTraits*/, class _Alloc = std::allocator<char> >
 class WriteStream
 {
@@ -184,7 +195,7 @@ public:
 	//! maxStreamLen : The maximum length can be written.
 	//! bNoWrite : if true then WriteStream will not do any write operation.
 	//! pAttachData : Attach to the existing memory.
-	WriteStream(Integer maxStreamLen = StreamHeadTrait::MaxPackLen, bool bNoWrite = false);//Automatically allocate memory
+	WriteStream(UserBuffType ubt = UBT_AUTO, Integer maxStreamLen = StreamHeadTrait::MaxPackLen);//Automatically allocate memory
 	WriteStream(char * pAttachData, Integer maxStreamLen, bool bNoWrite = false);// attach exist memory
 	~WriteStream(){}
 public:
@@ -236,13 +247,17 @@ protected:
 	template <class T>
 	inline WriteStream<StreamHeadTrait> & WriteSimpleData(T t);
 private:
+
+	UserBuffType m_useBuffType;
 	std::basic_string<char, std::char_traits<char>, _Alloc > m_data; //! If not attach any memory, class WriteStream will used this to managing memory.
+	static std::basic_string<char, std::char_traits<char>, _Alloc > m_staticData; //! warning: single-thread, static buff.
 	char * m_pAttachData;//! attach memory pointer
 	Integer m_maxStreamLen; //! can write max size
 	Integer m_cursor; //! current move cursor.
 	bool  m_bNoWrite; //! if true then WriteStream will not do any write operation.
 };
-
+template<class StreamHeadTrait/*=DefaultStreamHeadTraits*/, class _Alloc>
+std::basic_string<char, std::char_traits<char>, _Alloc > WriteStream<StreamHeadTrait, _Alloc>::m_staticData;
 //////////////////////////////////////////////////////////////////////////
 //class ReadStream: De-serialization the specified data from byte stream.
 //////////////////////////////////////////////////////////////////////////
@@ -646,39 +661,42 @@ inline std::pair<INTEGRITY_RET_TYPE, typename StreamHeadTrait::Integer> CheckBuf
 //////////////////////////////////////////////////////////////////////////
 
 template<class StreamHeadTrait, class AllocType>
-WriteStream<StreamHeadTrait, AllocType>::WriteStream(Integer maxStreamLen, bool bNoWrite)
+WriteStream<StreamHeadTrait, AllocType>::WriteStream(UserBuffType ubt, Integer maxStreamLen)
 {
+	m_useBuffType = ubt;
 	m_pAttachData = NULL;
+	m_bNoWrite = false;
 	m_maxStreamLen = maxStreamLen;
 	m_cursor = StreamHeadTrait::HeadLen;
-	m_bNoWrite = bNoWrite;
 	Integer reserveSize = sizeof(Integer) == 1 ? 255 : 1200;
 	if (reserveSize < StreamHeadTrait::HeadLen)
 	{
 		reserveSize = StreamHeadTrait::HeadLen;
 	}
-	if (!m_bNoWrite)
+	if (m_useBuffType == UBT_AUTO)
 	{
 		m_data.reserve(reserveSize);
 		m_data.resize((size_t)StreamHeadTrait::HeadLen, '\0');
 	}
+	else if (m_useBuffType == UBT_STATIC_AUTO)
+	{
+		if (m_staticData.capacity() < (size_t)StreamHeadTrait::HeadLen)
+		{
+			m_staticData.reserve((size_t)StreamHeadTrait::HeadLen);
+		}
+		m_staticData.resize((size_t)StreamHeadTrait::HeadLen, '\0');
+	}
 }
+
 
 template<class StreamHeadTrait, class AllocType>
 WriteStream<StreamHeadTrait, AllocType>::WriteStream(char * pAttachData, Integer maxStreamLen, bool bNoWrite)
 {
+	m_useBuffType = UBT_ATTACH;
 	m_pAttachData = pAttachData;
 	m_maxStreamLen = maxStreamLen;
 	m_cursor = StreamHeadTrait::HeadLen;
 	m_bNoWrite = bNoWrite;
-	if (!m_bNoWrite)
-	{
-		if (m_maxStreamLen < StreamHeadTrait::HeadLen)
-		{
-			m_pAttachData = NULL;
-			m_data.resize((size_t)StreamHeadTrait::HeadLen, '\0');
-		}
-	}
 }
 
 template<class StreamHeadTrait, class AllocType>
@@ -714,14 +732,19 @@ inline void WriteStream<StreamHeadTrait, AllocType>::FixPackLen()
 	{
 		packLen -= StreamHeadTrait::HeadLen;
 	}
-	if (m_pAttachData)
+	if (m_useBuffType == UBT_ATTACH)
 	{
 		IntegerToStream<Integer, StreamHeadTrait>(packLen, &m_pAttachData[StreamHeadTrait::PreOffset]);
 	}
-	else
+	else if (m_useBuffType == UBT_AUTO)
 	{
 		IntegerToStream<Integer, StreamHeadTrait>(packLen, &m_data[StreamHeadTrait::PreOffset]);
 	}
+	else if (m_useBuffType == UBT_STATIC_AUTO)
+	{
+		IntegerToStream<Integer, StreamHeadTrait>(packLen, &m_staticData[StreamHeadTrait::PreOffset]);
+	}
+	
 }
 template<class StreamHeadTrait, class AllocType>
 inline void WriteStream<StreamHeadTrait, AllocType>::GetStreamHead(char *streamHead)
@@ -730,13 +753,17 @@ inline void WriteStream<StreamHeadTrait, AllocType>::GetStreamHead(char *streamH
 	{
 		return;
 	}
-	if (m_pAttachData)
+	if (m_useBuffType == UBT_ATTACH)
 	{
 		memcpy(streamHead, m_pAttachData, StreamHeadTrait::HeadLen);
 	}
-	else
+	else if (m_useBuffType == UBT_AUTO)
 	{
 		memcpy(streamHead, &m_data[0], StreamHeadTrait::HeadLen);
+	}
+	else if (m_useBuffType == UBT_STATIC_AUTO)
+	{
+		memcpy(streamHead, &m_staticData[0], StreamHeadTrait::HeadLen);
 	}
 }
 template<class StreamHeadTrait, class AllocType>
@@ -746,13 +773,17 @@ inline void WriteStream<StreamHeadTrait, AllocType>::SetStreamHead(const char *s
 	{
 		return;
 	}
-	if (m_pAttachData)
+	if (m_useBuffType == UBT_ATTACH)
 	{
 		memcpy(m_pAttachData, streamHead, StreamHeadTrait::HeadLen);
 	}
-	else
+	else if (m_useBuffType == UBT_AUTO)
 	{
 		memcpy(&m_data[0], streamHead, StreamHeadTrait::HeadLen);
+	}
+	else if (m_useBuffType == UBT_STATIC_AUTO)
+	{
+		memcpy(&m_staticData[0], streamHead, StreamHeadTrait::HeadLen);
 	}
 	FixPackLen();
 }
@@ -764,14 +795,19 @@ inline char* WriteStream<StreamHeadTrait, AllocType>::GetStream()
 	{
 		return NULL;
 	}
-	if (m_pAttachData)
+	if (m_useBuffType == UBT_ATTACH)
 	{
 		return m_pAttachData;
 	}
-	else
+	else if (m_useBuffType == UBT_AUTO)
 	{
 		return &m_data[0];
 	}
+	else if (m_useBuffType == UBT_STATIC_AUTO)
+	{
+		return &m_staticData[0];
+	}
+	return NULL;
 }
 
 template<class StreamHeadTrait, class AllocType>
@@ -781,14 +817,19 @@ inline char* WriteStream<StreamHeadTrait, AllocType>::GetBodyStream()
 	{
 		return NULL;
 	}
-	if (m_pAttachData)
+	if (m_useBuffType == UBT_ATTACH)
 	{
 		return m_pAttachData + StreamHeadTrait::HeadLen;
 	}
-	else
+	else if (m_useBuffType == UBT_AUTO)
 	{
 		return &m_data[0] + StreamHeadTrait::HeadLen;
 	}
+	else if (m_useBuffType == UBT_STATIC_AUTO)
+	{
+		return &m_staticData[0] + StreamHeadTrait::HeadLen;
+	}
+	return NULL;
 }
 
 template<class StreamHeadTrait, class AllocType>
@@ -797,13 +838,17 @@ inline WriteStream<StreamHeadTrait> & WriteStream<StreamHeadTrait, AllocType>::A
 	CheckMoveCursor(unit);
 	if (!m_bNoWrite)
 	{
-		if (m_pAttachData)
+		if (m_useBuffType == UBT_ATTACH)
 		{
 			memcpy(&m_pAttachData[m_cursor], data, unit);
 		}
-		else
+		else if (m_useBuffType == UBT_AUTO)
 		{
 			m_data.append((const char*)data, unit);
+		}
+		else if (m_useBuffType == UBT_STATIC_AUTO)
+		{
+			m_staticData.append((const char*)data, unit);
 		}
 	}
 	m_cursor += unit;
@@ -818,16 +863,24 @@ inline WriteStream<StreamHeadTrait> & WriteStream<StreamHeadTrait, AllocType>::W
 	CheckMoveCursor(unit);
 	if (!m_bNoWrite)
 	{
-		if (m_pAttachData)
+		if (m_useBuffType == UBT_ATTACH)
 		{
 			IntegerToStream<T, StreamHeadTrait>(t, &m_pAttachData[m_cursor]);
 		}
-		else
+		else if (m_useBuffType == UBT_AUTO)
 		{
 			m_data.append((const char*)&t, unit);
 			if (StreamHeadTrait::EndianType != __LocalEndianType())
 			{
 				IntegerToStream<T, StreamHeadTrait>(t, &m_data[m_cursor]);
+			}
+		}
+		else if (m_useBuffType == UBT_STATIC_AUTO)
+		{
+			m_staticData.append((const char*)&t, unit);
+			if (StreamHeadTrait::EndianType != __LocalEndianType())
+			{
+				IntegerToStream<T, StreamHeadTrait>(t, &m_staticData[m_cursor]);
 			}
 		}
 	}
@@ -844,13 +897,17 @@ inline WriteStream<StreamHeadTrait> & WriteStream<StreamHeadTrait, AllocType>::W
 	CheckMoveCursor(unit);
 	if (!m_bNoWrite)
 	{
-		if (m_pAttachData)
+		if (m_useBuffType == UBT_ATTACH)
 		{
 			memcpy(&m_pAttachData[m_cursor], &t, unit);
 		}
-		else
+		else if (m_useBuffType == UBT_AUTO)
 		{
 			m_data.append((const char*)&t, unit);
+		}
+		else if (m_useBuffType == UBT_STATIC_AUTO)
+		{
+			m_staticData.append((const char*)&t, unit);
 		}
 	}
 

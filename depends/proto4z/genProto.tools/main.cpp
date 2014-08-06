@@ -40,7 +40,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
-#include <log4z/log4z.h>
+#include "log4z.h"
 #include <map>
 #include <iostream>
 #include <fstream>
@@ -53,6 +53,208 @@
 #include <direct.h>
 #endif
 
+struct DataArray
+{
+	std::string type;
+	std::string arrayName;
+	std::string desc;
+};
+
+struct DataMap
+{
+	std::string typeKey;
+	std::string typeValue;
+	std::string mapName;
+	std::string desc;
+};
+
+struct DataConstValue 
+{
+	std::string type;
+	std::string name;
+	std::string value;
+	std::string desc;
+};
+
+struct DataMember 
+{
+	std::string type;
+	std::string name;
+	std::string desc;
+};
+struct ProtoStruct
+{
+	std::string from;
+	std::string to;
+	std::string name;
+	unsigned short protoID;
+	std::string desc;
+	std::vector<DataMember> members;
+
+};
+
+struct GeneralStruct 
+{
+	std::string name;
+	std::string desc;
+	std::vector<DataMember> members;
+};
+
+const std::string LFCR = "\r\n";
+
+std::string genProtoIDName(const ProtoStruct & ps){return "ID_" + ps.from + "2" + ps.to + "_" + ps.name;}
+std::string genProtoStructName(const ProtoStruct & ps){ return "Proto"  + ps.name; }
+
+
+
+std::string WriteCppConstValue(const DataConstValue & v)
+{
+	std::string text;
+	std::string type = v.type;
+	if (type == "string")
+	{
+		type = "std::string";
+	}
+	text += "const " + type + " " + v.name + " = " + v.value + "; ";
+	if (!v.desc.empty())
+	{
+		text += "//" + v.desc;
+	}
+	text += LFCR;
+	
+	return text;
+}
+
+std::string WriteCppArray(const DataArray & a)
+{
+	std::string text;
+	std::string type = a.type;
+	if (type == "string")
+	{
+		type = "std::string";
+	}
+	text += "typedef std::vector<" + type + "> " + a.arrayName + "; "; 
+	if (!a.desc.empty())
+	{
+		text += "//" + a.desc;
+	}
+	text += LFCR;
+	return text;
+}
+
+std::string WriteCppMap(const DataMap & dm)
+{
+	std::string text;
+	std::string typeKey = dm.typeKey;
+	std::string typeValue = dm.typeValue;
+	if (typeKey == "string")
+	{
+		typeKey = "std::string";
+	}
+	if (typeValue == "string")
+	{
+		typeValue = "std::string";
+	}
+	text += "typedef std::map<" + typeKey + ", " + typeValue + "> " + dm.mapName + "; ";
+	if (!dm.desc.empty())
+	{
+		text += "//" + dm.desc;
+	}
+	text += LFCR;
+	return text;
+}
+
+std::string WriteCppDataMember(const std::vector<DataMember> & ms)
+{
+	std::string text;
+	for (const auto & m:ms)
+	{
+		std::string type = m.type;
+		if (type == "string")
+		{
+			type = "std::string";
+		}
+		text += "\t" + type + " " + m.name + "; ";
+		if (!m.desc.empty())
+		{
+			text += "//" + m.desc;
+		}
+		text += LFCR;
+	}
+	return text;
+}
+
+std::string WriteCppDataStructStream(const std::string &name, const std::vector<DataMember> & ms)
+{
+	//输入流
+	std::string text;
+	text += LFCR;
+	text = "template<class T>" + LFCR;
+	text += "T & operator << (T & t, const " + name + " & data)" + LFCR;
+	text += "{" + LFCR;
+
+	for (const auto &m : ms)
+	{
+		text += "\tt << data." + m.name + ";" + LFCR;
+	}
+	text += "\treturn t;" + LFCR;
+	text += "}" + LFCR;
+
+	//输出流
+	text += "template<class T>" + LFCR;
+	text += "T & operator >> (T & t, " + name + " & data)" + LFCR;
+	text += "{" + LFCR;
+	for (const auto &m : ms)
+	{
+		text += "\tt >> data." + m.name + ";" + LFCR;
+	}
+	text += "\treturn t;" + LFCR;
+	text += "}" + LFCR;
+	return text;
+}
+
+
+
+std::string WriteCppStruct(const GeneralStruct & gs)
+{
+	std::string text;
+	text += "struct " + gs.name;
+	if (!gs.desc.empty())
+	{
+		text += " //" + gs.desc;
+	}
+	text += LFCR;
+
+	text += "{" + LFCR;
+	text += WriteCppDataMember(gs.members);
+	text += "};" + LFCR;
+	return text;
+}
+
+
+
+std::string WriteCppProto(const ProtoStruct & ps)
+{
+	std::string text;
+	DataConstValue proto;
+	proto.type = "ui16";
+	proto.name = genProtoIDName(ps);
+	proto.value = boost::lexical_cast<std::string>(ps.protoID);
+	proto.desc = ps.desc;
+	text += WriteCppConstValue(proto);
+
+	text += "struct " + genProtoStructName(ps);
+	if (!ps.desc.empty())
+	{
+		text += " //" + ps.desc;
+	}
+	text += LFCR;
+
+	text += "{" + LFCR;
+	text += WriteCppDataMember(ps.members);
+	text += "};" + LFCR;
+	return text;
+}
 
 
 class genProto
@@ -103,12 +305,11 @@ public:
 		{
 			boost::property_tree::ptree pt;
 			boost::property_tree::read_xml(filename, pt);
-			auto traits = pt.get_child("ProtoTraits");
-			m_minNo = boost::lexical_cast<unsigned short>(traits.get_child("MinNo").data());
-			m_maxNo = boost::lexical_cast<unsigned short>(traits.get_child("MaxNo").data());
 			try
 			{
-				m_bUseLog4z = boost::lexical_cast<bool>(traits.get_child("UseLog4z").data());
+				auto traits = pt.get_child("ProtoTraits");
+				m_minNo = boost::lexical_cast<unsigned short>(traits.get_child("MinNo").data());
+				m_maxNo = boost::lexical_cast<unsigned short>(traits.get_child("MaxNo").data());
 			}
 			catch (...)
 			{
@@ -155,49 +356,60 @@ public:
 			{
 				throw std::runtime_error("open cppFileName Error");
 			}
-			std::string filehead = "#ifndef " + macroFileName + "\n";
-			filehead += "#define " + macroFileName + "\n";
+			std::string filehead = "#ifndef " + macroFileName + LFCR;
+			filehead += "#define " + macroFileName + LFCR;
 
 			os.write(filehead.c_str(), filehead.length());
 
 			for (auto iter = protos.begin(); iter != protos.end(); ++iter)
 			{
 				std::string stype = iter->first;
-				//枚举类型
-				if (stype == "enum")
+				if (stype == "const")
 				{
-					std::string enumText = std::string("\n\nenum ") + iter->second.get<std::string>("<xmlattr>.name") + " //" + iter->second.get<std::string>("<xmlattr>.desc") + "\n";
-					enumText += "{\n";
-					for (auto member = iter->second.begin(); member != iter->second.end(); ++member)
+					DataConstValue dc;
+					dc.type = iter->second.get<std::string>("<xmlattr>.type");
+					dc.name = iter->second.get<std::string>("<xmlattr>.name");
+					dc.value = iter->second.get<std::string>("<xmlattr>.value");
+					try
 					{
-						if(member->first != "member") continue;
-						std::string dtype = member->second.get<std::string>("<xmlattr>.name");
-						if (dtype == "string")
-						{
-							dtype = "std::string";
-						}
-						enumText += "\t";
-						enumText += dtype + " = " + member->second.get<std::string>("<xmlattr>.value")  + ", //" + iter->second.get<std::string>("<xmlattr>.desc") + ",\n";
+						dc.desc = iter->second.get<std::string>("<xmlattr>.desc");
 					}
-					enumText += "};\n";
-					os.write(enumText.c_str(), enumText.length());
+					catch (...)
+					{
+					}
+					std::string text = LFCR;
+					text += WriteCppConstValue(dc);
+					os.write(text.c_str(), text.length());
 					os.flush();
 				}
 				//结构体类型
 				if (stype  == "struct" || stype == "proto")
 				{
-					std::string structName = iter->second.get<std::string>("<xmlattr>.name");
+					ProtoStruct  proto;
+					GeneralStruct stt;
+
+					
 
 					if (stype == "proto")
 					{
-						std::string from = iter->second.get<std::string>("<xmlattr>.from");
-						std::string to = iter->second.get<std::string>("<xmlattr>.to");
+						proto.name = iter->second.get<std::string>("<xmlattr>.name");
+						proto.from = iter->second.get<std::string>("<xmlattr>.from");
+						proto.to = iter->second.get<std::string>("<xmlattr>.to");
+						try
+						{
+							proto.desc = iter->second.get<std::string>("<xmlattr>.desc");
+						}
+						catch (...)
+						{
+						}
+						
+						std::string idName = genProtoIDName(proto);
 
 						unsigned short No = m_curNo;
-						auto iterNo = m_mapCacheNo.find(structName);
+						auto iterNo = m_mapCacheNo.find(idName);
 						if (iterNo == m_mapCacheNo.end())
 						{
-							m_mapCacheNo[structName] = No;
+							m_mapCacheNo[idName] = No;
 							m_curNo++;
 						}
 						else
@@ -209,115 +421,100 @@ public:
 							LOGE("proto No. overflow. curNo=" << m_curNo << ", maxNo=" << m_maxNo);
 							return false;
 						}
-						
-						std::string NoText = std::string("\n\nconst unsigned short ID_") + from + "2" + to + "_" + structName + " = " + boost::lexical_cast<std::string>(m_curNo)+";";
-						structName = std::string("Proto") + structName;
-						os.write(NoText.c_str(), NoText.length());
-						os.flush();
+						proto.protoID = No;
+					}
+					else
+					{
+						stt.name = iter->second.get<std::string>("<xmlattr>.name");
+						try
+						{
+							stt.desc = iter->second.get<std::string>("<xmlattr>.desc");
+						}
+						catch (...)
+						{
+						}
 					}
 					
 
-
-					std::vector<std::pair<std::string, std::string> > memberVct;
-
-					//struct
-					std::string structText = std::string("\n\nstruct ") + structName + " //" + iter->second.get<std::string>("<xmlattr>.desc") + "\n";
-					structText += "{\n";
 					for (auto member = iter->second.begin(); member != iter->second.end(); ++member)
 					{
 						if (member->first != "member") continue;
-						std::string dtype = member->second.get<std::string>("<xmlattr>.type");
-						std::string dname = member->second.get<std::string>("<xmlattr>.name");
-						memberVct.push_back(std::make_pair(dtype, dname));
-						if (dtype == "string")
+						DataMember dm;
+						dm.type = member->second.get<std::string>("<xmlattr>.type");
+						dm.name = member->second.get<std::string>("<xmlattr>.name");
+						try
 						{
-							dtype = "std::string";
+							dm.desc = member->second.get<std::string>("<xmlattr>.desc");
 						}
-						structText += "\t";
-						structText += dtype + " " + dname + "; //" + iter->second.get<std::string>("<xmlattr>.desc") + ",\n";
-					}
-					structText += "};\n";
-					os.write(structText.c_str(), structText.length());
-					
-
-					//输入流
-					structText = "\ntemplate<class T> \n";
-					structText += "T & operator << (T & t, const " + structName + " & data)\n{\n";
-					for (auto &pr : memberVct)
-					{
-						structText += "\t";
-						structText += "t << data." + pr.second + ";\n";
-					}
-					structText += "\t";
-					structText += "return t;\n}\n";
-					os.write(structText.c_str(), structText.length());
-
-					//输出流
-					structText = "\ntemplate<class T> \n";
-					structText += "T & operator >> (T & t, " + structName + " & data)\n{\n";
-					for (auto &pr : memberVct)
-					{
-						structText += "\t";
-						structText += "t >> data." + pr.second + ";\n";
-					}
-					structText += "\t";
-					structText += "return t;\n}\n";
-					
-					os.write(structText.c_str(), structText.length());
-
-					//支持log4z打印
-					if (m_bUseLog4z)
-					{
-						structText = "\ntemplate<> \n";
-						structText += "zsummer::log4z::CStringStream & operator << (zsummer::log4z::CStringStream & t, " + structName + " & data)\n{\n";
-						structText += "\tt << " + structName + " <<\"{ \"\n";
-						for (auto &pr : memberVct)
+						catch (...)
 						{
-							structText += "\t << \" " + pr.second + "=\" << " + pr.second + " \n";
 						}
-						structText += "\t << \"}\";\n";
-						structText += "\t return t;\n}\n";
-						os.write(structText.c_str(), structText.length());
+						if (stype == "proto")
+						{
+							proto.members.push_back(dm);
+						}
+						else
+						{
+							stt.members.push_back(dm);
+						}
 					}
+					
+					std::string text = LFCR;
+					if (stype == "proto")
+					{
+						text += WriteCppProto(proto);
+						text += WriteCppDataStructStream(genProtoStructName(proto), proto.members);
+					}
+					else
+					{
+						text += WriteCppStruct(stt);
+						text += WriteCppDataStructStream(stt.name, stt.members);
+					}
+					os.write(text.c_str(), text.length());
 					os.flush();
 				}
 				//数组类型
 				if (stype == "array")
 				{
-					std::string dtype = iter->second.get<std::string>("<xmlattr>.type");
-					if (dtype == "string")
+					DataArray ar;
+					ar.type = iter->second.get<std::string>("<xmlattr>.type");
+					ar.arrayName = iter->second.get<std::string>("<xmlattr>.name");
+					try
 					{
-						dtype = "std::string";
+						ar.desc = iter->second.get<std::string>("<xmlattr>.desc");
 					}
-					std::string arrayText = std::string("\n\ntypdef std::vector<") + dtype + "> "
-						+ iter->second.get<std::string>("<xmlattr>.name")
-						+ "; //" + iter->second.get<std::string>("<xmlattr>.desc") + "\n";
-					os.write(arrayText.c_str(), arrayText.length());
+					catch (...)
+					{
+					}
+					std::string text = LFCR;
+					text += WriteCppArray(ar);
+					os.write(text.c_str(), text.length());
 					os.flush();
 				}
 				//K-V类型
 				if (stype == "map")
 				{
-					std::string ktype = iter->second.get<std::string>("<xmlattr>.key");
-					if (ktype == "string")
+					DataMap dm;
+
+					dm.typeKey = iter->second.get<std::string>("<xmlattr>.key");
+					dm.typeValue = iter->second.get<std::string>("<xmlattr>.value");
+					dm.mapName = iter->second.get<std::string>("<xmlattr>.name");
+					try
 					{
-						ktype = "std::string";
+						dm.desc = iter->second.get<std::string>("<xmlattr>.desc");
 					}
-					std::string vtype = iter->second.get<std::string>("<xmlattr>.value");
-					if (vtype == "string")
+					catch (...)
 					{
-						vtype = "std::string";
 					}
-					std::string mapText = std::string("\n\ntypdef std::map<") + ktype + ", "+ vtype + "> "
-						+ iter->second.get<std::string>("<xmlattr>.name") +  "; //" + iter->second.get<std::string>("<xmlattr>.desc") + "\n";
-					os.write(mapText.c_str(), mapText.length());
+					std::string text = LFCR;
+					text += WriteCppMap(dm);
+					os.write(text.c_str(), text.length());
 					os.flush();
 				}
-
-
-
 			}
-			os.write("\n#endif\n", 8);
+			std::string fileEnd = LFCR;
+			fileEnd += "#endif" + LFCR;
+			os.write(fileEnd.c_str(), fileEnd.length());
 			os.close();
 
 

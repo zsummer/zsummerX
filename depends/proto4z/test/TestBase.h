@@ -222,7 +222,7 @@ public:
 
 	inline bool CheckNoAttachProtocol()
 	{
-		WriteStream<StreamHeadTrait> ws(m_packLen);
+		WriteStream<StreamHeadTrait> ws(UBT_AUTO, m_packLen);
 		std::string str = "Check NoAttach Write. protocolTrits=";
 		str += typeid(StreamHeadTrait).name();
 		str += ":  ";

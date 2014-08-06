@@ -8,14 +8,14 @@
 
 <Proto>
 
-  <!-- 支持枚举类型 如下是示例代码-->
-  <enum name="ServerType" desc="服务类型">
-    <member name="DBServer" value="0"  desc=""/>
-    <member name="GameServer" value="1"  desc=""/>
-    <member name="BattleServer"  value="2" desc=""/>
-    <member name="CenterServer" value="3"  desc=""/>
-    <member name="AgentServer"  value="4" desc=""/>
-  </enum>
+  <!-- 支持常量类型 如下是示例代码-->
+  <!-- 服务类型 -->
+  <const name="DBServer" type="ui16" value="1" desc=""/>
+  <const name="GameServer" type="ui16" value="2" desc=""/>
+  <const name="BattleServer" type="ui16" value="3" desc=""/>
+  <const name="CenterServer" type="ui16" value="4" desc=""/>
+  <const name="AgentServer" type="ui16" value="5" desc=""/>
+
 
   <!-- 支持结构体类型 如下是示例代码-->
   <struct name="AuthInfo" desc="认证信息">

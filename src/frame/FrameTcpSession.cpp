@@ -99,7 +99,7 @@ bool CTcpSession::BindTcpSocketPrt(CTcpSocketPtr sockptr, AccepterID aID, Sessio
 	return true;
 }
 
-void CTcpSession::BindTcpConnectorPrt(CTcpSocketPtr sockptr, const std::pair<tagConnctorConfigTraits, tagConnctorInfo> & config)
+void CTcpSession::BindTcpConnectorPtr(CTcpSocketPtr sockptr, const std::pair<tagConnctorConfigTraits, tagConnctorInfo> & config)
 {
 	CleanSession(config.first.reconnectCleanAllData);
 	m_sockptr = sockptr;

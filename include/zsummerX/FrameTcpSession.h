@@ -61,7 +61,7 @@ public:
 	CTcpSession();
 	~CTcpSession();
 	bool BindTcpSocketPrt(CTcpSocketPtr sockptr, AccepterID aID, SessionID sID);
-	void BindTcpConnectorPrt(CTcpSocketPtr sockptr, const std::pair<tagConnctorConfigTraits, tagConnctorInfo> & config);
+	void BindTcpConnectorPtr(CTcpSocketPtr sockptr, const std::pair<tagConnctorConfigTraits, tagConnctorInfo> & config);
 	void DoSend(const char *buf, unsigned int len);
 	void Close();
 private:

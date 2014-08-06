@@ -153,12 +153,16 @@ bool CTcpSocketImpl::DoConnect(std::string remoteIP, unsigned short remotePort, 
 	if (ret!=0 && errno != EINPROGRESS)
 	{
 		LCE("CTcpSocketImpl::DoConnect[this0x" << this << "] ::connect error. errno=" << strerror(errno) << GetSocketStatus());
+		close(m_register._fd);
+		m_register._fd = InvalideFD;
 		return false;
 	}
 	
 	if (!m_summer->m_impl.RegisterEvent(EPOLL_CTL_ADD, m_register))
 	{
 		LCE("CTcpSocketImpl::DoConnect[this0x" << this << "] RegisterEvent Error" << GetSocketStatus());
+		close(m_register._fd);
+		m_register._fd = InvalideFD;
 		return false;
 	}
 	m_onConnectHandler = handler;

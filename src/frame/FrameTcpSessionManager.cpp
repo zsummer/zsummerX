@@ -218,7 +218,7 @@ SessionID CTcpSessionManager::AddConnector(const tagConnctorConfigTraits & trait
 	CTcpSocketPtr sockPtr(new zsummer::network::CTcpSocket());
 	sockPtr->Initialize(m_summer);
 	CTcpSessionPtr sessionPtr(new CTcpSession());
-	sessionPtr->BindTcpConnectorPrt(sockPtr, m_mapConnectorConfig[traits.cID]);
+	sessionPtr->BindTcpConnectorPtr(sockPtr, m_mapConnectorConfig[traits.cID]);
 	return traits.cID;
 }
 
@@ -271,11 +271,11 @@ void CTcpSessionManager::OnConnectorStatus(ConnectorID connectorID, bool bConnec
 		static const bool EnableFastConnect = false;//fast reconnect.  Be careful of remote server access denied.
 		if (config->second.second.curReconnectCount == 1 && EnableFastConnect)
 		{
-			Post(std::bind(&CTcpSession::BindTcpConnectorPrt, session, sockPtr, config->second));
+			Post(std::bind(&CTcpSession::BindTcpConnectorPtr, session, sockPtr, config->second));
 		}
 		else
 		{
-			CreateTimer(config->second.first.reconnectInterval, std::bind(&CTcpSession::BindTcpConnectorPrt, session, sockPtr, config->second));
+			CreateTimer(config->second.first.reconnectInterval, std::bind(&CTcpSession::BindTcpConnectorPtr, session, sockPtr, config->second));
 		}
 	}
 	else if (config->second.first.reconnectMaxCount > 0)

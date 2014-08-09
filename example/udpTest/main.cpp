@@ -1,4 +1,4 @@
-/*
+ï»¿/*
  * zsummerX License
  * -----------
  * 
@@ -34,8 +34,8 @@
  * (end of COPYRIGHT)
  */
 
-//! zsummerµÄ²âÊÔ¿Í»§¶ËÄ£¿é
-//! mainÎÄ¼ş
+//! zsummerçš„æµ‹è¯•å®¢æˆ·ç«¯æ¨¡å—
+//! mainæ–‡ä»¶
 
 #include <signal.h>
 #include <zsummerX/zsummer.h>
@@ -45,12 +45,12 @@
 using namespace std;
 using namespace zsummer::network;
 using namespace zsummer::proto4z;
-//! ÏûÏ¢°ü»º³åÇø´óĞ¡
+//! æ¶ˆæ¯åŒ…ç¼“å†²åŒºå¤§å°
 #define _MSG_BUF_LEN	(1200)
 std::string g_fillString;
 #define NOW_TIME (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count())
 unsigned short g_type;
-//! ÏûÏ¢°ü 
+//! æ¶ˆæ¯åŒ… 
 struct Picnic
 {
 	char		   recvData[_MSG_BUF_LEN];
@@ -66,7 +66,7 @@ unsigned long long g_totalEchoTime;
 unsigned long long g_totalSend;
 unsigned long long g_totalRecv;
 
-//! ÇëÇó·¢ËÍ
+//! è¯·æ±‚å‘é€
 void doSend(const char *remoteIP, unsigned short remotePort, unsigned short protocolID, unsigned long long clientTick, PicnicPtr pic)
 {
 	pic->_reqTime = clientTick;
@@ -89,11 +89,11 @@ void onRecv(ErrorCode ec, const char *remoteIP, unsigned short remotePort, int t
 	auto ret = zsummer::proto4z::CheckBuffIntegrity<DefaultStreamHeadTraits>(pic->recvData, translate, _MSG_BUF_LEN);
 	if (ret.first == IRT_SUCCESS)
 	{
-		//! ½â°ü
+		//! è§£åŒ…
 		zsummer::proto4z::ReadStream<DefaultStreamHeadTraits> rs(pic->recvData, translate);
 		try
 		{
-			//Ğ­ÒéÁ÷Òì³£»á±»ÉÏ²ã²¶»ñ²¢¹Ø±ÕÁ¬½Ó
+			//åè®®æµå¼‚å¸¸ä¼šè¢«ä¸Šå±‚æ•è·å¹¶å…³é—­è¿æ¥
 			unsigned short protocolID = 0;
 			rs >> protocolID;
 			switch (protocolID)
@@ -143,7 +143,7 @@ void onRecv(ErrorCode ec, const char *remoteIP, unsigned short remotePort, int t
 
 int main(int argc, char* argv[])
 {
-	//! linuxÏÂĞèÒªÆÁ±ÎµÄÒ»Ğ©ĞÅºÅ
+	//! linuxä¸‹éœ€è¦å±è”½çš„ä¸€äº›ä¿¡å·
 #ifndef _WIN32
 	signal( SIGHUP, SIG_IGN );
 	signal( SIGALRM, SIG_IGN ); 
@@ -223,7 +223,7 @@ int main(int argc, char* argv[])
 	}
 	
 	
-	//¶¨Ê±¼ì²â
+	//å®šæ—¶æ£€æµ‹
 	unsigned long long nLast[4] = {0};
 
 	std::function<void()> doTimer = [&nLast, &doTimer, &summer]()

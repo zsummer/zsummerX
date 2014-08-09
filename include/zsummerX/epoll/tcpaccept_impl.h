@@ -1,4 +1,4 @@
-/*
+ï»¿/*
 * zsummerX License
 * -----------
 * 
@@ -41,7 +41,7 @@
 #include "../zsummer.h"
 #include "../tcpsocket.h"
 /*
-*	CTcpAccept: EPOLL LT EPOLLONESHOTÄ£Ê½ Ã¿´ÎMOD acceptÒ»´Î ÒÔ¾¡Á¿±£³ÖºÍIOCPµÄPROACTORÉè¼ÆµÄÒ»ÖÂĞÔ
+*	CTcpAccept: EPOLL LT EPOLLONESHOTæ¨¡å¼ æ¯æ¬¡MOD acceptä¸€æ¬¡ ä»¥å°½é‡ä¿æŒå’ŒIOCPçš„PROACTORè®¾è®¡çš„ä¸€è‡´æ€§
 */
 
 namespace zsummer
@@ -68,7 +68,7 @@ namespace zsummer
 
 			sockaddr_in		m_addr;
 
-			tagRegister m_register; //! epoll ×¢²áÊÂ¼ş
+			tagRegister m_register; //! epoll æ³¨å†Œäº‹ä»¶
 			_OnAcceptHandler m_onAcceptHandler;
 			CTcpSocketPtr  m_client;
 

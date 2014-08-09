@@ -1,4 +1,4 @@
-/*
+ï»¿/*
  * zsummerX License
  * -----------
  * 
@@ -66,14 +66,14 @@ namespace zsummer
 				_g_totalClosedCTcpSocketObjs++;
 			}
 
-			//! ³õÊ¼»¯,  °Ñµ±Ç°socket°ó¶¨µ½Ö¸¶¨µÄzsummerÉÏ.
+			//! åˆå§‹åŒ–,  æŠŠå½“å‰socketç»‘å®šåˆ°æŒ‡å®šçš„zsummerä¸Š.
 			inline bool Initialize(CZSummerPtr summer)
 			{
 				return m_impl.Initialize(summer);
 			}
 
 			//! handle: void(zsummer::network::ErrorCode);
-			//! ErrorCode: 0Îª³É¹¦. ÆäËûÎªÊ§°Ü, ´íÎóÂë¼ûÃ¶¾Ù¶¨Òå´¦.
+			//! ErrorCode: 0ä¸ºæˆåŠŸ. å…¶ä»–ä¸ºå¤±è´¥, é”™è¯¯ç è§æšä¸¾å®šä¹‰å¤„.
 			template<typename H>
 			inline bool DoConnect(std::string remoteIP, unsigned short remotePort, const H &h)
 			{
@@ -81,39 +81,39 @@ namespace zsummer
 			}
 
 			//!handle: void(ErrorCode, int)
-			//! ErrorCode: 0Îª³É¹¦. ÆäËûÎªÊ§°Ü, ´íÎóÂë¼ûÃ¶¾Ù¶¨Òå´¦.
-			//! int: ·¢ËÍµôµÄ×Ö½Ú³¤¶È, Èç¹ûÃ»ÓĞÈ«²¿·¢ËÍ³öÈ¥ Òªµ÷ÓÃ¸Ã½Ó¿Ú°Ñ²ĞÁôµÄÊı¾İ¼ÌĞø·¢³öÈ¥.
+			//! ErrorCode: 0ä¸ºæˆåŠŸ. å…¶ä»–ä¸ºå¤±è´¥, é”™è¯¯ç è§æšä¸¾å®šä¹‰å¤„.
+			//! int: å‘é€æ‰çš„å­—èŠ‚é•¿åº¦, å¦‚æœæ²¡æœ‰å…¨éƒ¨å‘é€å‡ºå» è¦è°ƒç”¨è¯¥æ¥å£æŠŠæ®‹ç•™çš„æ•°æ®ç»§ç»­å‘å‡ºå».
 			template<typename H>
 			inline bool DoSend(char * buf, unsigned int len, const H &h)
 			{
 				return m_impl.DoSend(buf, len, h);
 			}
 
-			//! ·¢ÆğRecvÇëÇó.
-			//! buf: Òª·¢ËÍµÄ»º³åÇøµØÖ·
-			//! len: Òª·¢ËÍµÄ×î´ó³¤¶È
+			//! å‘èµ·Recvè¯·æ±‚.
+			//! buf: è¦å‘é€çš„ç¼“å†²åŒºåœ°å€
+			//! len: è¦å‘é€çš„æœ€å¤§é•¿åº¦
 			//!
 			//! handle: void(ErrorCode, int)
-			//! ErrorCode: 0Îª³É¹¦. ÆäËûÎªÊ§°Ü, ´íÎóÂë¼ûÃ¶¾Ù¶¨Òå´¦.
-			//! int: ½ÓÊÕµ½µÄ×Ö½Ú³¤¶È.
+			//! ErrorCode: 0ä¸ºæˆåŠŸ. å…¶ä»–ä¸ºå¤±è´¥, é”™è¯¯ç è§æšä¸¾å®šä¹‰å¤„.
+			//! int: æ¥æ”¶åˆ°çš„å­—èŠ‚é•¿åº¦.
 			template<typename H>
 			inline bool DoRecv(char * buf, unsigned int len, const H &h)
 			{
 				return m_impl.DoRecv(buf, len, h);
 			}
-			//! »ñÈ¡Ô¶¶ËIPºÍPORT
+			//! è·å–è¿œç«¯IPå’ŒPORT
 			inline bool GetPeerInfo(std::string& remoteIP, unsigned short &remotePort)
 			{
 				return m_impl.GetPeerInfo(remoteIP, remotePort);
 			}
-			//! ¹Ø±ÕÏÖÓĞµÄÒ»¸öÁ¬½Ó.
-			//! ¸Ã½Ó¿Úµ÷ÓÃºó²¢²»È¡ÏûÖ®Ç°·¢³öµÄÇëÇó, µ«ÒÑ¾­·¢³öµÄÇëÇó²Ù×÷½«»áÒÑÊ§°Ü·µ»Ø.
+			//! å…³é—­ç°æœ‰çš„ä¸€ä¸ªè¿æ¥.
+			//! è¯¥æ¥å£è°ƒç”¨åå¹¶ä¸å–æ¶ˆä¹‹å‰å‘å‡ºçš„è¯·æ±‚, ä½†å·²ç»å‘å‡ºçš„è¯·æ±‚æ“ä½œå°†ä¼šå·²å¤±è´¥è¿”å›.
 			inline bool DoClose()
 			{
 				return m_impl.DoClose();
 			}
 
-			//! ¸Ã½Ó¿ÚÌá¹©¸øÓÃ»§Ò»¸ö64Î»µÄÊı¾İ¿é¹¦ÓÃ»§×ÔÓÉÊ¹ÓÃ, ¸ÃuserData¿ÉÒÔ±£´æÓÃ»§µÄÒ»¸öID»òÕßÖ¸Õë»òÕßÈÎÒâÏë±£´æµÄÊı¾İ.
+			//! è¯¥æ¥å£æä¾›ç»™ç”¨æˆ·ä¸€ä¸ª64ä½çš„æ•°æ®å—åŠŸç”¨æˆ·è‡ªç”±ä½¿ç”¨, è¯¥userDataå¯ä»¥ä¿å­˜ç”¨æˆ·çš„ä¸€ä¸ªIDæˆ–è€…æŒ‡é’ˆæˆ–è€…ä»»æ„æƒ³ä¿å­˜çš„æ•°æ®.
 			inline void SetUserData(unsigned long long userData){ m_userData = userData;}
 			inline unsigned long long GetUserData(){ return m_userData;}
 

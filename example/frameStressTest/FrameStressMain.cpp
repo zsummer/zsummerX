@@ -1,4 +1,4 @@
-/*
+ï»¿/*
  * zsummerX License
  * -----------
  * 
@@ -35,9 +35,9 @@
  */
 
 
-//! frameÄ£¿éÑ¹Á¦²âÊÔ
-//! frame·â×°ÔÚÍøÂç²¿·ÖÊ¹ÓÃµ¥ÀıÄ£Ê½, Èç¹ûĞèÒªÊ¹ÓÃ¶àÏß³Ì ĞèÒªÔÚÒµÎñ²ãÓÉÓÃ»§¿ª±ÙÏß³Ì³Ø´¦Àí.
-//! Èç¹ûĞèÒªÔÚzsummerXµÄÍøÂç²¿·ÖÊ¹ÓÃ¶àÏß³Ì Çë²Î¿¼tcpTestÊµÀıµ÷ÓÃzsummerXµÄÔ­Ê¼½Ó¿ÚÊµÏÖ.
+//! frameæ¨¡å—å‹åŠ›æµ‹è¯•
+//! frameå°è£…åœ¨ç½‘ç»œéƒ¨åˆ†ä½¿ç”¨å•ä¾‹æ¨¡å¼, å¦‚æœéœ€è¦ä½¿ç”¨å¤šçº¿ç¨‹ éœ€è¦åœ¨ä¸šåŠ¡å±‚ç”±ç”¨æˆ·å¼€è¾Ÿçº¿ç¨‹æ± å¤„ç†.
+//! å¦‚æœéœ€è¦åœ¨zsummerXçš„ç½‘ç»œéƒ¨åˆ†ä½¿ç”¨å¤šçº¿ç¨‹ è¯·å‚è€ƒtcpTestå®ä¾‹è°ƒç”¨zsummerXçš„åŸå§‹æ¥å£å®ç°.
 
 
 #include <zsummerX/FrameHeader.h>
@@ -46,20 +46,20 @@
 #include <unordered_map>
 using namespace zsummer::log4z;
 
-//! Ä¬ÈÏÆô¶¯²ÎÊı
-std::string g_remoteIP = "0.0.0.0"; //Èç¹û×÷Îª·şÎñ¶ËÀ´Ê¹ÓÃ ÕâÀïÊÇ¼àÌıµØÖ·
-unsigned short g_remotePort = 81; //Í¬ÉÏ
-unsigned short g_startType = 0;  //0 ×÷Îª·şÎñÆ÷Æô¶¯, 1 ×÷Îª¿Í»§¶ËÆô¶¯
-unsigned short g_maxClient = 1; //Èç¹ûÊÇ·şÎñ¶Ë ÕâÀïÊÇÏŞÖÆ¿Í»§¶ËµÄ¸öÊı ³¬³öµÄ»á±»Ìßµô, Èç¹ûÊÇ¿Í»§¶Ë ÕâÀïÊÇÆô¶¯µÄ¿Í»§¶Ë×ÜÊı.
+//! é»˜è®¤å¯åŠ¨å‚æ•°
+std::string g_remoteIP = "0.0.0.0"; //å¦‚æœä½œä¸ºæœåŠ¡ç«¯æ¥ä½¿ç”¨ è¿™é‡Œæ˜¯ç›‘å¬åœ°å€
+unsigned short g_remotePort = 81; //åŒä¸Š
+unsigned short g_startType = 0;  //0 ä½œä¸ºæœåŠ¡å™¨å¯åŠ¨, 1 ä½œä¸ºå®¢æˆ·ç«¯å¯åŠ¨
+unsigned short g_maxClient = 1; //å¦‚æœæ˜¯æœåŠ¡ç«¯ è¿™é‡Œæ˜¯é™åˆ¶å®¢æˆ·ç«¯çš„ä¸ªæ•° è¶…å‡ºçš„ä¼šè¢«è¸¢æ‰, å¦‚æœæ˜¯å®¢æˆ·ç«¯ è¿™é‡Œæ˜¯å¯åŠ¨çš„å®¢æˆ·ç«¯æ€»æ•°.
 unsigned short g_sendType = 0; //0 ping-pong test, 1 flood test
-unsigned int   g_intervalMs = 0; // Èç¹ûÊÇflood test, ÕâÀïµÄ¼ä¸ôÓ¦¸Ã´óÓÚ0, µ¥Î»ÊÇºÁÃë.
+unsigned int   g_intervalMs = 0; // å¦‚æœæ˜¯flood test, è¿™é‡Œçš„é—´éš”åº”è¯¥å¤§äº0, å•ä½æ˜¯æ¯«ç§’.
 
 
 
-//! g_testStrÓÃÀ´ÔÚÑ¹Á¦²âÊÔÖĞ·¢ËÍÍ³Ò»´óĞ¡µÄÏûÏ¢.
+//! g_testStrç”¨æ¥åœ¨å‹åŠ›æµ‹è¯•ä¸­å‘é€ç»Ÿä¸€å¤§å°çš„æ¶ˆæ¯.
 std::string g_testStr;
 
-//!ÊÕ·¢°ü²âÊÔÍ³¼ÆÊı¾İ
+//!æ”¶å‘åŒ…æµ‹è¯•ç»Ÿè®¡æ•°æ®
 unsigned long long g_totalEchoCount = 0;
 unsigned long long g_lastEchoCount = 0;
 unsigned long long g_totalSendCount = 0;
@@ -73,8 +73,8 @@ void MonitorFunc()
 };
 
 /*
-* ²âÊÔ´úÂëÖĞ¶¨ÒåÁË4¸öĞ­Òé ÓÃÀ´ÊµÏÖĞÄÌø»úÖÆºÍecho·¢°ü.
-* ECHO°üÊÇÁ½¸öĞ­ÒéºÅ Ò»¸öÓÃÀ´¿Í»§¶Ë·¢ËÍ Ò»¸öÓÃÀ´·şÎñ¶Ë»Ø¸´.
+* æµ‹è¯•ä»£ç ä¸­å®šä¹‰äº†4ä¸ªåè®® ç”¨æ¥å®ç°å¿ƒè·³æœºåˆ¶å’Œechoå‘åŒ….
+* ECHOåŒ…æ˜¯ä¸¤ä¸ªåè®®å· ä¸€ä¸ªç”¨æ¥å®¢æˆ·ç«¯å‘é€ ä¸€ä¸ªç”¨æ¥æœåŠ¡ç«¯å›å¤.
 */
 #define C2S_HEARTBEAT ProtocolID(10000)
 #define S2C_HEARTBEAT ProtocolID(10000)
@@ -82,23 +82,23 @@ void MonitorFunc()
 #define C2S_ECHO_REQ ProtocolID(10002)
 #define S2C_ECHO_ACK ProtocolID(10003)
 
-/*¹ÜÀíÁ¬½Ó×´Ì¬
-*ÔÚÕâ¸ö²âÊÔ´úÂëÖĞ °Ñ·şÎñ¶ËºÍ¿Í»§¶ËµÄĞÄÌø¹ÜÀí¶¼·ÅÔÚÁËÕâ¸öÒ»¸öÀàÖĞ.
-* ¸ÃĞÄÌø»úÖÆÊµÏÖ²ßÂÔÊÇ:
-*  ÔÚÁ¬½Ó½¨Á¢ÊÂ¼ş´¥·¢Ê± ³õÊ¼»¯ĞÄÌøÊ±¼ä´Á
-*  ÔÚÊÕµ½¶Ô·½ĞÄÌøÏûÏ¢ºó¸üĞÂÊ±¼ä´Á
-*  ÔÚ±¾µØĞÄÌø¶¨Ê±Æ÷´¥·¢Ê±¼ì²âÊ±¼ä(Í¬Ê±·¢ËÍĞÄÌø¸ø¶Ô·½)
-*  ÔÚÁ¬½Ó¶Ï¿ªÊÂ¼ş´¥·¢ºóÇå³ıÊ±¼ä´Á
+/*ç®¡ç†è¿æ¥çŠ¶æ€
+*åœ¨è¿™ä¸ªæµ‹è¯•ä»£ç ä¸­ æŠŠæœåŠ¡ç«¯å’Œå®¢æˆ·ç«¯çš„å¿ƒè·³ç®¡ç†éƒ½æ”¾åœ¨äº†è¿™ä¸ªä¸€ä¸ªç±»ä¸­.
+* è¯¥å¿ƒè·³æœºåˆ¶å®ç°ç­–ç•¥æ˜¯:
+*  åœ¨è¿æ¥å»ºç«‹äº‹ä»¶è§¦å‘æ—¶ åˆå§‹åŒ–å¿ƒè·³æ—¶é—´æˆ³
+*  åœ¨æ”¶åˆ°å¯¹æ–¹å¿ƒè·³æ¶ˆæ¯åæ›´æ–°æ—¶é—´æˆ³
+*  åœ¨æœ¬åœ°å¿ƒè·³å®šæ—¶å™¨è§¦å‘æ—¶æ£€æµ‹æ—¶é—´(åŒæ—¶å‘é€å¿ƒè·³ç»™å¯¹æ–¹)
+*  åœ¨è¿æ¥æ–­å¼€äº‹ä»¶è§¦å‘åæ¸…é™¤æ—¶é—´æˆ³
 *
-* ¸ÃĞÄÌø²ßÂÔÔÚ±¾²âÊÔ´úÂëÖĞÊÇµ¥ÏòµÄ Òò´ËÉÏÃæ¶¨ÒåµÄĞ­ÒéºÅÏàÍ¬ Õâ¸ö²¢²»Ó°Ïì.
-* Èç¹ûĞèÒªÔÚĞÄÌø°üĞ¯´ø¶îÍâµÄÊı¾İ, ÀıÈç¼ì²âÊ±¼äÑÓ³Ù, Ôò¿ÉÒÔ°ÑĞÄÌø°ü¸ÄÎªREQ-ACKĞÎÊ½(Ìí¼ÓÒ»¸öACK¼´¿É). ÔÚREQÖĞ·¢ËÍ±¾µØÊ±¼ä ÔÚACKÊ±ºò¼ì²âÊ±¼ä²î.
+* è¯¥å¿ƒè·³ç­–ç•¥åœ¨æœ¬æµ‹è¯•ä»£ç ä¸­æ˜¯å•å‘çš„ å› æ­¤ä¸Šé¢å®šä¹‰çš„åè®®å·ç›¸åŒ è¿™ä¸ªå¹¶ä¸å½±å“.
+* å¦‚æœéœ€è¦åœ¨å¿ƒè·³åŒ…æºå¸¦é¢å¤–çš„æ•°æ®, ä¾‹å¦‚æ£€æµ‹æ—¶é—´å»¶è¿Ÿ, åˆ™å¯ä»¥æŠŠå¿ƒè·³åŒ…æ”¹ä¸ºREQ-ACKå½¢å¼(æ·»åŠ ä¸€ä¸ªACKå³å¯). åœ¨REQä¸­å‘é€æœ¬åœ°æ—¶é—´ åœ¨ACKæ—¶å€™æ£€æµ‹æ—¶é—´å·®.
 */
 class CStressHeartBeatManager
 {
 public:
 	CStressHeartBeatManager()
 	{
-		//! ×¢²áÊÂ¼şºÍÏûÏ¢
+		//! æ³¨å†Œäº‹ä»¶å’Œæ¶ˆæ¯
 		CMessageDispatcher::getRef().RegisterOnConnectorEstablished(std::bind(&CStressHeartBeatManager::OnConnecotrConnected, this,
 			std::placeholders::_1));
 		CMessageDispatcher::getRef().RegisterOnMyConnectorHeartbeatTimer(std::bind(&CStressHeartBeatManager::OnConnecotrHeartbeatTimer, this,
@@ -185,17 +185,17 @@ public:
 protected:
 
 private:
-	//! ×¢²áµÄÊÂ¼şÊÇÕë¶ÔËùÓĞsession or connectorµÄ Òò´ËÔÚÊÂ¼ş´¥·¢Ê±ºò ÒªÈ¥²éÕÒ¶ÔÓ¦µÄĞÄÌøĞÅÏ¢
+	//! æ³¨å†Œçš„äº‹ä»¶æ˜¯é’ˆå¯¹æ‰€æœ‰session or connectorçš„ å› æ­¤åœ¨äº‹ä»¶è§¦å‘æ—¶å€™ è¦å»æŸ¥æ‰¾å¯¹åº”çš„å¿ƒè·³ä¿¡æ¯
 	std::unordered_map<SessionID, time_t> m_sessionHB;
 	std::unordered_map<ConnectorID, time_t> m_connectorHB;
 };
 
 
-/* ²âÊÔ¿Í»§¶ËhandlerÀà
-* Èç¹ûÆô¶¯¿Í»§¶ËÓÃÀ´×öping-pongÑ¹Á¦²âÊÔ, ÔòÁ÷³Ì²»´æÔÚ¶¨Ê±Æ÷ Á÷³ÌÈçÏÂ 
-*  ÔÚconnector³É¹¦ºó·¢ËÍµÚÒ»¸ösend°ü(ping), È»ºóÔÚÃ¿´ÎrecvµÄÊ±ºò(pong)Ïò·şÎñÆ÷send°ü(pong).
-* Èç¹ûÆô¶¯¿Í»§¶ËÓÃÀ´×öfloodÑ¹Á¦²âÊÔ, ÔòÃ¿¸öÁ¬½Ó¶¼ĞèÒª´´½¨Ò»¸ö¶¨Ê±Æ÷ Á÷³ÌÈçÏÂ
-*  ÔÚconnector³É¹¦ºó send¶¨Ê±Æ÷Æô¶¯, ²¢ÒÔÖ¸¶¨¶¨Ê±Æ÷¼ä¸ôÊ±¼ä³ÖĞøsend.
+/* æµ‹è¯•å®¢æˆ·ç«¯handlerç±»
+* å¦‚æœå¯åŠ¨å®¢æˆ·ç«¯ç”¨æ¥åšping-pongå‹åŠ›æµ‹è¯•, åˆ™æµç¨‹ä¸å­˜åœ¨å®šæ—¶å™¨ æµç¨‹å¦‚ä¸‹ 
+*  åœ¨connectoræˆåŠŸåå‘é€ç¬¬ä¸€ä¸ªsendåŒ…(ping), ç„¶ååœ¨æ¯æ¬¡recvçš„æ—¶å€™(pong)å‘æœåŠ¡å™¨sendåŒ…(pong).
+* å¦‚æœå¯åŠ¨å®¢æˆ·ç«¯ç”¨æ¥åšfloodå‹åŠ›æµ‹è¯•, åˆ™æ¯ä¸ªè¿æ¥éƒ½éœ€è¦åˆ›å»ºä¸€ä¸ªå®šæ—¶å™¨ æµç¨‹å¦‚ä¸‹
+*  åœ¨connectoræˆåŠŸå sendå®šæ—¶å™¨å¯åŠ¨, å¹¶ä»¥æŒ‡å®šå®šæ—¶å™¨é—´éš”æ—¶é—´æŒç»­send.
 */
 class CStressClientHandler
 {
@@ -261,8 +261,8 @@ private:
 
 
 /*
-* ·şÎñ¶ËhandlerÀà
-* ·şÎñ¶ËÂß¼­½ÏÎª¼òµ¥ Ö»ÒªÊÕµ½ÏûÏ¢°ü Á¢¿Ìecho»ØÈ¥¾Í¿ÉÒÔ.
+* æœåŠ¡ç«¯handlerç±»
+* æœåŠ¡ç«¯é€»è¾‘è¾ƒä¸ºç®€å• åªè¦æ”¶åˆ°æ¶ˆæ¯åŒ… ç«‹åˆ»echoå›å»å°±å¯ä»¥.
 */
 class CStressServerHandler
 {
@@ -291,7 +291,7 @@ int main(int argc, char* argv[])
 {
 
 #ifndef _WIN32
-	//! linuxÏÂĞèÒªÆÁ±ÎµÄÒ»Ğ©ĞÅºÅ
+	//! linuxä¸‹éœ€è¦å±è”½çš„ä¸€äº›ä¿¡å·
 	signal( SIGHUP, SIG_IGN );
 	signal( SIGALRM, SIG_IGN ); 
 	signal( SIGPIPE, SIG_IGN );
@@ -348,15 +348,15 @@ int main(int argc, char* argv[])
 
 	CTcpSessionManager::getRef().CreateTimer(5000, MonitorFunc);
 
-	//´´½¨ĞÄÌø¹ÜÀíhandlerµÄÊµÀı Ö»Òª´´½¨¼´¿É, ¹¹Ôìº¯ÊıÖĞ»á×¢²á¶ÔÓ¦ÊÂ¼ş
+	//åˆ›å»ºå¿ƒè·³ç®¡ç†handlerçš„å®ä¾‹ åªè¦åˆ›å»ºå³å¯, æ„é€ å‡½æ•°ä¸­ä¼šæ³¨å†Œå¯¹åº”äº‹ä»¶
 	CStressHeartBeatManager statusManager;
 
-	//ÕâÀï´´½¨·şÎñhandlerºÍ¿Í»§¶Ëhandler ¸ù¾İÆô¶¯²ÎÊı²»Í¬Ìí¼Ó²»Í¬½ÇÉ«.
+	//è¿™é‡Œåˆ›å»ºæœåŠ¡handlerå’Œå®¢æˆ·ç«¯handler æ ¹æ®å¯åŠ¨å‚æ•°ä¸åŒæ·»åŠ ä¸åŒè§’è‰².
 	CStressClientHandler client;
 	CStressServerHandler server;
 	if (g_startType) //client
 	{
-		//Ìí¼Ó¶à¸öconnector.
+		//æ·»åŠ å¤šä¸ªconnector.
 		for (int i = 0; i < g_maxClient; ++i)
 		{
 			tagConnctorConfigTraits traits;
@@ -370,7 +370,7 @@ int main(int argc, char* argv[])
 	}
 	else
 	{
-		//Ìí¼Óacceptor
+		//æ·»åŠ acceptor
 		tagAcceptorConfigTraits traits;
 		traits.aID = 1;
 		traits.listenPort = g_remotePort;
@@ -379,7 +379,7 @@ int main(int argc, char* argv[])
 		CTcpSessionManager::getRef().AddAcceptor(traits);
 	}
 
-	//Æô¶¯Ö÷Ñ­»·.
+	//å¯åŠ¨ä¸»å¾ªç¯.
 	CTcpSessionManager::getRef().Run();
 
 	return 0;

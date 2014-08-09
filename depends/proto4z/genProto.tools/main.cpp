@@ -1,4 +1,4 @@
-/*
+ï»¿/*
  * genProto License
  * -----------
  * 
@@ -186,7 +186,7 @@ std::string WriteCppDataMember(const std::vector<DataMember> & ms)
 
 std::string WriteCppDataStructStream(const std::string &name, const std::vector<DataMember> & ms)
 {
-	//ÊäÈëÁ÷
+	//è¾“å…¥æµ
 	std::string text;
 	text += LFCR;
 	text = "template<class T>" + LFCR;
@@ -200,7 +200,7 @@ std::string WriteCppDataStructStream(const std::string &name, const std::vector<
 	text += "\treturn t;" + LFCR;
 	text += "}" + LFCR;
 
-	//Êä³öÁ÷
+	//è¾“å‡ºæµ
 	text += "template<class T>" + LFCR;
 	text += "T & operator >> (T & t, " + name + " & data)" + LFCR;
 	text += "{" + LFCR;
@@ -382,7 +382,7 @@ public:
 					os.write(text.c_str(), text.length());
 					os.flush();
 				}
-				//½á¹¹ÌåÀàĞÍ
+				//ç»“æ„ä½“ç±»å‹
 				if (stype  == "struct" || stype == "proto")
 				{
 					ProtoStruct  proto;
@@ -473,7 +473,7 @@ public:
 					os.write(text.c_str(), text.length());
 					os.flush();
 				}
-				//Êı×éÀàĞÍ
+				//æ•°ç»„ç±»å‹
 				if (stype == "array")
 				{
 					DataArray ar;
@@ -491,7 +491,7 @@ public:
 					os.write(text.c_str(), text.length());
 					os.flush();
 				}
-				//K-VÀàĞÍ
+				//K-Vç±»å‹
 				if (stype == "map")
 				{
 					DataMap dm;

@@ -1,4 +1,4 @@
-/*
+ï»¿/*
  * zsummerX License
  * -----------
  * 
@@ -35,8 +35,8 @@
  */
 
 
-//! zsummerµÄ²âÊÔ·şÎñÄ£¿é(¶ÔÓ¦zsummerµ×²ãÍøÂç·â×°µÄÉÏ²ãÉè¼Æ²âÊÔ·şÎñ) ¿ÉÊÓÎª·şÎñ¶Ë¼Ü¹¹ÖĞµÄ gateway·şÎñ/agent·şÎñ/Ç°¶Ë·şÎñ, ÌØµãÊÇ¸ß²¢·¢¸ßÍÌÍÂÁ¿
-//! IOServerÍ·ÎÄ¼ş ¸ÃÀà¸ºÔğ´¦ÀíScheduleÅ×¹ıÀ´µÄclient socket. Ã¿¸öIOServer¶ÀÁ¢Ò»¸öÏß³Ì.
+//! zsummerçš„æµ‹è¯•æœåŠ¡æ¨¡å—(å¯¹åº”zsummeråº•å±‚ç½‘ç»œå°è£…çš„ä¸Šå±‚è®¾è®¡æµ‹è¯•æœåŠ¡) å¯è§†ä¸ºæœåŠ¡ç«¯æ¶æ„ä¸­çš„ gatewayæœåŠ¡/agentæœåŠ¡/å‰ç«¯æœåŠ¡, ç‰¹ç‚¹æ˜¯é«˜å¹¶å‘é«˜ååé‡
+//! IOServerå¤´æ–‡ä»¶ è¯¥ç±»è´Ÿè´£å¤„ç†ScheduleæŠ›è¿‡æ¥çš„client socket. æ¯ä¸ªIOServerç‹¬ç«‹ä¸€ä¸ªçº¿ç¨‹.
 
 #ifndef ZSUMMER_PROCESS_H_
 #define ZSUMMER_PROCESS_H_
@@ -47,10 +47,10 @@ class CProcess
 {
 public:
 	CProcess();
-	//! Æô¶¯ÓëÍ£Ö¹
+	//! å¯åŠ¨ä¸åœæ­¢
 	bool Start();
 	void Stop();
-	//! Ïß³Ì
+	//! çº¿ç¨‹
 	void Run();
 	//!
 	inline zsummer::network::CZSummerPtr GetZSummer(){return m_summer;}
@@ -66,7 +66,7 @@ public:
 	{
 		m_summer->Post(h);
 	}
-	//½ÓÊÕÒ»¸ösocket
+	//æ¥æ”¶ä¸€ä¸ªsocket
 	void RecvSocketPtr(std::shared_ptr<zsummer::network::CTcpSocket> sockptr);
 
 	//all use

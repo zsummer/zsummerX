@@ -1,4 +1,4 @@
-/*
+ï»¿/*
  * zsummerX License
  * -----------
  * 
@@ -34,8 +34,8 @@
  * (end of COPYRIGHT)
  */
 
-//! zsummerµÄ²âÊÔ·şÎñÄ£¿é(¶ÔÓ¦zsummerµ×²ãÍøÂç·â×°µÄÉÏ²ãÉè¼Æ²âÊÔ·şÎñ) ¿ÉÊÓÎª·şÎñ¶Ë¼Ü¹¹ÖĞµÄ gateway·şÎñ/agent·şÎñ/Ç°¶Ë·şÎñ, ÌØµãÊÇ¸ß²¢·¢¸ßÍÌÍÂÁ¿
-//! ScheduleÍ·ÎÄ¼ş ¸ÃÀà¸ºÔğ¼àÌı¶Ë¿Ú, accept client, ²¢°Ñacceptµ½µÄsocket·Ö·¢¸øIOServer³ØÈ¥´¦Àí.
+//! zsummerçš„æµ‹è¯•æœåŠ¡æ¨¡å—(å¯¹åº”zsummeråº•å±‚ç½‘ç»œå°è£…çš„ä¸Šå±‚è®¾è®¡æµ‹è¯•æœåŠ¡) å¯è§†ä¸ºæœåŠ¡ç«¯æ¶æ„ä¸­çš„ gatewayæœåŠ¡/agentæœåŠ¡/å‰ç«¯æœåŠ¡, ç‰¹ç‚¹æ˜¯é«˜å¹¶å‘é«˜ååé‡
+//! Scheduleå¤´æ–‡ä»¶ è¯¥ç±»è´Ÿè´£ç›‘å¬ç«¯å£, accept client, å¹¶æŠŠacceptåˆ°çš„socketåˆ†å‘ç»™IOServeræ± å»å¤„ç†.
 
 
 #ifndef ZSUMMER_SCHEDULE_H_
@@ -46,17 +46,17 @@ class CSchedule
 {
 public:
 	CSchedule();
-	//! Æô¶¯ÓëÍ£Ö¹
+	//! å¯åŠ¨ä¸åœæ­¢
 	void Start();
 	void Stop();
-	//! Ïß³Ì
+	//! çº¿ç¨‹
 	void Run();
 
 	void OnAccept(zsummer::network::ErrorCode ec, CTcpSocketPtr sockptr, CProcess * process);
 
 	void doConnect(unsigned int maxClient);
 
-	//! IOServer³Ø
+	//! IOServeræ± 
 	std::vector<CProcess *> m_process;
 	int						m_iCurProcess = 0;
 

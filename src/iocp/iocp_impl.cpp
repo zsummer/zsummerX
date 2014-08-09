@@ -1,4 +1,4 @@
-/*
+ï»¿/*
  * zsummerX License
  * -----------
  * 
@@ -56,7 +56,7 @@ void CZSummerImpl::RunOnce()
 
 	BOOL bRet = GetQueuedCompletionStatus(m_io, &dwTranceCount, &uComKey, &pOverlapped, m_timer.GetNextExpireTime()/*INFINITE*/);
 
-	//¼ì²é¶¨Ê±Æ÷³¬Ê±×´Ì¬
+	//æ£€æŸ¥å®šæ—¶å™¨è¶…æ—¶çŠ¶æ€
 	{
 		m_timer.CheckTimer();
 		if (!bRet && !pOverlapped)
@@ -66,7 +66,7 @@ void CZSummerImpl::RunOnce()
 		}
 	}
 	
-	//! ¼ì²é×Ô¶¨ÒåÍ¨Öª
+	//! æ£€æŸ¥è‡ªå®šä¹‰é€šçŸ¥
 	if (uComKey == PCK_USER_DATA)
 	{
 		_OnPostHandler * func = (_OnPostHandler*) pOverlapped;
@@ -75,7 +75,7 @@ void CZSummerImpl::RunOnce()
 		return;
 	}
 	
-	//! ´¦ÀíÀ´×ÔÍøÂçµÄÍ¨Öª
+	//! å¤„ç†æ¥è‡ªç½‘ç»œçš„é€šçŸ¥
 	
 	unsigned char type = HandlerFromOverlaped(pOverlapped)->_type;
 	switch (type)

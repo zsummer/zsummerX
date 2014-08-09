@@ -1,4 +1,4 @@
-/*
+ï»¿/*
 * zsummerX License
 * -----------
 * 
@@ -81,7 +81,7 @@ namespace zsummer
 {
 	namespace network
 	{
-		//! ´íÎóÂë
+		//! é”™è¯¯ç 
 		enum ErrorCode
 		{
 			EC_SUCCESS = 0,
@@ -91,7 +91,7 @@ namespace zsummer
 		};
 
 		
-		//! ´¦ÀíÆ÷
+		//! å¤„ç†å™¨
 		typedef std::function<void()> _OnPostHandler;
 		//unsigned long long : timer ID
 		typedef std::function<void()> _OnTimerHandler;
@@ -116,9 +116,9 @@ namespace zsummer
 
 		enum LINK_STATUS
 		{
-			LS_UNINITIALIZE, //socket¹¹ÔìºóµÄ×´Ì¬
-			LS_WAITLINK, // socket initÖ®ºóµÄ×´Ì¬
-			LS_ESTABLISHED, //Õı³£Í¨ĞÅ×´Ì¬
+			LS_UNINITIALIZE, //socketæ„é€ åçš„çŠ¶æ€
+			LS_WAITLINK, // socket initä¹‹åçš„çŠ¶æ€
+			LS_ESTABLISHED, //æ­£å¸¸é€šä¿¡çŠ¶æ€
 			LS_CLOSED,
 		};
 
@@ -184,7 +184,7 @@ namespace zsummer
 			t << h._type;
 			return t;
 		}
-		//! Íê³É¼ü
+		//! å®Œæˆé”®
 		enum POST_COM_KEY
 		{
 			PCK_USER_DATA,

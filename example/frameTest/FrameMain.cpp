@@ -1,4 +1,4 @@
-/*
+﻿/*
  * zsummerX License
  * -----------
  * 
@@ -35,8 +35,8 @@
  */
 
 
-//! zsummerX�Ĳ����ļ�
-//! �ò����ṩ��򵥵ļ���,��������,�շ����ݵ� �ͻ��˺ͷ����ʵ������.
+//! zsummerX的测试文件
+//! 该测试提供最简单的监听,建立连接,收发数据的 客户端和服务端实例代码.
 
 
 #include <zsummerX/FrameHeader.h>
@@ -77,31 +77,31 @@ int main(int argc, char* argv[])
 	
 	if (!g_startIsConnector)
 	{
-		//! ������־����
+		//! 启动日志服务
 		ILog4zManager::GetInstance()->Config("server.cfg");
 		ILog4zManager::GetInstance()->Start();
 	}
 	else
 	{
-		//! ������־����
+		//! 启动日志服务
 		ILog4zManager::GetInstance()->Config("client.cfg");
 		ILog4zManager::GetInstance()->Start();
 	}
 	LOGI("g_remoteIP=" << g_remoteIP << ", g_remotePort=" << g_remotePort << ", g_startIsConnector=" << g_startIsConnector );
 
 
-	//! step 1. ����Manager.
+	//! step 1. 开启Manager.
 	CTcpSessionManager::getRef().Start();
 
 
-	//! ����Э���
+	//! 定义协议号
 	static const ProtocolID _RequestSequence = 1001;
 	static const ProtocolID _ResultSequence = 1002;
 
 
 	if (g_startIsConnector) //client
 	{
-		//��Ӧ���ӳɹ��¼�
+		//响应连接成功事件
 		auto connectedfun = [](ConnectorID cID)
 		{
 			LOGI("send to ConnectorID=" << cID << ", msg=hello");
@@ -110,7 +110,7 @@ int main(int argc, char* argv[])
 			CTcpSessionManager::getRef().SendOrgConnectorData(cID, ws.GetStream(), ws.GetStreamLen());
 		};
 
-		//��Ӧ��Ϣ_ResultSequence
+		//响应消息_ResultSequence
 		auto msg_ResultSequence_fun = [](ConnectorID cID, ProtocolID pID, ReadStreamPack & rs)
 		{
 			std::string msg;
@@ -118,12 +118,12 @@ int main(int argc, char* argv[])
 			LOGI("recv ConnectorID = " << cID << ", msg = " << msg);
 		};
 
-		//! ע���¼�����Ϣ
-		CMessageDispatcher::getRef().RegisterOnConnectorEstablished(connectedfun); //!ע�����ӳɹ���������
-		CMessageDispatcher::getRef().RegisterConnectorMessage(_ResultSequence, msg_ResultSequence_fun);//!ע����Ϣ
+		//! 注册事件和消息
+		CMessageDispatcher::getRef().RegisterOnConnectorEstablished(connectedfun); //!注册连接成功处理函数
+		CMessageDispatcher::getRef().RegisterConnectorMessage(_ResultSequence, msg_ResultSequence_fun);//!注册消息
 
 
-		//����һ��connector
+		//添加一个connector
 		tagConnctorConfigTraits traits;
 		traits.cID = 1;
 		traits.remoteIP = "127.0.0.1";
@@ -132,13 +132,13 @@ int main(int argc, char* argv[])
 		traits.reconnectMaxCount = 0;
 		CTcpSessionManager::getRef().AddConnector(traits);
 
-		//! step 2 ������ѭ��
+		//! step 2 启动主循环
 		CTcpSessionManager::getRef().Run();
 	}
 	else
 	{
 
-		//��Ӧ��Ϣ_RequestSequence
+		//响应消息_RequestSequence
 		OnSessionMessageFunction msg_RequestSequence_fun = [](AccepterID aID, SessionID sID, ProtocolID pID, ReadStreamPack & rs)
 		{
 			std::string msg;
@@ -153,9 +153,9 @@ int main(int argc, char* argv[])
 		};
 
 
-		CMessageDispatcher::getRef().RegisterSessionMessage(_RequestSequence, msg_RequestSequence_fun); //ע����Ϣ
+		CMessageDispatcher::getRef().RegisterSessionMessage(_RequestSequence, msg_RequestSequence_fun); //注册消息
 
-		//���Ӽ�����
+		//添加监听器
 		tagAcceptorConfigTraits traits;
 		traits.aID = 1;
 		traits.listenPort = 81;
@@ -163,7 +163,7 @@ int main(int argc, char* argv[])
 		traits.whitelistIP.push_back("127.0.");
 		CTcpSessionManager::getRef().AddAcceptor(traits);
 
-		//! step 2 ������ѭ��
+		//! step 2 启动主循环
 		CTcpSessionManager::getRef().Run();
 	}
 	

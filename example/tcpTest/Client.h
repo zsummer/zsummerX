@@ -1,4 +1,4 @@
-/*
+ï»¿/*
  * zsummerX License
  * -----------
  * 
@@ -35,15 +35,15 @@
  */
 
 
-//! zsummerµÄ²âÊÔ·şÎñÄ£¿é(¶ÔÓ¦zsummerµ×²ãÍøÂç·â×°µÄÉÏ²ãÉè¼Æ²âÊÔ·şÎñ) ¿ÉÊÓÎª·şÎñ¶Ë¼Ü¹¹ÖĞµÄ gateway·şÎñ/agent·şÎñ/Ç°¶Ë·şÎñ, ÌØµãÊÇ¸ß²¢·¢¸ßÍÌÍÂÁ¿
-//! Socket ClientÍ·ÎÄ¼ş
+//! zsummerçš„æµ‹è¯•æœåŠ¡æ¨¡å—(å¯¹åº”zsummeråº•å±‚ç½‘ç»œå°è£…çš„ä¸Šå±‚è®¾è®¡æµ‹è¯•æœåŠ¡) å¯è§†ä¸ºæœåŠ¡ç«¯æ¶æ„ä¸­çš„ gatewayæœåŠ¡/agentæœåŠ¡/å‰ç«¯æœåŠ¡, ç‰¹ç‚¹æ˜¯é«˜å¹¶å‘é«˜ååé‡
+//! Socket Clientå¤´æ–‡ä»¶
 
 #ifndef ZSUMMER_CLIENT_H_
 #define ZSUMMER_CLIENT_H_
 #include "header.h"
 #include "Process.h"
 
-//! ÉÏ²ãSocekt ClientµÄ¶ş´Î·â×°
+//! ä¸Šå±‚Socekt Clientçš„äºŒæ¬¡å°è£…
 class CClient : public std::enable_shared_from_this<CClient>
 {
 public:
@@ -71,20 +71,20 @@ private:
 	CTcpSocketPtr  m_sockptr;
 	bool m_bEstablished = false;
 	
-	//! ¶Á°ü
+	//! è¯»åŒ…
 	Packet m_recving;
 	std::string m_recvTextCache;
 
-	//! Ğ´°ü¶ÓÁĞ
+	//! å†™åŒ…é˜Ÿåˆ—
 	std::queue<Packet *> m_sendque;
 
-	//! µ±Ç°Ğ´°ü
+	//! å½“å‰å†™åŒ…
 
 	char m_sendBuff[_SEND_BUF_LEN];
 	unsigned short m_sendLen = 0;
 	unsigned short m_curSendLen = 0;
 
-	unsigned long long m_lastDelayTime = 0; //×îºóÒ»´ÎÊÕµ½echoÏûÏ¢µÄÑÓ³ÙÊ±¼ä
+	unsigned long long m_lastDelayTime = 0; //æœ€åä¸€æ¬¡æ”¶åˆ°echoæ¶ˆæ¯çš„å»¶è¿Ÿæ—¶é—´
 };
 
 #endif

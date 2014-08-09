@@ -1,4 +1,4 @@
-//! yawei_zhang@foxmail.com
+﻿//! yawei_zhang@foxmail.com
 
 #include "../proto4z.h"
 #include <iostream>

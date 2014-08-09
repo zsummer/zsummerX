@@ -1,4 +1,4 @@
-/*
+ï»¿/*
  * proto4z License
  * -----------
  * 
@@ -622,13 +622,13 @@ void IntegerToStream(Integer integer, char *stream)
 template<class StreamHeadTrait>
 inline std::pair<INTEGRITY_RET_TYPE, typename StreamHeadTrait::Integer> CheckBuffIntegrity(const char * buff, typename StreamHeadTrait::Integer curBuffLen, typename StreamHeadTrait::Integer maxBuffLen)
 {
-	//! ¼ì²é°üÍ·ÊÇ·ñÍêÕû
+	//! æ£€æŸ¥åŒ…å¤´æ˜¯å¦å®Œæ•´
 	if (curBuffLen < StreamHeadTrait::HeadLen)
 	{
 		return std::make_pair(IRT_SHORTAGE, StreamHeadTrait::HeadLen - curBuffLen);
 	}
 
-	//! »ñÈ¡°ü³¤¶È
+	//! è·å–åŒ…é•¿åº¦
 	typename StreamHeadTrait::Integer packLen = StreamToInteger<typename StreamHeadTrait::Integer, StreamHeadTrait>(buff+StreamHeadTrait::PreOffset);
 	if (!StreamHeadTrait::PackLenIsContainHead)
 	{

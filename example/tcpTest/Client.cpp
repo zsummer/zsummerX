@@ -1,4 +1,4 @@
-/*
+ï»¿/*
  * zsummerX License
  * -----------
  * 
@@ -153,7 +153,7 @@ void CClient::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 		return ;
 	}
 
-	//! ½â°üÍê³É ½øĞĞÏûÏ¢´¦Àí
+	//! è§£åŒ…å®Œæˆ è¿›è¡Œæ¶ˆæ¯å¤„ç†
 	zsummer::proto4z::ReadStream<DefaultStreamHeadTraits> rs(m_recving._orgdata, m_recving._len);
 	try
 	{
@@ -168,13 +168,13 @@ void CClient::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 	}
 	m_process.AddTotalRecvLen(m_recving._len);
 	m_process.AddTotalRecvCount(1);
-	//! ¼ÌĞøÊÕ°ü
+	//! ç»§ç»­æ”¶åŒ…
 	DoRecv();
 }
 
 void CClient::MessageEntry(zsummer::proto4z::ReadStream<zsummer::proto4z::DefaultStreamHeadTraits> & rs)
 {
-	//Ğ­ÒéÁ÷Òì³£»á±»ÉÏ²ã²¶»ñ²¢¹Ø±ÕÁ¬½Ó
+	//åè®®æµå¼‚å¸¸ä¼šè¢«ä¸Šå±‚æ•è·å¹¶å…³é—­è¿æ¥
 	unsigned short protocolID = 0;
 	rs >> protocolID;
 	switch (protocolID)

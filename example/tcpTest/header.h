@@ -1,4 +1,4 @@
-/*
+ï»¿/*
  * zsummerX License
  * -----------
  * 
@@ -34,8 +34,8 @@
  * (end of COPYRIGHT)
  */
 
-//! zsummerµÄ²âÊÔ·şÎñÄ£¿é(¶ÔÓ¦zsummerµ×²ãÍøÂç·â×°µÄÉÏ²ãÉè¼Æ²âÊÔ·şÎñ) ¿ÉÊÓÎª·şÎñ¶Ë¼Ü¹¹ÖĞµÄ gateway·şÎñ/agent·şÎñ/Ç°¶Ë·şÎñ, ÌØµãÊÇ¸ß²¢·¢¸ßÍÌÍÂÁ¿
-//! ¹«¹²Í·ÎÄ¼ş
+//! zsummerçš„æµ‹è¯•æœåŠ¡æ¨¡å—(å¯¹åº”zsummeråº•å±‚ç½‘ç»œå°è£…çš„ä¸Šå±‚è®¾è®¡æµ‹è¯•æœåŠ¡) å¯è§†ä¸ºæœåŠ¡ç«¯æ¶æ„ä¸­çš„ gatewayæœåŠ¡/agentæœåŠ¡/å‰ç«¯æœåŠ¡, ç‰¹ç‚¹æ˜¯é«˜å¹¶å‘é«˜ååé‡
+//! å…¬å…±å¤´æ–‡ä»¶
 
 #ifndef ZSUMMER_HEADER_H_
 #define ZSUMMER_HEADER_H_
@@ -56,11 +56,11 @@ using namespace std;
 
 
 
-//! ÏûÏ¢°ü»º³åÇø´óĞ¡
+//! æ¶ˆæ¯åŒ…ç¼“å†²åŒºå¤§å°
 #define _MSG_BUF_LEN	(2*1024)
 #define _SEND_BUF_LEN (_MSG_BUF_LEN*10)
 
-//! ÏûÏ¢°ü 
+//! æ¶ˆæ¯åŒ… 
 struct Packet
 {
 	unsigned short _len;

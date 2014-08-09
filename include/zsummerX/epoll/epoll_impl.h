@@ -1,4 +1,4 @@
-/*
+ï»¿/*
 * zsummerX License
 * -----------
 * 
@@ -73,9 +73,9 @@ namespace zsummer
 			std::string GetZSummerImplStatus();
 		private:
 			int	m_epoll = InvalideFD;
-			//! ÍøÂçÏûÏ¢
+			//! ç½‘ç»œæ¶ˆæ¯
 			epoll_event m_events[5000] = {};
-			//Ïß³ÌÏûÏ¢
+			//çº¿ç¨‹æ¶ˆæ¯
 			int		m_sockpair[2] = {};
 			tagRegister m_register;
 			MessageStack m_stackMessages;

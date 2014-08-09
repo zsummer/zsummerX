@@ -1,4 +1,4 @@
-/*
+ï»¿/*
  * Log4z License
  * -----------
  * 
@@ -288,16 +288,16 @@ public:
 	virtual ~CLogerManager();
 
 	virtual std::string GetExampleConfig();
-	//! ¶ÁÈ¡ÅäÖÃÎÄ¼ş²¢¸²Ğ´
+	//! è¯»å–é…ç½®æ–‡ä»¶å¹¶è¦†å†™
 	virtual bool Config(std::string cfgPath);
 
-	//! ¸²Ğ´Ê½´´½¨
+	//! è¦†å†™å¼åˆ›å»º
 	virtual LoggerId CreateLogger(std::string name,std::string path,int nLevel,bool display, bool monthdir, unsigned int limitsize);
 	virtual bool Start();
 	virtual bool Stop();
 	virtual bool PrePushLog(LoggerId id, int level);
 	virtual bool PushLog(LoggerId id, int level, const char * log);
-	//! ²éÕÒID
+	//! æŸ¥æ‰¾ID
 	virtual LoggerId FindLogger(std::string name);
 	virtual bool SetLoggerLevel(LoggerId nLoggerID, int nLevel);
 	virtual bool SetLoggerDisplay(LoggerId nLoggerID, bool enable);
@@ -1061,7 +1061,7 @@ std::string CLogerManager::GetExampleConfig()
 }
 
 
-//! ¶ÁÈ¡ÅäÖÃÎÄ¼ş²¢¸²Ğ´
+//! è¯»å–é…ç½®æ–‡ä»¶å¹¶è¦†å†™
 bool CLogerManager::Config(std::string cfgPath)
 {
 	if (!m_configFile.empty())
@@ -1084,7 +1084,7 @@ bool CLogerManager::Config(std::string cfgPath)
 	return true;
 }
 
-//! ¸²Ğ´Ê½´´½¨
+//! è¦†å†™å¼åˆ›å»º
 LoggerId CLogerManager::CreateLogger(std::string name,std::string path,int nLevel,bool display, bool monthdir, unsigned int limitsize)
 {
 	std::string _tmp;
@@ -1249,7 +1249,7 @@ bool CLogerManager::PushLog(LoggerId id, int level, const char * log)
 	return true;
 }
 
-//! ²éÕÒID
+//! æŸ¥æ‰¾ID
 LoggerId CLogerManager::FindLogger(std::string name)
 {
 	std::map<std::string, LoggerId>::iterator iter;

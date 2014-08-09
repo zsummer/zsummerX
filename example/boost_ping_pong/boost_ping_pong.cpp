@@ -1,7 +1,7 @@
 // boost_ping_pong.cpp : 定义控制台应用程序的入口点。
 //
 
-
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include <boost/asio.hpp>
 #include <iostream>
 #include <stdio.h>

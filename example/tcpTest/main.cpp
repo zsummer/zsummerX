@@ -1,4 +1,4 @@
-/*
+ï»¿/*
  * zsummerX License
  * -----------
  * 
@@ -34,8 +34,8 @@
  * (end of COPYRIGHT)
  */
 
-//! zsummerµÄ²âÊÔ·þÎñÄ£¿é(¶ÔÓ¦zsummerµ×²ãÍøÂç·â×°µÄÉÏ²ãÉè¼Æ²âÊÔ·þÎñ) ¿ÉÊÓÎª·þÎñ¶Ë¼Ü¹¹ÖÐµÄ gateway·þÎñ/agent·þÎñ/Ç°¶Ë·þÎñ, ÌØµãÊÇ¸ß²¢·¢¸ßÍÌÍÂÁ¿
-//! mainÎÄ¼þ
+//! zsummerçš„æµ‹è¯•æœåŠ¡æ¨¡å—(å¯¹åº”zsummeråº•å±‚ç½‘ç»œå°è£…çš„ä¸Šå±‚è®¾è®¡æµ‹è¯•æœåŠ¡) å¯è§†ä¸ºæœåŠ¡ç«¯æž¶æž„ä¸­çš„ gatewayæœåŠ¡/agentæœåŠ¡/å‰ç«¯æœåŠ¡, ç‰¹ç‚¹æ˜¯é«˜å¹¶å‘é«˜åžåé‡
+//! mainæ–‡ä»¶
 
 
 #include "header.h"
@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
 {
 
 #ifndef _WIN32
-	//! linuxÏÂÐèÒªÆÁ±ÎµÄÒ»Ð©ÐÅºÅ
+	//! linuxä¸‹éœ€è¦å±è”½çš„ä¸€äº›ä¿¡å·
 	signal( SIGHUP, SIG_IGN );
 	signal( SIGALRM, SIG_IGN ); 
 	signal( SIGPIPE, SIG_IGN );
@@ -106,13 +106,13 @@ int main(int argc, char* argv[])
 	
 	if (g_startType == 0)
 	{
-		//! Æô¶¯ÈÕÖ¾·þÎñ
+		//! å¯åŠ¨æ—¥å¿—æœåŠ¡
 		ILog4zManager::GetInstance()->Config("server.cfg");
 		ILog4zManager::GetInstance()->Start();
 	}
 	else
 	{
-				//! Æô¶¯ÈÕÖ¾·þÎñ
+				//! å¯åŠ¨æ—¥å¿—æœåŠ¡
 		ILog4zManager::GetInstance()->Config("client.cfg");
 		ILog4zManager::GetInstance()->Start();
 	}
@@ -121,12 +121,12 @@ int main(int argc, char* argv[])
 
 
 
-	//! Æô¶¯µ÷¶ÈÆ÷
+	//! å¯åŠ¨è°ƒåº¦å™¨
 	CSchedule schedule;
 	schedule.Start();
 
 
-	//mainÏß³ÌÓÃÓÚ·þÎñ×´Ì¬Í³¼ÆÓëÊä³ö
+	//mainçº¿ç¨‹ç”¨äºŽæœåŠ¡çŠ¶æ€ç»Ÿè®¡ä¸Žè¾“å‡º
 
 	unsigned long long nLast[10] = {0};
 	unsigned long long temp[10] = {0};
@@ -162,7 +162,7 @@ int main(int argc, char* argv[])
 
 	schedule.Stop();
 
-	//ÈÕÖ¾·þÎñ²»ÐèÒªÏÔÊ½µ÷ÓÃÍ£Ö¹½Ó¿Ú
+	//æ—¥å¿—æœåŠ¡ä¸éœ€è¦æ˜¾å¼è°ƒç”¨åœæ­¢æŽ¥å£
 	//InterfaceLogger::GetInstance()->Stop();
 	return 0;
 }

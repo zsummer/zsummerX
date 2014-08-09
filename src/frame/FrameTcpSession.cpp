@@ -1,4 +1,4 @@
-/*
+ï»¿/*
  * zsummerX License
  * -----------
  * 
@@ -137,7 +137,7 @@ void CTcpSession::OnConnected(zsummer::network::ErrorCode ec, const std::pair<ta
 	}
 	m_heartbeatID = CTcpSessionManager::getRef().CreateTimer(HEARTBEART_INTERVAL, std::bind(&CTcpSession::OnHeartbeat, shared_from_this()));
 	
-	//ÓÃ»§ÔÚ¸Ã»Øµ÷ÖÐ·¢ËÍµÄµÚÒ»°ü»áÅÜµ½·¢ËÍ¶ÑÕ»µÄÕ»¶¥.
+	//ç”¨æˆ·åœ¨è¯¥å›žè°ƒä¸­å‘é€çš„ç¬¬ä¸€åŒ…ä¼šè·‘åˆ°å‘é€å †æ ˆçš„æ ˆé¡¶.
 	CTcpSessionManager::getRef().OnConnectorStatus(m_connectorID, true, shared_from_this());
 	if (m_sending.bufflen == 0 && !m_sendque.empty())
 	{
@@ -172,7 +172,7 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 
 	m_recving.bufflen += nRecvedLen;
 
-	//·Ö°üÓÅ»¯´¦Àí
+	//åˆ†åŒ…ä¼˜åŒ–å¤„ç†
 	
 	unsigned int usedIndex = 0;
 	do 

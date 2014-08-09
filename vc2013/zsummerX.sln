@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+VisualStudioVersion = 12.0.30723.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zsummerX", "zsummerX.vcxproj", "{06D64BC9-7AD1-40A1-835A-54BCC3ABFE39}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -91,9 +91,9 @@ Global
 		{B3E829E2-6A0B-41CB-8E6D-AD9B46A2E0F0}.Release|Win32.ActiveCfg = Release|Win32
 		{B3E829E2-6A0B-41CB-8E6D-AD9B46A2E0F0}.Release|x64.ActiveCfg = Release|x64
 		{E8D36731-AACA-4D6F-9CD7-E11CA4D71ED8}.Debug|Win32.ActiveCfg = Debug|Win32
-		{E8D36731-AACA-4D6F-9CD7-E11CA4D71ED8}.Debug|x64.ActiveCfg = Debug|Win32
+		{E8D36731-AACA-4D6F-9CD7-E11CA4D71ED8}.Debug|x64.ActiveCfg = Debug|x64
 		{E8D36731-AACA-4D6F-9CD7-E11CA4D71ED8}.Release|Win32.ActiveCfg = Release|Win32
-		{E8D36731-AACA-4D6F-9CD7-E11CA4D71ED8}.Release|x64.ActiveCfg = Release|Win32
+		{E8D36731-AACA-4D6F-9CD7-E11CA4D71ED8}.Release|x64.ActiveCfg = Release|x64
 		{EA950C2B-48CB-4FEC-81E8-4CED27BAB732}.Debug|Win32.ActiveCfg = Debug|Win32
 		{EA950C2B-48CB-4FEC-81E8-4CED27BAB732}.Debug|Win32.Build.0 = Debug|Win32
 		{EA950C2B-48CB-4FEC-81E8-4CED27BAB732}.Debug|x64.ActiveCfg = Debug|x64

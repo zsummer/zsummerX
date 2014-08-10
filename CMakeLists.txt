@@ -9,9 +9,9 @@ set(DEP_PROTOCOL4Z_INC  ${zsummerX_SOURCE_DIR}/depends CACHE PATH "")
 
 set(DEP_LOG4Z_INC  ${zsummerX_SOURCE_DIR}/depends CACHE PATH "")
 
-set(DEP_LOG4Z_LIBS_DIR  ${zsummerX_SOURCE_DIR}/depends/log4z/libs CACHE PATH "")
+set(DEP_LOG4Z_LIBS_DIR  ${zsummerX_SOURCE_DIR}/depends/log4z/lib CACHE PATH "")
 
-set(ZSUMMERX_LIBS_DIR ${zsummerX_SOURCE_DIR}/libs CACHE PATH "")
+set(ZSUMMERX_LIBS_DIR ${zsummerX_SOURCE_DIR}/lib CACHE PATH "")
 
 set(ZSUMMERX_LIB_NAME zsummerX)
 set(LIB_SUFFIX "")

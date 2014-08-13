@@ -246,7 +246,6 @@ void CTcpSessionManager::OnConnectorStatus(ConnectorID connectorID, bool bConnec
 	{
 		m_mapConnectorPtr[connectorID] = session;
 		config->second.second.curReconnectCount = 0;
-		config->second.second.totalConnectCount++;
 		Post(std::bind(&CMessageDispatcher::DispatchOnConnectorEstablished, &CMessageDispatcher::getRef(), connectorID));
 		return;
 	}
@@ -260,10 +259,11 @@ void CTcpSessionManager::OnConnectorStatus(ConnectorID connectorID, bool bConnec
 	}
 
 	if (!bConnected
-		&& config->second.second.curReconnectCount > 0
+		&& config->second.first.reconnectMaxCount > 0
 		&& config->second.second.curReconnectCount < config->second.first.reconnectMaxCount)
 	{
 		config->second.second.curReconnectCount++;
+		config->second.second.totalConnectCount++;
 
 		CTcpSocketPtr sockPtr(new zsummer::network::CTcpSocket());
 		sockPtr->Initialize(m_summer);

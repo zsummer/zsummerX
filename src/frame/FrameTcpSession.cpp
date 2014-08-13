@@ -178,7 +178,8 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 	do 
 	{
 		auto ret = zsummer::proto4z::CheckBuffIntegrity<FrameStreamTraits>(m_recving.buff + usedIndex, m_recving.bufflen - usedIndex, SEND_RECV_CHUNK_SIZE - usedIndex);
-		if (ret.first == zsummer::proto4z::IRT_CORRUPTION)
+		if (ret.first == zsummer::proto4z::IRT_CORRUPTION 
+			|| (ret.first == zsummer::proto4z::IRT_SHORTAGE && ret.second + m_recving.bufflen > SEND_RECV_CHUNK_SIZE))
 		{
 			LOGD("killed socket: CheckBuffIntegrity error ");
 			m_sockptr->DoClose();
@@ -202,8 +203,8 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 			}
 			if (! bOrgReturn)
 			{
-				//break dispatch.
-				break;
+				LOGW("Dispatch Message failed. ");
+				continue;
 			}
 			
 			ReadStreamPack rs(m_recving.buff + usedIndex, ret.second);

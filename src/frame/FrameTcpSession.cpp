@@ -181,7 +181,7 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 		if (ret.first == zsummer::proto4z::IRT_CORRUPTION 
 			|| (ret.first == zsummer::proto4z::IRT_SHORTAGE && ret.second + m_recving.bufflen > SEND_RECV_CHUNK_SIZE))
 		{
-			LOGD("killed socket: CheckBuffIntegrity error ");
+			LOGT("killed socket: CheckBuffIntegrity error ");
 			m_sockptr->DoClose();
 			OnClose();
 			return;

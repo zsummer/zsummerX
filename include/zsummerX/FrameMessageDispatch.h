@@ -76,31 +76,27 @@ public:
 	{
 		if (m_funOrgSessionDispatch == nullptr)
 		{
-			// continue DispatchSessionMessage
 			return true;
 		}
 		
 		try
 		{
+			LOGT("Entry DispatchOrgSessionMessage AccepterID=" << aID << ", SessionID=" << sID << ", blockSize=" << blockSize);
 			if (!m_funOrgSessionDispatch(aID, sID, blockBegin, blockSize))
 			{
-				// break DispatchSessionMessage
 				return false;
 			}
 		}
 		catch (std::runtime_error e)
 		{
 			LOGE("Leave OnOrgSessionMessage With Runtime Error: AccepterID=" << aID << ", SessionID=" << sID << ", Error Message=\"" << e.what() << "\"");
-			// break DispatchSessionMessage
 			return false;
 		}
 		catch (...)
 		{
 			LOGE("Leave OnOrgSessionMessage With Unknown Runtime Error: AccepterID=" << aID << ", SessionID=" << sID);
-			// break DispatchSessionMessage
 			return false;
 		}
-		// continue DispatchSessionMessage
 		return true;
 	}
 
@@ -110,12 +106,11 @@ public:
 		if (iter == m_mapSessionDispatch.end() && m_funDefaultSessionDispatch == nullptr)
 		{
 			LOGE("Entry OnSessionMessage[" <<pID <<"] Failed: UNKNOWN ProtocolID. AccepterID=" << aID << ", SessionID=" << sID << ", ProtocolID=" << pID);
-			//error
 			return;
 		}
 		try
 		{
-			LOGD("Entry OnSessionMessage[" << pID << "] AccepterID=" << aID << ", SessionID=" << sID);
+			LOGT("Entry OnSessionMessage[" << pID << "] AccepterID=" << aID << ", SessionID=" << sID);
 			if (iter != m_mapSessionDispatch.end())
 			{
 				(iter->second)(aID, sID, pID, msg);
@@ -124,7 +119,7 @@ public:
 			{
 				m_funDefaultSessionDispatch(aID, sID, pID, msg);
 			}
-			LOGD("Leave OnSessionMessage[" << pID << "] AccepterID=" << aID << ", SessionID=" << sID);
+			LOGT("Leave OnSessionMessage[" << pID << "] AccepterID=" << aID << ", SessionID=" << sID);
 		}
 		catch (std::runtime_error e)
 		{
@@ -141,31 +136,27 @@ public:
 	{
 		if (m_funOrgConnectorDispatch == nullptr)
 		{
-			// continue DispatchConnectorMessage
 			return true;
 		}
 
 		try
 		{
+			LOGT("Entry DispatchOrgConnectorMessage ConnectorID=" << cID << ", blockSize=" << blockSize);
 			if (!m_funOrgConnectorDispatch(cID, blockBegin, blockSize))
 			{
-				// break DispatchConnectorMessage
 				return false;
 			}
 		}
 		catch (std::runtime_error e)
 		{
 			LOGE("Leave OnOrgConnectorMessage With Runtime Error: ConnectorID=" << cID  << ", Error Message=\"" << e.what() << "\"");
-			// break DispatchConnectorMessage
 			return false;
 		}
 		catch (...)
 		{
 			LOGE("Leave OnOrgConnectorMessage With Unknown Runtime Error: ConnectorID=" << cID );
-			// break DispatchConnectorMessage
 			return false;
 		}
-		// continue DispatchConnectorMessage
 		return true;
 	}
 
@@ -180,7 +171,7 @@ public:
 		}
 		try
 		{
-			LOGD("Entry OnConnectorMessage[" << pID << "] ConnectorID=" << cID);
+			LOGT("Entry OnConnectorMessage[" << pID << "] ConnectorID=" << cID);
 			if (iter != m_mapConnectorDispatch.end())
 			{
 				(iter->second)(cID, pID, msg);
@@ -189,7 +180,7 @@ public:
 			{
 				m_funDefaultConnectorDispatch(cID, pID, msg);
 			}
-			LOGD("Leave OnConnectorMessage[" <<pID <<"] ConnectorID=" << cID);
+			LOGT("Leave OnConnectorMessage[" << pID << "] ConnectorID=" << cID);
 		}
 		catch (std::runtime_error e)
 		{
@@ -211,9 +202,9 @@ public:
 		{
 			try
 			{
-				LOGD("Entry OnSessionEstablished SessionID=" << sID);
+				LOGT("Entry OnSessionEstablished SessionID=" << sID);
 				fun(aID, sID);
-				LOGD("Leave OnSessionEstablished SessionID=" << sID);
+				LOGT("Leave OnSessionEstablished SessionID=" << sID);
 			}
 
 			catch (std::runtime_error e)
@@ -238,9 +229,9 @@ public:
 		{
 			try
 			{
-				LOGD("Entry OnSessionDisconnect SessionID=" << sID);
+				LOGT("Entry OnSessionDisconnect SessionID=" << sID);
 				fun(aID, sID);
-				LOGD("Leave OnSessionDisconnect SessionID=" << sID);
+				LOGT("Leave OnSessionDisconnect SessionID=" << sID);
 			}
 			catch (std::runtime_error e)
 			{
@@ -262,9 +253,9 @@ public:
 		{
 			try
 			{
-				LOGD("Entry OnConnectorEstablished ConnectorID=" << cID);
+				LOGT("Entry OnConnectorEstablished ConnectorID=" << cID);
 				fun(cID);
-				LOGD("Leave OnConnectorEstablished ConnectorID=" << cID);
+				LOGT("Leave OnConnectorEstablished ConnectorID=" << cID);
 			}
 			catch (std::runtime_error e)
 			{
@@ -287,9 +278,9 @@ public:
 		{
 			try
 			{
-				LOGD("Entry OnConnectorDisconnect ConnectorID=" << cID);
+				LOGT("Entry OnConnectorDisconnect ConnectorID=" << cID);
 				fun(cID);
-				LOGD("Leave OnConnectorDisconnect Success: ConnectorID=" << cID);
+				LOGT("Leave OnConnectorDisconnect Success: ConnectorID=" << cID);
 			}
 			catch (std::runtime_error e)
 			{
@@ -312,9 +303,9 @@ public:
 		{
 			try
 			{
-				LOGD("Entry OnMySessionHeartbeatTimer SessionID=" << sID);
+				LOGT("Entry OnMySessionHeartbeatTimer SessionID=" << sID);
 				fun(aID, sID);
-				LOGD("Leave OnMySessionHeartbeatTimer SessionID=" << sID);
+				LOGT("Leave OnMySessionHeartbeatTimer SessionID=" << sID);
 			}
 			catch (std::runtime_error e)
 			{
@@ -337,9 +328,9 @@ public:
 		{
 			try
 			{
-				LOGD("Entry OnMyConnectorHeartbeatTimer ConnectorID=" << cID);
+				LOGT("Entry OnMyConnectorHeartbeatTimer ConnectorID=" << cID);
 				fun(cID);
-				LOGD("Leave OnMyConnectorHeartbeatTimer Success: ConnectorID=" << cID);
+				LOGT("Leave OnMyConnectorHeartbeatTimer Success: ConnectorID=" << cID);
 			}
 			catch (std::runtime_error e)
 			{

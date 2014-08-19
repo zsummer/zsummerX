@@ -1,4 +1,4 @@
-// boost_ping_pong.cpp : ¶¨Òå¿ØÖÆÌ¨Ó¦ÓÃ³ÌĞòµÄÈë¿Úµã¡£
+ï»¿// boost_ping_pong.cpp : å®šä¹‰æ§åˆ¶å°åº”ç”¨ç¨‹åºçš„å…¥å£ç‚¹ã€‚
 //
 
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
@@ -79,11 +79,11 @@ int main(int argc, char* argv[])
 			return ;
 		}
 
-		//! ½â°üÍê³É ½øĞĞÏûÏ¢´¦Àí
+		//! è§£åŒ…å®Œæˆ è¿›è¡Œæ¶ˆæ¯å¤„ç†
 		ReadStream<DefaultStreamHeadTraits> rs(buffRecv, curRecv);
 		try
 		{
-			//Ğ­ÒéÁ÷Òì³£»á±»ÉÏ²ã²¶»ñ²¢¹Ø±ÕÁ¬½Ó
+			//åè®®æµå¼‚å¸¸ä¼šè¢«ä¸Šå±‚æ•è·å¹¶å…³é—­è¿æ¥
 			unsigned short protocolID = 0;
 			rs >> protocolID;
 			switch (protocolID)

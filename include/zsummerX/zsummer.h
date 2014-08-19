@@ -37,9 +37,9 @@
 
 /*
  * AUTHORS:  YaweiZhang <yawei_zhang@foxmail.com>
- * VERSION:  1.0.0
+ * VERSION:  2.0.0
  * PURPOSE:  A lightweight C++ library for network.
- * CREATION: 2013.9.28
+ * CREATION: 2014.8.19
  * LCHANGE:  -
  * LICENSE:  Expat/MIT License, See Copyright Notice at the begin of this file.
  */
@@ -53,7 +53,8 @@
 
 /*
  * UPDATES
- *
+ * 支持UDP TCP
+ * 增加高级封装
  *
  */
 

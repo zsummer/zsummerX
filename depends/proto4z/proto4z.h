@@ -37,10 +37,10 @@
 
 /*
  * AUTHORS:  YaweiZhang <yawei_zhang@foxmail.com>
- * VERSION:  0.3
+ * VERSION:  0.5
  * PURPOSE:  A lightweight library for process protocol .
  * CREATION: 2013.07.04
- * LCHANGE:  2014.05.16
+ * LCHANGE:  2014.08.19
  * LICENSE:  Expat/MIT License, See Copyright Notice at the begin of this file.
  */
 
@@ -63,6 +63,7 @@
  *  Add some useful interface method
  * VERSION 0.5.0 <DATE: 2014.08.06>
  *  Add static buff for optimize
+ *  Add genProto tools
  * 
  */
 #pragma once

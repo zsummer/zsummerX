@@ -65,8 +65,10 @@ public://! 创建和取消定时器
 	bool CancelTimer(unsigned long long timerID){ return m_summer->CancelTimer(timerID); }
 
 public://! 添加Connector或者Acceptor. 不限个数
-	SessionID AddConnector(const tagConnctorConfigTraits & traits);
-	AccepterID AddAcceptor(const tagAcceptorConfigTraits &traits);
+	bool AddConnector(const tagConnctorConfigTraits & traits);
+	bool AddConnector(ConnectorID cID);
+
+	bool AddAcceptor(const tagAcceptorConfigTraits &traits);
 
 	
 public://! 发送消息和主动断开

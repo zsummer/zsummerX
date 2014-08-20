@@ -76,25 +76,25 @@ void CTcpSessionManager::Run()
 
 
 
-AccepterID CTcpSessionManager::AddAcceptor(const tagAcceptorConfigTraits &traits)
+bool CTcpSessionManager::AddAcceptor(const tagAcceptorConfigTraits &traits)
 {
 	if (m_mapAccepterConfig.find(traits.aID) != m_mapAccepterConfig.end() || traits.aID == InvalidAccepterID)
 	{
 		LOGE("AddAcceptor confilict AccecptID. traits=" << traits);
-		return InvalidAccepterID;
+		return false;
 	}
 	m_mapAccepterConfig[traits.aID].first = traits;
 	CTcpAcceptPtr accepter(new zsummer::network::CTcpAccept(m_summer));
 	if (!accepter->OpenAccept(traits.listenIP.c_str(), traits.listenPort))
 	{
 		LOGE("AddAcceptor OpenAccept Failed. traits=" << traits);
-		return InvalidAccepterID;
+		return false;
 	}
 	m_mapAccepterPtr[traits.aID] = accepter;
 	CTcpSocketPtr newclient(new zsummer::network::CTcpSocket);
 	newclient->Initialize(m_summer);
 	accepter->DoAccept(newclient, std::bind(&CTcpSessionManager::OnAcceptNewClient, this, std::placeholders::_1, std::placeholders::_2, accepter, traits.aID));
-	return  traits.aID;
+	return true;
 }
 
 void CTcpSessionManager::OnAcceptNewClient(zsummer::network::ErrorCode ec, CTcpSocketPtr s, CTcpAcceptPtr accepter, AccepterID aID)
@@ -207,21 +207,34 @@ void CTcpSessionManager::OnSessionClose(AccepterID aID, SessionID sID)
 }
 
 
-SessionID CTcpSessionManager::AddConnector(const tagConnctorConfigTraits & traits)
+bool CTcpSessionManager::AddConnector(const tagConnctorConfigTraits & traits)
 {
 	if (m_mapConnectorConfig.find(traits.cID) != m_mapConnectorConfig.end() || traits.cID == InvalidConnectorID)
 	{
 		LOGE("AddConnector confilict ConnectorID. ConnectorID=" << traits.cID << ", remoteAdress=" << traits.remoteIP << ":" << traits.remotePort);
-		return traits.cID;
+		return false;
 	}
 	m_mapConnectorConfig[traits.cID].first = traits;
 	CTcpSocketPtr sockPtr(new zsummer::network::CTcpSocket());
 	sockPtr->Initialize(m_summer);
 	CTcpSessionPtr sessionPtr(new CTcpSession());
 	sessionPtr->BindTcpConnectorPtr(sockPtr, m_mapConnectorConfig[traits.cID]);
-	return traits.cID;
+	return true;
 }
-
+bool CTcpSessionManager::AddConnector(ConnectorID cID)
+{
+	auto founder = m_mapConnectorConfig.find(cID);
+	if (founder == m_mapConnectorConfig.end())
+	{
+		LOGE("AddConnector can not found ConnectorID. ConnectorID=" << cID);
+		return false;
+	}
+	CTcpSocketPtr sockPtr(new zsummer::network::CTcpSocket());
+	sockPtr->Initialize(m_summer);
+	CTcpSessionPtr sessionPtr(new CTcpSession());
+	sessionPtr->BindTcpConnectorPtr(sockPtr, founder->second);
+	return true;
+}
 
 void CTcpSessionManager::BreakConnector(ConnectorID cID)
 {

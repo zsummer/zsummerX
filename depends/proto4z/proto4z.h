@@ -1190,8 +1190,15 @@ inline INTEGRITY_RET_TYPE CheckHTTPBuffIntegrity(const char * buff, unsigned int
 		}
 	} while (true);
 
+	//check unsupport chunked
+	HTTPHeadMap::iterator iter = head.find("Transfer-Encoding");
+	if (iter != head.end() && iter->second.find("chunked") != std::string::npos)
+	{
+		return IRT_CORRUPTION;
+	}
+	
 	//check body
-	HTTPHeadMap::iterator iter = head.find("Content-Length");
+	iter = head.find("Content-Length");
 	if (iter == head.end() || atoi(iter->second.c_str()) == 0)
 	{
 		usedCount = cursor;

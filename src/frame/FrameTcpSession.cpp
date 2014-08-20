@@ -153,7 +153,7 @@ void CTcpSession::OnConnected(zsummer::network::ErrorCode ec, const std::pair<ta
 
 bool CTcpSession::DoRecv()
 {
-	return m_sockptr->DoRecv(m_recving.buff, SEND_RECV_CHUNK_SIZE - m_recving.bufflen, std::bind(&CTcpSession::OnRecv, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
+	return m_sockptr->DoRecv(m_recving.buff + m_recving.bufflen, SEND_RECV_CHUNK_SIZE - m_recving.bufflen, std::bind(&CTcpSession::OnRecv, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
 }
 
 void CTcpSession::Close()
@@ -241,6 +241,14 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 				head, body, usedLen);
 			if (ret == zsummer::proto4z::IRT_CORRUPTION)
 			{
+				if (m_connectorID != InvalidConnectorID)
+				{
+					CMessageDispatcher::getRef().DispatchConnectorHTTPMessage(m_connectorID, head, body);
+				}
+				else if (m_sessionID != InvalidSeesionID && m_acceptID != InvalidAccepterID)
+				{
+					CMessageDispatcher::getRef().DispatchSessionHTTPMessage(m_acceptID, m_sessionID, head, body);
+				}
 				LOGT("killed socket: CheckHTTPBuffIntegrity error ");
 				m_sockptr->DoClose();
 				OnClose();
@@ -254,7 +262,7 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 			{
 				if (!CMessageDispatcher::getRef().DispatchConnectorHTTPMessage(m_connectorID, head, body))
 				{
-					LOGT("killed socket: CheckHTTPBuffIntegrity error ");
+					LOGT("killed socket: DispatchConnectorHTTPMessage error ");
 					m_sockptr->DoClose();
 					OnClose();
 					return;
@@ -264,7 +272,7 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 			{
 				if (CMessageDispatcher::getRef().DispatchSessionHTTPMessage(m_acceptID, m_sessionID, head, body))
 				{
-					LOGT("killed socket: CheckHTTPBuffIntegrity error ");
+					LOGT("killed socket: DispatchSessionHTTPMessage error ");
 					m_sockptr->DoClose();
 					OnClose();
 					return;

@@ -44,7 +44,7 @@
 #include <zsummerX/FrameMessageDispatch.h>
 using namespace zsummer::log4z;
 
-std::string g_remoteIP = "61.135.169.105";
+std::string g_remoteIP = "220.181.112.224";
 unsigned short g_remotePort = 80;
 unsigned short g_startIsConnector = 1;  //0 listen, 1 connect
 
@@ -103,8 +103,8 @@ int main(int argc, char* argv[])
 			zsummer::proto4z::WriteHTTP wh;
 			wh.AddHead("Accept", " text/html, application/xhtml+xml, */*");
 			wh.AddHead("Accept-Language", "zh-CN");
-			wh.AddHead("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0) like Gecko");
-			wh.AddHead("Accept-Encoding", "gzip, deflate");
+			wh.AddHead("User-Agent", "Mozilla/5.0 ");
+			wh.AddHead("Accept-Encoding", "utf8");
 			wh.AddHead("Host", "www.baidu.com");
 			wh.AddHead("DNT", "1");
 			wh.AddHead("Connection", "Keep-Alive");
@@ -124,6 +124,7 @@ int main(int argc, char* argv[])
 			if (fouder->second != "200")
 			{
 				LOGE("response error. error code=" << fouder->second);
+				//CTcpSessionManager::getRef().AddConnector(1);
 				return false;
 			}
 			
@@ -153,8 +154,27 @@ int main(int argc, char* argv[])
 	else
 	{
 
+		//响应消息_ResultSequence
+		auto msg_ResultSequence_fun = [](AccepterID aID, SessionID sID, const zsummer::proto4z::HTTPHeadMap &head, const std::string & body)
+		{
+			auto fouder = head.find("GET");
+			if (fouder == head.end())
+			{
+				LOGE("not found GET.");
+				return false;
+			}
+			LOGI("GET  content=" << fouder->second);
+			return false;
+		};
 
+		//! 注册事件和消息
+		CMessageDispatcher::getRef().RegisterOnSessionHTTPMessage(msg_ResultSequence_fun);//!注册消息
 
+		tagAcceptorConfigTraits traits;
+		traits.aID = 1;
+		traits.listenPort = g_remotePort;
+		traits.protoType = PT_HTTP;
+		CTcpSessionManager::getRef().AddAcceptor(traits);
 		//! step 2 启动主循环
 		CTcpSessionManager::getRef().Run();
 	}

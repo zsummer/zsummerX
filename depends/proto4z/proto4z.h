@@ -37,10 +37,10 @@
 
 /*
  * AUTHORS:  YaweiZhang <yawei_zhang@foxmail.com>
- * VERSION:  0.5
+ * VERSION:  1.0
  * PURPOSE:  A lightweight library for process protocol .
  * CREATION: 2013.07.04
- * LCHANGE:  2014.08.19
+ * LCHANGE:  2014.08.20
  * LICENSE:  Expat/MIT License, See Copyright Notice at the begin of this file.
  */
 
@@ -64,6 +64,8 @@
  * VERSION 0.5.0 <DATE: 2014.08.06>
  *  Add static buff for optimize
  *  Add genProto tools
+ * VERSION 1.0.0 <DATE: 2014.08.20>
+ *  Add HTTP proto
  * 
  */
 #pragma once
@@ -71,6 +73,8 @@
 #define _PROTO4Z_H_
 
 #include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string>
 #include <vector>
 #include <map>
@@ -99,6 +103,9 @@ enum ZSummer_EndianType
 	BigEndian,
 	LittleEndian,
 };
+
+
+
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -137,7 +144,6 @@ struct TestBigStreamHeadTraits
 	const static ZSummer_EndianType EndianType = BigEndian;
 	const static Integer IntegerTypeSize = sizeof(Integer); // Don't Touch. PackLenSize and sizeof(Integer) must be equal. 
 	const static Integer HeadLen = PreOffset + IntegerTypeSize + PostOffset; //Don't Touch.
-
 };
 
 //stream translate to Integer with endian type.
@@ -172,6 +178,7 @@ template<class StreamHeadTrait>
 inline std::pair<INTEGRITY_RET_TYPE, typename StreamHeadTrait::Integer>
 CheckBuffIntegrity(const char * buff, typename StreamHeadTrait::Integer curBuffLen, 
 typename StreamHeadTrait::Integer maxBuffLen /*= StreamHeadTrait::MaxPackLen*/);
+
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -657,6 +664,8 @@ inline std::pair<INTEGRITY_RET_TYPE, typename StreamHeadTrait::Integer> CheckBuf
 	return std::make_pair(IRT_SHORTAGE, packLen - curBuffLen);
 }
 
+
+
 //////////////////////////////////////////////////////////////////////////
 //! implement 
 //////////////////////////////////////////////////////////////////////////
@@ -1037,6 +1046,177 @@ inline void ReadStream<StreamHeadTrait>::SkipOriginalData(Integer unit)
 	CheckMoveCursor(unit);
 	m_cursor += unit;
 }
+
+
+
+
+
+
+
+
+
+
+const char * const CRLF = "\r\n";
+typedef std::map<std::string, std::string> HTTPHeadMap;
+
+inline INTEGRITY_RET_TYPE CheckHTTPBuffIntegrity(const char * buff, unsigned int curBuffLen, unsigned int maxBuffLen,
+										HTTPHeadMap & head, std::string & body, unsigned int &usedCount);
+class WriteHTTP
+{
+public:
+	const char * GetStream(){ return m_buff.c_str();}
+	unsigned int GetStreamLen() { return (unsigned int)m_buff.length();}
+	void AddHead(std::string key, std::string val)
+	{
+		m_head.insert(std::make_pair(key, val));
+	}
+	void Post(std::string uri, std::string content)
+	{
+		char buf[100];
+		sprintf(buf, "%u", (unsigned int)content.length());
+		m_head.insert(std::make_pair("Content-Length", buf));
+		m_buff.append("POST " + uri + " HTTP/1.1" + CRLF);
+		WriteGeneralHead();
+		m_buff.append(CRLF);
+		m_buff.append(content);
+	}
+	void Get(std::string uri)
+	{
+		m_head.insert(std::make_pair("Content-Length", "0"));
+		m_buff.append("GET " + uri + " HTTP/1.1" + CRLF);
+		WriteGeneralHead();
+		m_buff.append(CRLF);
+	}
+	void Response(std::string statusCode, std::string content)
+	{
+		char buf[100];
+		sprintf(buf, "%u", (unsigned int)content.length());
+		m_head.insert(std::make_pair("Content-Length", buf));
+		m_buff.append("HTTP/1.1 " + statusCode + " ^o^" + CRLF);
+		WriteGeneralHead();
+		m_buff.append(CRLF);
+		m_buff.append(content);
+	}
+protected:
+	void WriteGeneralHead()
+	{
+		for (HTTPHeadMap::iterator iter = m_head.begin(); iter != m_head.end(); ++iter)
+		{
+			m_buff.append(iter->first + ":" + iter->second + CRLF);
+		}
+	}
+private:
+	HTTPHeadMap m_head;
+	std::string m_buff;
+};
+
+
+inline INTEGRITY_RET_TYPE CheckHTTPBuffIntegrity(const char * buff, unsigned int curBuffLen, unsigned int maxBuffLen, 
+										 HTTPHeadMap & head, std::string & body, unsigned int &usedCount)
+{
+	//check head
+	unsigned int cursor = 0;
+	do 
+	{
+		if (cursor == curBuffLen) return IRT_SHORTAGE;
+		if (cursor == maxBuffLen) return IRT_CORRUPTION;
+
+		std::string content;
+		do 
+		{
+			if (cursor == curBuffLen) return IRT_SHORTAGE;
+			if (cursor == maxBuffLen) return IRT_CORRUPTION;
+			content.append(buff + cursor, 1);
+			cursor++;
+			// post  get result
+			if (content.find(CRLF) != std::string::npos )
+			{
+				break;
+			}
+		} while (true);
+		if (content.size() == 2)
+		{
+			break;
+		}
+		std::string::size_type pos = content.find(":");
+		if (pos == std::string::npos)
+		{
+			pos = content.find(" ");
+			if (pos == std::string::npos)
+			{
+				return IRT_CORRUPTION;
+			}
+			std::string key;
+			if (content.find("GET") != std::string::npos)
+			{
+				key = "GET";
+			}
+			else if (content.find("POST") != std::string::npos)
+			{
+				key = "POST";
+			}
+			else if (content.substr(0, 4) == "HTTP")
+			{
+				key = "RESPONSE";
+			}
+			else
+			{
+				return IRT_CORRUPTION;
+			}
+			
+			std::string value = content.substr(pos+1);
+			std::string::size_type posEnd = value.find(" ");
+			if (posEnd == std::string::npos)
+			{
+				posEnd = value.find(CRLF);
+				if (posEnd == std::string::npos)
+				{
+					return IRT_CORRUPTION;
+				}
+			}
+				
+			value = value.substr(0, posEnd - 0);
+			if (value.empty()) return IRT_CORRUPTION;
+			head.insert(std::make_pair(key, value));
+		}
+		else
+		{
+			std::string key = content.substr(0, pos - 0);
+			std::string value = content.substr(pos+1);
+			if (value.size() < 2 || value.find(CRLF) == std::string::npos) return IRT_CORRUPTION;
+			value = value.substr(0, value.size()-2);
+			if (value.empty())return IRT_CORRUPTION;
+			head.insert(std::make_pair(key, value));
+		}
+	} while (true);
+
+	//check body
+	HTTPHeadMap::iterator iter = head.find("Content-Length");
+	if (iter == head.end() || atoi(iter->second.c_str()) == 0)
+	{
+		usedCount = cursor;
+		return IRT_SUCCESS;
+	}
+	unsigned int len = atoi(iter->second.c_str());
+	if (cursor + len > maxBuffLen)
+	{
+		return IRT_CORRUPTION;
+	}
+	if (cursor + len > curBuffLen)
+	{
+		return IRT_SHORTAGE;
+	}
+	
+	body.assign(buff + cursor, len);
+	usedCount = cursor + len;
+	return IRT_SUCCESS;
+}
+
+
+
+
+
+
 
 
 

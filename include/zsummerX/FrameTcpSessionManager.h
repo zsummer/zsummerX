@@ -84,7 +84,7 @@ private:
 	void OnSessionClose(AccepterID aID, SessionID sID);
 	void OnConnectorStatus(ConnectorID connectorID, bool bConnected, CTcpSessionPtr session);
 	void OnAcceptNewClient(zsummer::network::ErrorCode ec, CTcpSocketPtr s, CTcpAcceptPtr accepter, AccepterID aID);
-	bool BindEstablishedSocketPtr(CTcpSocketPtr sockptr, AccepterID aID);
+	bool BindEstablishedSocketPtr(CTcpSocketPtr sockptr, AccepterID aID, ProtoType pt);
 private:
 	bool  m_bRunning = true;
 	SessionID m_lastSessionID = 0;

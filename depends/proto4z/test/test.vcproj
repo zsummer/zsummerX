@@ -324,7 +324,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\TestBase.h"
+				RelativePath=".\TestHTTP.h"
+				>
+			</File>
+			<File
+				RelativePath=".\TestStream.h"
 				>
 			</File>
 		</Filter>

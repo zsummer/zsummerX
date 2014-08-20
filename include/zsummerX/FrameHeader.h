@@ -70,7 +70,11 @@ typedef unsigned short ProtocolID;
 const ProtocolID InvalidProtocolID = -1;
 
 
-
+enum ProtoType
+{
+	PT_TCP,
+	PT_HTTP,
+};
 
 //! ¼àÌýÆ÷ÅäÖÃ
 struct tagAcceptorConfigTraits
@@ -78,6 +82,7 @@ struct tagAcceptorConfigTraits
 	AccepterID aID = InvalidAccepterID;
 	std::string listenIP = "0.0.0.0";
 	unsigned short listenPort = 81;
+	ProtoType protoType = PT_TCP;
 	unsigned int maxSessions = 5000;
 	std::vector<std::string> whitelistIP;
 };
@@ -96,6 +101,7 @@ struct tagConnctorConfigTraits
 	ConnectorID cID = InvalidConnectorID;
 	std::string remoteIP = "127.0.0.1";
 	unsigned short remotePort = 81;
+	ProtoType protoType = PT_TCP;
 	unsigned int reconnectMaxCount = 0; // try reconnect max count
 	unsigned int reconnectInterval =5000; //million seconds;
 	bool         reconnectCleanAllData = true ;//clean all data when reconnect;
@@ -166,6 +172,12 @@ typedef std::function < void(ConnectorID) > OnConnectorEstablished;
 //×¢²áÊÂ¼þ
 typedef std::function < void(AccepterID, SessionID) > OnSessionDisconnect;
 typedef std::function < void(ConnectorID) > OnConnectorDisconnect;
+
+//×¢²áHTTPÏûÏ¢
+typedef std::function < bool(AccepterID, SessionID, const zsummer::proto4z::HTTPHeadMap& /*head*/, const std::string & /*body*/) > OnSessionHTTPMessageFunction;
+
+typedef std::function < bool(ConnectorID, const zsummer::proto4z::HTTPHeadMap & /*head*/, const std::string & /*body*/) > OnConnectorHTTPMessageFunction;
+
 
 //×¢²áÐÄÌø
 typedef std::function < void(AccepterID, SessionID) > OnMySessionHeartbeatTimer;

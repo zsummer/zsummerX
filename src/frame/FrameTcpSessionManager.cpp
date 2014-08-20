@@ -164,7 +164,7 @@ void CTcpSessionManager::OnAcceptNewClient(zsummer::network::ErrorCode ec, CTcpS
 			<< ", Aready linked sessions = " << iter->second.second.currentLinked << ", trais=" << iter->second.first);
 		iter->second.second.currentLinked++;
 		iter->second.second.totalAcceptCount++;
-		BindEstablishedSocketPtr(s, aID);
+		BindEstablishedSocketPtr(s, aID, iter->second.first.protoType);
 	}
 	
 	//! accept next socket.
@@ -174,11 +174,11 @@ void CTcpSessionManager::OnAcceptNewClient(zsummer::network::ErrorCode ec, CTcpS
 }
 
 
-bool CTcpSessionManager::BindEstablishedSocketPtr(CTcpSocketPtr sockptr, AccepterID aID)
+bool CTcpSessionManager::BindEstablishedSocketPtr(CTcpSocketPtr sockptr, AccepterID aID, ProtoType pt)
 {
 	m_lastSessionID++;
 	CTcpSessionPtr session(new CTcpSession());
-	if (!session->BindTcpSocketPrt(sockptr, aID, m_lastSessionID))
+	if (!session->BindTcpSocketPrt(sockptr, aID, m_lastSessionID, pt))
 	{
 		return false;
 	}

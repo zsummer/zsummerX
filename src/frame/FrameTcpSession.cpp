@@ -84,12 +84,13 @@ void CTcpSession::CleanSession(bool isCleanAllData)
 	}
 }
 
-bool CTcpSession::BindTcpSocketPrt(CTcpSocketPtr sockptr, AccepterID aID, SessionID sID)
+bool CTcpSession::BindTcpSocketPrt(CTcpSocketPtr sockptr, AccepterID aID, SessionID sID, ProtoType pt)
 {
 	CleanSession(true);
 	m_sockptr = sockptr;
 	m_sessionID = sID;
 	m_acceptID = aID;
+	m_protoType = pt;
 	if (!DoRecv())
 	{
 		LOGW("BindTcpSocketPrt Failed.");
@@ -104,6 +105,7 @@ void CTcpSession::BindTcpConnectorPtr(CTcpSocketPtr sockptr, const std::pair<tag
 	CleanSession(config.first.reconnectCleanAllData);
 	m_sockptr = sockptr;
 	m_connectorID = config.first.cID;
+	m_protoType = config.first.protoType;
 
 	bool connectRet = m_sockptr->DoConnect(config.first.remoteIP, config.first.remotePort,
 		std::bind(&CTcpSession::OnConnected, shared_from_this(), std::placeholders::_1, config));
@@ -177,56 +179,100 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 	unsigned int usedIndex = 0;
 	do 
 	{
-		auto ret = zsummer::proto4z::CheckBuffIntegrity<FrameStreamTraits>(m_recving.buff + usedIndex, m_recving.bufflen - usedIndex, SEND_RECV_CHUNK_SIZE - usedIndex);
-		if (ret.first == zsummer::proto4z::IRT_CORRUPTION 
-			|| (ret.first == zsummer::proto4z::IRT_SHORTAGE && ret.second + m_recving.bufflen > SEND_RECV_CHUNK_SIZE))
+		if (m_protoType == PT_TCP)
 		{
-			LOGT("killed socket: CheckBuffIntegrity error ");
-			m_sockptr->DoClose();
-			OnClose();
-			return;
+			auto ret = zsummer::proto4z::CheckBuffIntegrity<FrameStreamTraits>(m_recving.buff + usedIndex, m_recving.bufflen - usedIndex, SEND_RECV_CHUNK_SIZE - usedIndex);
+			if (ret.first == zsummer::proto4z::IRT_CORRUPTION
+				|| (ret.first == zsummer::proto4z::IRT_SHORTAGE && ret.second + m_recving.bufflen > SEND_RECV_CHUNK_SIZE))
+			{
+				LOGT("killed socket: CheckBuffIntegrity error ");
+				m_sockptr->DoClose();
+				OnClose();
+				return;
+			}
+			if (ret.first == zsummer::proto4z::IRT_SHORTAGE)
+			{
+				break;
+			}
+			try
+			{
+				bool bOrgReturn = false;
+				if (m_connectorID != InvalidConnectorID)
+				{
+					bOrgReturn = CMessageDispatcher::getRef().DispatchOrgConnectorMessage(m_connectorID, m_recving.buff + usedIndex, ret.second);
+				}
+				else if (m_sessionID != InvalidSeesionID && m_acceptID != InvalidAccepterID)
+				{
+					bOrgReturn = CMessageDispatcher::getRef().DispatchOrgSessionMessage(m_acceptID, m_sessionID, m_recving.buff + usedIndex, ret.second);
+				}
+				if (!bOrgReturn)
+				{
+					LOGW("Dispatch Message failed. ");
+					continue;
+				}
+
+				ReadStreamPack rs(m_recving.buff + usedIndex, ret.second);
+				ProtocolID protocolID = 0;
+				rs >> protocolID;
+				if (m_connectorID != InvalidConnectorID)
+				{
+					CMessageDispatcher::getRef().DispatchConnectorMessage(m_connectorID, protocolID, rs);
+				}
+				else if (m_sessionID != InvalidSeesionID && m_acceptID != InvalidAccepterID)
+				{
+					CMessageDispatcher::getRef().DispatchSessionMessage(m_acceptID, m_sessionID, protocolID, rs);
+				}
+			}
+			catch (std::runtime_error e)
+			{
+				LOGW("MessageEntry catch one exception: " << e.what());
+				m_sockptr->DoClose();
+				OnClose();
+				return;
+			}
+			usedIndex += ret.second;
 		}
-		if (ret.first == zsummer::proto4z::IRT_SHORTAGE)
+		else
 		{
-			break;
-		}
-		try
-		{
-			bool bOrgReturn = false;
+			zsummer::proto4z::HTTPHeadMap head;
+			std::string body;
+			unsigned int usedLen = 0;
+			auto ret = zsummer::proto4z::CheckHTTPBuffIntegrity(m_recving.buff + usedIndex, m_recving.bufflen - usedIndex, SEND_RECV_CHUNK_SIZE - usedIndex,
+				head, body, usedLen);
+			if (ret == zsummer::proto4z::IRT_CORRUPTION)
+			{
+				LOGT("killed socket: CheckHTTPBuffIntegrity error ");
+				m_sockptr->DoClose();
+				OnClose();
+				return;
+			}
+			if (ret == zsummer::proto4z::IRT_SHORTAGE)
+			{
+				break;
+			}
 			if (m_connectorID != InvalidConnectorID)
 			{
-				bOrgReturn = CMessageDispatcher::getRef().DispatchOrgConnectorMessage(m_connectorID, m_recving.buff + usedIndex, ret.second);
+				if (!CMessageDispatcher::getRef().DispatchConnectorHTTPMessage(m_connectorID, head, body))
+				{
+					LOGT("killed socket: CheckHTTPBuffIntegrity error ");
+					m_sockptr->DoClose();
+					OnClose();
+					return;
+				}
 			}
 			else if (m_sessionID != InvalidSeesionID && m_acceptID != InvalidAccepterID)
 			{
-				bOrgReturn = CMessageDispatcher::getRef().DispatchOrgSessionMessage(m_acceptID, m_sessionID, m_recving.buff + usedIndex, ret.second);
+				if (CMessageDispatcher::getRef().DispatchSessionHTTPMessage(m_acceptID, m_sessionID, head, body))
+				{
+					LOGT("killed socket: CheckHTTPBuffIntegrity error ");
+					m_sockptr->DoClose();
+					OnClose();
+					return;
+				}
 			}
-			if (! bOrgReturn)
-			{
-				LOGW("Dispatch Message failed. ");
-				continue;
-			}
-			
-			ReadStreamPack rs(m_recving.buff + usedIndex, ret.second);
-			ProtocolID protocolID = 0;
-			rs >> protocolID;
-			if (m_connectorID != InvalidConnectorID)
-			{
-				CMessageDispatcher::getRef().DispatchConnectorMessage(m_connectorID, protocolID, rs);
-			}
-			else if (m_sessionID != InvalidSeesionID && m_acceptID != InvalidAccepterID)
-			{
-				CMessageDispatcher::getRef().DispatchSessionMessage(m_acceptID, m_sessionID, protocolID, rs);
-			}
+			usedIndex += usedLen;
 		}
-		catch (std::runtime_error e)
-		{
-			LOGW("MessageEntry catch one exception: " << e.what());
-			m_sockptr->DoClose();
-			OnClose();
-			return;
-		}
-		usedIndex += ret.second;
+		
 	} while (true);
 	
 	

@@ -36,7 +36,7 @@
 
 
 //! zsummerX的测试文件
-//! 该测试提供最简单的监听,建立连接,收发数据的 客户端和服务端实例代码.
+//! 该测试提供最简单的HTTP协议的监听,建立连接,收发数据的 客户端和服务端实例代码.
 
 
 #include <zsummerX/FrameHeader.h>
@@ -44,9 +44,9 @@
 #include <zsummerX/FrameMessageDispatch.h>
 using namespace zsummer::log4z;
 
-std::string g_remoteIP = "220.181.112.224";
+std::string g_remoteIP = "0.0.0.0";
 unsigned short g_remotePort = 80;
-unsigned short g_startIsConnector = 1;  //0 listen, 1 connect
+unsigned short g_startIsConnector = 0;  //0 listen, 1 connect
 
 
 int main(int argc, char* argv[])
@@ -164,11 +164,23 @@ int main(int argc, char* argv[])
 				return false;
 			}
 			LOGI("GET  content=" << fouder->second);
+			zsummer::proto4z::WriteHTTP wh;
+			wh.AddHead("Accept", " text/html, application/xhtml+xml, */*");
+			wh.AddHead("Accept-Language", "zh-CN");
+			wh.AddHead("User-Agent", "Mozilla/5.0 ");
+			wh.AddHead("Accept-Encoding", "utf8");
+			wh.AddHead("Host", "www.baidu.com");
+			wh.AddHead("DNT", "1");
+			wh.AddHead("Connection", "Keep-Alive");
+			wh.Response("200", "What's your name ?");
+			CTcpSessionManager::getRef().SendOrgSessionData(aID, sID, wh.GetStream(), wh.GetStreamLen());
+			CTcpSessionManager::getRef().CreateTimer(1000,std::bind(&CTcpSessionManager::KickSession, CTcpSessionManager::getPtr(), aID, sID));
 			return false;
 		};
 
 		//! 注册事件和消息
 		CMessageDispatcher::getRef().RegisterOnSessionHTTPMessage(msg_ResultSequence_fun);//!注册消息
+
 
 		tagAcceptorConfigTraits traits;
 		traits.aID = 1;

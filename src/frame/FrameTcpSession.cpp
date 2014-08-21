@@ -174,8 +174,7 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 
 	m_recving.bufflen += nRecvedLen;
 
-	//分包优化处理
-	
+	//分包
 	unsigned int usedIndex = 0;
 	do 
 	{

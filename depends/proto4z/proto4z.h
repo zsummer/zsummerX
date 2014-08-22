@@ -97,6 +97,9 @@
 _ZSUMMER_BEGIN
 _ZSUMMER_PROTO4Z_BEGIN
 
+#ifdef WIN32
+#pragma warning(disable:4996)
+#endif
 
 enum ZSummer_EndianType
 {

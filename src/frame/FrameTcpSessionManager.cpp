@@ -110,6 +110,13 @@ void CTcpSessionManager::OnAcceptNewClient(zsummer::network::ErrorCode ec, CTcpS
 		LOGE("DoAccept Result Error. ec=" << ec << ", traits=" << iter->second.first);
 		return;
 	}
+
+	if (m_shutdownAccept)
+	{
+		LOGI("shutdown accepter. aID=" << aID);
+		return;
+	}
+	
 	
 
 
@@ -245,6 +252,11 @@ void CTcpSessionManager::BreakConnector(ConnectorID cID)
 		return;
 	}
 	iter->second->Close();
+}
+
+void CTcpSessionManager::ShutdownAllAccepter()
+{
+	m_shutdownAccept = true;
 }
 
 void CTcpSessionManager::OnConnectorStatus(ConnectorID connectorID, bool bConnected, CTcpSessionPtr session)

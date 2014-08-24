@@ -57,7 +57,7 @@ public:
 
 public://!如果多线程调用该类接口 需要通过Post转换调用线程.
 	template<class H>
-	void Post(const H &h){m_summer->Post(h);}
+	void Post(const H &h){ m_summer->Post(h); }
 
 public://! 创建和取消定时器
 	template <class H>
@@ -70,7 +70,7 @@ public://! 添加Connector或者Acceptor. 不限个数
 
 	bool AddAcceptor(const tagAcceptorConfigTraits &traits);
 
-	
+
 public://! 发送消息和主动断开
 	void SendOrgConnectorData(ConnectorID cID, const char * orgData, unsigned int orgDataLen);
 	void SendConnectorData(ConnectorID cID, ProtocolID pID, const char * userData, unsigned int userDataLen);
@@ -80,7 +80,7 @@ public://! 发送消息和主动断开
 
 	void KickSession(AccepterID aID, SessionID sID);
 	void BreakConnector(ConnectorID cID);
-
+	void ShutdownAllAccepter();
 private:
 	friend class CTcpSession;
 	void OnSessionClose(AccepterID aID, SessionID sID);
@@ -88,18 +88,22 @@ private:
 	void OnAcceptNewClient(zsummer::network::ErrorCode ec, CTcpSocketPtr s, CTcpAcceptPtr accepter, AccepterID aID);
 	bool BindEstablishedSocketPtr(CTcpSocketPtr sockptr, AccepterID aID, ProtoType pt);
 private:
+	typedef unsigned long long MergeBigID;
+	inline MergeBigID MERGEBIGID(AccepterID aID, SessionID sID) { return ((MergeBigID)aID << 32) | (MergeBigID)sID; }
+private:
+	CZSummerPtr m_summer;
 	bool  m_bRunning = true;
+	bool  m_shutdownAccept = false;
+
 	SessionID m_lastSessionID = 0;
 
-
-	CZSummerPtr m_summer;
-	typedef unsigned long long MergeBigID;
-#define MERGEBIGID(aID, sID) ( ((MergeBigID)aID << 32)  | sID )
+	std::unordered_map<AccepterID, CTcpAcceptPtr> m_mapAccepterPtr;
 	std::unordered_map<MergeBigID, CTcpSessionPtr> m_mapTcpSessionPtr;
 	std::unordered_map<ConnectorID, CTcpSessionPtr> m_mapConnectorPtr;
+
 	std::unordered_map<ConnectorID, std::pair<tagConnctorConfigTraits, tagConnctorInfo> > m_mapConnectorConfig;
 	std::unordered_map<AccepterID, std::pair<tagAcceptorConfigTraits, tagAcceptorInfo> > m_mapAccepterConfig;
-	std::unordered_map<AccepterID, CTcpAcceptPtr> m_mapAccepterPtr;
+
 public:
 };
 

@@ -39,9 +39,6 @@
 #define _ZSUMMERX_COMMON_H_
 
 #ifdef WIN32
-#ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x501
-#endif
 
 #include <WinSock2.h>
 #include <Windows.h>

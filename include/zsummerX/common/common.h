@@ -178,7 +178,7 @@ namespace zsummer
 		template <class T>
 		T & operator <<(T &t, const tagReqHandle & h)
 		{
-			t << h._type;
+			t << (unsigned int)h._type;
 			return t;
 		}
 		//! 完成键

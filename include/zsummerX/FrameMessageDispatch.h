@@ -172,7 +172,7 @@ inline void CMessageDispatcher::DispatchSessionMessage(AccepterID aID, SessionID
 	}
 	catch (std::runtime_error e)
 	{
-		LOGE("Leave OnSessionMessage[" << pID << "] With Runtime Error: AccepterID=" << aID << ", SessionID=" << sID << ", Error Message=\"" << e.what() << "\"");
+		LOGE("Leave OnSessionMessage[" << pID << "] With Runtime Error: AccepterID=" << aID << ", SessionID=" << sID << ", rsLen=" << msg.GetStreamLen() << ", Error Message=\"" << e.what() << "\"");
 	}
 	catch (...)
 	{
@@ -233,7 +233,7 @@ inline void CMessageDispatcher::DispatchConnectorMessage(ConnectorID cID, Protoc
 	}
 	catch (std::runtime_error e)
 	{
-		LOGE("Leave OnConnectorMessage[" << pID << "] With Runtime Error: ConnectorID=" << cID << ", Error Message=\"" << e.what() << "\"");
+		LOGE("Leave OnConnectorMessage[" << pID << "] With Runtime Error: ConnectorID=" << cID << ", rsLen=" << msg.GetStreamLen() << ", Error Message=\"" << e.what() << "\"");
 	}
 	catch (...)
 	{

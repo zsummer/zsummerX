@@ -205,7 +205,7 @@ bool CTcpAcceptImpl::OnIOCPMessage(BOOL bSuccess)
 	}
 	else
 	{
-		LCW("Accept Fail,  retry doAccept ... ip=" << m_ip << ", port=" << m_port);
+		LCW("Accept Fail,  retry doAccept ... ip=" << m_ip << ", port=" << m_port << ", lastError=" << GetLastError());
 		onAccept(EC_ERROR, m_client);
 	}
 	return true;

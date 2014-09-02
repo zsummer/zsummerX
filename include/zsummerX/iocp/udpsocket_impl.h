@@ -36,7 +36,7 @@
 #ifndef _ZSUMMERX_UDPSOCKET_IMPL_H_
 #define _ZSUMMERX_UDPSOCKET_IMPL_H_
 
-#include "../common/common.h"
+#include "common_impl.h"
 #include "../zsummer.h"
 
 namespace zsummer

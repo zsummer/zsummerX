@@ -119,6 +119,12 @@ namespace zsummer
 			LS_CLOSED,
 		};
 
+		class CInitEnvironment
+		{
+		public:
+			CInitEnvironment();
+			~CInitEnvironment();
+		};
 
 #ifndef WIN32
 		inline bool SetNonBlock(int fd) 
@@ -155,106 +161,7 @@ namespace zsummer
 }
 
 
-namespace zsummer
-{
-	namespace network
-	{
-#define InvalideFD -1
-#ifdef WIN32
-		struct tagReqHandle 
-		{
-			OVERLAPPED	 _overlapped;
-			unsigned char _type;
-			enum HANDLE_TYPE
-			{
-				HANDLE_ACCEPT, 
-				HANDLE_RECV, 
-				HANDLE_SEND,
-				HANDLE_CONNECT, 
-				HANDLE_RECVFROM,
-				HANDLE_SENDTO,
-			};
-		};
-		template <class T>
-		T & operator <<(T &t, const tagReqHandle & h)
-		{
-			t << (unsigned int)h._type;
-			return t;
-		}
-		//! 完成键
-		enum POST_COM_KEY
-		{
-			PCK_USER_DATA,
-		};
-#define HandlerFromOverlaped(ptr)  ((tagReqHandle*)((char*)ptr - (char*)&((tagReqHandle*)NULL)->_overlapped))
 
-#else
-		
-#ifdef WIN32
-
-		enum EPOLL_CTL_ENUM
-		{
-			EPOLL_CTL_ADD,
-			EPOLL_CTL_MOD,
-			EPOLL_CTL_DEL,
-		};
-
-		typedef union epoll_data {
-			void    *ptr;
-			int      fd;
-			uint32_t u32;
-			uint64_t u64;
-		} epoll_data_t;
-
-		struct epoll_event {
-			uint32_t     events;//    Epoll events 
-			epoll_data_t data;//      User data variable 
-		};
-#endif
-
-		
-		struct tagRegister
-		{
-			enum REG_TYPE
-			{
-				REG_INVALID,
-				REG_ZSUMMER,
-				REG_TCP_SOCKET,
-				REG_TCP_ACCEPT,
-				REG_UDP_SOCKET
-			};
-
-			epoll_event   _event; //event, auto set
-			unsigned char _type = REG_INVALID; //register type
-			unsigned char _linkstat = LS_UNINITIALIZE;
-			int			  _fd = InvalideFD;   //file descriptor
-			void *		  _ptr = nullptr;  //user pointer
-		};
-
-		template <class T>
-		T& operator <<(T &t, const tagRegister & reg)
-		{
-			   t<< "RegisterEvent Info: epoll_event.events[" << reg._event.events
-				   << "] _type[" << (int)reg._type << "] _linkstat[" << (int)reg._linkstat
-				<< "] _fd[" << reg._fd << "] _ptr[" << (void*)reg._ptr
-				<< "] Notes: REG_INVALID[" << tagRegister::REG_INVALID << "] REG_ZSUMMER[" << tagRegister::REG_ZSUMMER
-				<< "] REG_TCP_SOCKET[" << tagRegister::REG_TCP_SOCKET << "] REG_TCP_ACCEPT[" << tagRegister::REG_TCP_ACCEPT 
-				<< "] REG_UDP_SOCKET[" << tagRegister::REG_UDP_SOCKET
-				<< "] EPOLL_CTL_ADD[" << EPOLL_CTL_ADD << "] EPOLL_CTL_MOD[" << EPOLL_CTL_MOD << "] EPOLL_CTL_DEL[" << EPOLL_CTL_DEL
-				<< "];   EPOLLIN[" << EPOLLIN << "] EPOLLOUT[" << EPOLLOUT << "] EPOLLERR[" << EPOLLERR << "] EPOLLHUP[" << EPOLLHUP;
-			   return t;
-		}
-
-#endif
-
-		class CInitEnvironment
-		{
-		public:
-			CInitEnvironment();
-			~CInitEnvironment();
-		};
-	}
-}
 extern LoggerId g_coreID;
 
 

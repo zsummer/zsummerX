@@ -104,5 +104,8 @@
     <ClInclude Include="..\include\zsummerX\FrameTcpSessionManager.h">
       <Filter>include\interface</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\zsummerX\iocp\common_impl.h">
+      <Filter>include\impl</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

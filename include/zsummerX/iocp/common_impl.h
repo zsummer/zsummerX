@@ -1,4 +1,4 @@
-/*
+﻿/*
 * zsummerX License
 * -----------
 * 
@@ -33,66 +33,49 @@
 * 
 * (end of COPYRIGHT)
 */
-#ifndef _ZSUMMERX_TCPSOCKET_IMPL_H_
-#define _ZSUMMERX_TCPSOCKET_IMPL_H_
+#pragma once
 
-#include "common_impl.h"
-#include "../zsummer.h"
+#ifndef _ZSUMMERX_COMMON_IMPL_H_
+#define _ZSUMMERX_COMMON_IMPL_H_
+
+#include "../common/common.h"
+
+
+
+
 namespace zsummer
 {
 	namespace network
 	{
-		class CTcpSocketImpl
+		const int InvalideFD = -1;
+		struct tagReqHandle 
 		{
-		public:
-
-			CTcpSocketImpl();
-			~CTcpSocketImpl();
-			bool Initialize(CZSummerPtr summer);
-			inline bool GetPeerInfo(std::string& remoteIP, unsigned short &remotePort)
+			OVERLAPPED	 _overlapped;
+			unsigned char _type;
+			enum HANDLE_TYPE
 			{
-				remoteIP = m_remoteIP;
-				remotePort = m_remotePort;
-				return true;
-			}
-			bool DoConnect(std::string remoteIP, unsigned short remotePort, const _OnConnectHandler & handler);
-			bool DoSend(char * buf, unsigned int len, const _OnSendHandler &handler);
-			bool DoRecv(char * buf, unsigned int len, const _OnRecvHandler & handler);
-			bool DoClose();
-		public:
-			bool AttachEstablishedSocket(SOCKET s, std::string remoteIP, unsigned short remotePort);
-			void OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned char cType);
-			std::string GetTcpSocketImplStatus();
-		public:
-			//private
-			CZSummerPtr  m_summer;
-			SOCKET		m_socket = INVALID_SOCKET;
-			std::string m_remoteIP;
-			unsigned short m_remotePort = 0;
-
-			//recv
-			tagReqHandle m_recvHandle;
-			WSABUF		 m_recvWSABuf;
-			_OnRecvHandler m_onRecvHandler;
-
-
-			//send
-			tagReqHandle m_sendHandle;
-			WSABUF		 m_sendWsaBuf;
-			_OnSendHandler m_onSendHandler;
-
-
-			//connect
-			tagReqHandle m_connectHandle;
-			_OnConnectHandler m_onConnectHandler;
-			//status
-			int m_nLinkStatus = LS_UNINITIALIZE;
+				HANDLE_ACCEPT, 
+				HANDLE_RECV, 
+				HANDLE_SEND,
+				HANDLE_CONNECT, 
+				HANDLE_RECVFROM,
+				HANDLE_SENDTO,
+			};
 		};
+		template <class T>
+		T & operator <<(T &t, const tagReqHandle & h)
+		{
+			t << (unsigned int)h._type;
+			return t;
+		}
+		//! 完成键
+		enum POST_COM_KEY
+		{
+			PCK_USER_DATA,
+		};
+#define HandlerFromOverlaped(ptr)  ((tagReqHandle*)((char*)ptr - (char*)&((tagReqHandle*)NULL)->_overlapped))
 	}
 }
-
-
-
 
 
 

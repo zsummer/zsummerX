@@ -35,6 +35,7 @@
     <ClInclude Include="..\include\zsummerX\FrameMessageDispatch.h" />
     <ClInclude Include="..\include\zsummerX\FrameTcpSession.h" />
     <ClInclude Include="..\include\zsummerX\FrameTcpSessionManager.h" />
+    <ClInclude Include="..\include\zsummerX\iocp\common_impl.h" />
     <ClInclude Include="..\include\zsummerX\iocp\iocp_impl.h" />
     <ClInclude Include="..\include\zsummerX\iocp\tcpaccept_impl.h" />
     <ClInclude Include="..\include\zsummerX\iocp\tcpsocket_impl.h" />

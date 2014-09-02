@@ -156,6 +156,7 @@
     <ClInclude Include="..\..\depends\log4z\log4z.h" />
     <ClInclude Include="..\..\depends\protocol4z\protocol4z.h" />
     <ClInclude Include="..\..\include\zsummerX\common\common.h" />
+    <ClInclude Include="..\..\include\zsummerX\epoll\common_impl.h" />
     <ClInclude Include="..\..\include\zsummerX\epoll\epoll_impl.h" />
     <ClInclude Include="..\..\include\zsummerX\epoll\tcpaccept_impl.h" />
     <ClInclude Include="..\..\include\zsummerX\epoll\tcpsocket_impl.h" />

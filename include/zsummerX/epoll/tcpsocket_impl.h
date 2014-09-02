@@ -39,7 +39,7 @@
 
 
 
-#include "../common/common.h"
+#include "common_impl.h"
 #include "../zsummer.h"
 
 namespace zsummer

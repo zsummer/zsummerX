@@ -42,6 +42,9 @@
     <ClInclude Include="..\..\include\zsummerX\common\common.h">
       <Filter>epoll</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\zsummerX\epoll\common_impl.h">
+      <Filter>epoll</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="log">
@@ -52,6 +55,9 @@
     </Filter>
     <Filter Include="epoll">
       <UniqueIdentifier>{b788592e-3288-4971-9208-ec5b7f498c96}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="select">
+      <UniqueIdentifier>{d4df3dd3-e84c-4eef-bffb-e5647c1b74ad}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

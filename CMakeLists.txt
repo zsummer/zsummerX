@@ -56,6 +56,7 @@ endif(WIN32)
 
 
 add_subdirectory(g++)
+add_subdirectory(g++_select)
 add_subdirectory(example)
 add_subdirectory(depends)
 

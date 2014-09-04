@@ -39,7 +39,10 @@
 
 #ifndef _ZSUMMERX_UDPSOCKET_H_
 #define _ZSUMMERX_UDPSOCKET_H_
-#ifdef WIN32
+
+#ifdef ZSUMMERX_USE_SELECT
+#include "select/udpsocket_impl.h"
+#elif WIN32
 #include "iocp/udpsocket_impl.h"
 #else
 #include "epoll/udpsocket_impl.h"

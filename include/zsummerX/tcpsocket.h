@@ -41,7 +41,10 @@
 #ifndef _ZSUMMERX_TCPSOCKET_H_
 #define _ZSUMMERX_TCPSOCKET_H_
 #include <atomic>
-#ifdef WIN32
+
+#ifdef ZSUMMERX_USE_SELECT
+#include "select/tcpsocket_impl.h"
+#elif WIN32
 #include "iocp/tcpsocket_impl.h"
 #else
 #include "epoll/tcpsocket_impl.h"

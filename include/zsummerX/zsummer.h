@@ -61,7 +61,10 @@
 
 #ifndef _ZSUMMERX_ZSUMMER_H_
 #define _ZSUMMERX_ZSUMMER_H_
-#ifdef WIN32
+
+#ifdef ZSUMMERX_USE_SELECT
+#include "select/select_impl.h"
+#elif WIN32
 #include "iocp/iocp_impl.h"
 #else
 #include "epoll/epoll_impl.h"

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.6)
-project(libzsummerX)
+project(libzsummerX_select)
 
 
 aux_source_directory(${SRC_DIR}/common COMMON)
@@ -16,9 +16,10 @@ set(source  ${COMMON} ${TIMER} ${FRAME})
 
 set(LIBRARY_OUTPUT_PATH ${ZSUMMERX_LIBS_DIR})
 
-add_library(${ZSUMMERX_LIB_NAME}${LIB_SUFFIX} STATIC ${source} ${NETWORK})
+add_definitions(-DZSUMMERX_USE_SELECT)
+add_library(${ZSUMMERX_LIB_NAME}_select${LIB_SUFFIX} STATIC ${source} ${NETWORK_SELECT})
 
-install(TARGETS ${ZSUMMERX_LIB_NAME}${LIB_SUFFIX} 
+install(TARGETS ${ZSUMMERX_LIB_NAME}_select${LIB_SUFFIX} 
 	LIBRARY DESTINATION lib
 	ARCHIVE DESTINATION lib)
 install(DIRECTORY ${zsummerX_SOURCE_DIR}/include/zsummerX  DESTINATION include)

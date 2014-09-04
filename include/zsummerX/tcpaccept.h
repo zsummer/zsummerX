@@ -38,11 +38,15 @@
 
 #ifndef _ZSUMMERX_TCPACCEPT_H_
 #define _ZSUMMERX_TCPACCEPT_H_
-#ifdef WIN32
+
+#ifdef ZSUMMERX_USE_SELECT
+#include "select/tcpaccept_impl.h"
+#elif WIN32
 #include "iocp/tcpaccept_impl.h"
 #else
 #include "epoll/tcpaccept_impl.h"
 #endif
+
 namespace zsummer
 {
 	namespace network

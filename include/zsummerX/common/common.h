@@ -71,7 +71,7 @@
 #include <chrono>
 #include <thread>
 #include <mutex>
-
+#include <algorithm>
 #include <log4z/log4z.h>
 
 namespace zsummer

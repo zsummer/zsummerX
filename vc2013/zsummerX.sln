@@ -5,7 +5,7 @@ VisualStudioVersion = 12.0.30723.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zsummerX", "zsummerX.vcxproj", "{06D64BC9-7AD1-40A1-835A-54BCC3ABFE39}"
 	ProjectSection(ProjectDependencies) = postProject
-		{78726622-CC7B-4CE6-B836-5A124171104C} = {78726622-CC7B-4CE6-B836-5A124171104C}
+		{B6DE2B34-5DF4-4A72-9A30-3C16B6260585} = {B6DE2B34-5DF4-4A72-9A30-3C16B6260585}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "log4z", "..\depends\log4z\vc2005\log4z.vcxproj", "{78726622-CC7B-4CE6-B836-5A124171104C}"
@@ -46,7 +46,6 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zsummerX_select", "zsummerX_select.vcxproj", "{B6DE2B34-5DF4-4A72-9A30-3C16B6260585}"
 	ProjectSection(ProjectDependencies) = postProject
 		{78726622-CC7B-4CE6-B836-5A124171104C} = {78726622-CC7B-4CE6-B836-5A124171104C}
-		{06D64BC9-7AD1-40A1-835A-54BCC3ABFE39} = {06D64BC9-7AD1-40A1-835A-54BCC3ABFE39}
 	EndProjectSection
 EndProject
 Global

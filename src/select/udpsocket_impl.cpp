@@ -81,7 +81,7 @@ bool  CUdpSocketImpl::Initialize(CZSummerPtr summer, const char *localIP, unsign
 	m_register._linkstat = LS_WAITLINK;
 	if (m_register._fd == -1)
 	{
-		LCE("CUdpSocketImpl::Initialize[this0x" << this << "] create socket fail. this=" << this << ", errno=" << strerror(errno));
+		LCE("CUdpSocketImpl::Initialize[this0x" << this << "] create socket fail. this=" << this  << ", " << OSTREAM_GET_LASTERROR);
 		return false;
 	}
 	SetNonBlock(m_register._fd);
@@ -91,14 +91,14 @@ bool  CUdpSocketImpl::Initialize(CZSummerPtr summer, const char *localIP, unsign
 	localAddr.sin_port = htons(localPort);
 	if (bind(m_register._fd, (sockaddr *) &localAddr, sizeof(localAddr)) != 0)
 	{
-		LCE("CUdpSocketImpl::Initialize[this0x" << this << "]: socket bind err, errno=" << strerror(errno));
+		LCE("CUdpSocketImpl::Initialize[this0x" << this << "]: socket bind err, " << OSTREAM_GET_LASTERROR);
 		closesocket(m_register._fd);
 		m_register._fd = -1;
 		return false;
 	}
 	if (!m_summer->m_impl.RegisterEvent(0, m_register))
 	{
-		LCF("CUdpSocketImpl::Initialize[this0x" << this << "] EPOLL_CTL_ADD error. _register =" << m_register << ", errno=" << strerror(errno));
+		LCF("CUdpSocketImpl::Initialize[this0x" << this << "] EPOLL_CTL_ADD error. _register =" << m_register << ", " << OSTREAM_GET_LASTERROR);
 		return false;
 	}
 	m_register._linkstat = LS_ESTABLISHED;
@@ -156,7 +156,7 @@ bool CUdpSocketImpl::DoRecv(char * buf, unsigned int len, const _OnRecvFromHandl
 	m_register._rd = true;
 	if (!m_summer->m_impl.RegisterEvent(1, m_register))
 	{
-		LCF("CUdpSocketImpl::DoRecv[this0x" << this << "] EPOLLMod error. m_register=" << m_register << ", errno=" << strerror(errno));
+		LCF("CUdpSocketImpl::DoRecv[this0x" << this << "] EPOLLMod error. m_register=" << m_register << ", " << OSTREAM_GET_LASTERROR);
 		m_onRecvFromHandler = nullptr;
 		m_pRecvBuf = nullptr;
 		m_iRecvLen = 0;
@@ -184,7 +184,7 @@ bool CUdpSocketImpl::OnSelectMessage(int type, bool rd, bool wt)
 
 		if (!m_summer->m_impl.RegisterEvent(1, m_register))
 		{
-			LCF("CUdpSocketImpl::OnEPOLLMessage[this0x" << this << "] EPOLLMod error. m_register=" << m_register << ", errno=" << strerror(errno));
+			LCF("CUdpSocketImpl::OnEPOLLMessage[this0x" << this << "] EPOLLMod error. m_register=" << m_register << ", " << OSTREAM_GET_LASTERROR);
 			return false;
 		}
 
@@ -195,15 +195,15 @@ bool CUdpSocketImpl::OnSelectMessage(int type, bool rd, bool wt)
 
 		m_pRecvBuf = nullptr;
 		m_iRecvLen = 0;
-		if (ret == 0 || (ret ==-1 && (errno !=EAGAIN && errno != EWOULDBLOCK)) )
+		if (ret == 0 || (ret ==-1 && !IS_WOULDBLOCK) )
 		{
-			LCE("CUdpSocketImpl::OnEPOLLMessage[this0x" << this << "] recv error.  m_register=" << m_register << ", ret=" << ret << ", errno=" << strerror(errno));
+			LCE("CUdpSocketImpl::OnEPOLLMessage[this0x" << this << "] recv error.  m_register=" << m_register << ", ret=" << ret << ", " << OSTREAM_GET_LASTERROR);
 			onRecv(EC_ERROR, "", 0, 0);
 			return false;
 		}
 		if (ret == -1)
 		{
-			LCE("CUdpSocketImpl::OnEPOLLMessage[this0x" << this << "] recv error.  m_register=" << m_register << ", ret=" << ret << ", errno=" << strerror(errno));
+			LCE("CUdpSocketImpl::OnEPOLLMessage[this0x" << this << "] recv error.  m_register=" << m_register << ", ret=" << ret << ", " << OSTREAM_GET_LASTERROR);
 			onRecv(EC_ERROR, "", 0, 0);
 			return false;
 		}

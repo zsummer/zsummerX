@@ -92,7 +92,7 @@ bool CTcpAcceptImpl::OpenAccept(std::string listenIP, unsigned short listenPort)
 	m_register._fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (m_register._fd == InvalideFD)
 	{
-		LCF("CTcpAcceptImpl::OpenAccept[this0x" << this << "] listen socket create err errno =" << strerror(errno) << GetAcceptImplStatus());
+		LCF("CTcpAcceptImpl::OpenAccept[this0x" << this << "] listen socket create err " << OSTREAM_GET_LASTERROR << ", " << GetAcceptImplStatus());
 		return false;
 	}
 
@@ -103,7 +103,7 @@ bool CTcpAcceptImpl::OpenAccept(std::string listenIP, unsigned short listenPort)
 	int bReuse = 1;
 	if (setsockopt(m_register._fd, SOL_SOCKET, SO_REUSEADDR,  (char *)&bReuse, sizeof(bReuse)) != 0)
 	{
-		LCW("CTcpAcceptImpl::OpenAccept[this0x" << this << "] listen socket set reuse fail! errno=" << strerror(errno) << GetAcceptImplStatus());
+		LCW("CTcpAcceptImpl::OpenAccept[this0x" << this << "] listen socket set reuse fail! " << OSTREAM_GET_LASTERROR << ", " << GetAcceptImplStatus());
 	}
 
 
@@ -112,7 +112,7 @@ bool CTcpAcceptImpl::OpenAccept(std::string listenIP, unsigned short listenPort)
 	m_addr.sin_port = htons(listenPort);
 	if (bind(m_register._fd, (sockaddr *) &m_addr, sizeof(m_addr)) != 0)
 	{
-		LCF("CTcpAcceptImpl::OpenAccept[this0x" << this << "] listen socket bind err, errno=" << strerror(errno) << GetAcceptImplStatus());
+		LCF("CTcpAcceptImpl::OpenAccept[this0x" << this << "] listen socket bind err, " << OSTREAM_GET_LASTERROR << ", " << GetAcceptImplStatus());
 		closesocket(m_register._fd);
 		m_register._fd = InvalideFD;
 		return false;
@@ -120,7 +120,7 @@ bool CTcpAcceptImpl::OpenAccept(std::string listenIP, unsigned short listenPort)
 
 	if (listen(m_register._fd, 200) != 0)
 	{
-		LCF("CTcpAcceptImpl::OpenAccept[this0x" << this << "] listen socket listen err, errno=" << strerror(errno) << GetAcceptImplStatus());
+		LCF("CTcpAcceptImpl::OpenAccept[this0x" << this << "] listen socket listen err, " << OSTREAM_GET_LASTERROR << ", " << GetAcceptImplStatus());
 		closesocket(m_register._fd);
 		m_register._fd = InvalideFD;
 		return false;
@@ -186,9 +186,9 @@ void CTcpAcceptImpl::OnSelectMessage()
 	SOCKET s = ::accept(m_register._fd, (sockaddr *)&cltaddr, &len);
 	if (s == -1)
 	{
-		if (errno != EAGAIN && errno != EWOULDBLOCK)
+		if (!IS_WOULDBLOCK)
 		{
-			LCE("CTcpAcceptImpl::DoAccept[this0x" << this << "] ERR: accept return -1, errno=" << strerror(errno) << GetAcceptImplStatus());
+			LCE("CTcpAcceptImpl::DoAccept[this0x" << this << "] ERR: accept return -1, " OSTREAM_GET_LASTERROR << GetAcceptImplStatus());
 		}
 		onAccept(EC_ERROR, ps);
 		return ;

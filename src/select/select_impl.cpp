@@ -226,9 +226,9 @@ void CZSummerImpl::RunOnce()
 	int retCount = ::select(m_poolRegister.size(), &fdr, &fdw, NULL, &tv);
 	if (retCount == -1)
 	{
-		if (errno != EINTR)
+		if (IS_EINTR)
 		{
-			LCD("CZSummerImpl::RunOnce[this0x" << this << "]  select err!  errno=" << strerror(errno) << GetZSummerImplStatus());
+			LCD("CZSummerImpl::RunOnce[this0x" << this << "]  select err!  " << OSTREAM_GET_LASTERROR << ", " << GetZSummerImplStatus());
 			return; //! error
 		}
 		return;
@@ -276,17 +276,23 @@ void CZSummerImpl::RunOnce()
 		else if (r._type == tagRegister::REG_TCP_SOCKET)
 		{
 			CTcpSocketImpl *pKey = (CTcpSocketImpl *)r._ptr;
-			bool rd = (bool)FD_ISSET(r._fd, &fdr);
-			bool wt = (bool)FD_ISSET(r._fd, &fdw);
 
-			pKey->OnSelectMessage(r._type, rd, wt);
+			bool rd = r._rd && (bool)FD_ISSET(r._fd, &fdr) ;
+			bool wt = r._wt && (bool)FD_ISSET(r._fd, &fdw);
+			if (rd || wt)
+			{
+				pKey->OnSelectMessage(r._type, rd, wt);
+			}
 		}
 		else if (r._type == tagRegister::REG_UDP_SOCKET)
 		{
 			CUdpSocketImpl *pKey = (CUdpSocketImpl *)r._ptr;
-			bool rd = (bool)FD_ISSET(r._fd, &fdr);
-			bool wt = (bool)FD_ISSET(r._fd, &fdw);
-			pKey->OnSelectMessage(r._type, rd, wt);
+			bool rd = r._rd && (bool)FD_ISSET(r._fd, &fdr);
+			bool wt = r._wt && (bool)FD_ISSET(r._fd, &fdw);
+			if (rd || wt)
+			{
+				pKey->OnSelectMessage(r._type, rd, wt);
+			}
 		}
 		else
 		{

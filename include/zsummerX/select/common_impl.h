@@ -87,9 +87,9 @@ namespace zsummer
 		template <class T>
 		T& operator <<(T &t, const tagRegister & reg)
 		{
-			t << "RegisterEvent Info: register._rd[" << reg._rd
-				<< "] _wt[" << reg._wt << "] _linkstat[" << (int)reg._linkstat
-				<< "] _fd[" << reg._fd << "] _ptr[" << (void*)reg._ptr;
+			t << "RegisterEvent Info: register._fd[" << reg._fd << "] _ptr[" << (void*)reg._ptr << "], _rd[" << reg._rd
+				<< "] _wt[" << reg._wt << "] _linkstat[" << (int)reg._linkstat << "], _type=[" << reg._type << "]";
+				
 			return t;
 		}
 	}

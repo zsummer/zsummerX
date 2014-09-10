@@ -164,12 +164,12 @@ void CTcpAcceptImpl::OnSelectMessage()
 	//
 	if (!m_onAcceptHandler)
 	{
-		LCF("CTcpAcceptImpl::DoAccept[this0x" << this << "] err, dumplicate DoAccept" << GetAcceptImplStatus());
+		LCF("CTcpAcceptImpl::OnSelectMessage[this0x" << this << "] err, dumplicate DoAccept" << GetAcceptImplStatus());
 		return ;
 	}
 	if (m_register._linkstat != LS_ESTABLISHED)
 	{
-		LCF("CTcpAcceptImpl::DoAccept[this0x" << this << "] err, _linkstat not work state" << GetAcceptImplStatus());
+		LCF("CTcpAcceptImpl::OnSelectMessage[this0x" << this << "] err, _linkstat not work state" << GetAcceptImplStatus());
 		return ;
 	}
 
@@ -188,7 +188,7 @@ void CTcpAcceptImpl::OnSelectMessage()
 	{
 		if (!IS_WOULDBLOCK)
 		{
-			LCE("CTcpAcceptImpl::DoAccept[this0x" << this << "] ERR: accept return -1, " OSTREAM_GET_LASTERROR << GetAcceptImplStatus());
+			LCE("CTcpAcceptImpl::OnSelectMessage[this0x" << this << "] ERR: accept return -1, " OSTREAM_GET_LASTERROR << GetAcceptImplStatus());
 		}
 		onAccept(EC_ERROR, ps);
 		return ;

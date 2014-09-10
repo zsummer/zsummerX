@@ -171,7 +171,7 @@ bool CUdpSocketImpl::OnSelectMessage(int type, bool rd, bool wt)
 {
 	if (!m_onRecvFromHandler)
 	{
-		LCE("CUdpSocketImpl::OnEPOLLMessage[this0x" << this << "] unknown error");
+		LCE("CUdpSocketImpl::OnSelectMessage[this0x" << this << "] unknown error");
 		return false;
 	}
 
@@ -184,7 +184,7 @@ bool CUdpSocketImpl::OnSelectMessage(int type, bool rd, bool wt)
 
 		if (!m_summer->m_impl.RegisterEvent(1, m_register))
 		{
-			LCF("CUdpSocketImpl::OnEPOLLMessage[this0x" << this << "] EPOLLMod error. m_register=" << m_register << ", " << OSTREAM_GET_LASTERROR);
+			LCF("CUdpSocketImpl::OnSelectMessage[this0x" << this << "] EPOLLMod error. m_register=" << m_register << ", " << OSTREAM_GET_LASTERROR);
 			return false;
 		}
 
@@ -197,13 +197,13 @@ bool CUdpSocketImpl::OnSelectMessage(int type, bool rd, bool wt)
 		m_iRecvLen = 0;
 		if (ret == 0 || (ret ==-1 && !IS_WOULDBLOCK) )
 		{
-			LCE("CUdpSocketImpl::OnEPOLLMessage[this0x" << this << "] recv error.  m_register=" << m_register << ", ret=" << ret << ", " << OSTREAM_GET_LASTERROR);
+			LCE("CUdpSocketImpl::OnSelectMessage[this0x" << this << "] recv error.  m_register=" << m_register << ", ret=" << ret << ", " << OSTREAM_GET_LASTERROR);
 			onRecv(EC_ERROR, "", 0, 0);
 			return false;
 		}
 		if (ret == -1)
 		{
-			LCE("CUdpSocketImpl::OnEPOLLMessage[this0x" << this << "] recv error.  m_register=" << m_register << ", ret=" << ret << ", " << OSTREAM_GET_LASTERROR);
+			LCE("CUdpSocketImpl::OnSelectMessage[this0x" << this << "] recv error.  m_register=" << m_register << ", ret=" << ret << ", " << OSTREAM_GET_LASTERROR);
 			onRecv(EC_ERROR, "", 0, 0);
 			return false;
 		}

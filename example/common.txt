@@ -2,7 +2,11 @@
 
 
 aux_source_directory(./ source)    
-set(BINNAME ${PROJECT_NAME}${LIB_SUFFIX})
+if(ZSUMMERX_USE_SELECT)
+	set(BINNAME ${PROJECT_NAME}_select${LIB_SUFFIX})
+else()
+	set(BINNAME ${PROJECT_NAME}${LIB_SUFFIX})
+endif()
 
 
 set(EXECUTABLE_OUTPUT_PATH ${BIN_DIR})
@@ -10,9 +14,9 @@ set(EXECUTABLE_OUTPUT_PATH ${BIN_DIR})
 add_executable(${BINNAME} ${source})
 
 if(WIN32)
-  target_link_libraries(${BINNAME} zsummerX${LIB_SUFFIX} log4z${LIB_SUFFIX})
+  target_link_libraries(${BINNAME} ${ZSUMMERX_LIB_NAME}${LIB_SUFFIX} log4z${LIB_SUFFIX})
 else()
-  target_link_libraries(${BINNAME} zsummerX${LIB_SUFFIX} log4z${LIB_SUFFIX} pthread rt)
+  target_link_libraries(${BINNAME} ${ZSUMMERX_LIB_NAME}${LIB_SUFFIX} log4z${LIB_SUFFIX} pthread rt)
 endif()
 
 

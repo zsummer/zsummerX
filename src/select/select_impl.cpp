@@ -124,15 +124,13 @@ bool CZSummerImpl::Initialize()
 
 bool CZSummerImpl::RegisterEvent(int op, tagRegister & reg)
 {
-	if (!reg._ptr)
-	{
-		return false;
-	}
+	LOGI("op=" << op << ", reg=" << reg);
 	if (op == 1)
 	{
 		auto founder = std::find_if(m_poolRegister.begin(), m_poolRegister.end(), [&reg](const tagRegister & r){ return reg._fd == r._fd; });
 		if (founder == m_poolRegister.end())
 		{
+			LOGE("CZSummerImpl::RegisterEvent not found register. op=" << op << ", reg._type=" << reg._type);
 			return false;
 		}
 		else
@@ -150,6 +148,7 @@ bool CZSummerImpl::RegisterEvent(int op, tagRegister & reg)
 			{
 				if (m_poolRegister.size() >= FD_SETSIZE)
 				{
+					LOGE("CZSummerImpl::RegisterEvent add. register is too many. op=" << op << ", reg=" << reg);
 					return false;
 				}
 				m_poolRegister.push_back(reg);
@@ -157,6 +156,7 @@ bool CZSummerImpl::RegisterEvent(int op, tagRegister & reg)
 			}
 			else
 			{
+				LOGE("CZSummerImpl::RegisterEvent del. register not found. op=" << op << ", reg=" << reg);
 				return false;
 			}
 
@@ -165,6 +165,7 @@ bool CZSummerImpl::RegisterEvent(int op, tagRegister & reg)
 		{
 			if (op	== 0)
 			{
+				LOGE("CZSummerImpl::RegisterEvent add. register aready exsit. op=" << op << ", reg=" << reg);
 				return false;
 			}
 			founder->_ptr = nullptr;
@@ -199,11 +200,14 @@ std::string CZSummerImpl::GetZSummerImplStatus()
 
 void CZSummerImpl::RunOnce()
 {
+	int nfds = 0;
 	fd_set fdr;
 	fd_set fdw;
+	fd_set fde;
 	FD_ZERO(&fdr);
 	FD_ZERO(&fdw);
-	for ( auto & r : m_poolRegister)
+	FD_ZERO(&fde);
+	for (auto & r : m_poolRegister)
 	{
 		if (!r._ptr)
 		{
@@ -212,18 +216,37 @@ void CZSummerImpl::RunOnce()
 		if (r._rd)
 		{
 			FD_SET(r._fd, &fdr);
+			if (r._fd > nfds)
+			{
+				nfds = (int)r._fd;
+			}
+			
 		}
 		if (r._wt)
 		{
 			FD_SET(r._fd, &fdw);
+			if (r._type == tagRegister::REG_TCP_SOCKET && r._linkstat == LS_WAITLINK)
+			{
+				FD_SET(r._fd, &fde);
+			}
+			if (r._fd > nfds)
+			{
+				nfds = (int)r._fd;
+			}
 		}
 	}
 	FD_SET(m_sockpair[1], &fdr);
+	if (m_sockpair[1] > nfds)
+	{
+		nfds = (int)m_sockpair[1];
+	}
+
 	timeval tv;
 	unsigned int ms = m_timer.GetNextExpireTime();
 	tv.tv_sec = ms / 1000;
 	tv.tv_usec = (ms % 1000) * 1000;
-	int retCount = ::select(m_poolRegister.size(), &fdr, &fdw, NULL, &tv);
+
+	int retCount = ::select(nfds+1, &fdr, &fdw, &fde, &tv);
 	if (retCount == -1)
 	{
 		if (IS_EINTR)
@@ -239,6 +262,7 @@ void CZSummerImpl::RunOnce()
 		m_timer.CheckTimer();
 		if (retCount == 0) return;//timeout
 	}
+
 	if (FD_ISSET(m_sockpair[1], &fdr))
 	{
 		char buf[1000];
@@ -276,10 +300,13 @@ void CZSummerImpl::RunOnce()
 		else if (r._type == tagRegister::REG_TCP_SOCKET)
 		{
 			CTcpSocketImpl *pKey = (CTcpSocketImpl *)r._ptr;
-
-			bool rd = r._rd && (bool)FD_ISSET(r._fd, &fdr) ;
-			bool wt = r._wt && (bool)FD_ISSET(r._fd, &fdw);
-			if (rd || wt)
+			bool rd = r._rd && FD_ISSET(r._fd, &fdr) != 0 ;
+			bool wt = r._wt && FD_ISSET(r._fd, &fdw) != 0;
+			if (FD_ISSET(r._fd, &fde) != 0)
+			{
+				pKey->OnSelectMessage(r._type, true, true);
+			}
+			else if (rd || wt)
 			{
 				pKey->OnSelectMessage(r._type, rd, wt);
 			}
@@ -287,8 +314,8 @@ void CZSummerImpl::RunOnce()
 		else if (r._type == tagRegister::REG_UDP_SOCKET)
 		{
 			CUdpSocketImpl *pKey = (CUdpSocketImpl *)r._ptr;
-			bool rd = r._rd && (bool)FD_ISSET(r._fd, &fdr);
-			bool wt = r._wt && (bool)FD_ISSET(r._fd, &fdw);
+			bool rd = r._rd && FD_ISSET(r._fd, &fdr) != 0;
+			bool wt = r._wt && FD_ISSET(r._fd, &fdw) != 0;
 			if (rd || wt)
 			{
 				pKey->OnSelectMessage(r._type, rd, wt);
@@ -296,11 +323,11 @@ void CZSummerImpl::RunOnce()
 		}
 		else
 		{
-			LCE("CZSummerImpl::RunOnce[this0x" << this << "] check register event type failed !!  type=" << r._type << GetZSummerImplStatus());
+			LCE("CZSummerImpl::RunOnce[this0x" << this << "] check register event type failed !!  type=" << r << GetZSummerImplStatus());
 		}
 	}
 
-	std::remove_if(m_poolRegister.begin(), m_poolRegister.end(), [](const tagRegister & r){return r._ptr == nullptr; });
+	m_poolRegister.erase(std::remove_if(m_poolRegister.begin(), m_poolRegister.end(), [](const tagRegister & r){return r._ptr == nullptr; }), m_poolRegister.end());
 
 
 }

@@ -34,8 +34,8 @@
 * (end of COPYRIGHT)
 */
 
-#ifndef _ZSUMMER_EPOLL_IMPL_H_
-#define _ZSUMMER_EPOLL_IMPL_H_
+#ifndef _ZSUMMER_SELECT_IMPL_H_
+#define _ZSUMMER_SELECT_IMPL_H_
 #include "common_impl.h"
 #include "../timer/timer.h"
 

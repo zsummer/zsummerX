@@ -52,7 +52,7 @@ CTcpSocketImpl::~CTcpSocketImpl()
 {
 	if (m_onRecvHandler || m_onSendHandler || m_onConnectHandler)
 	{
-		LCW("CTcpSocketImpl::~CTcpSocketImpl[this0x" << this << "] Handler status error. " << GetSocketStatus());
+		LCF("CTcpSocketImpl::~CTcpSocketImpl[this0x" << this << "] Handler status error. " << GetSocketStatus());
 	}
 	if (m_register._fd != InvalideFD)
 	{
@@ -259,8 +259,6 @@ bool CTcpSocketImpl::DoRecv(char * buf, unsigned int len, const _OnRecvHandler &
 		m_iRecvLen = 0;
 		return false;
 	}
-
-
 	m_onRecvHandler = handler;
 	return true;
 }
@@ -273,7 +271,7 @@ void CTcpSocketImpl::OnSelectMessage(int type, bool rd, bool wt)
 
 	if (!m_onRecvHandler && !m_onSendHandler && linkstat != LS_WAITLINK)
 	{
-		LCE("CTcpSocketImpl::OnEPOLLMessage[this0x" << this << "] unknown error. " << OSTREAM_GET_LASTERROR << GetSocketStatus());
+		LCE("CTcpSocketImpl::OnSelectMessage[this0x" << this << "] unknown error. " << OSTREAM_GET_LASTERROR << GetSocketStatus());
 		return ;
 	}
 
@@ -283,7 +281,7 @@ void CTcpSocketImpl::OnSelectMessage(int type, bool rd, bool wt)
 		onConnect.swap(m_onConnectHandler);
 		int err = 0;
 		socklen_t len = sizeof(int);
-		if (!getsockopt(m_register._fd, SOL_SOCKET, SO_ERROR, (char*)&err, &len))
+		if (wt && getsockopt(m_register._fd, SOL_SOCKET, SO_ERROR, (char*)&err, &len) == 0 && err == 0)
 		{
 			m_register._wt =  0;
 			m_summer->m_impl.RegisterEvent(1, m_register);
@@ -305,19 +303,12 @@ void CTcpSocketImpl::OnSelectMessage(int type, bool rd, bool wt)
 
 	if (linkstat != LS_ESTABLISHED)
 	{
-		LCE("CTcpSocketImpl::OnEPOLLMessage[this0x" << this << "] unknow type !=REG_ESTABLISHED_TCP or LS_WAITLINK. "
+		LCE("CTcpSocketImpl::OnSelectMessage[this0x" << this << "] unknow type !=REG_ESTABLISHED_TCP or LS_WAITLINK. "
 			<< OSTREAM_GET_LASTERROR << GetSocketStatus());
 		return ;
 	}
 
-	int err = 0;
-	socklen_t len;
-	if (!getsockopt(m_register._fd, SOL_SOCKET, SO_ERROR, (char*)&err, &len))
-	{
-		ec = EC_REMOTE_HANGUP;
-		goto clean;
-		return;
-	}
+
 
 
 
@@ -327,7 +318,7 @@ void CTcpSocketImpl::OnSelectMessage(int type, bool rd, bool wt)
 		m_register._rd = false;
 		if (!m_summer->m_impl.RegisterEvent(1, m_register))
 		{
-			LCF("CTcpSocketImpl::OnEPOLLMessage[this0x" << this << "] connect true & EPOLLMod error.  " << OSTREAM_GET_LASTERROR << GetSocketStatus());
+			LCF("CTcpSocketImpl::OnSelectMessage[this0x" << this << "] connect true & EPOLLMod error.  " << OSTREAM_GET_LASTERROR << GetSocketStatus());
 		}
 		if (ret == 0)
 		{
@@ -357,7 +348,7 @@ void CTcpSocketImpl::OnSelectMessage(int type, bool rd, bool wt)
 		m_register._wt = false;
 		if (!m_summer->m_impl.RegisterEvent(1, m_register))
 		{
-			LCF("CTcpSocketImpl::OnEPOLLMessage[this0x" << this << "] connect true & EPOLLMod error. " << OSTREAM_GET_LASTERROR << GetSocketStatus());
+			LCF("CTcpSocketImpl::OnSelectMessage[this0x" << this << "] connect true & EPOLLMod error. " << OSTREAM_GET_LASTERROR << GetSocketStatus());
 		}
 		
 		if (ret == -1 && !IS_WOULDBLOCK)
@@ -385,7 +376,7 @@ clean:
 	}
 	if (!m_summer->m_impl.RegisterEvent(2, m_register))
 	{
-		LCD("CTcpSocketImpl::OnEPOLLMessage[this0x" << this << "] connect true & EPOLL DEL error.  " << OSTREAM_GET_LASTERROR << GetSocketStatus());
+		LCD("CTcpSocketImpl::OnSelectMessage[this0x" << this << "] connect true & EPOLL DEL error.  " << OSTREAM_GET_LASTERROR << GetSocketStatus());
 	}
 
 	if (m_onRecvHandler)

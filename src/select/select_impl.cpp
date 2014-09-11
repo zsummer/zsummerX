@@ -124,7 +124,7 @@ bool CZSummerImpl::Initialize()
 
 bool CZSummerImpl::RegisterEvent(int op, tagRegister & reg)
 {
-	LOGI("op=" << op << ", reg=" << reg);
+//	LOGI("op=" << op << ", reg=" << reg);
 	if (op == 1)
 	{
 		auto founder = std::find_if(m_poolRegister.begin(), m_poolRegister.end(), [&reg](const tagRegister & r){ return reg._fd == r._fd; });
@@ -168,7 +168,7 @@ bool CZSummerImpl::RegisterEvent(int op, tagRegister & reg)
 				LOGE("CZSummerImpl::RegisterEvent add. register aready exsit. op=" << op << ", reg=" << reg);
 				return false;
 			}
-			founder->_ptr = nullptr;
+			m_poolRegister.erase(founder);
 		}
 	}
 	
@@ -251,7 +251,7 @@ void CZSummerImpl::RunOnce()
 	{
 		if (IS_EINTR)
 		{
-			LCD("CZSummerImpl::RunOnce[this0x" << this << "]  select err!  " << OSTREAM_GET_LASTERROR << ", " << GetZSummerImplStatus());
+			LCW("CZSummerImpl::RunOnce[this0x" << this << "]  select err!  " << OSTREAM_GET_LASTERROR << ", " << GetZSummerImplStatus());
 			return; //! error
 		}
 		return;
@@ -282,12 +282,9 @@ void CZSummerImpl::RunOnce()
 	}
 	
 
-	for (auto & r : m_poolRegister)
+	PoolReggister poolRegister = m_poolRegister;
+	for (auto & r : poolRegister)
 	{
-		if (!r._ptr)
-		{
-			continue;
-		}
 		//tagHandle  type
 		if (r._type == tagRegister::REG_TCP_ACCEPT)
 		{
@@ -327,7 +324,6 @@ void CZSummerImpl::RunOnce()
 		}
 	}
 
-	m_poolRegister.erase(std::remove_if(m_poolRegister.begin(), m_poolRegister.end(), [](const tagRegister & r){return r._ptr == nullptr; }), m_poolRegister.end());
 
 
 }

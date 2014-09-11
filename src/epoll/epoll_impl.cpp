@@ -133,7 +133,7 @@ void CZSummerImpl::RunOnce()
 	{
 		if (errno != EINTR)
 		{
-			LCD("CZSummerImpl::RunOnce[this0x" << this << "]  epoll_wait err!  errno=" << strerror(errno) << GetZSummerImplStatus());
+			LCW("CZSummerImpl::RunOnce[this0x" << this << "]  epoll_wait err!  errno=" << strerror(errno) << GetZSummerImplStatus());
 			return; //! error
 		}
 		return;

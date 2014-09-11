@@ -238,7 +238,7 @@ bool CTcpSocketImpl::DoSend(char * buf, unsigned int len, const _OnSendHandler &
 	{
 		if (WSAGetLastError() != WSA_IO_PENDING)
 		{
-			LCD("CTcpSocketImpl::DoSend[" << this << "] DoSend failed and ERRCODE!=ERROR_IO_PENDING ERRCODE=" << WSAGetLastError() << GetTcpSocketImplStatus());
+			LCW("CTcpSocketImpl::DoSend[" << this << "] DoSend failed and ERRCODE!=ERROR_IO_PENDING ERRCODE=" << WSAGetLastError() << GetTcpSocketImplStatus());
 			m_sendWsaBuf.buf = nullptr;
 			m_sendWsaBuf.len = 0;
 			return false;
@@ -282,7 +282,7 @@ bool CTcpSocketImpl::DoRecv(char * buf, unsigned int len, const _OnRecvHandler &
 	{
 		if (WSAGetLastError() != WSA_IO_PENDING)
 		{
-			LCD("CTcpSocketImpl::DoRecv[" << this << "] DoRecv failed and ERRCODE!=ERROR_IO_PENDING, ERRCODE=" << WSAGetLastError() << GetTcpSocketImplStatus());
+			LCW("CTcpSocketImpl::DoRecv[" << this << "] DoRecv failed and ERRCODE!=ERROR_IO_PENDING, ERRCODE=" << WSAGetLastError() << GetTcpSocketImplStatus());
 			m_recvWSABuf.buf = nullptr;
 			m_recvWSABuf.len = 0;
 			return false;

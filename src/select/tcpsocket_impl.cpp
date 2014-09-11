@@ -376,7 +376,7 @@ clean:
 	}
 	if (!m_summer->m_impl.RegisterEvent(2, m_register))
 	{
-		LCD("CTcpSocketImpl::OnSelectMessage[this0x" << this << "] connect true & EPOLL DEL error.  " << OSTREAM_GET_LASTERROR << GetSocketStatus());
+		LCW("CTcpSocketImpl::OnSelectMessage[this0x" << this << "] connect true & EPOLL DEL error.  " << OSTREAM_GET_LASTERROR << GetSocketStatus());
 	}
 
 	if (m_onRecvHandler)

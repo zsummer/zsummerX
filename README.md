@@ -1,9 +1,18 @@
 Welcome to the zsummerX wiki!  
   
 # introduction:  
-zsummerX 是一款C++ 跨平台的 高性能的 轻量级的网络底层库, 支持TCP, UDP, 拥有完善的定时器机制与日志系统, 并提供一个用于固定包头协议的frame实现, 仅仅通过几行代码就可以实现绝大部分的app,game的网络通讯功能.
+zsummerX 是一款C++ 跨平台的 高性能的 轻量级的网络底层库.  
 
-zsummerX 相较于较早开源的zsummer来说, 主要区别在于使用C++11标准中的function+bind来重新设计了整个底层库, 无论是库的本身设计还是提供网络接口都变得更为简洁灵活.  
+zsummerX 有三套底层实现, 提供给用户的是一套proactor的简洁接口.  
+底层分别是  
+linux下的 epoll LT,   
+windows下的IOCP,  
+这两套实现为高性能高并发的服务器实现方案. 
+针对其他特殊系统的第三种实现是select, 支持 android/iOS/wp8/mac OSX/其他的嵌入式设备 .
+
+zsummerX 支持TCP, UDP, 拥有完善的定时器机制与日志系统, 并提供一个使用二进制协议封包的frame实现, 仅仅通过几行代码就可以实现出一套从客户端到服务端的完整服务器的网络功能.  
+
+zsummerX 相较于较早开源的zsummer来说, 主要区别在于使用C++11标准中的function+bind来重新设计了整个底层库, 无论是库的本身设计还是提供网络接口都变得更为简洁灵活.   
 
 # 优点:    
 采用MIT开源许可协议 代码可以免费闭源使用于商业开发.  
@@ -57,7 +66,6 @@ cd zsummerX/example/bin/
 tcpTest_win32d.exe 127.0.0.1 81 1 1  
 
  
-
 
 
 # auther: YaweiZhang  

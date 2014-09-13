@@ -10,7 +10,9 @@ zsummerX 相较于较早开源的zsummer来说, 主要区别在于使用C++11标
 
 纯原生 不依赖任何第三方库, 总体代码量非常精简 没有冗余晦涩设计与书写.  
 
-网络底层使用EPOLL/IOCP实现, 跨LINUX/WINDOWS 32/64平台并且拥有极佳的性能.   
+网络底层使用EPOLL/IOCP/select实现, 跨LINUX/WINDOWS 32/64平台并且拥有极佳的性能.  
+
+网络底层可以通过宏切换到select实现, 打通android/iOS客户端到高性能高并发的服务端的网络通讯功能.  
 
 规范通用的proactor接口设计, 可灵活适应绝大多数服务端的使用场景, 包括不仅限于高并发,吞吐,计算,IO,低延迟等. 例如高并发的接入服务, 高吞吐的转发路由服务, 高IO延迟的数据库代理服务, 高计算低延迟的战斗服务, 以及web服务, IM服务等.  
    
@@ -56,6 +58,11 @@ tcpTest_win32d.exe 127.0.0.1 81 1 1
 
  
 
+
+# auther: YaweiZhang  
+Web Site: www.zsummer.net  
+mail: yawei_zhang@foxmail.com  
+github: https://github.com/zsummer
 
 # auther: YaweiZhang  
 Web Site: www.zsummer.net  

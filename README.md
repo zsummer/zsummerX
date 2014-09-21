@@ -3,12 +3,8 @@ Welcome to the zsummerX wiki!
 # introduction:  
 zsummerX 是一款C++ 跨平台的 高性能的 轻量级的网络底层库.  
 
-zsummerX 有三套底层实现, 提供给用户的是一套proactor的简洁接口.  
-底层分别是  
-linux下的 epoll LT,   
-windows下的IOCP,  
-这两套实现为高性能高并发的服务器实现方案. 
-针对其他特殊系统的第三种实现是select, 支持 android/iOS/wp8/mac OSX/其他的嵌入式设备 .
+zsummerX 使用EPOLL/IOCP/SELECT为底层实现, 提供给用户的是一套简洁的proactor接口.  
+zsummerX 支持windows / linux / mac / android / iOS 等操作系统.  
 
 zsummerX 支持TCP, UDP, 拥有完善的定时器机制与日志系统, 并提供一个使用二进制协议封包的frame实现, 仅仅通过几行代码就可以实现出一套从客户端到服务端的完整服务器的网络功能.  
 
@@ -19,9 +15,9 @@ zsummerX 相较于较早开源的zsummer来说, 主要区别在于使用C++11标
 
 纯原生 不依赖任何第三方库, 总体代码量非常精简 没有冗余晦涩设计与书写.  
 
-网络底层使用EPOLL/IOCP/select实现, 跨LINUX/WINDOWS 32/64平台并且拥有极佳的性能.  
+网络底层使用EPOLL/IOCP/select实现, 跨LINUX / WINDOWS / mac 32/64平台并且拥有极佳的性能.  
 
-网络底层可以通过宏切换到select实现, 打通android/iOS客户端到高性能高并发的服务端的网络通讯功能.  
+网络底层可以通过宏切换到select实现, 以适应一些特殊通讯环境 比如android iOS 以及一些其他的嵌入式设备 从而打通从客户端到高性能服务端的通讯功能.  
 
 规范通用的proactor接口设计, 可灵活适应绝大多数服务端的使用场景, 包括不仅限于高并发,吞吐,计算,IO,低延迟等. 例如高并发的接入服务, 高吞吐的转发路由服务, 高IO延迟的数据库代理服务, 高计算低延迟的战斗服务, 以及web服务, IM服务等.  
    
@@ -65,8 +61,17 @@ tcpTest_win32d.exe 0.0.0.0 81
 cd zsummerX/example/bin/   
 tcpTest_win32d.exe 127.0.0.1 81 1 1  
 
- 
+#compile in mac iOS  
+### build   
+cd zsummerX/  
+cmake . -DZSUMMER_MAC  
+make  
 
+#compile in android or other  
+### build   
+cd zsummerX/  
+cmake . -DZSUMMER_USE_SELECT  
+make  
 
 # auther: YaweiZhang  
 Web Site: www.zsummer.net  

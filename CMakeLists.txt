@@ -14,6 +14,10 @@ set(ZSUMMERX_INC_DIR ${zsummerX_SOURCE_DIR}/include CACHE PATH "")
 
 set(ZSUMMERX_SRC_DIR ${zsummerX_SOURCE_DIR}/src CACHE PATH "")
 
+if (ZSUMMERX_MAC)
+  set(ZSUMMERX_USE_SELECT 1)
+endif()
+
 if (ZSUMMERX_USE_SELECT)
   set(ZSUMMERX_LIB_NAME zsummerX_select)
 else()

@@ -16,7 +16,11 @@ add_executable(${BINNAME} ${source})
 if(WIN32)
   target_link_libraries(${BINNAME} ${ZSUMMERX_LIB_NAME}${LIB_SUFFIX} log4z${LIB_SUFFIX})
 else()
-  target_link_libraries(${BINNAME} ${ZSUMMERX_LIB_NAME}${LIB_SUFFIX} log4z${LIB_SUFFIX} pthread rt)
+  if (ZSUMMERX_MAC)
+    target_link_libraries(${BINNAME} ${ZSUMMERX_LIB_NAME}${LIB_SUFFIX} log4z${LIB_SUFFIX} pthread )
+  else()
+    target_link_libraries(${BINNAME} ${ZSUMMERX_LIB_NAME}${LIB_SUFFIX} log4z${LIB_SUFFIX} pthread rt)
+  endif()
 endif()
 
 

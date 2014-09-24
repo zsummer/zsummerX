@@ -82,6 +82,7 @@ _ZSUMMER_LOG4Z_BEGIN
 
 static const char *const LOG_STRING[]=
 {
+	"LOG_TRACE",
 	"LOG_DEBUG",
 	"LOG_INFO ",
 	"LOG_WARN ",
@@ -119,6 +120,7 @@ struct LogData
 	int	_level;	//log level
 	time_t _time;		//create time
 	unsigned int _precise;
+	int _contentLen;
 	char _content[LOG4Z_LOG_BUF_SIZE]; //content
 };
 
@@ -165,7 +167,7 @@ struct LoggerInfo
 //! UTILITY
 //////////////////////////////////////////////////////////////////////////
 static void SleepMillisecond(unsigned int ms);
-static bool TimeToTm(const time_t & t, tm * tt);
+static tm TimeToTm(time_t t);
 static bool IsSameDay(time_t t1, time_t t2);
 
 static void FixPath(std::string &path);
@@ -175,7 +177,6 @@ static void ParseConfig(std::string file, std::map<std::string, LoggerInfo> & ou
 static bool IsDirectory(std::string path);
 static bool CreateRecursionDir(std::string path);
 void GetProcessInfo(std::string &name, std::string &pid);
-static void ShowColorText(const char *text, int level = LOG_LEVEL_DEBUG);
 
 
 
@@ -264,7 +265,6 @@ unsigned int WINAPI  ThreadProc(LPVOID lpParam)
 {
 	CThread * p = (CThread *) lpParam;
 	p->Run();
-	_endthreadex(0);
 	return 0;
 }
 #else
@@ -289,16 +289,16 @@ public:
 
 	virtual std::string GetExampleConfig();
 	//! 读取配置文件并覆写
-	virtual bool Config(std::string cfgPath);
+	virtual bool Config(const char* strCfgPath);
 
 	//! 覆写式创建
-	virtual LoggerId CreateLogger(std::string name,std::string path,int nLevel,bool display, bool monthdir, unsigned int limitsize);
+	virtual LoggerId CreateLogger(const char* strName, const char* strPath, int nLevel, bool display, bool monthdir, unsigned int limitsize);
 	virtual bool Start();
 	virtual bool Stop();
 	virtual bool PrePushLog(LoggerId id, int level);
 	virtual bool PushLog(LoggerId id, int level, const char * log);
 	//! 查找ID
-	virtual LoggerId FindLogger(std::string name);
+	virtual LoggerId FindLogger(const char*  strName);
 	virtual bool SetLoggerLevel(LoggerId nLoggerID, int nLevel);
 	virtual bool SetLoggerDisplay(LoggerId nLoggerID, bool enable);
 	virtual bool SetLoggerMonthdir(LoggerId nLoggerID, bool use);
@@ -309,7 +309,9 @@ public:
 	virtual unsigned long long GetStatusWaitingCount(){return m_ullStatusTotalPushLog - m_ullStatusTotalPopLog;}
 	virtual unsigned int GetStatusActiveLoggers();
 protected:
-	bool OpenLogger(LoggerId id);
+	void ShowColorText(const char *text, int level = LOG_LEVEL_DEBUG);
+	bool OpenLogger(LogData * pLog);
+	bool CloseLogger(LoggerId id);
 	bool PopLog(LogData *& log);
 	virtual void Run();
 private:
@@ -332,6 +334,8 @@ private:
 	std::list<LogData *> m_logs;
 	CLock	m_lock;
 
+	//show color lock
+	CLock m_scLock;
 	//status statistics
 	//write file
 	unsigned long long m_ullStatusTotalWriteFileCount;
@@ -342,6 +346,7 @@ private:
 	unsigned long long m_ullStatusTotalPopLog;
 
 };
+
 
 
 
@@ -393,6 +398,11 @@ void CLog4zFile::Write(const char * data, size_t len)
 	{
 		return;
 	}
+	if (len == 0)
+	{
+		return;
+	}
+	
 	size_t wlen = fwrite(data, 1, len, m_file);
 	if (wlen != len)
 	{
@@ -461,35 +471,27 @@ void SleepMillisecond(unsigned int ms)
 #endif
 }
 
-bool TimeToTm(const time_t &t, tm * tt)
+struct tm TimeToTm(time_t t)
 {
 #ifdef WIN32
 #if _MSC_VER < 1400 //VS2003
-	tm *ptm = localtime(&t);
-	memcpy(tt,ptm,sizeof(tm));
-	return true;
+	return * localtime(&t);
 #else //vs2005->vs2013->
-	if (localtime_s(tt, &t) == 0)
-	{
-		return true;
-	}
-	return false;
+	struct tm tt = { 0 };
+	localtime_s(&tt, &t);
+	return tt;
 #endif
 #else //linux
-	if (localtime_r(&t, tt) != NULL)
-	{
-		return true;
-	}
-	return false;
+	struct tm tt = { 0 };
+	localtime_r(&t, &tt);
+	return tt;
 #endif
 }
 
 bool IsSameDay(time_t t1, time_t t2)
 {
-	tm tm1;
-	tm tm2;
-	TimeToTm(t1, &tm1);
-	TimeToTm(t2, &tm2);
+	tm tm1 = TimeToTm(t1);
+	tm tm2 = TimeToTm(t2);
 	if ( tm1.tm_year == tm2.tm_year
 		&& tm1.tm_yday == tm2.tm_yday)
 	{
@@ -644,7 +646,11 @@ static void ParseConfig(std::string file, std::map<std::string, LoggerInfo> & ou
 				//! level
 				if (key == "level")
 				{
-					if (value == "debug" || value == "all")
+					if (value == "trace" || value == "all")
+					{
+						iter->second._level = LOG_LEVEL_TRACE;
+					}
+					else if (value == "debug")
 					{
 						iter->second._level = LOG_LEVEL_DEBUG;
 					}
@@ -809,8 +815,8 @@ void GetProcessInfo(std::string &name, std::string &pid)
 
 
 #ifdef WIN32
-CLock gs_ShowColorTextLock;
 const static WORD cs_sColor[LOG_LEVEL_FATAL+1] = {
+	0,
 	0,
 	FOREGROUND_BLUE|FOREGROUND_GREEN,
 	FOREGROUND_GREEN|FOREGROUND_RED,
@@ -821,6 +827,7 @@ const static WORD cs_sColor[LOG_LEVEL_FATAL+1] = {
 
 const static char cs_strColor[LOG_LEVEL_FATAL+1][50] = { 
 	"\e[0m",
+	"\e[0m",
 	"\e[34m\e[1m",//hight blue
 	"\e[33m", //yellow
 	"\e[31m", //red
@@ -828,34 +835,6 @@ const static char cs_strColor[LOG_LEVEL_FATAL+1][50] = {
 	"\e[35m"};
 #endif
 
-void ShowColorText(const char *text, int level)
-{
-	if (level < LOG_LEVEL_DEBUG || level > LOG_LEVEL_FATAL) goto showfail;
-	if (level == LOG_LEVEL_DEBUG) goto showfail;
-#ifndef WIN32
-	printf("%s%s\e[0m", cs_strColor[level], text);
-#else
-	HANDLE hStd = ::GetStdHandle(STD_OUTPUT_HANDLE);
-	if (hStd == INVALID_HANDLE_VALUE) goto showfail;
-
-	CONSOLE_SCREEN_BUFFER_INFO oldInfo;
-	if (!GetConsoleScreenBufferInfo(hStd, &oldInfo)) goto showfail;
-
-	{
-		CAutoLock l(gs_ShowColorTextLock);
-		SetConsoleTextAttribute(hStd, cs_sColor[level]);
-		printf("%s", text);
-		SetConsoleTextAttribute(hStd, oldInfo.wAttributes);
-	}
-
-
-#endif
-
-	return;
-
-showfail:
-	printf("%s", text);
-}
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -970,10 +949,34 @@ bool CSem::Wait(int timeout)
 	}
 	else
 	{
-		timespec ts;
-		ts.tv_sec = time(NULL) + timeout/1000;
-		ts.tv_nsec = (timeout%1000)*1000000;
-		return (sem_timedwait(&m_semid, &ts) == 0);
+		struct timeval tm;
+		gettimeofday(&tm, NULL);
+		long long endtime = tm.tv_sec *1000 + tm.tv_usec/1000 + timeout;
+		do 
+		{
+			SleepMillisecond(50);
+			int ret = sem_trywait(&m_semid);
+			if (ret == 0)
+			{
+				return true;
+			}
+			struct timeval tv_cur;
+			gettimeofday(&tv_cur, NULL);
+			if (tv_cur.tv_sec*1000 + tv_cur.tv_usec/1000 > endtime)
+			{
+				return false;
+			}
+			
+			if (ret == -1 && errno == EAGAIN)
+			{
+				continue;
+			}
+			else
+			{
+				return false;
+			}
+		} while (true);
+		return false;
 	}
 #endif
 	return true;
@@ -998,7 +1001,7 @@ bool CThread::Start()
 
 	if (ret == -1 || ret == 1  || ret == 0)
 	{
-		ShowColorText("log4z: create log4z thread error! \r\n", LOG_LEVEL_FATAL);
+		std::cout << "log4z: create log4z thread error! \r\n" <<std::endl;
 		return false;
 	}
 	m_hThreadID = ret;
@@ -1006,7 +1009,7 @@ bool CThread::Start()
 	int ret = pthread_create(&m_phtreadID, NULL, ThreadProc, (void*)this);
 	if (ret != 0)
 	{
-		ShowColorText("log4z: create log4z thread error! \r\n", LOG_LEVEL_FATAL);
+		std::cout <<"log4z: create log4z thread error! \r\n" << std::endl;
 		return false;
 	}
 #endif
@@ -1061,21 +1064,51 @@ std::string CLogerManager::GetExampleConfig()
 }
 
 
+void CLogerManager::ShowColorText(const char *text, int level)
+{
+	if (level <= LOG_LEVEL_DEBUG || level > LOG_LEVEL_FATAL)
+	{
+		printf("%s", text);
+		return;
+	}
+#ifndef WIN32
+	printf("%s%s\e[0m", cs_strColor[level], text);
+#else
+
+	CAutoLock l(m_scLock);
+	HANDLE hStd = ::GetStdHandle(STD_OUTPUT_HANDLE);
+	if (hStd == INVALID_HANDLE_VALUE) return;
+	CONSOLE_SCREEN_BUFFER_INFO oldInfo;
+	if (!GetConsoleScreenBufferInfo(hStd, &oldInfo))
+	{
+		return;
+	}
+	else 
+	{
+		SetConsoleTextAttribute(hStd, cs_sColor[level]);
+		printf("%s", text);
+		SetConsoleTextAttribute(hStd, oldInfo.wAttributes);
+	}
+#endif
+	return;
+}
+
+
 //! 读取配置文件并覆写
-bool CLogerManager::Config(std::string cfgPath)
+bool CLogerManager::Config(const char* strCfgPath)
 {
 	if (!m_configFile.empty())
 	{
-		std::cout << "log4z configure error: too many too call Config. the old config file="<< m_configFile << ", the new config file=" << cfgPath << std::endl;
+		std::cout << "log4z configure error: too many too call Config. the old config file=" << m_configFile << ", the new config file=" << strCfgPath << std::endl;
 		return false;
 	}
-	m_configFile = cfgPath;
+	m_configFile = strCfgPath;
 	std::map<std::string, LoggerInfo> loggerMap;
-	ParseConfig(cfgPath, loggerMap);
+	ParseConfig(strCfgPath, loggerMap);
 	for (std::map<std::string, LoggerInfo>::iterator iter = loggerMap.begin(); iter != loggerMap.end(); ++iter)
 	{
-		CreateLogger(iter->second._name, 
-			iter->second._path, 
+		CreateLogger(iter->second._name.c_str(), 
+			iter->second._path.c_str(), 
 			iter->second._level, 
 			iter->second._display, 
 			iter->second._monthdir,
@@ -1085,11 +1118,13 @@ bool CLogerManager::Config(std::string cfgPath)
 }
 
 //! 覆写式创建
-LoggerId CLogerManager::CreateLogger(std::string name,std::string path,int nLevel,bool display, bool monthdir, unsigned int limitsize)
+LoggerId CLogerManager::CreateLogger(const char* strName, const char* strPath, int nLevel, bool display, bool monthdir, unsigned int limitsize)
 {
 	std::string _tmp;
 	std::string _pid;
 	GetProcessInfo(_tmp, _pid);
+	std::string name = strName;
+	std::string path = strPath;
 	if (name.length() == 0)
 	{
 		ShowColorText("log4z: create logger error, name is empty ! \r\n", LOG_LEVEL_FATAL);
@@ -1215,34 +1250,70 @@ bool CLogerManager::PushLog(LoggerId id, int level, const char * log)
 		pLog->_precise = tm.tv_usec/1000;
 #endif
 	}
-
-	if (m_loggers[pLog->_id]._display && LOG4Z_ALL_SYNCHRONOUS_DISPLAY)
 	{
-		tm tt;
-		if (!TimeToTm(pLog->_time, &tt))
+		tm tt = TimeToTm(pLog->_time);
+#ifdef WIN32
+		int ret = _snprintf_s(pLog->_content, LOG4Z_LOG_BUF_SIZE, _TRUNCATE, "%d-%02d-%02d %02d:%02d:%02d.%03d %s %s \r\n",
+			tt.tm_year + 1900, tt.tm_mon + 1, tt.tm_mday, tt.tm_hour, tt.tm_min, tt.tm_sec, pLog->_precise,
+			LOG_STRING[pLog->_level], log);
+		if (ret == -1)
 		{
-			memset(&tt, 0, sizeof(tt));
+			ret = LOG4Z_LOG_BUF_SIZE - 1;
 		}
-		std::string text;
-		sprintf(pLog->_content, "%d-%02d-%02d %02d:%02d:%02d.%03d %s ", 
-			tt.tm_year+1900, tt.tm_mon+1, tt.tm_mday, tt.tm_hour, tt.tm_min, tt.tm_sec, pLog->_precise,
-			LOG_STRING[pLog->_level]);
-		text = pLog->_content;
-		text += log;
-		text += " \r\n";
-		ShowColorText(text.c_str(), pLog->_level);
+		pLog->_contentLen = ret;
+#else
+		int ret = snprintf(pLog->_content, LOG4Z_LOG_BUF_SIZE, "%d-%02d-%02d %02d:%02d:%02d.%03d %s %s \r\n",
+			tt.tm_year + 1900, tt.tm_mon + 1, tt.tm_mday, tt.tm_hour, tt.tm_min, tt.tm_sec, pLog->_precise,
+			LOG_STRING[pLog->_level], log);
+		if (ret == -1)
+		{
+			ret = 0;
+		}
+		if (ret >= LOG4Z_LOG_BUF_SIZE)
+		{
+			ret = LOG4Z_LOG_BUF_SIZE-1;
+		}
+		
+		pLog->_contentLen = ret;
+#endif
+		if (pLog->_contentLen >= 2)
+		{
+			pLog->_content[pLog->_contentLen - 2] = '\r';
+			pLog->_content[pLog->_contentLen - 1] = '\n';
+		}
+	
 	}
 
-	int len = (int) strlen(log);
-	if (len >= LOG4Z_LOG_BUF_SIZE)
+	if (m_loggers[pLog->_id]._display && LOG4Z_ALL_SYNCHRONOUS_OUTPUT)
 	{
-		memcpy(pLog->_content, log, LOG4Z_LOG_BUF_SIZE);
-		pLog->_content[LOG4Z_LOG_BUF_SIZE-1] = '\0';
+		ShowColorText(pLog->_content, pLog->_level);
 	}
-	else
+
+	if (LOG4Z_ALL_DEBUGOUTPUT_DISPLAY && LOG4Z_ALL_SYNCHRONOUS_OUTPUT)
 	{
-		memcpy(pLog->_content, log, len+1);
+#ifdef WIN32
+		OutputDebugStringA(pLog->_content);
+#endif
 	}
+
+	if (LOG4Z_ALL_WRITE_TO_FILE && LOG4Z_ALL_SYNCHRONOUS_OUTPUT)
+	{
+		CAutoLock l(m_lock);
+		if (OpenLogger(pLog))
+		{
+			m_loggers[pLog->_id]._handle.Write(pLog->_content, pLog->_contentLen);
+			CloseLogger(pLog->_id);
+			m_ullStatusTotalWriteFileCount++;
+			m_ullStatusTotalWriteFileBytes += pLog->_contentLen;
+		}
+	}
+
+	if (LOG4Z_ALL_SYNCHRONOUS_OUTPUT)
+	{
+		delete pLog;
+		return true;
+	}
+	
 	CAutoLock l(m_lock);
 	m_logs.push_back(pLog);
 	m_ullStatusTotalPushLog ++;
@@ -1250,10 +1321,10 @@ bool CLogerManager::PushLog(LoggerId id, int level, const char * log)
 }
 
 //! 查找ID
-LoggerId CLogerManager::FindLogger(std::string name)
+LoggerId CLogerManager::FindLogger(const char * strName)
 {
 	std::map<std::string, LoggerId>::iterator iter;
-	iter = m_ids.find(name);
+	iter = m_ids.find(strName);
 	if (iter != m_ids.end())
 	{
 		return iter->second;
@@ -1263,7 +1334,7 @@ LoggerId CLogerManager::FindLogger(std::string name)
 
 bool CLogerManager::SetLoggerLevel(LoggerId nLoggerID, int nLevel)
 {
-	if (nLoggerID <0 || nLoggerID >= LOG4Z_LOGGER_MAX || nLevel < LOG_LEVEL_DEBUG || nLevel >LOG_LEVEL_FATAL) return false;
+	if (nLoggerID <0 || nLoggerID >= LOG4Z_LOGGER_MAX || nLevel < LOG_LEVEL_TRACE || nLevel >LOG_LEVEL_FATAL) return false;
 	m_loggers[nLoggerID]._level = nLevel;
 	return true;
 }
@@ -1296,7 +1367,7 @@ bool CLogerManager::UpdateConfig()
 	ParseConfig(m_configFile, loggerMap);
 	for (std::map<std::string, LoggerInfo>::iterator iter = loggerMap.begin(); iter != loggerMap.end(); ++iter)
 	{
-		LoggerId id = FindLogger(iter->first);
+		LoggerId id = FindLogger(iter->first.c_str());
 		if (id != LOG4Z_INVALID_LOGGER_ID)
 		{
 			SetLoggerDisplay(id, iter->second._display);
@@ -1322,42 +1393,82 @@ unsigned int CLogerManager::GetStatusActiveLoggers()
 }
 
 
-bool CLogerManager::OpenLogger(LoggerId id)
+bool CLogerManager::OpenLogger(LogData * pLog)
 {
+	int id = pLog->_id;
 	if (id < 0 || id >m_lastId)
 	{
 		ShowColorText("log4z: OpenLogger can not open, invalide logger id! \r\n", LOG_LEVEL_FATAL);
+		return false;
+	}
+
+	LoggerInfo * pLogger = &m_loggers[id];
+	if (!pLogger->_enable || pLog->_level < pLogger->_level)
+	{
+		return false;
+	}
+
+	bool sameday = IsSameDay(pLog->_time, pLogger->_curFileCreateTime);
+	bool needChageFile = pLogger->_curWriteLen > pLogger->_limitsize * 1024 * 1024;
+	if (!sameday || needChageFile)
+	{
+		if (!sameday)
+		{
+			pLogger->_curFileIndex = 0;
+			pLogger->_curWriteLen = 0;
+			pLogger->_curFileCreateTime = pLog->_time;
+		}
+		else if (needChageFile)
+		{
+			pLogger->_curFileIndex++;
+			pLogger->_curWriteLen = 0;
+		}
+		if (pLogger->_handle.IsOpen())
+		{
+			pLogger->_handle.Close();
+		}
+	}
+	if (!pLogger->_handle.IsOpen())
+	{
+		
+		tm t = TimeToTm(pLogger->_curFileCreateTime);
+		std::string path = pLogger->_path;
+		char buf[100] = { 0 };
+		if (pLogger->_monthdir)
+		{
+			sprintf(buf, "%04d_%02d/", t.tm_year + 1900, t.tm_mon + 1);
+			path += buf;
+		}
+
+		if (!IsDirectory(path))
+		{
+			CreateRecursionDir(path);
+		}
+
+		sprintf(buf, "%s_%04d%02d%02d%02d%02d_%s_%03d.log",
+			pLogger->_name.c_str(), t.tm_year + 1900, t.tm_mon + 1, t.tm_mday,
+			t.tm_hour, t.tm_min, pLogger->_pid.c_str(), pLogger->_curFileIndex);
+		path += buf;
+		pLogger->_handle.Open(path.c_str(), "ab");
+		return pLogger->_handle.IsOpen();
+	}
+	return true;
+}
+bool CLogerManager::CloseLogger(LoggerId id)
+{
+	if (id < 0 || id >m_lastId)
+	{
+		ShowColorText("log4z: CloseLogger can not close, invalide logger id! \r\n", LOG_LEVEL_FATAL);
 		return false;
 	}
 	LoggerInfo * pLogger = &m_loggers[id];
 	if (pLogger->_handle.IsOpen())
 	{
 		pLogger->_handle.Close();
+		return true;
 	}
-
-	tm t;
-	TimeToTm(pLogger->_curFileCreateTime, &t);
-	std::string path = pLogger->_path;
-	char buf[100]={0};
-	if (pLogger->_monthdir)
-	{
-		sprintf(buf, "%04d_%02d/", t.tm_year+1900, t.tm_mon+1);
-		path += buf;
-	}
-
-	if (!IsDirectory(path))
-	{
-		CreateRecursionDir(path);
-	}
-
-	sprintf(buf, "%s_%04d%02d%02d%02d%02d_%s_%03d.log", 
-		pLogger->_name.c_str(),  t.tm_year+1900, t.tm_mon+1, t.tm_mday, 
-		t.tm_hour, t.tm_min, pLogger->_pid.c_str(), pLogger->_curFileIndex);
-	path += buf;
-	pLogger->_handle.Open(path.c_str(), "ab");
-	return pLogger->_handle.IsOpen();
+	return false;
 }
-
 bool CLogerManager::PopLog(LogData *& log)
 {
 	CAutoLock l(m_lock);
@@ -1374,6 +1485,7 @@ void CLogerManager::Run()
 {
 	m_bRuning = true;
 	m_loggers[LOG4Z_MAIN_LOGGER_ID]._enable = true;
+
 	PushLog(0, LOG_LEVEL_ALARM, "-----------------  log4z thread started!   ----------------------------");
 	for (int i=0; i<LOG4Z_LOGGER_MAX; i++)
 	{
@@ -1393,7 +1505,6 @@ void CLogerManager::Run()
 
 
 	LogData * pLog = NULL;
-	char *pWriteBuf = new char[LOG4Z_LOG_BUF_SIZE + 512];
 	int needFlush[LOG4Z_LOGGER_MAX] = {0};
 	while (true)
 	{
@@ -1410,69 +1521,39 @@ void CLogerManager::Run()
 				continue;
 			}
 
-			//update file
-			if (LOG4Z_ALL_WRITE_TO_FILE)
+
+			if (curLogger._display && !LOG4Z_ALL_SYNCHRONOUS_OUTPUT)
 			{
-				bool sameday = IsSameDay(pLog->_time, curLogger._curFileCreateTime);
-				bool needChageFile = curLogger._curWriteLen > curLogger._limitsize*1024*1024;
-				if (!curLogger._handle.IsOpen() 
-					|| !sameday
-					|| needChageFile)
+				ShowColorText(pLog->_content, pLog->_level);
+			}
+			if (LOG4Z_ALL_DEBUGOUTPUT_DISPLAY && !LOG4Z_ALL_SYNCHRONOUS_OUTPUT)
+			{
+#ifdef WIN32
+				OutputDebugStringA(pLog->_content);
+#endif
+			}
+
+
+			if (LOG4Z_ALL_WRITE_TO_FILE && !LOG4Z_ALL_SYNCHRONOUS_OUTPUT)
+			{
+				if (!OpenLogger(pLog))
 				{
-					if (!sameday)
-					{
-						curLogger._curFileIndex = 0;
-						curLogger._curWriteLen = 0;
-					}
-					else if ( needChageFile)
-					{
-						curLogger._curFileIndex ++;
-						curLogger._curWriteLen = 0;
-					}
-					curLogger._curFileCreateTime = pLog->_time;
-					if (!OpenLogger(pLog->_id))
-					{
-						curLogger._enable = false;
-						delete pLog;
-						pLog = NULL;
-						ShowColorText("log4z: Run can not update file, open file false! \r\n", LOG_LEVEL_FATAL);
-						continue;
-					}
+					delete pLog;
+					pLog = NULL;
+					continue;
 				}
-			}
 
-			//record
-			tm tt;
-			if (!TimeToTm(pLog->_time, &tt))
-			{
-				memset(&tt, 0, sizeof(tt));
-			}
-			sprintf(pWriteBuf, "%d-%02d-%02d %02d:%02d:%02d.%03d %s %s \r\n", 
-				tt.tm_year+1900, tt.tm_mon+1, tt.tm_mday, tt.tm_hour, tt.tm_min, tt.tm_sec, pLog->_precise,
-				LOG_STRING[pLog->_level], pLog->_content);
-
-			if (LOG4Z_ALL_WRITE_TO_FILE)
-			{
-				size_t writeLen = strlen(pWriteBuf);
-				curLogger._handle.Write(pWriteBuf, writeLen);
-				curLogger._curWriteLen += (unsigned int)writeLen;
+				curLogger._handle.Write(pLog->_content, pLog->_contentLen);
+				curLogger._curWriteLen += (unsigned int)pLog->_contentLen;
 				needFlush[pLog->_id] ++;
 				m_ullStatusTotalWriteFileCount++;
-				m_ullStatusTotalWriteFileBytes += writeLen;
+				m_ullStatusTotalWriteFileBytes += pLog->_contentLen;
 			}
-			else
+			else if (!LOG4Z_ALL_SYNCHRONOUS_OUTPUT)
 			{
-				size_t writeLen = strlen(pWriteBuf);
 				m_ullStatusTotalWriteFileCount++;
-				m_ullStatusTotalWriteFileBytes += writeLen;
+				m_ullStatusTotalWriteFileBytes += pLog->_contentLen;
 			}
-
-			if (curLogger._display && !LOG4Z_ALL_SYNCHRONOUS_DISPLAY)
-			{
-				ShowColorText(pWriteBuf, pLog->_level);
-			}
-
-
 
 			delete pLog;
 			pLog = NULL;
@@ -1503,11 +1584,9 @@ void CLogerManager::Run()
 		if (m_loggers[i]._enable)
 		{
 			m_loggers[i]._enable = false;
-			m_loggers[i]._handle.Close();
+			CloseLogger(i);
 		}
 	}
-	delete []pWriteBuf;
-	pWriteBuf = NULL;
 
 }
 

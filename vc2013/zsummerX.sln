@@ -12,19 +12,16 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "log4z", "..\depends\log4z\v
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "frameTest", "..\example\frameTest\frameTest.vcxproj", "{4359E83A-9761-4DA9-8B82-B832E0767E18}"
 	ProjectSection(ProjectDependencies) = postProject
-		{78726622-CC7B-4CE6-B836-5A124171104C} = {78726622-CC7B-4CE6-B836-5A124171104C}
 		{06D64BC9-7AD1-40A1-835A-54BCC3ABFE39} = {06D64BC9-7AD1-40A1-835A-54BCC3ABFE39}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tcpTest", "..\example\tcpTest\tcpTest.vcxproj", "{17F06D73-CA62-487F-B1E4-7C8A34E48839}"
 	ProjectSection(ProjectDependencies) = postProject
-		{78726622-CC7B-4CE6-B836-5A124171104C} = {78726622-CC7B-4CE6-B836-5A124171104C}
 		{06D64BC9-7AD1-40A1-835A-54BCC3ABFE39} = {06D64BC9-7AD1-40A1-835A-54BCC3ABFE39}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "udpTest", "..\example\udpTest\udpTest.vcxproj", "{194E3B3C-61AD-429D-8A6A-92978D525E45}"
 	ProjectSection(ProjectDependencies) = postProject
-		{78726622-CC7B-4CE6-B836-5A124171104C} = {78726622-CC7B-4CE6-B836-5A124171104C}
 		{06D64BC9-7AD1-40A1-835A-54BCC3ABFE39} = {06D64BC9-7AD1-40A1-835A-54BCC3ABFE39}
 	EndProjectSection
 EndProject
@@ -34,7 +31,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "boost_ping_pong", "..\examp
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "frameStressTest", "..\example\frameStressTest\frameStressTest.vcxproj", "{EA950C2B-48CB-4FEC-81E8-4CED27BAB732}"
 	ProjectSection(ProjectDependencies) = postProject
-		{78726622-CC7B-4CE6-B836-5A124171104C} = {78726622-CC7B-4CE6-B836-5A124171104C}
 		{06D64BC9-7AD1-40A1-835A-54BCC3ABFE39} = {06D64BC9-7AD1-40A1-835A-54BCC3ABFE39}
 	EndProjectSection
 EndProject

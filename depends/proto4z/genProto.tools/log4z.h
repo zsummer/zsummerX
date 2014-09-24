@@ -132,9 +132,12 @@
  *  fix WCHAR String cannot output
  *  optimize std::string, binary log input, and support std::wstring.
  *  clean code, better readability
+ *  
  * VERSION 2.6 <DATE: 2014.07.03>
  *  add PrePushLog 
  *  better performance when log is filter out.
+ *  interface replace std::string because it's in shared library is unsafe.
+ *  add log level 'trace'
  *  
  */
 
@@ -156,68 +159,72 @@
 typedef int LoggerId;
 
 //! the invalid logger id. DO NOT TOUCH
-#define LOG4Z_INVALID_LOGGER_ID -1
+const int LOG4Z_INVALID_LOGGER_ID = -1;
 
 //! the main logger id. DO NOT TOUCH
 //! can use this id to set the main logger's attribute.
 //! example:
 //! ILog4zManager::GetInstance()->SetLoggerLevel(LOG4Z_MAIN_LOGGER_ID, LOG_LEVEL_WARN);
 //! ILog4zManager::GetInstance()->SetLoggerDisplay(LOG4Z_MAIN_LOGGER_ID, false);
-#define LOG4Z_MAIN_LOGGER_ID 0
+const int LOG4Z_MAIN_LOGGER_ID = 0;
 
 //! the main logger name. DO NOT TOUCH
-#define LOG4Z_MAIN_LOGGER_NAME "Main"
+const char*const LOG4Z_MAIN_LOGGER_NAME = "Main";
 
 //! check VC VERSION. DO NOT TOUCH
 //! format micro cannot support VC6 or VS2003, please use stream input log, like LOGI, LOGD, LOG_DEBUG, LOG_STREAM ...
-#ifndef _MSC_VER
-#define _MSC_VER 1400
-#endif
-#if _MSC_VER >= 1400 //gcc or MSVC >= VS2005
+#if _MSC_VER >= 1400 //MSVC >= VS2005
 #define LOG4Z_FORMAT_INPUT_ENABLE
 #endif
 
-
-
-//////////////////////////////////////////////////////////////////////////
-//! -----------------default logger config, can change on this.-----------
-//////////////////////////////////////////////////////////////////////////
-//! the max logger count.
-#define LOG4Z_LOGGER_MAX 10
-//! the max log content length.
-#define LOG4Z_LOG_BUF_SIZE 2048
-
-//! all logger synchronous display to the screen or not
-#define LOG4Z_ALL_SYNCHRONOUS_DISPLAY false
-//! all logger write log to file or not
-#define LOG4Z_ALL_WRITE_TO_FILE true
-
-//! default logger output file.
-#define LOG4Z_DEFAULT_PATH "./log/"
-//! default log filter level
-#define LOG4Z_DEFAULT_LEVEL LOG_LEVEL_DEBUG
-//! default logger display
-#define LOG4Z_DEFAULT_DISPLAY true
-//! default logger month dir used status
-#define LOG4Z_DEFAULT_MONTHDIR false
-//! default logger output file limit size, unit M byte.
-#define LOG4Z_DEFAULT_LIMITSIZE 100
-
-///////////////////////////////////////////////////////////////////////////
-//! -----------------------------------------------------------------------
-//////////////////////////////////////////////////////////////////////////
-
+#ifndef WIN32
+#define LOG4Z_FORMAT_INPUT_ENABLE
+#endif
 
 //! LOG Level
 enum ENUM_LOG_LEVEL
 {
-	LOG_LEVEL_DEBUG = 0,
+	LOG_LEVEL_TRACE = 0,
+	LOG_LEVEL_DEBUG,
 	LOG_LEVEL_INFO,
 	LOG_LEVEL_WARN,
 	LOG_LEVEL_ERROR,
 	LOG_LEVEL_ALARM,
 	LOG_LEVEL_FATAL,
 };
+
+//////////////////////////////////////////////////////////////////////////
+//! -----------------default logger config, can change on this.-----------
+//////////////////////////////////////////////////////////////////////////
+//! the max logger count.
+const int LOG4Z_LOGGER_MAX = 10;
+//! the max log content length.
+const int LOG4Z_LOG_BUF_SIZE = 2048;
+
+//! all logger synchronous output or not
+const bool LOG4Z_ALL_SYNCHRONOUS_OUTPUT = true;
+//! all logger write log to file or not
+const bool LOG4Z_ALL_WRITE_TO_FILE = false;
+//! all logger synchronous display to the windows debug output
+const bool LOG4Z_ALL_DEBUGOUTPUT_DISPLAY = false;
+
+//! default logger output file.
+const char* const LOG4Z_DEFAULT_PATH = "./log/";
+//! default log filter level
+const int LOG4Z_DEFAULT_LEVEL = LOG_LEVEL_DEBUG;
+//! default logger display
+const bool LOG4Z_DEFAULT_DISPLAY = true;
+//! default logger month dir used status
+const bool LOG4Z_DEFAULT_MONTHDIR = false;
+//! default logger output file limit size, unit M byte.
+const int LOG4Z_DEFAULT_LIMITSIZE = 100;
+
+///////////////////////////////////////////////////////////////////////////
+//! -----------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////////
+
+
+
 
 
 #ifndef _ZSUMMER_BEGIN
@@ -245,12 +252,12 @@ public:
 
 	//! Config or overwrite configure
 	//! Needs to be called before ILog4zManager::Start,, OR Do not call.
-	virtual bool Config(std::string cfgPath) = 0;
+	virtual bool Config(const char * strCfgPath) = 0;
 
 	//! Create or overwrite logger, Total count limited by LOG4Z_LOGGER_MAX.
 	//! Needs to be called before ILog4zManager::Start, OR Do not call.
-	virtual LoggerId CreateLogger(std::string name, 
-		std::string path=LOG4Z_DEFAULT_PATH,
+	virtual LoggerId CreateLogger(const char* strName, 
+		const char* strPath = LOG4Z_DEFAULT_PATH,
 		int nLevel = LOG4Z_DEFAULT_LEVEL,
 		bool display = LOG4Z_DEFAULT_DISPLAY,
 		bool monthdir = LOG4Z_DEFAULT_MONTHDIR,
@@ -264,7 +271,7 @@ public:
 	virtual bool Stop() = 0;
 
 	//! Find logger. thread safe.
-	virtual LoggerId FindLogger(std::string name) =0;
+	virtual LoggerId FindLogger(const char* strName) =0;
 
 	//pre-check the log filter. if filter out return false. 
 	virtual bool PrePushLog(LoggerId id, int level) = 0;
@@ -331,6 +338,7 @@ extern __thread char g_log4zstreambuf[LOG4Z_LOG_BUF_SIZE];
 #endif
 
 //! fast micro
+#define LOG_TRACE(id, log) LOG_STREAM(id, LOG_LEVEL_TRACE, log)
 #define LOG_DEBUG(id, log) LOG_STREAM(id, LOG_LEVEL_DEBUG, log)
 #define LOG_INFO(id, log)  LOG_STREAM(id, LOG_LEVEL_INFO, log)
 #define LOG_WARN(id, log)  LOG_STREAM(id, LOG_LEVEL_WARN, log)
@@ -339,6 +347,7 @@ extern __thread char g_log4zstreambuf[LOG4Z_LOG_BUF_SIZE];
 #define LOG_FATAL(id, log) LOG_STREAM(id, LOG_LEVEL_FATAL, log)
 
 //! super micro.
+#define LOGT( log ) LOG_TRACE(LOG4Z_MAIN_LOGGER_ID, log )
 #define LOGD( log ) LOG_DEBUG(LOG4Z_MAIN_LOGGER_ID, log )
 #define LOGI( log ) LOG_INFO(LOG4Z_MAIN_LOGGER_ID, log )
 #define LOGW( log ) LOG_WARN(LOG4Z_MAIN_LOGGER_ID, log )
@@ -378,12 +387,14 @@ extern __thread char g_log4zstreambuf[LOG4Z_LOG_BUF_SIZE];
 }
 #endif
 //!format string
+#define LOGFMT_TRACE(id, fmt, ...)  LOG_FORMAT(id, LOG_LEVEL_TRACE, fmt, ##__VA_ARGS__)
 #define LOGFMT_DEBUG(id, fmt, ...)  LOG_FORMAT(id, LOG_LEVEL_DEBUG, fmt, ##__VA_ARGS__)
 #define LOGFMT_INFO(id, fmt, ...)  LOG_FORMAT(id, LOG_LEVEL_INFO, fmt, ##__VA_ARGS__)
 #define LOGFMT_WARN(id, fmt, ...)  LOG_FORMAT(id, LOG_LEVEL_WARN, fmt, ##__VA_ARGS__)
 #define LOGFMT_ERROR(id, fmt, ...)  LOG_FORMAT(id, LOG_LEVEL_ERROR, fmt, ##__VA_ARGS__)
 #define LOGFMT_ALARM(id, fmt, ...)  LOG_FORMAT(id, LOG_LEVEL_ALARM, fmt, ##__VA_ARGS__)
 #define LOGFMT_FATAL(id, fmt, ...)  LOG_FORMAT(id, LOG_LEVEL_FATAL, fmt, ##__VA_ARGS__)
+#define LOGFMTT( fmt, ...) LOGFMT_TRACE(LOG4Z_MAIN_LOGGER_ID, fmt,  ##__VA_ARGS__)
 #define LOGFMTD( fmt, ...) LOGFMT_DEBUG(LOG4Z_MAIN_LOGGER_ID, fmt,  ##__VA_ARGS__)
 #define LOGFMTI( fmt, ...) LOGFMT_INFO(LOG4Z_MAIN_LOGGER_ID, fmt,  ##__VA_ARGS__)
 #define LOGFMTW( fmt, ...) LOGFMT_WARN(LOG4Z_MAIN_LOGGER_ID, fmt,  ##__VA_ARGS__)
@@ -393,18 +404,20 @@ extern __thread char g_log4zstreambuf[LOG4Z_LOG_BUF_SIZE];
 #else
 inline void empty_log_format_function1(LoggerId id, const char*, ...){}
 inline void empty_log_format_function2(const char*, ...){}
-#define LOGFMT_DEBUG empty_log_format_function1
-#define LOGFMT_INFO LOGFMT_DEBUG
-#define LOGFMT_WARN LOGFMT_DEBUG
-#define LOGFMT_ERROR LOGFMT_DEBUG
-#define LOGFMT_ALARM LOGFMT_DEBUG
-#define LOGFMT_FATAL LOGFMT_DEBUG
-#define LOGFMTD empty_log_format_function2
-#define LOGFMTI LOGFMTD
-#define LOGFMTW LOGFMTD
-#define LOGFMTE LOGFMTD
-#define LOGFMTA LOGFMTD
-#define LOGFMTF LOGFMTD
+#define LOGFMT_TRACE empty_log_format_function1
+#define LOGFMT_DEBUG LOGFMT_TRACE
+#define LOGFMT_INFO LOGFMT_TRACE
+#define LOGFMT_WARN LOGFMT_TRACE
+#define LOGFMT_ERROR LOGFMT_TRACE
+#define LOGFMT_ALARM LOGFMT_TRACE
+#define LOGFMT_FATAL LOGFMT_TRACE
+#define LOGFMTT empty_log_format_function2
+#define LOGFMTD LOGFMTT
+#define LOGFMTI LOGFMTT
+#define LOGFMTW LOGFMTT
+#define LOGFMTE LOGFMTT
+#define LOGFMTA LOGFMTT
+#define LOGFMTF LOGFMTT
 #endif
 
 

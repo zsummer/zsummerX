@@ -240,8 +240,8 @@ public:
 	inline WriteStream<StreamHeadTrait> & operator << (unsigned long data) { return WriteIntegerData((unsigned long long)data); }
 	inline WriteStream<StreamHeadTrait> & operator << (long long data) { return WriteIntegerData(data); }
 	inline WriteStream<StreamHeadTrait> & operator << (unsigned long long data) { return WriteIntegerData(data); }
-	inline WriteStream<StreamHeadTrait> & operator << (float data) { return WriteSimpleData(data); }
-	inline WriteStream<StreamHeadTrait> & operator << (double data) { return WriteSimpleData(data); }
+	inline WriteStream<StreamHeadTrait> & operator << (float data) { return WriteIntegerData(data); }
+	inline WriteStream<StreamHeadTrait> & operator << (double data) { return WriteIntegerData(data); }
 
 protected:
 	//! check move cursor is valid. if invalid then throw exception.
@@ -317,8 +317,8 @@ public:
 	inline ReadStream<StreamHeadTrait> & operator >> (unsigned long & data){ unsigned long long tmp = 0;ReadStream & ret = ReadIntegerData(tmp);data = (unsigned long)tmp;return ret;}
 	inline ReadStream<StreamHeadTrait> & operator >> (long long & data) { return ReadIntegerData(data); }
 	inline ReadStream<StreamHeadTrait> & operator >> (unsigned long long & data) { return ReadIntegerData(data); }
-	inline ReadStream<StreamHeadTrait> & operator >> (float & data) { return ReadSimpleData(data); }
-	inline ReadStream<StreamHeadTrait> & operator >> (double & data) { return ReadSimpleData(data); }
+	inline ReadStream<StreamHeadTrait> & operator >> (float & data) { return ReadIntegerData(data); } 
+	inline ReadStream<StreamHeadTrait> & operator >> (double & data) { return ReadIntegerData(data); }
 protected:
 	inline void CheckMoveCursor(Integer unit);
 	template <class T>

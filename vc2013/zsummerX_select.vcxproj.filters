@@ -1,0 +1,111 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{1670c306-e1cc-4a8e-b20d-e1feac7c711b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\common">
+      <UniqueIdentifier>{ec35c1ca-5758-41e1-8298-2a541638767f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\timmer">
+      <UniqueIdentifier>{d7d27401-f32a-4231-868a-d00fa489ff42}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\impl">
+      <UniqueIdentifier>{f27d84d5-5f27-4af9-b6c4-e4ccdf6f2b2e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include">
+      <UniqueIdentifier>{17eaf74e-bbee-4196-bc57-e394f704ed4c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\common">
+      <UniqueIdentifier>{53c1ed1d-4bad-4633-be41-c6109cbbd811}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\impl">
+      <UniqueIdentifier>{a5fcfdcb-d288-45e6-86ab-5f67670fa806}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\interface">
+      <UniqueIdentifier>{39e1124e-006c-4e1f-b827-93c4aae1929e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\frame">
+      <UniqueIdentifier>{f45d965e-2242-40d3-b31e-94c6c0371c69}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\timer">
+      <UniqueIdentifier>{546cc95f-872f-4528-b9f4-6e253d6c2862}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\common\common.cpp">
+      <Filter>src\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\timer\timer.cpp">
+      <Filter>src\timmer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\frame\FrameMessageDispatch.cpp">
+      <Filter>src\frame</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\frame\FrameTcpSession.cpp">
+      <Filter>src\frame</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\frame\FrameTcpSessionManager.cpp">
+      <Filter>src\frame</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\select\tcpaccept_impl.cpp">
+      <Filter>src\impl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\select\tcpsocket_impl.cpp">
+      <Filter>src\impl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\select\udpsocket_impl.cpp">
+      <Filter>src\impl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\select\select_impl.cpp">
+      <Filter>src\impl</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\include\zsummerX\common\common.h">
+      <Filter>include\common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\zsummerX\tcpaccept.h">
+      <Filter>include\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\zsummerX\tcpsocket.h">
+      <Filter>include\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\zsummerX\udpsocket.h">
+      <Filter>include\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\zsummerX\zsummer.h">
+      <Filter>include\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\zsummerX\timer\timer.h">
+      <Filter>include\timer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\zsummerX\FrameHeader.h">
+      <Filter>include\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\zsummerX\FrameMessageDispatch.h">
+      <Filter>include\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\zsummerX\FrameTcpSession.h">
+      <Filter>include\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\zsummerX\FrameTcpSessionManager.h">
+      <Filter>include\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\zsummerX\select\common_impl.h">
+      <Filter>include\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\zsummerX\select\tcpaccept_impl.h">
+      <Filter>include\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\zsummerX\select\tcpsocket_impl.h">
+      <Filter>include\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\zsummerX\select\udpsocket_impl.h">
+      <Filter>include\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\zsummerX\select\select_impl.h">
+      <Filter>include\impl</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

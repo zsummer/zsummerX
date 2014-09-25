@@ -37,17 +37,15 @@
 #include <zsummerX/FrameTcpSession.h>
 #include <zsummerX/FrameTcpSessionManager.h>
 #include <zsummerX/FrameMessageDispatch.h>
-#include "rc4.h"
+
 using namespace zsummer::proto4z;
 
 
 CTcpSession::CTcpSession()
 {
 	std::string key = "zhangyawei_zhang@foxmail.com";
-	m_rc4StateRead = new rc4_state;
-	m_rc4StateWrite = new rc4_state;
-	rc4_setup(m_rc4StateRead, (unsigned char *)key.c_str(), (int)key.length());
-	rc4_setup(m_rc4StateWrite, (unsigned char *)key.c_str(), (int)key.length());
+	m_rc4StateRead.MakeSBox(key);
+	m_rc4StateWrite.MakeSBox(key);
 }
 
 
@@ -64,10 +62,6 @@ CTcpSession::~CTcpSession()
 		m_freeCache.pop();
 	}
 	m_sockptr.reset();
-	delete m_rc4StateRead;
-	delete m_rc4StateWrite;
-	m_rc4StateRead = NULL;
-	m_rc4StateWrite = NULL;
 	LOGI("~CTcpSession. global _g_totalCreatedCTcpSocketObjs=" << zsummer::network::_g_totalCreatedCTcpSocketObjs << ", _g_totalClosedCTcpSocketObjs=" << zsummer::network::_g_totalClosedCTcpSocketObjs);
 }
 void CTcpSession::CleanSession(bool isCleanAllData)
@@ -77,7 +71,9 @@ void CTcpSession::CleanSession(bool isCleanAllData)
 	m_acceptID = InvalidAccepterID;
 	m_connectorID = InvalidConnectorID;
 	m_heartbeatID = InvalidTimerID;
-
+	std::string key = "zhangyawei_zhang@foxmail.com";
+	m_rc4StateRead.MakeSBox(key);
+	m_rc4StateWrite.MakeSBox(key);
 
 	m_recving.bufflen = 0;
 	m_sending.bufflen = 0;
@@ -181,7 +177,7 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 	}
 	if (m_bRC4Encryption)
 	{
-		rc4_crypt(m_rc4StateRead, (unsigned char*)m_recving.buff + m_recving.bufflen, nRecvedLen);
+		m_rc4StateRead.RC4Encryption((unsigned char*)m_recving.buff + m_recving.bufflen, nRecvedLen);
 	}
 	m_recving.bufflen += nRecvedLen;
 
@@ -313,7 +309,7 @@ void CTcpSession::DoSend(const char *buf, unsigned int len)
 {
 	if (m_bRC4Encryption)
 	{
-		rc4_crypt(m_rc4StateWrite, (unsigned char*)buf, len);
+		m_rc4StateWrite.RC4Encryption((unsigned char*)buf, len);
 	}
 	
 	if (m_sending.bufflen != 0)

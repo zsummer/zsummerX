@@ -72,6 +72,7 @@
 #include <mutex>
 #include <algorithm>
 #include <log4z/log4z.h>
+#include <rc4/rc4_encryption.h>
 
 namespace zsummer
 {

@@ -40,7 +40,7 @@
 #ifndef ZSUMMER_TCP_SESSION_H_
 #define ZSUMMER_TCP_SESSION_H_
 #include "FrameHeader.h"
-
+#include <rc4/rc4_encryption.h>
 
 struct MessagePack
 {
@@ -115,8 +115,9 @@ private:
 
 	//!  «∑Òº”√‹
 	bool m_bRC4Encryption = false;
-	rc4_state *m_rc4StateRead = NULL;
-	rc4_state *m_rc4StateWrite = NULL;
+	CRC4Encryption m_rc4StateRead;
+	CRC4Encryption m_rc4StateWrite;
+
 };
 
 #endif

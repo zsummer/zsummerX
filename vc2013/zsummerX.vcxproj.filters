@@ -60,6 +60,9 @@
     <ClCompile Include="..\src\frame\FrameTcpSessionManager.cpp">
       <Filter>src\frame</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\frame\rc4.cpp">
+      <Filter>src\frame</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\zsummerX\common\common.h">
@@ -106,6 +109,9 @@
     </ClInclude>
     <ClInclude Include="..\include\zsummerX\iocp\common_impl.h">
       <Filter>include\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\frame\rc4.h">
+      <Filter>src\frame</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

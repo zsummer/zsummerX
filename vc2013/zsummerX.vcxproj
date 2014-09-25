@@ -23,6 +23,7 @@
     <ClCompile Include="..\src\frame\FrameMessageDispatch.cpp" />
     <ClCompile Include="..\src\frame\FrameTcpSession.cpp" />
     <ClCompile Include="..\src\frame\FrameTcpSessionManager.cpp" />
+    <ClCompile Include="..\src\frame\rc4.cpp" />
     <ClCompile Include="..\src\iocp\iocp_impl.cpp" />
     <ClCompile Include="..\src\iocp\tcpaccept_impl.cpp" />
     <ClCompile Include="..\src\iocp\tcpsocket_impl.cpp" />
@@ -45,6 +46,7 @@
     <ClInclude Include="..\include\zsummerX\timer\timer.h" />
     <ClInclude Include="..\include\zsummerX\udpsocket.h" />
     <ClInclude Include="..\include\zsummerX\zsummer.h" />
+    <ClInclude Include="..\src\frame\rc4.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{06D64BC9-7AD1-40A1-835A-54BCC3ABFE39}</ProjectGuid>

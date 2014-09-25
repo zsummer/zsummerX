@@ -45,7 +45,7 @@
 using namespace zsummer::log4z;
 
 std::string g_remoteIP = "0.0.0.0";
-unsigned short g_remotePort = 80;
+unsigned short g_remotePort = 8090;
 unsigned short g_startIsConnector = 0;  //0 listen, 1 connect
 
 

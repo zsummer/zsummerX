@@ -86,7 +86,7 @@ private:
 	void OnSessionClose(AccepterID aID, SessionID sID);
 	void OnConnectorStatus(ConnectorID connectorID, bool bConnected, CTcpSessionPtr session);
 	void OnAcceptNewClient(zsummer::network::ErrorCode ec, CTcpSocketPtr s, CTcpAcceptPtr accepter, AccepterID aID);
-	bool BindEstablishedSocketPtr(CTcpSocketPtr sockptr, AccepterID aID, ProtoType pt);
+	bool BindEstablishedSocketPtr(CTcpSocketPtr sockptr, AccepterID aID, ProtoType pt, bool bEncryp);
 private:
 	typedef unsigned long long MergeBigID;
 	inline MergeBigID MERGEBIGID(AccepterID aID, SessionID sID) { return ((MergeBigID)aID << 32) | (MergeBigID)sID; }

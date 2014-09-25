@@ -54,6 +54,7 @@ struct MessageChunk
 	unsigned int bufflen = 0;
 };
 
+struct rc4_state;
 
 class CTcpSession : public std::enable_shared_from_this<CTcpSession>
 {
@@ -64,6 +65,10 @@ public:
 	void BindTcpConnectorPtr(CTcpSocketPtr sockptr, const std::pair<tagConnctorConfigTraits, tagConnctorInfo> & config);
 	void DoSend(const char *buf, unsigned int len);
 	void Close();
+
+public:
+	inline void SetEncryption(bool encryp){ m_bRC4Encryption = encryp; }
+	inline bool GetEncryption(){ return m_bRC4Encryption; }
 private:
 
 	bool DoRecv();
@@ -107,6 +112,11 @@ private:
 	//! 写包队列
 	std::queue<MessagePack *> m_sendque;
 	std::queue<MessagePack *> m_freeCache;
+
+	//! 是否加密
+	bool m_bRC4Encryption = false;
+	rc4_state *m_rc4StateRead = NULL;
+	rc4_state *m_rc4StateWrite = NULL;
 };
 
 #endif

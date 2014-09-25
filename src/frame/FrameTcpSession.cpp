@@ -37,13 +37,17 @@
 #include <zsummerX/FrameTcpSession.h>
 #include <zsummerX/FrameTcpSessionManager.h>
 #include <zsummerX/FrameMessageDispatch.h>
-
+#include "rc4.h"
 using namespace zsummer::proto4z;
 
 
 CTcpSession::CTcpSession()
 {
-
+	std::string key = "zhangyawei_zhang@foxmail.com";
+	m_rc4StateRead = new rc4_state;
+	m_rc4StateWrite = new rc4_state;
+	rc4_setup(m_rc4StateRead, (unsigned char *)key.c_str(), (int)key.length());
+	rc4_setup(m_rc4StateWrite, (unsigned char *)key.c_str(), (int)key.length());
 }
 
 
@@ -60,6 +64,10 @@ CTcpSession::~CTcpSession()
 		m_freeCache.pop();
 	}
 	m_sockptr.reset();
+	delete m_rc4StateRead;
+	delete m_rc4StateWrite;
+	m_rc4StateRead = NULL;
+	m_rc4StateWrite = NULL;
 	LOGI("~CTcpSession. global _g_totalCreatedCTcpSocketObjs=" << zsummer::network::_g_totalCreatedCTcpSocketObjs << ", _g_totalClosedCTcpSocketObjs=" << zsummer::network::_g_totalClosedCTcpSocketObjs);
 }
 void CTcpSession::CleanSession(bool isCleanAllData)
@@ -171,7 +179,10 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 		OnClose();
 		return;
 	}
-
+	if (m_bRC4Encryption)
+	{
+		rc4_crypt(m_rc4StateRead, (unsigned char*)m_recving.buff + m_recving.bufflen, nRecvedLen);
+	}
 	m_recving.bufflen += nRecvedLen;
 
 	//分包
@@ -300,6 +311,11 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 
 void CTcpSession::DoSend(const char *buf, unsigned int len)
 {
+	if (m_bRC4Encryption)
+	{
+		rc4_crypt(m_rc4StateWrite, (unsigned char*)buf, len);
+	}
+	
 	if (m_sending.bufflen != 0)
 	{
 		MessagePack *pack = NULL;

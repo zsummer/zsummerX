@@ -83,8 +83,10 @@ struct tagAcceptorConfigTraits
 	std::string listenIP = "0.0.0.0";
 	unsigned short listenPort = 81;
 	ProtoType protoType = PT_TCP;
+	bool rc4_tcp_encryption = false;
 	unsigned int maxSessions = 5000;
 	std::vector<std::string> whitelistIP;
+
 };
 
 struct tagAcceptorInfo
@@ -102,6 +104,7 @@ struct tagConnctorConfigTraits
 	std::string remoteIP = "127.0.0.1";
 	unsigned short remotePort = 81;
 	ProtoType protoType = PT_TCP;
+	bool rc4_tcp_encryption = false;
 	unsigned int reconnectMaxCount = 0; // try reconnect max count
 	unsigned int reconnectInterval =5000; //million seconds;
 	bool         reconnectCleanAllData = true ;//clean all data when reconnect;

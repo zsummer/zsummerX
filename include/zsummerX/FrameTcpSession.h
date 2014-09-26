@@ -67,8 +67,8 @@ public:
 	void Close();
 
 public:
-	inline void SetEncryption(bool encryp){ m_bRC4Encryption = encryp; }
-	inline bool GetEncryption(){ return m_bRC4Encryption; }
+	void SetEncryption(std::string encryp);
+	inline std::string GetEncryption(){ return m_rc4Encrypt; }
 private:
 
 	bool DoRecv();
@@ -114,7 +114,7 @@ private:
 	std::queue<MessagePack *> m_freeCache;
 
 	//!  «∑Òº”√‹
-	bool m_bRC4Encryption = false;
+	std::string m_rc4Encrypt;
 	CRC4Encryption m_rc4StateRead;
 	CRC4Encryption m_rc4StateWrite;
 

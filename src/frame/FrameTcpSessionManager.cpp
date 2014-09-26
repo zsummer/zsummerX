@@ -181,11 +181,11 @@ void CTcpSessionManager::OnAcceptNewClient(zsummer::network::ErrorCode ec, CTcpS
 }
 
 
-bool CTcpSessionManager::BindEstablishedSocketPtr(CTcpSocketPtr sockptr, AccepterID aID, ProtoType pt, bool bEncryp)
+bool CTcpSessionManager::BindEstablishedSocketPtr(CTcpSocketPtr sockptr, AccepterID aID, ProtoType pt, std::string encrypt)
 {
 	m_lastSessionID++;
 	CTcpSessionPtr session(new CTcpSession());
-	session->SetEncryption(bEncryp);
+	session->SetEncryption(encrypt);
 	if (!session->BindTcpSocketPrt(sockptr, aID, m_lastSessionID, pt))
 	{
 		return false;

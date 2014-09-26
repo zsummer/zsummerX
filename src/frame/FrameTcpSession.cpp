@@ -43,11 +43,14 @@ using namespace zsummer::proto4z;
 
 CTcpSession::CTcpSession()
 {
-	std::string key = "zhangyawei_zhang@foxmail.com";
-	m_rc4StateRead.MakeSBox(key);
-	m_rc4StateWrite.MakeSBox(key);
 }
 
+void CTcpSession::SetEncryption(std::string encryp)
+{
+	m_rc4Encrypt = encryp;	
+	m_rc4StateRead.MakeSBox(encryp); 
+	m_rc4StateWrite.MakeSBox(encryp); 
+}
 
 CTcpSession::~CTcpSession()
 {
@@ -71,9 +74,8 @@ void CTcpSession::CleanSession(bool isCleanAllData)
 	m_acceptID = InvalidAccepterID;
 	m_connectorID = InvalidConnectorID;
 	m_heartbeatID = InvalidTimerID;
-	std::string key = "zhangyawei_zhang@foxmail.com";
-	m_rc4StateRead.MakeSBox(key);
-	m_rc4StateWrite.MakeSBox(key);
+	m_rc4StateRead.MakeSBox(m_rc4Encrypt);
+	m_rc4StateWrite.MakeSBox(m_rc4Encrypt);
 
 	m_recving.bufflen = 0;
 	m_sending.bufflen = 0;
@@ -175,7 +177,7 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 		OnClose();
 		return;
 	}
-	if (m_bRC4Encryption)
+	if (!m_rc4Encrypt.empty())
 	{
 		m_rc4StateRead.RC4Encryption((unsigned char*)m_recving.buff + m_recving.bufflen, nRecvedLen);
 	}
@@ -307,7 +309,7 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 
 void CTcpSession::DoSend(const char *buf, unsigned int len)
 {
-	if (m_bRC4Encryption)
+	if (!m_rc4Encrypt.empty())
 	{
 		m_rc4StateWrite.RC4Encryption((unsigned char*)buf, len);
 	}

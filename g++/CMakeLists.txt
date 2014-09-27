@@ -16,9 +16,7 @@ aux_source_directory(${ZSUMMERX_SRC_DIR}/frame FRAME)
 
 set(source  ${COMMON} ${TIMER} ${FRAME} ${NETWORK})
 
-set(LIBRARY_OUTPUT_PATH ${ZSUMMERX_LIBS_DIR})
-
-message(STATUS "add_library " ${ZSUMMERX_LIB_NAME}${LIB_SUFFIX} )
+set(LIBRARY_OUTPUT_PATH ${ZSUMMERX_LIB_DIR})
 
 add_library(${ZSUMMERX_LIB_NAME}${LIB_SUFFIX} STATIC ${source})
 

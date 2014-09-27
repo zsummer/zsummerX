@@ -46,21 +46,21 @@ class CMessageDispatcher
 {
 private:
 	CMessageDispatcher(){}
-	typedef std::unordered_map<ProtocolID, OnSessionMessageFunction> MapSessionDispatch;
-	typedef std::unordered_map<ProtocolID, OnConnectorMessageFunction> MapConnectorDispatch;
+	typedef std::unordered_map<ProtocolID, std::vector<OnSessionMessageFunction> > MapSessionDispatch;
+	typedef std::unordered_map<ProtocolID, std::vector<OnConnectorMessageFunction> > MapConnectorDispatch;
 public:
 	static CMessageDispatcher & getRef();
 	static CMessageDispatcher * getPtr(){ return &getRef(); }
 	~CMessageDispatcher(){};
 
 	//message
-	inline void RegisterSessionOrgMessage(const OnSessionOrgMessageFunction & msgfun){ m_funOrgSessionDispatch = msgfun; }
-	inline void RegisterSessionMessage(ProtocolID protocolID, const OnSessionMessageFunction & msgfun){ m_mapSessionDispatch[protocolID] = msgfun; }
-	inline void RegisterSessionDefaultMessage(const OnSessionMessageFunction & msgfun){ m_funDefaultSessionDispatch = msgfun; }
+	inline void RegisterSessionOrgMessage(const OnSessionOrgMessageFunction & msgfun){ m_vctOrgSessionDispatch.push_back(msgfun); }
+	inline void RegisterSessionMessage(ProtocolID protocolID, const OnSessionMessageFunction & msgfun){ m_mapSessionDispatch[protocolID].push_back(msgfun); }
+	inline void RegisterSessionDefaultMessage(const OnSessionMessageFunction & msgfun){ m_vctDefaultSessionDispatch.push_back(msgfun); }
 
-	inline void RegisterConnectorOrgMessage(const OnConnectorOrgMessageFunction & msgfun){ m_funOrgConnectorDispatch = msgfun; }
-	inline void RegisterConnectorMessage(ProtocolID protocolID, const OnConnectorMessageFunction & msgfun){ m_mapConnectorDispatch[protocolID] = msgfun; }
-	inline void RegisterConnectorDefaultMessage(const OnConnectorMessageFunction & msgfun){ m_funDefaultConnectorDispatch = msgfun; }
+	inline void RegisterConnectorOrgMessage(const OnConnectorOrgMessageFunction & msgfun){ m_vctOrgConnectorDispatch.push_back(msgfun); }
+	inline void RegisterConnectorMessage(ProtocolID protocolID, const OnConnectorMessageFunction & msgfun){ m_mapConnectorDispatch[protocolID].push_back(msgfun); }
+	inline void RegisterConnectorDefaultMessage(const OnConnectorMessageFunction & msgfun){ m_vctDefaultConnectorDispatch.push_back(msgfun); }
 
 	//event
 	inline void RegisterOnSessionEstablished(const OnSessionEstablished & fun){m_vctOnSessionEstablished.push_back(fun); }
@@ -69,12 +69,12 @@ public:
 	inline void RegisterOnConnectorDisconnect(const OnConnectorDisconnect & fun) { m_vctOnConnectorDisconnect.push_back(fun); }
 
 	//heartbeat
-	inline void RegisterOnMySessionHeartbeatTimer(const OnMySessionHeartbeatTimer & fun) { m_vctOnSessionHeartbeat.push_back(fun); }
-	inline void RegisterOnMyConnectorHeartbeatTimer(const OnMyConnectorHeartbeatTimer &fun){ m_vctOnConnectorHeartbeat.push_back(fun); }
+	inline void RegisterOnSessionPulse(const OnSessionPulseTimer & fun) { m_vctOnSessionPulse.push_back(fun); }
+	inline void RegisterOnConnectorPulse(const OnConnectorPulseTimer &fun){ m_vctOnConnectorPulse.push_back(fun); }
 
 	//http
-	inline void RegisterOnSessionHTTPMessage(const OnSessionHTTPMessageFunction & fun) { m_funSessionHTTPMessage = fun; }
-	inline void RegisterOnConnectorHTTPMessage(const OnConnectorHTTPMessageFunction & fun) { m_funConnectorHTTPMessage = fun; }
+	inline void RegisterOnSessionHTTPMessage(const OnSessionHTTPMessageFunction & fun) { m_vctSessionHTTPMessage.push_back(fun); }
+	inline void RegisterOnConnectorHTTPMessage(const OnConnectorHTTPMessageFunction & fun) { m_vctConnectorHTTPMessage.push_back(fun); }
 public:
 	inline bool DispatchOrgSessionMessage(AccepterID aID, SessionID sID, const char * blockBegin, FrameStreamTraits::Integer blockSize);
 	inline void DispatchSessionMessage(AccepterID aID, SessionID sID, ProtocolID pID, ReadStreamPack & msg);
@@ -84,38 +84,33 @@ public:
 	inline void DispatchOnSessionDisconnect(AccepterID aID, SessionID sID);
 	inline void DispatchOnConnectorEstablished(ConnectorID cID);
 	inline void DispatchOnConnectorDisconnect(ConnectorID cID);
-	inline void DispatchOnSessionHeartbeat(AccepterID aID, SessionID sID);
-	inline void DispatchOnConnectorHeartbeat(ConnectorID cID);
+	inline void DispatchOnSessionPulse(AccepterID aID, SessionID sID, unsigned int pulseInterval);
+	inline void DispatchOnConnectorPulse(ConnectorID cID, unsigned int pulseInterval);
 	inline bool DispatchSessionHTTPMessage(AccepterID aID, SessionID sID, const zsummer::proto4z::HTTPHeadMap &head, const std::string & body);
 	inline bool DispatchConnectorHTTPMessage(ConnectorID cID, const zsummer::proto4z::HTTPHeadMap &head, const std::string & body);
 
 	private:
-		//!对具体的每个消息进行注册handler回调处理
+		//!message
 		MapSessionDispatch m_mapSessionDispatch;
-		//!对消息的原始封包进行注册handler回调处理, 如果回调返回值为false 直接跳过本次封包的其他dispatch.
-		//!该处理可针对所有/部分消息进行一些统一的消息处理 比如转发,屏蔽等.
-		OnSessionOrgMessageFunction m_funOrgSessionDispatch;
-		//!对于在原始封包处理中没有匹配到handler的消息 将统一dispatch到该handler中.
-		OnSessionMessageFunction m_funDefaultSessionDispatch;
+		std::vector<OnSessionOrgMessageFunction> m_vctOrgSessionDispatch;
+		std::vector<OnSessionMessageFunction> m_vctDefaultSessionDispatch;
 
-		//!对具体的每个消息进行注册handler回调处理
 		MapConnectorDispatch m_mapConnectorDispatch;
-		//!对消息的原始封包进行注册handler回调处理, 如果回调返回值为false 直接跳过本次封包的其他dispatch.
-		//!该处理可针对所有/部分消息进行一些统一的消息处理 比如转发,屏蔽等.
-		OnConnectorOrgMessageFunction m_funOrgConnectorDispatch;
-		//!对于在原始封包处理中没有匹配到handler的消息 将统一dispatch到该handler中.
-		OnConnectorMessageFunction m_funDefaultConnectorDispatch;
+		std::vector<OnConnectorOrgMessageFunction> m_vctOrgConnectorDispatch;
+		std::vector<OnConnectorMessageFunction> m_vctDefaultConnectorDispatch;
 
+		//http
+		std::vector<OnSessionHTTPMessageFunction> m_vctSessionHTTPMessage;
+		std::vector<OnConnectorHTTPMessageFunction> m_vctConnectorHTTPMessage;
+
+		//event
 		std::vector<OnSessionEstablished> m_vctOnSessionEstablished;
 		std::vector<OnSessionDisconnect> m_vctOnSessionDisconnect;
 		std::vector<OnConnectorEstablished> m_vctOnConnectorEstablished;
 		std::vector<OnConnectorDisconnect> m_vctOnConnectorDisconnect;
 
-		std::vector<OnMySessionHeartbeatTimer> m_vctOnSessionHeartbeat;
-		std::vector<OnMyConnectorHeartbeatTimer> m_vctOnConnectorHeartbeat;
-
-		OnSessionHTTPMessageFunction m_funSessionHTTPMessage;
-		OnConnectorHTTPMessageFunction m_funConnectorHTTPMessage;
+		std::vector<OnSessionPulseTimer> m_vctOnSessionPulse;
+		std::vector<OnConnectorPulseTimer> m_vctOnConnectorPulse;
 };
 
 
@@ -123,27 +118,30 @@ public:
 
 inline bool CMessageDispatcher::DispatchOrgSessionMessage(AccepterID aID, SessionID sID, const char * blockBegin, FrameStreamTraits::Integer blockSize)
 {
-	if (m_funOrgSessionDispatch == nullptr)
+	if (m_vctOrgSessionDispatch.empty())
 	{
 		return true;
 	}
 
 	try
 	{
-		LOGT("Entry DispatchOrgSessionMessage AccepterID=" << aID << ", SessionID=" << sID << ", blockSize=" << blockSize);
-		if (!m_funOrgSessionDispatch(aID, sID, blockBegin, blockSize))
+		for (auto & fun : m_vctOrgSessionDispatch)
 		{
-			return false;
+			LOGT("Entry DispatchOrgSessionMessage AccepterID=" << aID << ", SessionID=" << sID << ", blockSize=" << blockSize);
+			if (!fun(aID, sID, blockBegin, blockSize))
+			{
+				return false;
+			}
 		}
 	}
 	catch (std::runtime_error e)
 	{
-		LOGE("Leave OnOrgSessionMessage With Runtime Error: AccepterID=" << aID << ", SessionID=" << sID << ", Error Message=\"" << e.what() << "\"");
+		LOGE("Leave DispatchOrgSessionMessage With Runtime Error: AccepterID=" << aID << ", SessionID=" << sID << ", Error Message=\"" << e.what() << "\"");
 		return false;
 	}
 	catch (...)
 	{
-		LOGE("Leave OnOrgSessionMessage With Unknown Runtime Error: AccepterID=" << aID << ", SessionID=" << sID);
+		LOGE("Leave DispatchOrgSessionMessage With Unknown Runtime Error: AccepterID=" << aID << ", SessionID=" << sID);
 		return false;
 	}
 	return true;
@@ -152,58 +150,70 @@ inline bool CMessageDispatcher::DispatchOrgSessionMessage(AccepterID aID, Sessio
 inline void CMessageDispatcher::DispatchSessionMessage(AccepterID aID, SessionID sID, ProtocolID pID, ReadStreamPack & msg)
 {
 	MapSessionDispatch::iterator iter = m_mapSessionDispatch.find(pID);
-	if (iter == m_mapSessionDispatch.end() && m_funDefaultSessionDispatch == nullptr)
+	if ((iter == m_mapSessionDispatch.end() || iter->second.empty()) && m_vctDefaultSessionDispatch.empty())
 	{
-		LOGE("Entry OnSessionMessage[" << pID << "] Failed: UNKNOWN ProtocolID. AccepterID=" << aID << ", SessionID=" << sID << ", ProtocolID=" << pID);
+		LOGE("Entry DispatchSessionMessage[" << pID << "] Failed: UNKNOWN ProtocolID. AccepterID=" << aID << ", SessionID=" << sID << ", ProtocolID=" << pID);
 		return;
 	}
 	try
 	{
-		LOGT("Entry OnSessionMessage[" << pID << "] AccepterID=" << aID << ", SessionID=" << sID);
-		if (iter != m_mapSessionDispatch.end())
+		if (iter != m_mapSessionDispatch.end() && !iter->second.empty())
 		{
-			(iter->second)(aID, sID, pID, msg);
+			for (auto & fun : iter->second)
+			{
+				LOGT("Entry DispatchSessionMessage[" << pID << "] AccepterID=" << aID << ", SessionID=" << sID);
+				msg.ResetMoveCursor();
+				msg >> pID;
+				fun(aID, sID, pID, msg);
+			}	
 		}
 		else
 		{
-			m_funDefaultSessionDispatch(aID, sID, pID, msg);
+			for (auto & fun : m_vctDefaultSessionDispatch)
+			{
+				msg.ResetMoveCursor();
+				msg >> pID;
+				fun(aID, sID, pID, msg);
+			}
 		}
-		LOGT("Leave OnSessionMessage[" << pID << "] AccepterID=" << aID << ", SessionID=" << sID);
+		LOGT("Leave DispatchSessionMessage[" << pID << "] AccepterID=" << aID << ", SessionID=" << sID);
 	}
 	catch (std::runtime_error e)
 	{
-		LOGE("Leave OnSessionMessage[" << pID << "] With Runtime Error: AccepterID=" << aID << ", SessionID=" << sID << ", rsLen=" << msg.GetStreamLen() << ", Error Message=\"" << e.what() << "\"");
+		LOGE("Leave DispatchSessionMessage[" << pID << "] With Runtime Error: AccepterID=" << aID << ", SessionID=" << sID << ", rsLen=" << msg.GetStreamLen() << ", Error Message=\"" << e.what() << "\"");
 	}
 	catch (...)
 	{
-		LOGE("Leave OnSessionMessage[" << pID << "] With Unknown Runtime Error: AccepterID=" << aID << ", SessionID=" << sID);
+		LOGE("Leave DispatchSessionMessage[" << pID << "] With Unknown Runtime Error: AccepterID=" << aID << ", SessionID=" << sID);
 	}
 }
 
 
 inline bool CMessageDispatcher::DispatchOrgConnectorMessage(ConnectorID cID, const char * blockBegin, FrameStreamTraits::Integer blockSize)
 {
-	if (m_funOrgConnectorDispatch == nullptr)
+	if (m_vctOrgConnectorDispatch.empty())
 	{
 		return true;
 	}
-
 	try
 	{
-		LOGT("Entry DispatchOrgConnectorMessage ConnectorID=" << cID << ", blockSize=" << blockSize);
-		if (!m_funOrgConnectorDispatch(cID, blockBegin, blockSize))
+		for (auto & fun : m_vctOrgConnectorDispatch)
 		{
-			return false;
+			LOGT("Entry DispatchOrgConnectorMessage ConnectorID=" << cID << ", blockSize=" << blockSize);
+			if (!fun(cID, blockBegin, blockSize))
+			{
+				return false;
+			}
 		}
 	}
 	catch (std::runtime_error e)
 	{
-		LOGE("Leave OnOrgConnectorMessage With Runtime Error: ConnectorID=" << cID << ", Error Message=\"" << e.what() << "\"");
+		LOGE("Leave DispatchOrgConnectorMessage With Runtime Error: ConnectorID=" << cID << ", Error Message=\"" << e.what() << "\"");
 		return false;
 	}
 	catch (...)
 	{
-		LOGE("Leave OnOrgConnectorMessage With Unknown Runtime Error: ConnectorID=" << cID);
+		LOGE("Leave DispatchOrgConnectorMessage With Unknown Runtime Error: ConnectorID=" << cID);
 		return false;
 	}
 	return true;
@@ -212,32 +222,44 @@ inline bool CMessageDispatcher::DispatchOrgConnectorMessage(ConnectorID cID, con
 inline void CMessageDispatcher::DispatchConnectorMessage(ConnectorID cID, ProtocolID pID, ReadStreamPack & msg)
 {
 	MapConnectorDispatch::iterator iter = m_mapConnectorDispatch.find(pID);
-	if (iter == m_mapConnectorDispatch.end() && m_funDefaultConnectorDispatch == nullptr)
+	if ((iter == m_mapConnectorDispatch.end() || iter->second.empty()) && m_vctDefaultConnectorDispatch.empty())
 	{
-		LOGE("Entry ConnectorMessage[" << pID << "] Failed: UNKNOWN ProtocolID. ConnectorID=" << cID << ", ProtocolID=" << pID);
+		LOGE("Entry DispatchConnectorMessage[" << pID << "] Failed: UNKNOWN ProtocolID. ConnectorID=" << cID << ", ProtocolID=" << pID);
 		//error
 		return;
 	}
 	try
 	{
-		LOGT("Entry OnConnectorMessage[" << pID << "] ConnectorID=" << cID);
-		if (iter != m_mapConnectorDispatch.end())
+		
+		if (iter != m_mapConnectorDispatch.end() && !iter->second.empty())
 		{
-			(iter->second)(cID, pID, msg);
+			for (auto & fun : iter->second)
+			{
+				LOGT("Entry DispatchConnectorMessage[" << pID << "] ConnectorID=" << cID);
+				msg.ResetMoveCursor();
+				msg >> pID;
+				fun(cID, pID, msg);
+			}
+			
 		}
 		else
 		{
-			m_funDefaultConnectorDispatch(cID, pID, msg);
+			for (auto & fun : m_vctDefaultConnectorDispatch)
+			{
+				msg.ResetMoveCursor();
+				msg >> pID;
+				fun(cID, pID, msg);
+			}
 		}
-		LOGT("Leave OnConnectorMessage[" << pID << "] ConnectorID=" << cID);
+		LOGT("Leave DispatchConnectorMessage[" << pID << "] ConnectorID=" << cID);
 	}
 	catch (std::runtime_error e)
 	{
-		LOGE("Leave OnConnectorMessage[" << pID << "] With Runtime Error: ConnectorID=" << cID << ", rsLen=" << msg.GetStreamLen() << ", Error Message=\"" << e.what() << "\"");
+		LOGE("Leave DispatchConnectorMessage[" << pID << "] With Runtime Error: ConnectorID=" << cID << ", rsLen=" << msg.GetStreamLen() << ", Error Message=\"" << e.what() << "\"");
 	}
 	catch (...)
 	{
-		LOGE("Leave OnConnectorMessage[" << pID << "] With Unknown Runtime Error: ConnectorID=" << cID);
+		LOGE("Leave DispatchConnectorMessage[" << pID << "] With Unknown Runtime Error: ConnectorID=" << cID);
 	}
 }
 
@@ -251,18 +273,18 @@ inline void CMessageDispatcher::DispatchOnSessionEstablished(AccepterID aID, Ses
 	{
 		try
 		{
-			LOGT("Entry OnSessionEstablished SessionID=" << sID);
+			LOGT("Entry DispatchOnSessionEstablished SessionID=" << sID);
 			fun(aID, sID);
-			LOGT("Leave OnSessionEstablished SessionID=" << sID);
+			LOGT("Leave DispatchOnSessionEstablished SessionID=" << sID);
 		}
 
 		catch (std::runtime_error e)
 		{
-			LOGE("Leave OnSessionEstablished Runtime Error: SessionID=" << sID << ", Error Message=\"" << e.what() << "\"");
+			LOGE("Leave DispatchOnSessionEstablished Runtime Error: SessionID=" << sID << ", Error Message=\"" << e.what() << "\"");
 		}
 		catch (...)
 		{
-			LOGE("Leave OnSessionEstablished Unknown Runtime Error: SessionID=" << sID);
+			LOGE("Leave DispatchOnSessionEstablished Unknown Runtime Error: SessionID=" << sID);
 		}
 	}
 
@@ -278,17 +300,17 @@ inline void CMessageDispatcher::DispatchOnSessionDisconnect(AccepterID aID, Sess
 	{
 		try
 		{
-			LOGT("Entry OnSessionDisconnect SessionID=" << sID);
+			LOGT("Entry DispatchOnSessionDisconnect SessionID=" << sID);
 			fun(aID, sID);
-			LOGT("Leave OnSessionDisconnect SessionID=" << sID);
+			LOGT("Leave DispatchOnSessionDisconnect SessionID=" << sID);
 		}
 		catch (std::runtime_error e)
 		{
-			LOGE("Leave OnSessionDisconnect Runtime Error: SessionID=" << sID << ", Error Message=\"" << e.what() << "\"");
+			LOGE("Leave DispatchOnSessionDisconnect Runtime Error: SessionID=" << sID << ", Error Message=\"" << e.what() << "\"");
 		}
 		catch (...)
 		{
-			LOGE("Leave OnSessionDisconnect Unknown Runtime Error: SessionID=" << sID);
+			LOGE("Leave DispatchOnSessionDisconnect Unknown Runtime Error: SessionID=" << sID);
 		}
 	}
 }
@@ -302,17 +324,17 @@ inline void CMessageDispatcher::DispatchOnConnectorEstablished(ConnectorID cID)
 	{
 		try
 		{
-			LOGT("Entry OnConnectorEstablished ConnectorID=" << cID);
+			LOGT("Entry DispatchOnConnectorEstablished ConnectorID=" << cID);
 			fun(cID);
-			LOGT("Leave OnConnectorEstablished ConnectorID=" << cID);
+			LOGT("Leave DispatchOnConnectorEstablished ConnectorID=" << cID);
 		}
 		catch (std::runtime_error e)
 		{
-			LOGE("Leave OnConnectorEstablished Runtime Error: ConnectorID=" << cID << ", Error Message=\"" << e.what() << "\"");
+			LOGE("Leave DispatchOnConnectorEstablished Runtime Error: ConnectorID=" << cID << ", Error Message=\"" << e.what() << "\"");
 		}
 		catch (...)
 		{
-			LOGE("Leave OnConnectorEstablished With Unknown Runtime Error: ConnectorID=" << cID);
+			LOGE("Leave DispatchOnConnectorEstablished With Unknown Runtime Error: ConnectorID=" << cID);
 		}
 	}
 }
@@ -327,67 +349,67 @@ inline void CMessageDispatcher::DispatchOnConnectorDisconnect(ConnectorID cID)
 	{
 		try
 		{
-			LOGT("Entry OnConnectorDisconnect ConnectorID=" << cID);
+			LOGT("Entry DispatchOnConnectorDisconnect ConnectorID=" << cID);
 			fun(cID);
-			LOGT("Leave OnConnectorDisconnect Success: ConnectorID=" << cID);
+			LOGT("Leave DispatchOnConnectorDisconnect Success: ConnectorID=" << cID);
 		}
 		catch (std::runtime_error e)
 		{
-			LOGE("Leave OnConnectorDisconnect Runtime Error: ConnectorID=" << cID << ", Error Message=\"" << e.what() << "\"");
+			LOGE("Leave DispatchOnConnectorDisconnect Runtime Error: ConnectorID=" << cID << ", Error Message=\"" << e.what() << "\"");
 		}
 		catch (...)
 		{
-			LOGE("Leave OnConnectorDisconnect Unknown Runtime Error: ConnectorID=" << cID);
+			LOGE("Leave DispatchOnConnectorDisconnect Unknown Runtime Error: ConnectorID=" << cID);
 		}
 	}
 }
 
-inline void CMessageDispatcher::DispatchOnSessionHeartbeat(AccepterID aID, SessionID sID)
+inline void CMessageDispatcher::DispatchOnSessionPulse(AccepterID aID, SessionID sID, unsigned int pulseInterval)
 {
-	if (m_vctOnSessionHeartbeat.empty())
+	if (m_vctOnSessionPulse.empty())
 	{
 		return;
 	}
-	for (auto & fun : m_vctOnSessionHeartbeat)
+	for (auto & fun : m_vctOnSessionPulse)
 	{
 		try
 		{
-			LOGT("Entry OnMySessionHeartbeatTimer SessionID=" << sID);
-			fun(aID, sID);
-			LOGT("Leave OnMySessionHeartbeatTimer SessionID=" << sID);
+			LOGT("Entry DispatchOnSessionPulse SessionID=" << sID);
+			fun(aID, sID, pulseInterval);
+			LOGT("Leave DispatchOnSessionPulse SessionID=" << sID);
 		}
 		catch (std::runtime_error e)
 		{
-			LOGE("Leave OnMySessionHeartbeatTimer Runtime Error: SessionID=" << sID << ", Error Message=\"" << e.what() << "\"");
+			LOGE("Leave DispatchOnSessionPulse Runtime Error: SessionID=" << sID << ", Error Message=\"" << e.what() << "\"");
 		}
 		catch (...)
 		{
-			LOGE("Leave OnMySessionHeartbeatTimer Unknown Runtime Error: SessionID=" << sID);
+			LOGE("Leave DispatchOnSessionPulse Unknown Runtime Error: SessionID=" << sID);
 		}
 	}
 }
 
-inline void CMessageDispatcher::DispatchOnConnectorHeartbeat(ConnectorID cID)
+inline void CMessageDispatcher::DispatchOnConnectorPulse(ConnectorID cID, unsigned int pulseInterval)
 {
-	if (m_vctOnConnectorHeartbeat.empty())
+	if (m_vctOnConnectorPulse.empty())
 	{
 		return;
 	}
-	for (auto & fun : m_vctOnConnectorHeartbeat)
+	for (auto & fun : m_vctOnConnectorPulse)
 	{
 		try
 		{
-			LOGT("Entry OnMyConnectorHeartbeatTimer ConnectorID=" << cID);
-			fun(cID);
-			LOGT("Leave OnMyConnectorHeartbeatTimer Success: ConnectorID=" << cID);
+			LOGT("Entry DispatchOnConnectorPulse ConnectorID=" << cID);
+			fun(cID, pulseInterval);
+			LOGT("Leave DispatchOnConnectorPulse Success: ConnectorID=" << cID);
 		}
 		catch (std::runtime_error e)
 		{
-			LOGE("Leave OnMyConnectorHeartbeatTimer Runtime Error: ConnectorID=" << cID << ", Error Message=\"" << e.what() << "\"");
+			LOGE("Leave DispatchOnConnectorPulse Runtime Error: ConnectorID=" << cID << ", Error Message=\"" << e.what() << "\"");
 		}
 		catch (...)
 		{
-			LOGE("Leave OnMyConnectorHeartbeatTimer Unknown Runtime Error: ConnectorID=" << cID);
+			LOGE("Leave DispatchOnConnectorPulse Unknown Runtime Error: ConnectorID=" << cID);
 		}
 	}
 
@@ -398,18 +420,24 @@ inline bool  CMessageDispatcher::DispatchSessionHTTPMessage(AccepterID aID, Sess
 {
 	try
 	{
-		LOGT("Entry OnSessionHTTPMessage AccepterID=" << aID << ", SessionID=" << sID << ", head count=" << head.size() << ", bodySize=" << body.length());
-		bool ret = m_funSessionHTTPMessage(aID, sID, head, body);
-		LOGT("Leave OnSessionHTTPMessage AccepterID=" << aID << ", SessionID=" << sID);
-		return ret;
+		for (auto & fun : m_vctSessionHTTPMessage)
+		{
+			LOGT("Entry DispatchSessionHTTPMessage AccepterID=" << aID << ", SessionID=" << sID << ", head count=" << head.size() << ", bodySize=" << body.length());
+			if (!fun(aID, sID, head, body))
+			{
+				return false;
+			}
+			LOGT("Leave DispatchSessionHTTPMessage AccepterID=" << aID << ", SessionID=" << sID);
+		}
+		return true;
 	}
 	catch (std::runtime_error e)
 	{
-		LOGE("Leave OnSessionHTTPMessage With Runtime Error: AccepterID=" << aID << ", SessionID=" << sID << ", Error Message=\"" << e.what() << "\"");
+		LOGE("Leave DispatchSessionHTTPMessage With Runtime Error: AccepterID=" << aID << ", SessionID=" << sID << ", Error Message=\"" << e.what() << "\"");
 	}
 	catch (...)
 	{
-		LOGE("Leave OnSessionHTTPMessage With Unknown Runtime Error: AccepterID=" << aID << ", SessionID=" << sID);
+		LOGE("Leave DispatchSessionHTTPMessage With Unknown Runtime Error: AccepterID=" << aID << ", SessionID=" << sID);
 	}
 	return false;
 }
@@ -417,18 +445,24 @@ inline bool  CMessageDispatcher::DispatchConnectorHTTPMessage(ConnectorID cID, c
 {
 	try
 	{
-		LOGT("Entry OnConnectorHTTPMessage ConnectorID=" << cID << ", head count=" << head.size() << ", bodySize=" << body.length());
-		bool ret = m_funConnectorHTTPMessage(cID, head, body);
-		LOGT("Leave OnConnectorHTTPMessage ConnectorID=" << cID);
-		return ret;
+		for (auto & fun : m_vctConnectorHTTPMessage)
+		{
+			LOGT("Entry DispatchConnectorHTTPMessage ConnectorID=" << cID << ", head count=" << head.size() << ", bodySize=" << body.length());
+			if (!fun(cID, head, body))
+			{
+				return false;
+			}
+			LOGT("Leave DispatchConnectorHTTPMessage ConnectorID=" << cID);
+		}
+		return true;
 	}
 	catch (std::runtime_error e)
 	{
-		LOGE("Leave OnConnectorHTTPMessage With Runtime Error: ConnectorID=" << cID << ", Error Message=\"" << e.what() << "\"");
+		LOGE("Leave DispatchConnectorHTTPMessage With Runtime Error: ConnectorID=" << cID << ", Error Message=\"" << e.what() << "\"");
 	}
 	catch (...)
 	{
-		LOGE("Leave OnConnectorHTTPMessage With Unknown Runtime Error: ConnectorID=" << cID);
+		LOGE("Leave DispatchConnectorHTTPMessage With Unknown Runtime Error: ConnectorID=" << cID);
 	}
 	return false;
 }

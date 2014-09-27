@@ -282,6 +282,8 @@ public:
 	ReadStream(const char *pAttachData, Integer attachDataLen);
 	~ReadStream(){}
 public:
+
+	inline void ResetMoveCursor(){ m_cursor = StreamHeadTrait::HeadLen;}
 	//get head memory to packHead
 	inline void GetStreamHead(char *streamHead/*[StreamHeadTrait::HeadLen]*/);
 	inline Integer GetStreamHeadLen(){ return StreamHeadTrait::HeadLen; };
@@ -952,6 +954,8 @@ ReadStream<StreamHeadTrait>::ReadStream(const char *pAttachData, Integer attachD
 		m_pAttachData = NULL;
 	}
 }
+
+
 template<class StreamHeadTrait>
 inline void ReadStream<StreamHeadTrait>::CheckMoveCursor(Integer unit)
 {

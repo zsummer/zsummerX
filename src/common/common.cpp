@@ -56,7 +56,7 @@ zsummer::network::CInitEnvironment::CInitEnvironment()
 		assert(0);
 	}
 #endif
-	g_coreID = zsummer::log4z::ILog4zManager::GetInstance()->CreateLogger("NetWork");
+	g_coreID = zsummer::log4z::ILog4zManager::GetInstance()->CreateLogger("NetWork", LOG4Z_DEFAULT_PATH, LOG_LEVEL_ERROR);
 }
 zsummer::network::CInitEnvironment::~CInitEnvironment()
 {

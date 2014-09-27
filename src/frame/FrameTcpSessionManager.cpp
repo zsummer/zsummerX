@@ -171,7 +171,14 @@ void CTcpSessionManager::OnAcceptNewClient(zsummer::network::ErrorCode ec, CTcpS
 			<< ", Aready linked sessions = " << iter->second.second.currentLinked << ", trais=" << iter->second.first);
 		iter->second.second.currentLinked++;
 		iter->second.second.totalAcceptCount++;
-		BindEstablishedSocketPtr(s, aID, iter->second.first.protoType, iter->second.first.rc4_tcp_encryption);
+
+		m_lastSessionID++;
+		CTcpSessionPtr session(new CTcpSession());
+		if (session->BindTcpSocketPrt(s, aID, m_lastSessionID, iter->second.first))
+		{
+			m_mapTcpSessionPtr[MERGEBIGID(aID, m_lastSessionID)] = session;
+			Post(std::bind(&CMessageDispatcher::DispatchOnSessionEstablished, &CMessageDispatcher::getRef(), aID, m_lastSessionID));
+		}
 	}
 	
 	//! accept next socket.
@@ -181,19 +188,7 @@ void CTcpSessionManager::OnAcceptNewClient(zsummer::network::ErrorCode ec, CTcpS
 }
 
 
-bool CTcpSessionManager::BindEstablishedSocketPtr(CTcpSocketPtr sockptr, AccepterID aID, ProtoType pt, std::string encrypt)
-{
-	m_lastSessionID++;
-	CTcpSessionPtr session(new CTcpSession());
-	session->SetEncryption(encrypt);
-	if (!session->BindTcpSocketPrt(sockptr, aID, m_lastSessionID, pt))
-	{
-		return false;
-	}
-	m_mapTcpSessionPtr[MERGEBIGID(aID,m_lastSessionID)] = session;
-	Post(std::bind(&CMessageDispatcher::DispatchOnSessionEstablished, &CMessageDispatcher::getRef(), aID, m_lastSessionID));
-	return true;
-}
+
 
 
 void CTcpSessionManager::KickSession(AccepterID aID, SessionID sID)
@@ -226,7 +221,6 @@ bool CTcpSessionManager::AddConnector(const tagConnctorConfigTraits & traits)
 	CTcpSocketPtr sockPtr(new zsummer::network::CTcpSocket());
 	sockPtr->Initialize(m_summer);
 	CTcpSessionPtr sessionPtr(new CTcpSession());
-	sessionPtr->SetEncryption(m_mapConnectorConfig[traits.cID].first.rc4_tcp_encryption);
 	sessionPtr->BindTcpConnectorPtr(sockPtr, m_mapConnectorConfig[traits.cID]);
 	return true;
 }

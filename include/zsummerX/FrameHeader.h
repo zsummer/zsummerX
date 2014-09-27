@@ -55,11 +55,9 @@
 #include <proto4z/proto4z.h>
 using namespace std;
 
-//! frame封装在网络部分使用单例模式, 如果需要使用多线程 需要在业务层由用户开辟线程池处理, 并需要配合CTcpSessionManager的Post接口.
-//! 如果需要在zsummerX的网络部分使用多线程 请参考tcpTest实例调用zsummerX的原始接口实现.
+//! frame封装在网络部分使用单例模式, 如果需要在zsummerX的网络部分使用多线程 请参考tcpTest实例调用zsummerX的原始接口实现.
 
 
-//! ID类型和无效状态数值定义
 typedef unsigned int SessionID;
 const SessionID InvalidSeesionID = -1;
 typedef unsigned int AccepterID;
@@ -83,7 +81,8 @@ struct tagAcceptorConfigTraits
 	std::string listenIP = "0.0.0.0";
 	unsigned short listenPort = 81;
 	ProtoType protoType = PT_TCP;
-	std::string rc4_tcp_encryption = ""; //empty is not encryption
+	std::string rc4TcpEncryption = ""; //empty is not encryption
+	unsigned int pulseInterval = 30000;
 	unsigned int maxSessions = 5000;
 	std::vector<std::string> whitelistIP;
 
@@ -104,7 +103,8 @@ struct tagConnctorConfigTraits
 	std::string remoteIP = "127.0.0.1";
 	unsigned short remotePort = 81;
 	ProtoType protoType = PT_TCP;
-	std::string rc4_tcp_encryption = ""; //empty is not encryption
+	std::string rc4TcpEncryption = ""; //empty is not encryption
+	unsigned int pulseInterval = 30000;
 	unsigned int reconnectMaxCount = 0; // try reconnect max count
 	unsigned int reconnectInterval =5000; //million seconds;
 	bool         reconnectCleanAllData = true ;//clean all data when reconnect;
@@ -137,8 +137,6 @@ const unsigned int SEND_RECV_CHUNK_SIZE = 64 * 1024 -1;
 
 
 
-//心跳间隔
-const unsigned int HEARTBEART_INTERVAL = 30000; //毫秒
 
 
 //包头特性
@@ -183,8 +181,8 @@ typedef std::function < bool(ConnectorID, const zsummer::proto4z::HTTPHeadMap & 
 
 
 //注册心跳
-typedef std::function < void(AccepterID, SessionID) > OnMySessionHeartbeatTimer;
-typedef std::function < void(ConnectorID) > OnMyConnectorHeartbeatTimer;
+typedef std::function < void(AccepterID, SessionID, unsigned int/*pulse interval*/) > OnSessionPulseTimer;
+typedef std::function < void(ConnectorID, unsigned int/*pulse interval*/) > OnConnectorPulseTimer;
 
 
 //! print log

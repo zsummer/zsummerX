@@ -45,12 +45,7 @@ CTcpSession::CTcpSession()
 {
 }
 
-void CTcpSession::SetEncryption(std::string encryp)
-{
-	m_rc4Encrypt = encryp;	
-	m_rc4StateRead.MakeSBox(encryp); 
-	m_rc4StateWrite.MakeSBox(encryp); 
-}
+
 
 CTcpSession::~CTcpSession()
 {
@@ -73,7 +68,7 @@ void CTcpSession::CleanSession(bool isCleanAllData)
 	m_sessionID = InvalidSeesionID;
 	m_acceptID = InvalidAccepterID;
 	m_connectorID = InvalidConnectorID;
-	m_heartbeatID = InvalidTimerID;
+	m_pulseTimerID = InvalidTimerID;
 	m_rc4StateRead.MakeSBox(m_rc4Encrypt);
 	m_rc4StateWrite.MakeSBox(m_rc4Encrypt);
 
@@ -90,28 +85,35 @@ void CTcpSession::CleanSession(bool isCleanAllData)
 	}
 }
 
-bool CTcpSession::BindTcpSocketPrt(CTcpSocketPtr sockptr, AccepterID aID, SessionID sID, ProtoType pt)
+bool CTcpSession::BindTcpSocketPrt(CTcpSocketPtr sockptr, AccepterID aID, SessionID sID, const tagAcceptorConfigTraits &traits)
 {
+	m_rc4Encrypt = traits.rc4TcpEncryption;
 	CleanSession(true);
 	m_sockptr = sockptr;
 	m_sessionID = sID;
 	m_acceptID = aID;
-	m_protoType = pt;
+	m_protoType = traits.protoType;
+	m_pulseInterval = traits.pulseInterval;
 	if (!DoRecv())
 	{
 		LOGW("BindTcpSocketPrt Failed.");
 		return false;
 	}
-	m_heartbeatID = CTcpSessionManager::getRef().CreateTimer(HEARTBEART_INTERVAL, std::bind(&CTcpSession::OnHeartbeat, shared_from_this()));
+	if (traits.pulseInterval > 0)
+	{
+		m_pulseTimerID = CTcpSessionManager::getRef().CreateTimer(traits.pulseInterval, std::bind(&CTcpSession::OnHeartbeat, shared_from_this()));
+	}
 	return true;
 }
 
 void CTcpSession::BindTcpConnectorPtr(CTcpSocketPtr sockptr, const std::pair<tagConnctorConfigTraits, tagConnctorInfo> & config)
 {
+	m_rc4Encrypt = config.first.rc4TcpEncryption;
 	CleanSession(config.first.reconnectCleanAllData);
 	m_sockptr = sockptr;
 	m_connectorID = config.first.cID;
 	m_protoType = config.first.protoType;
+	m_pulseInterval = config.first.pulseInterval;
 
 	bool connectRet = m_sockptr->DoConnect(config.first.remoteIP, config.first.remotePort,
 		std::bind(&CTcpSession::OnConnected, shared_from_this(), std::placeholders::_1, config));
@@ -143,7 +145,11 @@ void CTcpSession::OnConnected(zsummer::network::ErrorCode ec, const std::pair<ta
 		OnClose();
 		return;
 	}
-	m_heartbeatID = CTcpSessionManager::getRef().CreateTimer(HEARTBEART_INTERVAL, std::bind(&CTcpSession::OnHeartbeat, shared_from_this()));
+	if (m_pulseInterval > 0)
+	{
+		m_pulseTimerID = CTcpSessionManager::getRef().CreateTimer(config.first.pulseInterval, std::bind(&CTcpSession::OnHeartbeat, shared_from_this()));
+	}
+	
 	
 	//用户在该回调中发送的第一包会跑到发送堆栈的栈顶.
 	CTcpSessionManager::getRef().OnConnectorStatus(m_connectorID, true, shared_from_this());
@@ -165,8 +171,11 @@ bool CTcpSession::DoRecv()
 void CTcpSession::Close()
 {
 	m_sockptr->DoClose();
-	CTcpSessionManager::getRef().CancelTimer(m_heartbeatID);
-	m_heartbeatID = InvalidTimerID;
+	if (m_pulseTimerID != InvalidTimerID)
+	{
+		CTcpSessionManager::getRef().CancelTimer(m_pulseTimerID);
+		m_pulseTimerID = InvalidTimerID;
+	}
 }
 
 void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
@@ -401,31 +410,31 @@ void CTcpSession::OnHeartbeat()
 {
 	if (m_connectorID != InvalidConnectorID)
 	{
-		CMessageDispatcher::getRef().DispatchOnConnectorHeartbeat(m_connectorID);
+		CMessageDispatcher::getRef().DispatchOnConnectorPulse(m_connectorID, m_pulseInterval);
 	}
 	else if (m_sessionID != InvalidSeesionID && m_acceptID != InvalidAccepterID)
 	{
-		CMessageDispatcher::getRef().DispatchOnSessionHeartbeat(m_acceptID, m_sessionID);
+		CMessageDispatcher::getRef().DispatchOnSessionPulse(m_acceptID, m_sessionID, m_pulseInterval);
 	}
 	else
 	{
 		LOGE("Unknown heartbeat");
 	}
-	if (m_heartbeatID == InvalidTimerID)
+	if (m_pulseTimerID == InvalidTimerID || m_pulseInterval == 0)
 	{
 		return;
 	}
-	m_heartbeatID = CTcpSessionManager::getRef().CreateTimer(HEARTBEART_INTERVAL, std::bind(&CTcpSession::OnHeartbeat, shared_from_this()));
+	m_pulseTimerID = CTcpSessionManager::getRef().CreateTimer(m_pulseInterval, std::bind(&CTcpSession::OnHeartbeat, shared_from_this()));
 	
 }
 
 void CTcpSession::OnClose()
 {
 	LOGI("Client Closed!");
-	if (m_heartbeatID != InvalidTimerID)
+	if (m_pulseTimerID != InvalidTimerID)
 	{
-		CTcpSessionManager::getRef().CancelTimer(m_heartbeatID);
-		m_heartbeatID = InvalidTimerID;
+		CTcpSessionManager::getRef().CancelTimer(m_pulseTimerID);
+		m_pulseTimerID = InvalidTimerID;
 	}
 	
 	if (m_connectorID != InvalidConnectorID)

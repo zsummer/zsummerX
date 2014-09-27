@@ -61,25 +61,19 @@ class CTcpSession : public std::enable_shared_from_this<CTcpSession>
 public:
 	CTcpSession();
 	~CTcpSession();
-	bool BindTcpSocketPrt(CTcpSocketPtr sockptr, AccepterID aID, SessionID sID, ProtoType pt);
+	bool BindTcpSocketPrt(CTcpSocketPtr sockptr, AccepterID aID, SessionID sID, const tagAcceptorConfigTraits &traits);
 	void BindTcpConnectorPtr(CTcpSocketPtr sockptr, const std::pair<tagConnctorConfigTraits, tagConnctorInfo> & config);
 	void DoSend(const char *buf, unsigned int len);
 	void Close();
 
-public:
-	void SetEncryption(std::string encryp);
-	inline std::string GetEncryption(){ return m_rc4Encrypt; }
 private:
+	void CleanSession(bool isCleanAllData);
 
 	bool DoRecv();
 
-	void CleanSession(bool isCleanAllData);
-
 	void OnConnected(zsummer::network::ErrorCode ec, const std::pair<tagConnctorConfigTraits, tagConnctorInfo> & config);
 
-	
 	void OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen);
-
 	
 	void OnSend(zsummer::network::ErrorCode ec,  int nSentLen);
 
@@ -87,14 +81,14 @@ private:
 	
 	void OnClose();
 
-
+private:
 	CTcpSocketPtr  m_sockptr;
-	SessionID m_sessionID = InvalidSeesionID;
+	SessionID m_sessionID = InvalidSeesionID; 
 	AccepterID m_acceptID = InvalidAccepterID;
 	ConnectorID m_connectorID = InvalidConnectorID;
 	ProtoType m_protoType = PT_TCP;
-
-	zsummer::network::TimerID m_heartbeatID = InvalidTimerID;
+	unsigned int m_pulseInterval = 0;
+	zsummer::network::TimerID m_pulseTimerID = InvalidTimerID;
 
 	enum SessionStatus
 	{

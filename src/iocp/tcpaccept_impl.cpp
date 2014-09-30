@@ -200,7 +200,7 @@ bool CTcpAcceptImpl::OnIOCPMessage(BOOL bSuccess)
 		int tmp1 = 0;
 		int tmp2 = 0;
 		GetAcceptExSockaddrs(m_recvBuf, m_recvLen, sizeof(SOCKADDR_IN)+16, sizeof(SOCKADDR_IN)+16, &paddr1, &tmp1, &paddr2, &tmp2);
-		m_client->m_impl.AttachEstablishedSocket(m_socket, inet_ntoa(((sockaddr_in*)paddr2)->sin_addr), ntohs(((sockaddr_in*)paddr2)->sin_port));
+		m_client->m_impl.AttachSocket(m_socket, inet_ntoa(((sockaddr_in*)paddr2)->sin_addr), ntohs(((sockaddr_in*)paddr2)->sin_port));
 		onAccept(EC_SUCCESS, m_client);
 	}
 	else

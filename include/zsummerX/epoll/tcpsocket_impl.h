@@ -69,7 +69,7 @@ namespace zsummer
 			void OnPostClose();
 
 			void OnEPOLLMessage(int type, int flag);
-			bool AttachEstablishedSocket(int s, std::string remoteIP, unsigned short remotePort);
+			bool AttachSocket(int s, std::string remoteIP, unsigned short remotePort);
 
 		private:
 			std::string GetSocketStatus();

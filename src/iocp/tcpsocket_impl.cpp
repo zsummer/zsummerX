@@ -87,42 +87,52 @@ std::string CTcpSocketImpl::GetTcpSocketImplStatus()
 	return os.str();
 }
 
+//new socket to connect, or accept established socket
 bool CTcpSocketImpl::Initialize(CZSummerPtr summer)
 {
+	m_summer = summer;
 	if (m_nLinkStatus != LS_UNINITIALIZE)
 	{
-		LCE("CTcpSocketImpl::Initialize[" << this << "] LinkStatus != LS_UNINITIALIZE" << GetTcpSocketImplStatus());
-		return false;
+		m_nLinkStatus = LS_ESTABLISHED;
 	}
-	m_summer = summer;
-	m_nLinkStatus = LS_WAITLINK;
-	return true;
-}
-
-
-bool CTcpSocketImpl::AttachEstablishedSocket(SOCKET s, std::string remoteIP, unsigned short remotePort)
-{
-	if (!m_summer)
+	else
 	{
-		LCF("CTcpSocketImpl::AttachEstablishedSocket[" << this << "] m_summer pointer uninitialize." << GetTcpSocketImplStatus());
-		return false;
+		m_nLinkStatus = LS_WAITLINK;
+		m_socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
+		if (m_socket == INVALID_SOCKET)
+		{
+			LCE("CTcpSocketImpl::DoConnect[" << this << "] socket create error! ERRCODE=" << WSAGetLastError() << GetTcpSocketImplStatus());
+			return false;
+		}
+
+		SOCKADDR_IN localAddr;
+		memset(&localAddr, 0, sizeof(SOCKADDR_IN));
+		localAddr.sin_family = AF_INET;
+		if (bind(m_socket, (sockaddr *)&localAddr, sizeof(SOCKADDR_IN)) != 0)
+		{
+			LCE("CTcpSocketImpl::DoConnect[" << this << "] bind local addr error! ERRCODE=" << WSAGetLastError() << GetTcpSocketImplStatus());
+			return false;
+		}
 	}
-	if (m_nLinkStatus != LS_WAITLINK)
-	{
-		LCF("CTcpSocketImpl::AttachEstablishedSocket[" << this << "] socket already used or not initilize. " << GetTcpSocketImplStatus());
-		return false;
-	}
-	m_socket = s;
+
 	if (CreateIoCompletionPort((HANDLE)m_socket, m_summer->m_impl.m_io, (ULONG_PTR)this, 1) == NULL)
 	{
-		LCE("CTcpSocketImpl::AttachEstablishedSocket[" << this << "] bind socket to IOCP error.  ERRCODE=" << GetLastError() << GetTcpSocketImplStatus());
+		LCE("CTcpSocketImpl::Initialize[" << this << "] bind socket to IOCP error.  ERRCODE=" << GetLastError() << GetTcpSocketImplStatus());
 		closesocket(m_socket);
 		m_socket = INVALID_SOCKET;
 		return false;
 	}
+	return true;
+}
+
+
+bool CTcpSocketImpl::AttachSocket(SOCKET s, std::string remoteIP, unsigned short remotePort)
+{
+
+	m_socket = s;
 	m_remoteIP = remoteIP;
 	m_remotePort = remotePort;
-	m_nLinkStatus = LS_ESTABLISHED;
+	m_nLinkStatus = LS_WAITLINK;
 	return true;
 }
 
@@ -149,30 +159,6 @@ bool CTcpSocketImpl::DoConnect(std::string remoteIP, unsigned short remotePort, 
 		return false;
 	}
 	
-	m_socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
-	if (m_socket == INVALID_SOCKET)
-	{
-		LCE("CTcpSocketImpl::DoConnect[" << this << "] socket create error! ERRCODE=" << WSAGetLastError() << GetTcpSocketImplStatus());
-		return false;
-	}
-
-	SOCKADDR_IN localAddr;
-	memset(&localAddr, 0, sizeof(SOCKADDR_IN));
-	localAddr.sin_family = AF_INET;
-	if (bind(m_socket, (sockaddr *) &localAddr, sizeof(SOCKADDR_IN)) != 0)
-	{
-		LCE("CTcpSocketImpl::DoConnect[" << this << "] bind local addr error! ERRCODE=" << WSAGetLastError() << GetTcpSocketImplStatus());
-		return false;
-	}
-
-	if (CreateIoCompletionPort((HANDLE)m_socket, m_summer->m_impl.m_io, (ULONG_PTR)this, 1) == NULL)
-	{
-		LCE("CTcpSocketImpl::DoConnect[" << this << "] bind socket to IOCP error. ERRCODE=" << GetLastError() << GetTcpSocketImplStatus());
-		closesocket(m_socket);
-		m_socket = INVALID_SOCKET;
-		return false;
-	}
-
 
 	GUID gid = WSAID_CONNECTEX;
 	ConnectEx lpConnectEx = NULL;

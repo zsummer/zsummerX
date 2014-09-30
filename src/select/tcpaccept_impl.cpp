@@ -197,7 +197,7 @@ void CTcpAcceptImpl::OnSelectMessage()
 	SetNonBlock(s);
 	SetNoDelay(s);
 
-	ps->m_impl.AttachEstablishedSocket(s,inet_ntoa(cltaddr.sin_addr), ntohs(cltaddr.sin_port));
+	ps->m_impl.AttachSocket(s,inet_ntoa(cltaddr.sin_addr), ntohs(cltaddr.sin_port));
 	onAccept(EC_SUCCESS, ps);
 	
 	return ;

@@ -43,10 +43,10 @@ RM = /usr/local/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /mnt/hgfs/D/github/zsummerX/trunk
+CMAKE_SOURCE_DIR = /root/github/zsummerX/trunk
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /mnt/hgfs/D/github/zsummerX/trunk
+CMAKE_BINARY_DIR = /root/github/zsummerX/trunk
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -114,14 +114,14 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	cd /mnt/hgfs/D/github/zsummerX/trunk && $(CMAKE_COMMAND) -E cmake_progress_start /mnt/hgfs/D/github/zsummerX/trunk/CMakeFiles /mnt/hgfs/D/github/zsummerX/trunk/example/tcpStressTest/CMakeFiles/progress.marks
-	cd /mnt/hgfs/D/github/zsummerX/trunk && $(MAKE) -f CMakeFiles/Makefile2 example/tcpStressTest/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /mnt/hgfs/D/github/zsummerX/trunk/CMakeFiles 0
+	cd /root/github/zsummerX/trunk && $(CMAKE_COMMAND) -E cmake_progress_start /root/github/zsummerX/trunk/CMakeFiles /root/github/zsummerX/trunk/example/tcpStressTest/CMakeFiles/progress.marks
+	cd /root/github/zsummerX/trunk && $(MAKE) -f CMakeFiles/Makefile2 example/tcpStressTest/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /root/github/zsummerX/trunk/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /mnt/hgfs/D/github/zsummerX/trunk && $(MAKE) -f CMakeFiles/Makefile2 example/tcpStressTest/clean
+	cd /root/github/zsummerX/trunk && $(MAKE) -f CMakeFiles/Makefile2 example/tcpStressTest/clean
 .PHONY : clean
 
 # The main clean target
@@ -130,39 +130,39 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /mnt/hgfs/D/github/zsummerX/trunk && $(MAKE) -f CMakeFiles/Makefile2 example/tcpStressTest/preinstall
+	cd /root/github/zsummerX/trunk && $(MAKE) -f CMakeFiles/Makefile2 example/tcpStressTest/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /mnt/hgfs/D/github/zsummerX/trunk && $(MAKE) -f CMakeFiles/Makefile2 example/tcpStressTest/preinstall
+	cd /root/github/zsummerX/trunk && $(MAKE) -f CMakeFiles/Makefile2 example/tcpStressTest/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /mnt/hgfs/D/github/zsummerX/trunk && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /root/github/zsummerX/trunk && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
-example/tcpStressTest/CMakeFiles/tcpStressTest_d.dir/rule:
-	cd /mnt/hgfs/D/github/zsummerX/trunk && $(MAKE) -f CMakeFiles/Makefile2 example/tcpStressTest/CMakeFiles/tcpStressTest_d.dir/rule
-.PHONY : example/tcpStressTest/CMakeFiles/tcpStressTest_d.dir/rule
+example/tcpStressTest/CMakeFiles/tcpStressTest_select_d.dir/rule:
+	cd /root/github/zsummerX/trunk && $(MAKE) -f CMakeFiles/Makefile2 example/tcpStressTest/CMakeFiles/tcpStressTest_select_d.dir/rule
+.PHONY : example/tcpStressTest/CMakeFiles/tcpStressTest_select_d.dir/rule
 
 # Convenience name for target.
-tcpStressTest_d: example/tcpStressTest/CMakeFiles/tcpStressTest_d.dir/rule
-.PHONY : tcpStressTest_d
+tcpStressTest_select_d: example/tcpStressTest/CMakeFiles/tcpStressTest_select_d.dir/rule
+.PHONY : tcpStressTest_select_d
 
 # fast build rule for target.
-tcpStressTest_d/fast:
-	cd /mnt/hgfs/D/github/zsummerX/trunk && $(MAKE) -f example/tcpStressTest/CMakeFiles/tcpStressTest_d.dir/build.make example/tcpStressTest/CMakeFiles/tcpStressTest_d.dir/build
-.PHONY : tcpStressTest_d/fast
+tcpStressTest_select_d/fast:
+	cd /root/github/zsummerX/trunk && $(MAKE) -f example/tcpStressTest/CMakeFiles/tcpStressTest_select_d.dir/build.make example/tcpStressTest/CMakeFiles/tcpStressTest_select_d.dir/build
+.PHONY : tcpStressTest_select_d/fast
 
 Client.o: Client.cpp.o
 .PHONY : Client.o
 
 # target to build an object file
 Client.cpp.o:
-	cd /mnt/hgfs/D/github/zsummerX/trunk && $(MAKE) -f example/tcpStressTest/CMakeFiles/tcpStressTest_d.dir/build.make example/tcpStressTest/CMakeFiles/tcpStressTest_d.dir/Client.cpp.o
+	cd /root/github/zsummerX/trunk && $(MAKE) -f example/tcpStressTest/CMakeFiles/tcpStressTest_select_d.dir/build.make example/tcpStressTest/CMakeFiles/tcpStressTest_select_d.dir/Client.cpp.o
 .PHONY : Client.cpp.o
 
 Client.i: Client.cpp.i
@@ -170,7 +170,7 @@ Client.i: Client.cpp.i
 
 # target to preprocess a source file
 Client.cpp.i:
-	cd /mnt/hgfs/D/github/zsummerX/trunk && $(MAKE) -f example/tcpStressTest/CMakeFiles/tcpStressTest_d.dir/build.make example/tcpStressTest/CMakeFiles/tcpStressTest_d.dir/Client.cpp.i
+	cd /root/github/zsummerX/trunk && $(MAKE) -f example/tcpStressTest/CMakeFiles/tcpStressTest_select_d.dir/build.make example/tcpStressTest/CMakeFiles/tcpStressTest_select_d.dir/Client.cpp.i
 .PHONY : Client.cpp.i
 
 Client.s: Client.cpp.s
@@ -178,7 +178,7 @@ Client.s: Client.cpp.s
 
 # target to generate assembly for a file
 Client.cpp.s:
-	cd /mnt/hgfs/D/github/zsummerX/trunk && $(MAKE) -f example/tcpStressTest/CMakeFiles/tcpStressTest_d.dir/build.make example/tcpStressTest/CMakeFiles/tcpStressTest_d.dir/Client.cpp.s
+	cd /root/github/zsummerX/trunk && $(MAKE) -f example/tcpStressTest/CMakeFiles/tcpStressTest_select_d.dir/build.make example/tcpStressTest/CMakeFiles/tcpStressTest_select_d.dir/Client.cpp.s
 .PHONY : Client.cpp.s
 
 Process.o: Process.cpp.o
@@ -186,7 +186,7 @@ Process.o: Process.cpp.o
 
 # target to build an object file
 Process.cpp.o:
-	cd /mnt/hgfs/D/github/zsummerX/trunk && $(MAKE) -f example/tcpStressTest/CMakeFiles/tcpStressTest_d.dir/build.make example/tcpStressTest/CMakeFiles/tcpStressTest_d.dir/Process.cpp.o
+	cd /root/github/zsummerX/trunk && $(MAKE) -f example/tcpStressTest/CMakeFiles/tcpStressTest_select_d.dir/build.make example/tcpStressTest/CMakeFiles/tcpStressTest_select_d.dir/Process.cpp.o
 .PHONY : Process.cpp.o
 
 Process.i: Process.cpp.i
@@ -194,7 +194,7 @@ Process.i: Process.cpp.i
 
 # target to preprocess a source file
 Process.cpp.i:
-	cd /mnt/hgfs/D/github/zsummerX/trunk && $(MAKE) -f example/tcpStressTest/CMakeFiles/tcpStressTest_d.dir/build.make example/tcpStressTest/CMakeFiles/tcpStressTest_d.dir/Process.cpp.i
+	cd /root/github/zsummerX/trunk && $(MAKE) -f example/tcpStressTest/CMakeFiles/tcpStressTest_select_d.dir/build.make example/tcpStressTest/CMakeFiles/tcpStressTest_select_d.dir/Process.cpp.i
 .PHONY : Process.cpp.i
 
 Process.s: Process.cpp.s
@@ -202,7 +202,7 @@ Process.s: Process.cpp.s
 
 # target to generate assembly for a file
 Process.cpp.s:
-	cd /mnt/hgfs/D/github/zsummerX/trunk && $(MAKE) -f example/tcpStressTest/CMakeFiles/tcpStressTest_d.dir/build.make example/tcpStressTest/CMakeFiles/tcpStressTest_d.dir/Process.cpp.s
+	cd /root/github/zsummerX/trunk && $(MAKE) -f example/tcpStressTest/CMakeFiles/tcpStressTest_select_d.dir/build.make example/tcpStressTest/CMakeFiles/tcpStressTest_select_d.dir/Process.cpp.s
 .PHONY : Process.cpp.s
 
 Schedule.o: Schedule.cpp.o
@@ -210,7 +210,7 @@ Schedule.o: Schedule.cpp.o
 
 # target to build an object file
 Schedule.cpp.o:
-	cd /mnt/hgfs/D/github/zsummerX/trunk && $(MAKE) -f example/tcpStressTest/CMakeFiles/tcpStressTest_d.dir/build.make example/tcpStressTest/CMakeFiles/tcpStressTest_d.dir/Schedule.cpp.o
+	cd /root/github/zsummerX/trunk && $(MAKE) -f example/tcpStressTest/CMakeFiles/tcpStressTest_select_d.dir/build.make example/tcpStressTest/CMakeFiles/tcpStressTest_select_d.dir/Schedule.cpp.o
 .PHONY : Schedule.cpp.o
 
 Schedule.i: Schedule.cpp.i
@@ -218,7 +218,7 @@ Schedule.i: Schedule.cpp.i
 
 # target to preprocess a source file
 Schedule.cpp.i:
-	cd /mnt/hgfs/D/github/zsummerX/trunk && $(MAKE) -f example/tcpStressTest/CMakeFiles/tcpStressTest_d.dir/build.make example/tcpStressTest/CMakeFiles/tcpStressTest_d.dir/Schedule.cpp.i
+	cd /root/github/zsummerX/trunk && $(MAKE) -f example/tcpStressTest/CMakeFiles/tcpStressTest_select_d.dir/build.make example/tcpStressTest/CMakeFiles/tcpStressTest_select_d.dir/Schedule.cpp.i
 .PHONY : Schedule.cpp.i
 
 Schedule.s: Schedule.cpp.s
@@ -226,7 +226,7 @@ Schedule.s: Schedule.cpp.s
 
 # target to generate assembly for a file
 Schedule.cpp.s:
-	cd /mnt/hgfs/D/github/zsummerX/trunk && $(MAKE) -f example/tcpStressTest/CMakeFiles/tcpStressTest_d.dir/build.make example/tcpStressTest/CMakeFiles/tcpStressTest_d.dir/Schedule.cpp.s
+	cd /root/github/zsummerX/trunk && $(MAKE) -f example/tcpStressTest/CMakeFiles/tcpStressTest_select_d.dir/build.make example/tcpStressTest/CMakeFiles/tcpStressTest_select_d.dir/Schedule.cpp.s
 .PHONY : Schedule.cpp.s
 
 main.o: main.cpp.o
@@ -234,7 +234,7 @@ main.o: main.cpp.o
 
 # target to build an object file
 main.cpp.o:
-	cd /mnt/hgfs/D/github/zsummerX/trunk && $(MAKE) -f example/tcpStressTest/CMakeFiles/tcpStressTest_d.dir/build.make example/tcpStressTest/CMakeFiles/tcpStressTest_d.dir/main.cpp.o
+	cd /root/github/zsummerX/trunk && $(MAKE) -f example/tcpStressTest/CMakeFiles/tcpStressTest_select_d.dir/build.make example/tcpStressTest/CMakeFiles/tcpStressTest_select_d.dir/main.cpp.o
 .PHONY : main.cpp.o
 
 main.i: main.cpp.i
@@ -242,7 +242,7 @@ main.i: main.cpp.i
 
 # target to preprocess a source file
 main.cpp.i:
-	cd /mnt/hgfs/D/github/zsummerX/trunk && $(MAKE) -f example/tcpStressTest/CMakeFiles/tcpStressTest_d.dir/build.make example/tcpStressTest/CMakeFiles/tcpStressTest_d.dir/main.cpp.i
+	cd /root/github/zsummerX/trunk && $(MAKE) -f example/tcpStressTest/CMakeFiles/tcpStressTest_select_d.dir/build.make example/tcpStressTest/CMakeFiles/tcpStressTest_select_d.dir/main.cpp.i
 .PHONY : main.cpp.i
 
 main.s: main.cpp.s
@@ -250,7 +250,7 @@ main.s: main.cpp.s
 
 # target to generate assembly for a file
 main.cpp.s:
-	cd /mnt/hgfs/D/github/zsummerX/trunk && $(MAKE) -f example/tcpStressTest/CMakeFiles/tcpStressTest_d.dir/build.make example/tcpStressTest/CMakeFiles/tcpStressTest_d.dir/main.cpp.s
+	cd /root/github/zsummerX/trunk && $(MAKE) -f example/tcpStressTest/CMakeFiles/tcpStressTest_select_d.dir/build.make example/tcpStressTest/CMakeFiles/tcpStressTest_select_d.dir/main.cpp.s
 .PHONY : main.cpp.s
 
 # Help Target
@@ -265,7 +265,7 @@ help:
 	@echo "... install/strip"
 	@echo "... list_install_components"
 	@echo "... rebuild_cache"
-	@echo "... tcpStressTest_d"
+	@echo "... tcpStressTest_select_d"
 	@echo "... Client.o"
 	@echo "... Client.i"
 	@echo "... Client.s"
@@ -289,6 +289,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /mnt/hgfs/D/github/zsummerX/trunk && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /root/github/zsummerX/trunk && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

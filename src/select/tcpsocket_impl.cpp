@@ -74,37 +74,44 @@ std::string CTcpSocketImpl::GetSocketStatus()
 
  bool CTcpSocketImpl::Initialize(CZSummerPtr summer)
 {
+	 m_summer = summer;
 	if (m_register._linkstat != LS_UNINITIALIZE)
 	{
-		LCF("CTcpSocketImpl::Initialize[this0x" << this << "] linkstat != LS_UNINITIALIZE" << GetSocketStatus());
-		return false;
+		if (!m_summer->m_impl.RegisterEvent(0, m_register))
+		{
+			LCE("CTcpSocketImpl::Initialize[this0x" << this << "] socket already used or not initilize." << GetSocketStatus());
+			return false;
+		}
+		m_register._linkstat = LS_ESTABLISHED;
 	}
-	m_summer = summer;
-	m_register._linkstat = LS_WAITLINK;
-	return true;
-}
- bool CTcpSocketImpl::AttachEstablishedSocket(SOCKET s, std::string remoteIP, unsigned short remotePort)
-{
-	if (!m_summer)
+	else
 	{
-		LCF("CTcpSocketImpl::AttachEstablishedSocket[this0x" << this << "] m_summer uninitialize" << GetSocketStatus());
-		return false;
-	}
-	if (m_register._linkstat != LS_WAITLINK)
-	{
-		LCF("CTcpSocketImpl::AttachEstablishedSocket[this0x" << this << "] socket already used or not initilize." << GetSocketStatus());
-		return false;
+		if (m_register._fd != -1)
+		{
+			LCE("CTcpSocketImpl::DoConnect[this0x" << this << "] fd aready used!" << GetSocketStatus());
+			return false;
+		}
+		m_register._fd = socket(AF_INET, SOCK_STREAM, 0);
+		if (m_register._fd == -1)
+		{
+			LCE("CTcpSocketImpl::DoConnect[this0x" << this << "] fd create failed!" << GetSocketStatus());
+			return false;
+		}
+		SetNonBlock(m_register._fd);
+		SetNoDelay(m_register._fd);
+		m_register._linkstat = LS_WAITLINK;
 	}
 
-	m_register._fd = s;
-	if (!m_summer->m_impl.RegisterEvent(0, m_register))
-	{
-		LCE("CTcpSocketImpl::AttachEstablishedSocket[this0x" << this << "] socket already used or not initilize." << GetSocketStatus());
-		return false;
-	}
-	m_remoteIP = remoteIP;
-	m_remotePort = remotePort;
-	m_register._linkstat = LS_ESTABLISHED;
+
+
+	return true;
+}
+ bool CTcpSocketImpl::AttachSocket(SOCKET s, std::string remoteIP, unsigned short remotePort)
+{
+	 m_register._fd = s;
+	 m_remoteIP = remoteIP;
+	 m_remotePort = remotePort;
+	 m_register._linkstat = LS_WAITLINK;
 	return true;
 }
 
@@ -123,20 +130,7 @@ bool CTcpSocketImpl::DoConnect(std::string remoteIP, unsigned short remotePort, 
 		LCE("CTcpSocketImpl::DoConnect[this0x" << this << "] _linkstat not LS_WAITLINK!" << GetSocketStatus());
 		return false;
 	}
-	if (m_register._fd != -1)
-	{
-		LCE("CTcpSocketImpl::DoConnect[this0x" << this << "] fd aready used!" << GetSocketStatus());
-		return false;
-	}
-	m_register._fd = socket(AF_INET, SOCK_STREAM, 0);
-	if (m_register._fd == -1)
-	{
-		LCE("CTcpSocketImpl::DoConnect[this0x" << this << "] fd create failed!" << GetSocketStatus());
-		return false;
-	}
-	
-	SetNonBlock(m_register._fd);
-	SetNoDelay(m_register._fd);
+
 	m_register._wt = true;
 
 	m_remoteIP = remoteIP;
@@ -167,6 +161,7 @@ bool CTcpSocketImpl::DoConnect(std::string remoteIP, unsigned short remotePort, 
 		m_register._fd = InvalideFD;
 		return false;
 	}
+
 	m_onConnectHandler = handler;
 	return true;
 }

@@ -59,7 +59,7 @@ std::string g_remoteIP = "0.0.0.0";
 unsigned short g_remotePort = 81;
 unsigned short g_startType = 0;  //0 listen, 1 connect
 bool g_runing = true;
-bool g_safeexit = false;
+bool g_safeexit = true;
 CZSummerPtr summer;
 CTcpAcceptPtr accepter;
 CTcpSocketPtr ts;
@@ -145,9 +145,9 @@ void OnAcceptSocket(ErrorCode ec, CTcpSocketPtr s)
 	g_safeexit = false;
 	curAcceptCount++;
 	usedSocket = s;
+	usedSocket->Initialize(summer);
 	usedSocket->DoRecv(recvBuffer, recvBufferLen, OnServerSocektRecv);
 	ts = std::shared_ptr<CTcpSocket>(new CTcpSocket);
-	ts->Initialize(summer);
 	accepter->DoAccept(ts, OnAcceptSocket);
 
 };
@@ -250,7 +250,7 @@ int main(int argc, char* argv[])
 		{
 			return 0;
 		}
-		ts->Initialize(summer);
+		
 		accepter->DoAccept(ts, OnAcceptSocket);
 	}
 	else

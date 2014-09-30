@@ -60,7 +60,7 @@ namespace zsummer
 			bool DoRecv(char * buf, unsigned int len, const _OnRecvHandler & handler);
 			bool DoClose();
 		public:
-			bool AttachEstablishedSocket(SOCKET s, std::string remoteIP, unsigned short remotePort);
+			bool AttachSocket(SOCKET s, std::string remoteIP, unsigned short remotePort);
 			void OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned char cType);
 			std::string GetTcpSocketImplStatus();
 		public:

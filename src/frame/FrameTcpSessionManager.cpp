@@ -92,7 +92,6 @@ bool CTcpSessionManager::AddAcceptor(const tagAcceptorConfigTraits &traits)
 	}
 	m_mapAccepterPtr[traits.aID] = accepter;
 	CTcpSocketPtr newclient(new zsummer::network::CTcpSocket);
-	newclient->Initialize(m_summer);
 	accepter->DoAccept(newclient, std::bind(&CTcpSessionManager::OnAcceptNewClient, this, std::placeholders::_1, std::placeholders::_2, accepter, traits.aID));
 	return true;
 }
@@ -174,6 +173,7 @@ void CTcpSessionManager::OnAcceptNewClient(zsummer::network::ErrorCode ec, CTcpS
 
 		m_lastSessionID++;
 		CTcpSessionPtr session(new CTcpSession());
+		s->Initialize(m_summer);
 		if (session->BindTcpSocketPrt(s, aID, m_lastSessionID, iter->second.first))
 		{
 			m_mapTcpSessionPtr[MERGEBIGID(aID, m_lastSessionID)] = session;

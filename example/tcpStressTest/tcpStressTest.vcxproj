@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{17F06D73-CA62-487F-B1E4-7C8A34E48839}</ProjectGuid>
+    <ProjectGuid>{62F47AC3-D0C9-413C-B819-4BBD507E788A}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>server</RootNamespace>
   </PropertyGroup>
@@ -167,7 +167,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Client.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Process.cpp" />
+    <ClCompile Include="Schedule.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\depends\log4z\log4z.h" />
@@ -177,6 +180,10 @@
     <ClInclude Include="..\..\include\zsummerX\timer.h" />
     <ClInclude Include="..\..\include\zsummerX\udpsocket.h" />
     <ClInclude Include="..\..\include\zsummerX\zsummer.h" />
+    <ClInclude Include="Client.h" />
+    <ClInclude Include="header.h" />
+    <ClInclude Include="Process.h" />
+    <ClInclude Include="Schedule.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,11 +1,32 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <ClCompile Include="Client.cpp">
+      <Filter>main</Filter>
+    </ClCompile>
     <ClCompile Include="main.cpp">
+      <Filter>main</Filter>
+    </ClCompile>
+    <ClCompile Include="Process.cpp">
+      <Filter>main</Filter>
+    </ClCompile>
+    <ClCompile Include="Schedule.cpp">
       <Filter>main</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Client.h">
+      <Filter>main</Filter>
+    </ClInclude>
+    <ClInclude Include="header.h">
+      <Filter>main</Filter>
+    </ClInclude>
+    <ClInclude Include="Process.h">
+      <Filter>main</Filter>
+    </ClInclude>
+    <ClInclude Include="Schedule.h">
+      <Filter>main</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\include\zsummerX\tcpaccept.h">
       <Filter>zsummerX\interface</Filter>
     </ClInclude>

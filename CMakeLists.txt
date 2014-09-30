@@ -14,7 +14,7 @@ set(ZSUMMERX_INC_DIR ${zsummerX_SOURCE_DIR}/include CACHE PATH "")
 
 set(ZSUMMERX_SRC_DIR ${zsummerX_SOURCE_DIR}/src CACHE PATH "")
 
-if (ZSUMMERX_MAC)
+if (APPLE)
   set(ZSUMMERX_USE_SELECT 1)
 endif()
 

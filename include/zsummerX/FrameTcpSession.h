@@ -88,7 +88,7 @@ private:
 	ConnectorID m_connectorID = InvalidConnectorID;
 	ProtoType m_protoType = PT_TCP;
 	unsigned int m_pulseInterval = 0;
-	zsummer::network::TimerID m_pulseTimerID = InvalidTimerID;
+	zsummer::network::TimerID m_pulseTimerID = zsummer::network::InvalidTimerID;
 
 	enum SessionStatus
 	{
@@ -97,17 +97,17 @@ private:
 		SS_CLOSED,
 	};
 	
-	//! 读包
+	//! 
 	MessageChunk m_recving;
 
 
 	MessageChunk m_sending;
 	unsigned int m_sendingCurIndex = 0;
-	//! 写包队列
+	//! 
 	std::queue<MessagePack *> m_sendque;
 	std::queue<MessagePack *> m_freeCache;
 
-	//! 是否加密
+	//! 
 	std::string m_rc4Encrypt;
 	CRC4Encryption m_rc4StateRead;
 	CRC4Encryption m_rc4StateWrite;

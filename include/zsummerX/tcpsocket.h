@@ -9,7 +9,7 @@
  * 
  * ===============================================================================
  * 
- * Copyright (C) 2013 YaweiZhang <yawei_zhang@foxmail.com>.
+ * Copyright (C) 2013-2014 YaweiZhang <yawei_zhang@foxmail.com>.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -41,7 +41,7 @@
 #ifndef _ZSUMMERX_TCPSOCKET_H_
 #define _ZSUMMERX_TCPSOCKET_H_
 #include <atomic>
-
+// encapsulate the tcp  socket  operate.
 #ifdef ZSUMMERX_USE_SELECT
 #include "select/tcpsocket_impl.h"
 #elif WIN32
@@ -69,54 +69,60 @@ namespace zsummer
 				_g_totalClosedCTcpSocketObjs++;
 			}
 
-			//! 初始化,  把当前socket绑定到指定的zsummer上.
+			//! Initialize an attach socket to zsummer pump.
+			//if the socket is used to connect,  It's need initialize before call DoConnect 
+			// if the socket is used to accept new socket, It's need initialize after OnAccept. 
 			inline bool Initialize(CZSummerPtr summer)
 			{
 				return m_impl.Initialize(summer);
 			}
 
 			//! handle: void(zsummer::network::ErrorCode);
-			//! ErrorCode: 0为成功. 其他为失败, 错误码见枚举定义处.
+			//! handle: ErrorCode: 0 success. other code is failed  and can see error code in enum ErrorCode 
 			template<typename H>
 			inline bool DoConnect(std::string remoteIP, unsigned short remotePort, const H &h)
 			{
 				return m_impl.DoConnect(remoteIP, remotePort, h);
 			}
 
-			//!handle: void(ErrorCode, int)
-			//! ErrorCode: 0为成功. 其他为失败, 错误码见枚举定义处.
-			//! int: 发送掉的字节长度, 如果没有全部发送出去 要调用该接口把残留的数据继续发出去.
+			//!handle:  void(ErrorCode, int)
+			//!handle:  ErrorCode: 0 success. other code is failed  and can see error code in enum ErrorCode 
+			//!handle:  int: is transfer length. if not all data already transfer that you need call DoSend transfer the remnant data.
+			//! warning: when  handler is not callback ,  the function can not call repeat. if you have some question maybe you need read the test or implementation .
+			//!          so,  when you want  repeat send data without care the callback , you need encapsulate the send operate via a send queue like the StressTest/FrameTest source code
 			template<typename H>
 			inline bool DoSend(char * buf, unsigned int len, const H &h)
 			{
 				return m_impl.DoSend(buf, len, h);
 			}
 
-			//! 发起Recv请求.
-			//! buf: 要发送的缓冲区地址
-			//! len: 要发送的最大长度
-			//!
-			//! handle: void(ErrorCode, int)
-			//! ErrorCode: 0为成功. 其他为失败, 错误码见枚举定义处.
-			//! int: 接收到的字节长度.
+
+			//!handle:  void(ErrorCode, int)
+			//!handle:  ErrorCode: 0 success. other code is failed  and can see error code in enum ErrorCode 
+			//!handle:  int: is received data  length. it maybe short than you want received data (len).
+			//! buf: you recv buffer memory address . you would block the buffer still the handler callback .
+			//! len: you want recv data for max bytes .
+			//! warning: when  handler is not callback ,  the function can not call repeat. if you have some question maybe you need read the test or implementation .
 			template<typename H>
 			inline bool DoRecv(char * buf, unsigned int len, const H &h)
 			{
 				return m_impl.DoRecv(buf, len, h);
 			}
-			//! 获取远端IP和PORT
+			//! get socket remote IP and Port.
 			inline bool GetPeerInfo(std::string& remoteIP, unsigned short &remotePort)
 			{
 				return m_impl.GetPeerInfo(remoteIP, remotePort);
 			}
-			//! 关闭现有的一个连接.
-			//! 该接口调用后并不取消之前发出的请求, 但已经发出的请求操作将会已失败返回.
+
+			//close this socket.
+			//warning : at a safe close method , if you have DoConnect/DoRecv/DoSend request and not all callback. you need wait callback .  the callback will return with a error code.
+			//         if you have not the operate and when you DoClose the socket and immediate destroy this class object . in next do zsummerx's RunOnce(), callback may be return and call operate in the bad memory . 
 			inline bool DoClose()
 			{
 				return m_impl.DoClose();
 			}
 
-			//! 该接口提供给用户一个64位的数据块功用户自由使用, 该userData可以保存用户的一个ID或者指针或者任意想保存的数据.
+			//!  little avail. in general you can ignore this method 
 			inline void SetUserData(unsigned long long userData){ m_userData = userData;}
 			inline unsigned long long GetUserData(){ return m_userData;}
 

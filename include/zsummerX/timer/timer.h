@@ -40,10 +40,13 @@
 #include "../common/common.h"
 
 
+// build a timmer system  based on red-black tree (std::map).
 namespace zsummer
 {
 	namespace network
 	{
+		typedef unsigned long long TimerID;
+		const unsigned long long   InvalidTimerID = 0;
 		class CTimer
 		{
 		public:
@@ -55,10 +58,13 @@ namespace zsummer
 			~CTimer()
 			{
 			}
+			//get current time tick. unit is millisecond.
 			inline unsigned  int GetNowMilliTick()
 			{
 				return (unsigned int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 			}
+
+			//get next expire time  be used to set timeout when calling select / epoll_wait / GetQueuedCompletionStatus.
 			inline unsigned int GetNextExpireTime()
 			{
 				unsigned int now = GetNowMilliTick();
@@ -69,14 +75,15 @@ namespace zsummer
 				}
 				return dwDelayMs;
 			}
-			inline unsigned long long CreateTimer(unsigned int delayms, const _OnTimerHandler &handle)
+
+			inline TimerID CreateTimer(unsigned int delayms, const _OnTimerHandler &handle)
 			{
 				_OnTimerHandler *pfunc= new _OnTimerHandler(handle);
 				unsigned int now = GetNowMilliTick();
 				unsigned int expire = now+delayms;
 				unsigned long long timerID = expire;
 				timerID <<= 32;
-				timerID |= m_queSeq++;
+				timerID |= m_queSeq++; //timerID is merge expire time and a sequence. sequence assure the ID is single.
 				m_queTimer.insert(std::make_pair(timerID, pfunc));
 				if (m_nextExpire > expire)
 				{
@@ -84,7 +91,7 @@ namespace zsummer
 				}
 				return timerID;
 			}
-			inline bool CancelTimer(unsigned long long timerID)
+			inline bool CancelTimer(TimerID timerID)
 			{
 				std::map<unsigned long long, _OnTimerHandler* >::iterator iter = m_queTimer.find(timerID);
 				if (iter != m_queTimer.end())
@@ -95,6 +102,7 @@ namespace zsummer
 				}
 				return false;
 			}
+			// if have expired timer. the timer will trigger.
 			inline void CheckTimer()
 			{
 				if (!m_queTimer.empty())
@@ -121,6 +129,7 @@ namespace zsummer
 							m_nextExpire = nextexpire;
 							break;
 						}
+						//erase the pointer from timer queue before call handler.
 						m_queTimer.erase(iter);
 						(*handler)();
 						delete handler;
@@ -128,12 +137,12 @@ namespace zsummer
 					
 				}
 			}
-			inline std::map<unsigned long long, _OnTimerHandler* >::size_type GetTimersCount(){ return m_queTimer.size(); }
+			inline std::map<TimerID, _OnTimerHandler* >::size_type GetTimersCount(){ return m_queTimer.size(); }
 		private:
-			//! 定时器
-			std::map<unsigned long long, _OnTimerHandler* > m_queTimer;
-			unsigned int m_queSeq; //! 用于生成定时器ID的组成部分
-			unsigned int m_nextExpire; //! 下次触发时间
+			//! timer queue
+			std::map<TimerID, _OnTimerHandler* > m_queTimer;
+			unsigned int m_queSeq; //! single sequence . assure timer ID is global single.
+			unsigned int m_nextExpire; //! cache the next expire time for check timer with   performance 
 		};
 	}
 }

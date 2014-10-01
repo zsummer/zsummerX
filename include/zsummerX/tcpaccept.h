@@ -9,7 +9,7 @@
  * 
  * ===============================================================================
  * 
- * Copyright (C) 2013 YaweiZhang <yawei_zhang@foxmail.com>.
+ * Copyright (C) 2013-2014 YaweiZhang <yawei_zhang@foxmail.com>.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -38,7 +38,7 @@
 
 #ifndef _ZSUMMERX_TCPACCEPT_H_
 #define _ZSUMMERX_TCPACCEPT_H_
-
+// encapsulate the tcp  accepter   operate.
 #ifdef ZSUMMERX_USE_SELECT
 #include "select/tcpaccept_impl.h"
 #elif WIN32
@@ -56,6 +56,7 @@ namespace zsummer
 		public:
 			CTcpAccept(CZSummerPtr summer){ m_impl.Initialize(summer); }
 			~CTcpAccept(){}
+			//open and  listen 
 			bool OpenAccept(const char * ip, unsigned short port)
 			{
 				return m_impl.OpenAccept(ip, port);

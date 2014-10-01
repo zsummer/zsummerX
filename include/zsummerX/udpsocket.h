@@ -9,7 +9,7 @@
  * 
  * ===============================================================================
  * 
- * Copyright (C) 2013 YaweiZhang <yawei_zhang@foxmail.com>.
+ * Copyright (C) 2013-2014 YaweiZhang <yawei_zhang@foxmail.com>.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -40,6 +40,7 @@
 #ifndef _ZSUMMERX_UDPSOCKET_H_
 #define _ZSUMMERX_UDPSOCKET_H_
 
+// encapsulate the udp socket  operate.
 #ifdef ZSUMMERX_USE_SELECT
 #include "select/udpsocket_impl.h"
 #elif WIN32
@@ -69,6 +70,7 @@ namespace zsummer
 			}
 
 			//handle: std::function<void(ErrorCode)>
+			//needless callback handler 
 			bool DoSendTo(char * buf, unsigned int len, const char *dstip, unsigned short dstport)
 			{
 				return m_impl.DoSend(buf, len, dstip, dstport);

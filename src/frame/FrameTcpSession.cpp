@@ -68,7 +68,7 @@ void CTcpSession::CleanSession(bool isCleanAllData)
 	m_sessionID = InvalidSeesionID;
 	m_acceptID = InvalidAccepterID;
 	m_connectorID = InvalidConnectorID;
-	m_pulseTimerID = InvalidTimerID;
+	m_pulseTimerID = zsummer::network::InvalidTimerID;
 	m_rc4StateRead.MakeSBox(m_rc4Encrypt);
 	m_rc4StateWrite.MakeSBox(m_rc4Encrypt);
 
@@ -171,10 +171,10 @@ bool CTcpSession::DoRecv()
 void CTcpSession::Close()
 {
 	m_sockptr->DoClose();
-	if (m_pulseTimerID != InvalidTimerID)
+	if (m_pulseTimerID != zsummer::network::InvalidTimerID)
 	{
 		CTcpSessionManager::getRef().CancelTimer(m_pulseTimerID);
-		m_pulseTimerID = InvalidTimerID;
+		m_pulseTimerID = zsummer::network::InvalidTimerID;
 	}
 }
 
@@ -420,7 +420,7 @@ void CTcpSession::OnHeartbeat()
 	{
 		LOGE("Unknown heartbeat");
 	}
-	if (m_pulseTimerID == InvalidTimerID || m_pulseInterval == 0)
+	if (m_pulseTimerID == zsummer::network::InvalidTimerID || m_pulseInterval == 0)
 	{
 		return;
 	}
@@ -431,10 +431,10 @@ void CTcpSession::OnHeartbeat()
 void CTcpSession::OnClose()
 {
 	LOGI("Client Closed!");
-	if (m_pulseTimerID != InvalidTimerID)
+	if (m_pulseTimerID != zsummer::network::InvalidTimerID)
 	{
 		CTcpSessionManager::getRef().CancelTimer(m_pulseTimerID);
-		m_pulseTimerID = InvalidTimerID;
+		m_pulseTimerID = zsummer::network::InvalidTimerID;
 	}
 	
 	if (m_connectorID != InvalidConnectorID)

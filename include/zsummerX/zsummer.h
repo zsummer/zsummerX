@@ -9,7 +9,7 @@
  * 
  * ===============================================================================
  * 
- * Copyright (C) 2013 YaweiZhang <yawei_zhang@foxmail.com>.
+ * Copyright (C) 2013-2014 YaweiZhang <yawei_zhang@foxmail.com>.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -46,22 +46,23 @@
 
 
 /*
- * Web Site: www.zsummer.net
+ * tencent QQ group:19811947
  * mail: yawei_zhang@foxmail.com
  */
 
 
-/*
- * UPDATES
- * 支持UDP TCP
- * 增加高级封装
- *
- */
 
+// a IO pump class.
+// encapsulate the select / IOCP / EPOLL operate.
 
 #ifndef _ZSUMMERX_ZSUMMER_H_
 #define _ZSUMMERX_ZSUMMER_H_
 
+
+// default in windows use IOCP implementation
+// default in linux use EPOLL LT implementation 
+// default in mac use select implementaion
+// if can't compile on  some other system , you can try compile used ZSUMMERX_USE_SELECT.  It's be force compiled with select implementation.
 #ifdef ZSUMMERX_USE_SELECT
 #include "select/select_impl.h"
 #elif WIN32
@@ -74,8 +75,7 @@ namespace zsummer
 {
 	namespace network
 	{
-		typedef unsigned long long TimerID;
-#define  InvalidTimerID 0
+
 		class CZSummer :public std::enable_shared_from_this<CZSummer>
 		{
 		public:
@@ -91,6 +91,7 @@ namespace zsummer
 			}
 
 			//handle: std::function<void()>
+			//switch initiative, in the multi-thread it's switch call thread simultaneously.
 			template<typename H>
 			inline void Post(const H &h)
 			{
@@ -98,7 +99,6 @@ namespace zsummer
 			}
 
 			//handle: std::function<void(unsigned long long)>
-			//unsigned long long : timer ID
 			template<typename H>
 			inline TimerID CreateTimer(unsigned int delayms, const H &h)
 			{

@@ -35,7 +35,7 @@
  */
 
 
-//! 公共头文件
+//! common header 
 
 #ifndef ZSUMMER_HEADER_H_
 #define ZSUMMER_HEADER_H_
@@ -55,7 +55,6 @@
 #include <proto4z/proto4z.h>
 using namespace std;
 
-//! frame封装在网络部分使用单例模式, 如果需要在zsummerX的网络部分使用多线程 请参考tcpTest实例调用zsummerX的原始接口实现.
 
 
 typedef unsigned int SessionID;
@@ -74,7 +73,7 @@ enum ProtoType
 	PT_HTTP,
 };
 
-//! 监听器配置
+
 struct tagAcceptorConfigTraits
 {
 	AccepterID aID = InvalidAccepterID;
@@ -90,13 +89,13 @@ struct tagAcceptorConfigTraits
 
 struct tagAcceptorInfo
 {
-	unsigned long long totalAcceptCount = 0; //累计接收客户端连接请求
-	unsigned long long currentLinked = 0; //当前客户端并发个数
+	//limit max session.
+	unsigned long long totalAcceptCount = 0; 
+	unsigned long long currentLinked = 0; 
 };
 
 
 
-//连接器配置
 struct tagConnctorConfigTraits
 {
 	ConnectorID cID = InvalidConnectorID;
@@ -112,34 +111,27 @@ struct tagConnctorConfigTraits
 
 struct tagConnctorInfo
 {
-	unsigned long long totalConnectCount = 0; //累计连接次数
-	unsigned long long curReconnectCount = 0; //当前重连次数
+	//implementation reconnect 
+	unsigned long long totalConnectCount = 0; 
+	unsigned long long curReconnectCount = 0; 
 };
 
 
 
 
-//类型定义
+
 //----------------------------------------
 class CTcpSession;
-
 typedef std::shared_ptr<zsummer::network::CTcpSocket> CTcpSocketPtr;
 typedef std::shared_ptr<zsummer::network::CTcpAccept> CTcpAcceptPtr;
 typedef std::shared_ptr<zsummer::network::CZSummer> CZSummerPtr;
 typedef std::shared_ptr<CTcpSession> CTcpSessionPtr;
 
 
-//public method
-#define  NOW_TIME (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count())
 
-//接收包缓冲大小
+//receive buffer length  and send buffer length 
 const unsigned int SEND_RECV_CHUNK_SIZE = 64 * 1024 -1;
-
-
-
-
-
-//包头特性
+//proto traits 
 struct FrameStreamTraits
 {
 	typedef unsigned short Integer;
@@ -153,34 +145,32 @@ struct FrameStreamTraits
 };
 
 
-
-
 typedef zsummer::proto4z::ReadStream<FrameStreamTraits> ReadStreamPack;
 typedef zsummer::proto4z::WriteStream<FrameStreamTraits> WriteStreamPack;
 
-//!注册原始消息的封包 如果存在回调并且回调的返回值为false则直接处理下一个封包.
+//! this method used to ignore some message .
+//!register message with original net pack, if return false other register will not receive this message.
 typedef std::function < bool(AccepterID, SessionID, const char * /*blockBegin*/, typename FrameStreamTraits::Integer /*blockSize*/) > OnSessionOrgMessageFunction;
 typedef std::function < bool(ConnectorID, const char * /*blockBegin*/, typename FrameStreamTraits::Integer /*blockSize*/) > OnConnectorOrgMessageFunction;
 
-//!注册消息
+//!register message 
 typedef std::function < void(AccepterID, SessionID, ProtocolID, ReadStreamPack &) > OnSessionMessageFunction;
 typedef std::function < void(ConnectorID, ProtocolID, ReadStreamPack &) > OnConnectorMessageFunction;
 
-//注册事件
+//!register event 
 typedef std::function < void(AccepterID, SessionID) > OnSessionEstablished;
 typedef std::function < void(ConnectorID) > OnConnectorEstablished;
 
-//注册事件
 typedef std::function < void(AccepterID, SessionID) > OnSessionDisconnect;
 typedef std::function < void(ConnectorID) > OnConnectorDisconnect;
 
-//注册HTTP消息
+//register http proto message 
 typedef std::function < bool(AccepterID, SessionID, const zsummer::proto4z::HTTPHeadMap& /*head*/, const std::string & /*body*/) > OnSessionHTTPMessageFunction;
 
 typedef std::function < bool(ConnectorID, const zsummer::proto4z::HTTPHeadMap & /*head*/, const std::string & /*body*/) > OnConnectorHTTPMessageFunction;
 
 
-//注册心跳
+//register pulse timer .  you can register this to implement heartbeat . 
 typedef std::function < void(AccepterID, SessionID, unsigned int/*pulse interval*/) > OnSessionPulseTimer;
 typedef std::function < void(ConnectorID, unsigned int/*pulse interval*/) > OnConnectorPulseTimer;
 

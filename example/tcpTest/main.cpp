@@ -114,7 +114,7 @@ void OnServerSocektRecv(ErrorCode ec, int recvLength)
 	LOGI("recv client msg len = " << recvLength << ", msg :" << recvBuffer);
 	memcpy(sendBuffer, recvBuffer, recvLength);
 	sendBufferLen = recvLength;
-	bool ret = usedSocket->DoSend(sendBuffer, sendBufferLen, OnSocektSend);// safe-warning: can't call this methon again before receive last DoSend callback. 
+	bool ret = usedSocket->DoSend(sendBuffer, sendBufferLen, OnSocektSend);// safe-warning: can't call this method again when last DoSend request not return. 
 	if (!ret)
 	{
 		g_safeexit = true;
@@ -159,7 +159,7 @@ void SendOneMsg()
 	{
 		sprintf(sendBuffer, "%s", "hellow");
 		sendBufferLen = strlen(sendBuffer) + 1;
-		// safe-warning: can't call this methon again before receive last DoSend callback. 
+		// safe-warning: can't call this method again when last DoSend request not return. 
 		usedSocket->DoSend(sendBuffer, sendBufferLen, OnSocektSend);
 	}
 }
@@ -222,13 +222,11 @@ int main(int argc, char* argv[])
 	
 	if (g_startType == 0)
 	{
-		//! 启动日志服务
 		ILog4zManager::GetInstance()->Config("server.cfg");
 		ILog4zManager::GetInstance()->Start();
 	}
 	else
 	{
-				//! 启动日志服务
 		ILog4zManager::GetInstance()->Config("client.cfg");
 		ILog4zManager::GetInstance()->Start();
 	}
@@ -238,7 +236,6 @@ int main(int argc, char* argv[])
 
 	
 
-	//! 启动调度器
 	summer = std::shared_ptr<CZSummer>(new CZSummer);
 	summer->Initialize();
 
@@ -264,7 +261,7 @@ int main(int argc, char* argv[])
 	{
 		summer->RunOnce();
 	}
-	//warning: be safe close :  1.all socket call close. 2. all socket receive recv callback. 3 stop runonce and safe exit.
+	//warning: be safe close need:  1.close all established socket. 2. wait all socket recv callback. 3 stop runonce and safe exit.
 	//current test will  output some safety warning with error log because the test not safe exit. but no problem.
 
 	return 0;

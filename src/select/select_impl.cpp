@@ -251,7 +251,7 @@ void CZSummerImpl::RunOnce()
 	{
 		if (IS_EINTR)
 		{
-			LCW("CZSummerImpl::RunOnce[this0x" << this << "]  select err!  " << OSTREAM_GET_LASTERROR << ", " << GetZSummerImplStatus());
+			LCT("CZSummerImpl::RunOnce[this0x" << this << "]  select err!  " << OSTREAM_GET_LASTERROR << ", " << GetZSummerImplStatus());
 			return; //! error
 		}
 		return;

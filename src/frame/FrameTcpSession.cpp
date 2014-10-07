@@ -67,7 +67,6 @@ void CTcpSession::CleanSession(bool isCleanAllData)
 	m_sockptr.reset();
 	m_sessionID = InvalidSeesionID;
 	m_acceptID = InvalidAccepterID;
-	m_connectorID = InvalidConnectorID;
 	m_pulseTimerID = zsummer::network::InvalidTimerID;
 	m_rc4StateRead.MakeSBox(m_rc4Encrypt);
 	m_rc4StateWrite.MakeSBox(m_rc4Encrypt);
@@ -111,7 +110,7 @@ void CTcpSession::BindTcpConnectorPtr(CTcpSocketPtr sockptr, const std::pair<tag
 	m_rc4Encrypt = config.first.rc4TcpEncryption;
 	CleanSession(config.first.reconnectCleanAllData);
 	m_sockptr = sockptr;
-	m_connectorID = config.first.cID;
+	m_sessionID = config.second.cID;
 	m_protoType = config.first.protoType;
 	m_pulseInterval = config.first.pulseInterval;
 
@@ -135,7 +134,7 @@ void CTcpSession::OnConnected(zsummer::network::ErrorCode ec, const std::pair<ta
 	{
 		LOGE("OnConnected failed. ec=" << ec 
 			<< ",  config=" << config.first);
-		CTcpSessionManager::getRef().OnConnectorStatus(config.first.cID, false, shared_from_this());
+		CTcpSessionManager::getRef().OnConnect(config.second.cID, false, shared_from_this());
 		return;
 	}
 	LOGI("OnConnected success.  config=" << config.first);
@@ -152,7 +151,7 @@ void CTcpSession::OnConnected(zsummer::network::ErrorCode ec, const std::pair<ta
 	
 	
 	//用户在该回调中发送的第一包会跑到发送堆栈的栈顶.
-	CTcpSessionManager::getRef().OnConnectorStatus(m_connectorID, true, shared_from_this());
+	CTcpSessionManager::getRef().OnConnect(m_sessionID, true, shared_from_this());
 	if (m_sending.bufflen == 0 && !m_sendque.empty())
 	{
 		MessagePack *tmp = m_sendque.front();
@@ -213,32 +212,16 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 			}
 			try
 			{
-				bool bOrgReturn = false;
-				if (m_connectorID != InvalidConnectorID)
-				{
-					bOrgReturn = CMessageDispatcher::getRef().DispatchOrgConnectorMessage(m_connectorID, m_recving.buff + usedIndex, ret.second);
-				}
-				else if (m_sessionID != InvalidSeesionID && m_acceptID != InvalidAccepterID)
-				{
-					bOrgReturn = CMessageDispatcher::getRef().DispatchOrgSessionMessage(m_acceptID, m_sessionID, m_recving.buff + usedIndex, ret.second);
-				}
+				bool bOrgReturn  = CMessageDispatcher::getRef().DispatchOrgSessionMessage(m_sessionID, m_recving.buff + usedIndex, ret.second);
 				if (!bOrgReturn)
 				{
 					LOGW("Dispatch Message failed. ");
 					continue;
 				}
-
 				ReadStreamPack rs(m_recving.buff + usedIndex, ret.second);
-				ProtocolID protocolID = 0;
+				ProtoID protocolID = 0;
 				rs >> protocolID;
-				if (m_connectorID != InvalidConnectorID)
-				{
-					CMessageDispatcher::getRef().DispatchConnectorMessage(m_connectorID, protocolID, rs);
-				}
-				else if (m_sessionID != InvalidSeesionID && m_acceptID != InvalidAccepterID)
-				{
-					CMessageDispatcher::getRef().DispatchSessionMessage(m_acceptID, m_sessionID, protocolID, rs);
-				}
+				CMessageDispatcher::getRef().DispatchSessionMessage(m_sessionID, protocolID, rs);
 			}
 			catch (std::runtime_error e)
 			{
@@ -258,14 +241,6 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 				head, body, usedLen);
 			if (ret == zsummer::proto4z::IRT_CORRUPTION)
 			{
-				if (m_connectorID != InvalidConnectorID)
-				{
-					CMessageDispatcher::getRef().DispatchConnectorHTTPMessage(m_connectorID, head, body);
-				}
-				else if (m_sessionID != InvalidSeesionID && m_acceptID != InvalidAccepterID)
-				{
-					CMessageDispatcher::getRef().DispatchSessionHTTPMessage(m_acceptID, m_sessionID, head, body);
-				}
 				LOGT("killed socket: CheckHTTPBuffIntegrity error ");
 				m_sockptr->DoClose();
 				OnClose();
@@ -275,25 +250,12 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 			{
 				break;
 			}
-			if (m_connectorID != InvalidConnectorID)
+			if (CMessageDispatcher::getRef().DispatchSessionHTTPMessage(m_sessionID, head, body))
 			{
-				if (!CMessageDispatcher::getRef().DispatchConnectorHTTPMessage(m_connectorID, head, body))
-				{
-					LOGT("killed socket: DispatchConnectorHTTPMessage error ");
-					m_sockptr->DoClose();
-					OnClose();
-					return;
-				}
-			}
-			else if (m_sessionID != InvalidSeesionID && m_acceptID != InvalidAccepterID)
-			{
-				if (CMessageDispatcher::getRef().DispatchSessionHTTPMessage(m_acceptID, m_sessionID, head, body))
-				{
-					LOGT("killed socket: DispatchSessionHTTPMessage error ");
-					m_sockptr->DoClose();
-					OnClose();
-					return;
-				}
+				LOGT("killed socket: DispatchSessionHTTPMessage error ");
+				m_sockptr->DoClose();
+				OnClose();
+				return;
 			}
 			usedIndex += usedLen;
 		}
@@ -408,24 +370,12 @@ void CTcpSession::OnSend(zsummer::network::ErrorCode ec,  int nSentLen)
 
 void CTcpSession::OnHeartbeat()
 {
-	if (m_connectorID != InvalidConnectorID)
-	{
-		CMessageDispatcher::getRef().DispatchOnConnectorPulse(m_connectorID, m_pulseInterval);
-	}
-	else if (m_sessionID != InvalidSeesionID && m_acceptID != InvalidAccepterID)
-	{
-		CMessageDispatcher::getRef().DispatchOnSessionPulse(m_acceptID, m_sessionID, m_pulseInterval);
-	}
-	else
-	{
-		LOGE("Unknown heartbeat");
-	}
+	CMessageDispatcher::getRef().DispatchOnSessionPulse(m_sessionID, m_pulseInterval);
 	if (m_pulseTimerID == zsummer::network::InvalidTimerID || m_pulseInterval == 0)
 	{
 		return;
 	}
 	m_pulseTimerID = CTcpSessionManager::getRef().CreateTimer(m_pulseInterval, std::bind(&CTcpSession::OnHeartbeat, shared_from_this()));
-	
 }
 
 void CTcpSession::OnClose()
@@ -437,11 +387,11 @@ void CTcpSession::OnClose()
 		m_pulseTimerID = zsummer::network::InvalidTimerID;
 	}
 	
-	if (m_connectorID != InvalidConnectorID)
+	if (IsConnectID(m_sessionID))
 	{
-		CTcpSessionManager::getRef().OnConnectorStatus(m_connectorID, false, shared_from_this());
+		CTcpSessionManager::getRef().OnConnect(m_sessionID, false, shared_from_this());
 	}
-	else if (m_sessionID != InvalidSeesionID && m_acceptID != InvalidAccepterID)
+	else
 	{
 		CTcpSessionManager::getRef().OnSessionClose(m_acceptID, m_sessionID);
 	}

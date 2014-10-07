@@ -48,9 +48,9 @@ using namespace zsummer::log4z;
 
 //! 默认启动参数
 std::string g_remoteIP = "0.0.0.0"; //如果作为服务端来使用 这里是监听地址
-unsigned short g_remotePort = 81; //同上
+unsigned short g_remotePort = 8081; //同上
 unsigned short g_startType = 0;  //0 作为服务器启动, 1 作为客户端启动
-unsigned short g_maxClient = 1; //如果是服务端 这里是限制客户端的个数 超出的会被踢掉, 如果是客户端 这里是启动的客户端总数.
+unsigned short g_maxClient = 100; //如果是服务端 这里是限制客户端的个数 超出的会被踢掉, 如果是客户端 这里是启动的客户端总数.
 unsigned short g_sendType = 0; //0 ping-pong test, 1 flood test
 unsigned int   g_intervalMs = 0; // 如果是flood test, 这里的间隔应该大于0, 单位是毫秒.
 
@@ -76,11 +76,11 @@ void MonitorFunc()
 * 测试代码中定义了4个协议 用来实现心跳机制和echo发包.
 * ECHO包是两个协议号 一个用来客户端发送 一个用来服务端回复.
 */
-#define C2S_HEARTBEAT ProtocolID(10000)
-#define S2C_HEARTBEAT ProtocolID(10000)
+#define C2S_HEARTBEAT ProtoID(10000)
+#define S2C_HEARTBEAT ProtoID(10000)
 
-#define C2S_ECHO_REQ ProtocolID(10002)
-#define S2C_ECHO_ACK ProtocolID(10003)
+#define C2S_ECHO_REQ ProtoID(10002)
+#define S2C_ECHO_ACK ProtoID(10003)
 
 /*管理连接状态
 *在这个测试代码中 把服务端和客户端的心跳管理都放在了这个一个类中.
@@ -99,96 +99,61 @@ class CStressHeartBeatManager
 public:
 	CStressHeartBeatManager()
 	{
-		//! 注册事件和消息
-		CMessageDispatcher::getRef().RegisterOnConnectorEstablished(std::bind(&CStressHeartBeatManager::OnConnecotrConnected, this,
-			std::placeholders::_1));
-		CMessageDispatcher::getRef().RegisterOnConnectorPulse(std::bind(&CStressHeartBeatManager::OnConnecotrHeartbeatTimer, this,
-			std::placeholders::_1, std::placeholders::_2));
-		CMessageDispatcher::getRef().RegisterOnConnectorDisconnect(std::bind(&CStressHeartBeatManager::OnConnecotrDisconnect, this,
-			std::placeholders::_1));
-		CMessageDispatcher::getRef().RegisterConnectorMessage(S2C_HEARTBEAT, std::bind(&CStressHeartBeatManager::OnMsgServerHeartbeat, this,
-			std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-
-
 		CMessageDispatcher::getRef().RegisterOnSessionEstablished(std::bind(&CStressHeartBeatManager::OnSessionEstablished, this,
-			std::placeholders::_1, std::placeholders::_2));
-		CMessageDispatcher::getRef().RegisterOnSessionPulse(std::bind(&CStressHeartBeatManager::OnSessionHeartbeatTimer, this,
-			std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+			std::placeholders::_1));
 		CMessageDispatcher::getRef().RegisterOnSessionDisconnect(std::bind(&CStressHeartBeatManager::OnSessionDisconnect, this,
+			std::placeholders::_1));
+		CMessageDispatcher::getRef().RegisterOnSessionPulse(std::bind(&CStressHeartBeatManager::OnSessionPulse, this,
 			std::placeholders::_1, std::placeholders::_2));
-		CMessageDispatcher::getRef().RegisterSessionMessage(C2S_HEARTBEAT, std::bind(&CStressHeartBeatManager::OnMsgConnectorHeartbeat, this,
-			std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+		CMessageDispatcher::getRef().RegisterSessionMessage(S2C_HEARTBEAT, std::bind(&CStressHeartBeatManager::OnMsgPulse, this,
+			std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+		CMessageDispatcher::getRef().RegisterSessionMessage(C2S_HEARTBEAT, std::bind(&CStressHeartBeatManager::OnMsgPulse, this,
+			std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	}
 	
-	void OnConnecotrConnected(ConnectorID cID)
-	{
-		m_connectorHB[cID] = time(NULL);
-		LOGI("connect sucess. cID=" << cID);
-	}
-	void OnConnecotrHeartbeatTimer(ConnectorID cID, unsigned int pulseInterval)
-	{
-		auto iter = m_connectorHB.find(cID);
-		if (iter == m_connectorHB.end() || time(NULL) - iter->second > pulseInterval/ 1000 * 2)
-		{
-			LOGI("server  lost. cID=" << cID << ", timeout=" << time(NULL) - iter->second);
-			CTcpSessionManager::getRef().BreakConnector(cID);
-		}
-		WriteStreamPack pack;
-		pack << C2S_HEARTBEAT;
-		CTcpSessionManager::getRef().SendOrgConnectorData(cID, pack.GetStream(), pack.GetStreamLen());
-	}
-	void OnConnecotrDisconnect(ConnectorID cID)
-	{
-		m_connectorHB.erase(cID);
-		LOGI("Disconnect. cID=" << cID);
-	}
 
-	void OnMsgServerHeartbeat(ConnectorID cID, ProtocolID pID, ReadStreamPack & pack)
+	void OnMsgPulse(SessionID sID, ProtoID pID, ReadStreamPack & pack)
 	{
-		auto iter = m_connectorHB.find(cID);
-		if (iter != m_connectorHB.end())
+		auto iter = m_sessionPulse.find(sID);
+		if (iter != m_sessionPulse.end())
 		{
 			iter->second = time(NULL);
 		}
 	}
 
-	void OnSessionEstablished(AccepterID aID, SessionID sID)
+	void OnSessionEstablished(SessionID sID)
 	{
-		m_sessionHB[sID] = time(NULL);
-		LOGI("remote session connected. sID=" << sID);
+		m_sessionPulse[sID] = time(NULL);
+		LOGI("OnSessionEstablished. sID=" << sID);
 	}
-	void OnSessionHeartbeatTimer(AccepterID aID, SessionID sID, unsigned int pulseInterval)
+
+	void OnSessionPulse(SessionID sID, unsigned int pulseInterval)
 	{
-		auto iter = m_sessionHB.find(sID);
-		if (iter == m_sessionHB.end() || time(NULL) - iter->second > pulseInterval / 1000 * 2)
+		auto iter = m_sessionPulse.find(sID);
+		if (iter == m_sessionPulse.end() || time(NULL) - iter->second > pulseInterval / 1000 * 2)
 		{
 			LOGI("remote session lost. sID=" << sID << ", timeout=" << time(NULL) - iter->second);
-			CTcpSessionManager::getRef().KickSession(aID, sID);
+			CTcpSessionManager::getRef().KickSession(sID);
+			return;
 		}
 		WriteStreamPack pack;
-		pack << S2C_HEARTBEAT;
-		CTcpSessionManager::getRef().SendOrgSessionData(aID, sID, pack.GetStream(), pack.GetStreamLen());
-	}
-	void OnSessionDisconnect(AccepterID aID, SessionID sID)
-	{
-		LOGI("remote session Disconnect. sID=" << sID );
-		m_sessionHB.erase(sID);
-	}
-	void OnMsgConnectorHeartbeat(AccepterID aID, SessionID sID, ProtocolID pID, ReadStreamPack & pack)
-	{
-		auto iter = m_sessionHB.find(sID);
-		if (iter != m_sessionHB.end())
+		if (IsConnectID(sID))
 		{
-			iter->second = time(NULL);
+			pack << C2S_HEARTBEAT;
 		}
+		else
+		{
+			pack << S2C_HEARTBEAT;
+		}
+		CTcpSessionManager::getRef().SendOrgSessionData(sID, pack.GetStream(), pack.GetStreamLen());
 	}
-
-protected:
-
+	void OnSessionDisconnect(SessionID sID)
+	{
+		LOGI("OnSessionDisconnect. sID=" << sID );
+		m_sessionPulse.erase(sID);
+	}
 private:
-	//! 注册的事件是针对所有session or connector的 因此在事件触发时候 要去查找对应的心跳信息
-	std::unordered_map<SessionID, time_t> m_sessionHB;
-	std::unordered_map<ConnectorID, time_t> m_connectorHB;
+	std::unordered_map<SessionID, time_t> m_sessionPulse;
 };
 
 
@@ -203,20 +168,20 @@ class CStressClientHandler
 public:
 	CStressClientHandler()
 	{
-		CMessageDispatcher::getRef().RegisterOnConnectorEstablished(std::bind(&CStressClientHandler::OnConnected, this, std::placeholders::_1));
-		CMessageDispatcher::getRef().RegisterConnectorMessage(S2C_ECHO_ACK,
+		CMessageDispatcher::getRef().RegisterOnSessionEstablished(std::bind(&CStressClientHandler::OnConnected, this, std::placeholders::_1));
+		CMessageDispatcher::getRef().RegisterSessionMessage(S2C_ECHO_ACK,
 			std::bind(&CStressClientHandler::msg_ResultSequence_fun, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-		CMessageDispatcher::getRef().RegisterConnectorMessage(S2C_ECHO_ACK,
+		CMessageDispatcher::getRef().RegisterSessionMessage(S2C_ECHO_ACK,
 			std::bind(&CStressClientHandler::looker_ResultSequence_fun, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-		CMessageDispatcher::getRef().RegisterOnConnectorDisconnect(std::bind(&CStressClientHandler::OnConnectDisconnect, this, std::placeholders::_1));
+		CMessageDispatcher::getRef().RegisterOnSessionDisconnect(std::bind(&CStressClientHandler::OnConnectDisconnect, this, std::placeholders::_1));
 	}
 
-	void OnConnected (ConnectorID cID)
+	void OnConnected (SessionID cID)
 	{
 		LOGI("OnConnected. ConnectorID=" << cID );
 		WriteStreamPack ws;
 		ws << C2S_ECHO_REQ << "client request one REQ.";
-		CTcpSessionManager::getRef().SendOrgConnectorData(cID, ws.GetStream(), ws.GetStreamLen());
+		CTcpSessionManager::getRef().SendOrgSessionData(cID, ws.GetStream(), ws.GetStreamLen());
 		g_totalSendCount++;
 		if (g_sendType != 0 && g_intervalMs > 0)
 		{
@@ -224,12 +189,12 @@ public:
 			m_sessionStatus[cID] = true;
 		}
 	};
-	void OnConnectDisconnect(ConnectorID cID)
+	void OnConnectDisconnect(SessionID cID)
 	{
 		m_sessionStatus[cID] = false;
 	}
 
-	void msg_ResultSequence_fun(ConnectorID cID, ProtocolID pID, ReadStreamPack & rs)
+	void msg_ResultSequence_fun(SessionID cID, ProtoID pID, ReadStreamPack & rs)
 	{
 		std::string msg;
 		rs >> msg;
@@ -240,23 +205,23 @@ public:
 		{
 			WriteStreamPack ws;
 			ws << C2S_ECHO_REQ << g_testStr;
-			CTcpSessionManager::getRef().SendOrgConnectorData(cID, ws.GetStream(), ws.GetStreamLen());
+			CTcpSessionManager::getRef().SendOrgSessionData(cID, ws.GetStream(), ws.GetStreamLen());
 			g_totalSendCount++;
 		}
 	};
-	void looker_ResultSequence_fun(ConnectorID cID, ProtocolID pID, ReadStreamPack & rs)
+	void looker_ResultSequence_fun(SessionID cID, ProtoID pID, ReadStreamPack & rs)
 	{
 		std::string msg;
 		rs >> msg;
 //		LOGA("looker:" <<msg);
 	};
-	void SendFunc(ConnectorID cID)
+	void SendFunc(SessionID cID)
 	{
 		if (g_totalSendCount - g_totalRecvCount < 10000)
 		{
 			WriteStreamPack ws;
 			ws << C2S_ECHO_REQ << g_testStr;
-			CTcpSessionManager::getRef().SendOrgConnectorData(cID, ws.GetStream(), ws.GetStreamLen());
+			CTcpSessionManager::getRef().SendOrgSessionData(cID, ws.GetStream(), ws.GetStreamLen());
 			g_totalSendCount++;
 		}
 		if (m_sessionStatus[cID])
@@ -265,7 +230,7 @@ public:
 		}
 	};
 private:
-	std::unordered_map<ConnectorID, bool> m_sessionStatus;
+	std::unordered_map<SessionID, bool> m_sessionStatus;
 };
 
 
@@ -279,17 +244,17 @@ public:
 	CStressServerHandler()
 	{
 		CMessageDispatcher::getRef().RegisterSessionMessage(C2S_ECHO_REQ,
-			std::bind(&CStressServerHandler::msg_RequestSequence_fun, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+			std::bind(&CStressServerHandler::msg_RequestSequence_fun, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	}
 
-	void msg_RequestSequence_fun (AccepterID aID, SessionID sID, ProtocolID pID, ReadStreamPack & rs)
+	void msg_RequestSequence_fun (SessionID sID, ProtoID pID, ReadStreamPack & rs)
 	{
 		std::string msg;
 		rs >> msg;
 		msg += " echo";
 		WriteStreamPack ws;
 		ws << S2C_ECHO_ACK << msg;
-		CTcpSessionManager::getRef().SendOrgSessionData(aID, sID, ws.GetStream(), ws.GetStreamLen());
+		CTcpSessionManager::getRef().SendOrgSessionData(sID, ws.GetStream(), ws.GetStreamLen());
 		g_totalEchoCount++;
 		g_totalSendCount++;
 		g_totalRecvCount++;
@@ -297,6 +262,10 @@ public:
 };
 
 
+void sigFun(int sig)
+{
+	CTcpSessionManager::getRef().Stop();
+}
 
 int main(int argc, char* argv[])
 {
@@ -313,13 +282,14 @@ int main(int argc, char* argv[])
 	signal( SIGQUIT, SIG_IGN );
 	signal( SIGCHLD, SIG_IGN);
 #endif
+	signal(SIGINT, sigFun);
 	if (argc == 2 && 
 		(strcmp(argv[1], "--help") == 0 
 		|| strcmp(argv[1], "/?") == 0))
 	{
 		cout << "please input like example:" << endl;
 		cout << "tcpTest remoteIP remotePort startType maxClient sendType interval" << endl;
-		cout << "./tcpTest 0.0.0.0 81 0" << endl;
+		cout << "./tcpTest 0.0.0.0 8081 0" << endl;
 		cout << "startType: 0 server, 1 client" << endl;
 		cout << "maxClient: limit max" << endl;
 		cout << "sendType: 0 echo send, 1 direct send" << endl;
@@ -332,6 +302,7 @@ int main(int argc, char* argv[])
 		g_remotePort = atoi(argv[2]);
 	if (argc > 3)
 		g_startType = atoi(argv[3]);
+		if (g_startType != 0) g_maxClient = 1;
 	if (argc > 4)
 		g_maxClient = atoi(argv[4]);
 	if (argc > 5)
@@ -371,11 +342,10 @@ int main(int argc, char* argv[])
 		for (int i = 0; i < g_maxClient; ++i)
 		{
 			tagConnctorConfigTraits traits;
-			traits.cID = i;
 			traits.remoteIP = g_remoteIP;
 			traits.remotePort = g_remotePort;
 			traits.reconnectInterval = 5000;
-			traits.reconnectMaxCount = 50;
+			traits.reconnectMaxCount = 5;
 			traits.rc4TcpEncryption = "yawei.zhang@foxmail.com";
 			traits.pulseInterval = 10000;
 			CTcpSessionManager::getRef().AddConnector(traits);
@@ -385,7 +355,6 @@ int main(int argc, char* argv[])
 	{
 		//添加acceptor
 		tagAcceptorConfigTraits traits;
-		traits.aID = 1;
 		traits.listenPort = g_remotePort;
 		traits.maxSessions = g_maxClient;
 		traits.rc4TcpEncryption = "yawei.zhang@foxmail.com";

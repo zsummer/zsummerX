@@ -164,13 +164,14 @@ namespace zsummer
 
 extern LoggerId g_coreID;
 
-
+#define LCT( log ) LOG_TRACE( g_coreID,__FUNCTION__ << ": "<< log )
 #define LCD( log ) LOG_DEBUG( g_coreID, __FUNCTION__ <<": "<< log )
 #define LCI( log ) LOG_INFO( g_coreID,__FUNCTION__ <<": "<<  log )
 #define LCW( log ) LOG_WARN( g_coreID,__FUNCTION__ << ": "<< log )
 #define LCE( log ) LOG_ERROR( g_coreID,__FUNCTION__ << ": "<< log )
 #define LCA( log ) LOG_ALARM( g_coreID,__FUNCTION__ << ": "<< log )
 #define LCF( log ) LOG_FATAL( g_coreID,__FUNCTION__ << ": "<< log )
+
 
 
 

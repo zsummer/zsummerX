@@ -97,7 +97,7 @@ int main(int argc, char* argv[])
 	if (g_startIsConnector) //client
 	{
 		//响应连接成功事件
-		auto connectedfun = [](ConnectorID cID)
+		auto connectedfun = [](SessionID cID)
 		{
 			LOGI("send to ConnectorID=" << cID);
 			zsummer::proto4z::WriteHTTP wh;
@@ -109,11 +109,11 @@ int main(int argc, char* argv[])
 			wh.AddHead("DNT", "1");
 			wh.AddHead("Connection", "Keep-Alive");
 			wh.Get("/");
-			CTcpSessionManager::getRef().SendOrgConnectorData(cID, wh.GetStream(), wh.GetStreamLen());
+			CTcpSessionManager::getRef().SendOrgSessionData(cID, wh.GetStream(), wh.GetStreamLen());
 		};
 
 		//响应消息_ResultSequence
-		auto msg_ResultSequence_fun = [](ConnectorID cID, const zsummer::proto4z::HTTPHeadMap &head, const std::string & body)
+		auto msg_ResultSequence_fun = [](SessionID cID, const zsummer::proto4z::HTTPHeadMap &head, const std::string & body)
 		{
 			auto fouder = head.find("RESPONSE");
 			if (fouder == head.end())
@@ -127,20 +127,18 @@ int main(int argc, char* argv[])
 				//CTcpSessionManager::getRef().AddConnector(1);
 				return false;
 			}
-			
-			
 			LOGI("response success. content=" << body);
+			CTcpSessionManager::getRef().Stop();
 			return true;
 		};
 
 		//! 注册事件和消息
-		CMessageDispatcher::getRef().RegisterOnConnectorEstablished(connectedfun); //!注册连接成功处理函数
-		CMessageDispatcher::getRef().RegisterOnConnectorHTTPMessage(msg_ResultSequence_fun);//!注册消息
+		CMessageDispatcher::getRef().RegisterOnSessionEstablished(connectedfun); //!注册连接成功处理函数
+		CMessageDispatcher::getRef().RegisterOnSessionHTTPMessage(msg_ResultSequence_fun);//!注册消息
 
 
 		//添加一个connector
 		tagConnctorConfigTraits traits;
-		traits.cID = 1;
 		traits.remoteIP = g_remoteIP;
 		traits.remotePort = g_remotePort;
 		traits.protoType = PT_HTTP;
@@ -155,7 +153,7 @@ int main(int argc, char* argv[])
 	{
 
 		//响应消息_ResultSequence
-		auto msg_ResultSequence_fun = [](AccepterID aID, SessionID sID, const zsummer::proto4z::HTTPHeadMap &head, const std::string & body)
+		auto msg_ResultSequence_fun = [](SessionID sID, const zsummer::proto4z::HTTPHeadMap &head, const std::string & body)
 		{
 			auto fouder = head.find("GET");
 			if (fouder == head.end())
@@ -173,17 +171,15 @@ int main(int argc, char* argv[])
 			wh.AddHead("DNT", "1");
 			wh.AddHead("Connection", "Keep-Alive");
 			wh.Response("200", "What's your name ?");
-			CTcpSessionManager::getRef().SendOrgSessionData(aID, sID, wh.GetStream(), wh.GetStreamLen());
-			CTcpSessionManager::getRef().CreateTimer(1000,std::bind(&CTcpSessionManager::KickSession, CTcpSessionManager::getPtr(), aID, sID));
+			CTcpSessionManager::getRef().SendOrgSessionData( sID, wh.GetStream(), wh.GetStreamLen());
+			CTcpSessionManager::getRef().CreateTimer(1000,std::bind(&CTcpSessionManager::Stop, CTcpSessionManager::getPtr()));
 			return false;
 		};
 
 		//! 注册事件和消息
 		CMessageDispatcher::getRef().RegisterOnSessionHTTPMessage(msg_ResultSequence_fun);//!注册消息
 
-
 		tagAcceptorConfigTraits traits;
-		traits.aID = 1;
 		traits.listenPort = g_remotePort;
 		traits.protoType = PT_HTTP;
 		CTcpSessionManager::getRef().AddAcceptor(traits);

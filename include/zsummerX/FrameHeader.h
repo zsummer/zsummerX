@@ -57,14 +57,22 @@ using namespace std;
 
 
 
+
 typedef unsigned int SessionID;
 const SessionID InvalidSeesionID = -1;
 typedef unsigned int AccepterID;
 const AccepterID InvalidAccepterID = -1;
-typedef unsigned int ConnectorID;
-const ConnectorID InvalidConnectorID = -1;
-typedef unsigned short ProtocolID;
-const ProtocolID InvalidProtocolID = -1;
+typedef unsigned short ProtoID;
+const ProtoID InvalidProtoID = -1;
+
+
+// const unsigned int __MIDDLE_SEGMENT_VALUE = ((unsigned int)-1) / (unsigned int)2;
+const unsigned int __MIDDLE_SEGMENT_VALUE = 400*1000*1000;
+inline bool IsSessionID(unsigned int unknowID){ return unknowID < __MIDDLE_SEGMENT_VALUE ? true : false; }
+inline bool IsConnectID(unsigned int unknowID){ return !IsSessionID(unknowID); }
+inline unsigned int NextSessionID(unsigned int curSessionID){ return (curSessionID + 1) % __MIDDLE_SEGMENT_VALUE; }
+inline unsigned int NextConnectID(unsigned int curSessionID){ return (curSessionID + 1 < __MIDDLE_SEGMENT_VALUE || curSessionID + 1 == InvalidSeesionID) ? __MIDDLE_SEGMENT_VALUE : curSessionID + 1; }
+
 
 
 enum ProtoType
@@ -76,7 +84,6 @@ enum ProtoType
 
 struct tagAcceptorConfigTraits
 {
-	AccepterID aID = InvalidAccepterID;
 	std::string listenIP = "0.0.0.0";
 	unsigned short listenPort = 81;
 	ProtoType protoType = PT_TCP;
@@ -84,12 +91,12 @@ struct tagAcceptorConfigTraits
 	unsigned int pulseInterval = 30000;
 	unsigned int maxSessions = 5000;
 	std::vector<std::string> whitelistIP;
-
 };
 
 struct tagAcceptorInfo
 {
 	//limit max session.
+	AccepterID aID = InvalidAccepterID;
 	unsigned long long totalAcceptCount = 0; 
 	unsigned long long currentLinked = 0; 
 };
@@ -98,7 +105,6 @@ struct tagAcceptorInfo
 
 struct tagConnctorConfigTraits
 {
-	ConnectorID cID = InvalidConnectorID;
 	std::string remoteIP = "127.0.0.1";
 	unsigned short remotePort = 81;
 	ProtoType protoType = PT_TCP;
@@ -112,6 +118,7 @@ struct tagConnctorConfigTraits
 struct tagConnctorInfo
 {
 	//implementation reconnect 
+	SessionID cID = InvalidSeesionID;
 	unsigned long long totalConnectCount = 0; 
 	unsigned long long curReconnectCount = 0; 
 };
@@ -148,38 +155,28 @@ struct FrameStreamTraits
 typedef zsummer::proto4z::ReadStream<FrameStreamTraits> ReadStreamPack;
 typedef zsummer::proto4z::WriteStream<FrameStreamTraits> WriteStreamPack;
 
-//! this method used to ignore some message .
+
 //!register message with original net pack, if return false other register will not receive this message.
-typedef std::function < bool(AccepterID, SessionID, const char * /*blockBegin*/, typename FrameStreamTraits::Integer /*blockSize*/) > OnSessionOrgMessageFunction;
-typedef std::function < bool(ConnectorID, const char * /*blockBegin*/, typename FrameStreamTraits::Integer /*blockSize*/) > OnConnectorOrgMessageFunction;
+typedef std::function < bool(SessionID, const char * /*blockBegin*/, typename FrameStreamTraits::Integer /*blockSize*/) > OnOrgMessageFunction;
 
 //!register message 
-typedef std::function < void(AccepterID, SessionID, ProtocolID, ReadStreamPack &) > OnSessionMessageFunction;
-typedef std::function < void(ConnectorID, ProtocolID, ReadStreamPack &) > OnConnectorMessageFunction;
+typedef std::function < void(SessionID, ProtoID, ReadStreamPack &) > OnMessageFunction;
 
 //!register event 
-typedef std::function < void(AccepterID, SessionID) > OnSessionEstablished;
-typedef std::function < void(ConnectorID) > OnConnectorEstablished;
-
-typedef std::function < void(AccepterID, SessionID) > OnSessionDisconnect;
-typedef std::function < void(ConnectorID) > OnConnectorDisconnect;
+typedef std::function < void(SessionID) > OnSessionEstablished;
+typedef std::function < void(SessionID) > OnSessionDisconnect;
 
 //register http proto message 
-typedef std::function < bool(AccepterID, SessionID, const zsummer::proto4z::HTTPHeadMap& /*head*/, const std::string & /*body*/) > OnSessionHTTPMessageFunction;
-
-typedef std::function < bool(ConnectorID, const zsummer::proto4z::HTTPHeadMap & /*head*/, const std::string & /*body*/) > OnConnectorHTTPMessageFunction;
-
+typedef std::function < bool(SessionID, const zsummer::proto4z::HTTPHeadMap& /*head*/, const std::string & /*body*/) > OnHTTPMessageFunction;
 
 //register pulse timer .  you can register this to implement heartbeat . 
-typedef std::function < void(AccepterID, SessionID, unsigned int/*pulse interval*/) > OnSessionPulseTimer;
-typedef std::function < void(ConnectorID, unsigned int/*pulse interval*/) > OnConnectorPulseTimer;
-
+typedef std::function < void(SessionID, unsigned int/*pulse interval*/) > OnSessionPulseTimer;
 
 //! print log
 template<class OS>
 OS & operator <<(OS & os, const tagAcceptorConfigTraits & traits)
 {
-	os << "[AccepterID=" << traits.aID << "; listenIP=" << traits.listenIP << "; listenPort=" << traits.listenPort
+	os << "[listenIP=" << traits.listenIP << "; listenPort=" << traits.listenPort
 		<< "; maxSessions=" << traits.maxSessions << "; whitelistIP=";
 	for (auto x : traits.whitelistIP)
 	{
@@ -193,7 +190,7 @@ OS & operator <<(OS & os, const tagAcceptorConfigTraits & traits)
 template<class OS>
 OS & operator <<(OS & os, const tagConnctorConfigTraits & traits)
 {
-	os << "[ConnectorID=" << traits.cID << "; remoteIP=" << traits.remoteIP << "; remotePort=" << traits.remotePort
+	os << "[remoteIP=" << traits.remoteIP << "; remotePort=" << traits.remotePort
 		<< "; reconnectMaxCount=" << traits.reconnectMaxCount << "; reconnectInterval=" << traits.reconnectInterval;
 	return os;
 }

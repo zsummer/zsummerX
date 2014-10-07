@@ -67,52 +67,43 @@ public:
 	bool CancelTimer(unsigned long long timerID){ return m_summer->CancelTimer(timerID); }
 
 public:
-	//! add connector under the configure.
-	bool AddConnector(const tagConnctorConfigTraits & traits);
-	//! reconnect under the exist configure.
-	bool AddConnector(ConnectorID cID);
 	//! add acceptor under the configure.
 	bool AddAcceptor(const tagAcceptorConfigTraits &traits);
 
+	//! add connector under the configure.
+	bool AddConnector(const tagConnctorConfigTraits & traits);
 
 public:
 	//send original data. can repeat call because it's used send queue in internal implementation.
-	void SendOrgConnectorData(ConnectorID cID, const char * orgData, unsigned int orgDataLen);
+	void SendOrgSessionData(SessionID sID, const char * orgData, unsigned int orgDataLen);
 	//send logic data with protocol id 
-	void SendConnectorData(ConnectorID cID, ProtocolID pID, const char * userData, unsigned int userDataLen);
-	//send original data. can repeat call because it's used send queue in internal implementation.
-	void SendOrgSessionData(AccepterID aID, SessionID sID, const char * orgData, unsigned int orgDataLen);
-	//send logic data with protocol id 
-	void SendSessionData(AccepterID aID, SessionID sID, ProtocolID pID, const char * userData, unsigned int userDataLen);
+	void SendSessionData(SessionID sID, ProtoID pID, const char * userData, unsigned int userDataLen);
 
 	//close session socket.
-	void KickSession(AccepterID aID, SessionID sID);
-	//close connect socket.
-	void BreakConnector(ConnectorID cID);
-	//set flag used to not accept new socket.
-	void ShutdownAllAccepter();
+	void KickSession(SessionID sID);
+
 private:
+	void SafeStop();
 	friend class CTcpSession;
+	// socket(from accept) on close 
 	void OnSessionClose(AccepterID aID, SessionID sID);
-	void OnConnectorStatus(ConnectorID connectorID, bool bConnected, CTcpSessionPtr session);
+	// socket(from connect) on close 
+	void OnConnect(SessionID cID, bool bConnected, CTcpSessionPtr session);
 	void OnAcceptNewClient(zsummer::network::ErrorCode ec, CTcpSocketPtr s, CTcpAcceptPtr accepter, AccepterID aID);
-private:
-	typedef unsigned long long MergeBigID;
-	inline MergeBigID MERGEBIGID(AccepterID aID, SessionID sID) { return ((MergeBigID)aID << 32) | (MergeBigID)sID; }
 private:
 	CZSummerPtr m_summer;
 	bool  m_bRunning = true;
 	bool  m_shutdownAccept = false;
 
+	SessionID m_lastAcceptID = 0;
 	SessionID m_lastSessionID = 0;
+	SessionID m_lastConnectID = 0;
 
 	std::unordered_map<AccepterID, CTcpAcceptPtr> m_mapAccepterPtr;
-	std::unordered_map<MergeBigID, CTcpSessionPtr> m_mapTcpSessionPtr;
-	std::unordered_map<ConnectorID, CTcpSessionPtr> m_mapConnectorPtr;
+	std::unordered_map<SessionID, CTcpSessionPtr> m_mapTcpSessionPtr;
 
-	std::unordered_map<ConnectorID, std::pair<tagConnctorConfigTraits, tagConnctorInfo> > m_mapConnectorConfig;
+	std::unordered_map<SessionID, std::pair<tagConnctorConfigTraits, tagConnctorInfo> > m_mapConnectorConfig;
 	std::unordered_map<AccepterID, std::pair<tagAcceptorConfigTraits, tagAcceptorInfo> > m_mapAccepterConfig;
-
 public:
 };
 

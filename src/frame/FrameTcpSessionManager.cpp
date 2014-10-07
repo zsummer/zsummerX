@@ -61,13 +61,26 @@ bool CTcpSessionManager::Start()
 
 void CTcpSessionManager::Stop()
 {
-	m_bRunning = false;
+	Post(std::bind(&CTcpSessionManager::SafeStop, this));
 }
 
+void CTcpSessionManager::SafeStop()
+{
+	m_shutdownAccept = true;
+	m_bRunning = false;
+	for (auto m : m_mapTcpSessionPtr)
+	{
+		if (IsConnectID(m.first))
+		{
+			m_mapConnectorConfig[m.first].second.curReconnectCount = -1;
+		}
+		m.second->Close();
+	}
+}
 void CTcpSessionManager::Run()
 {
 	m_bRunning = true;
-	while (m_bRunning)
+	while (m_bRunning || !m_mapTcpSessionPtr.empty())
 	{
 		m_summer->RunOnce();
 	}
@@ -78,30 +91,34 @@ void CTcpSessionManager::Run()
 
 bool CTcpSessionManager::AddAcceptor(const tagAcceptorConfigTraits &traits)
 {
-	if (m_mapAccepterConfig.find(traits.aID) != m_mapAccepterConfig.end() || traits.aID == InvalidAccepterID)
-	{
-		LOGE("AddAcceptor confilict AccecptID. traits=" << traits);
-		return false;
-	}
-	m_mapAccepterConfig[traits.aID].first = traits;
+	m_lastAcceptID++;
+	auto & pairConfig = m_mapAccepterConfig[m_lastAcceptID];
+	pairConfig.first = traits;
+	pairConfig.second.aID = m_lastAcceptID;
+
 	CTcpAcceptPtr accepter(new zsummer::network::CTcpAccept(m_summer));
 	if (!accepter->OpenAccept(traits.listenIP.c_str(), traits.listenPort))
 	{
 		LOGE("AddAcceptor OpenAccept Failed. traits=" << traits);
 		return false;
 	}
-	m_mapAccepterPtr[traits.aID] = accepter;
+	m_mapAccepterPtr[m_lastAcceptID] = accepter;
 	CTcpSocketPtr newclient(new zsummer::network::CTcpSocket);
-	accepter->DoAccept(newclient, std::bind(&CTcpSessionManager::OnAcceptNewClient, this, std::placeholders::_1, std::placeholders::_2, accepter, traits.aID));
+	accepter->DoAccept(newclient, std::bind(&CTcpSessionManager::OnAcceptNewClient, this, std::placeholders::_1, std::placeholders::_2, accepter, pairConfig.second.aID));
 	return true;
 }
 
 void CTcpSessionManager::OnAcceptNewClient(zsummer::network::ErrorCode ec, CTcpSocketPtr s, CTcpAcceptPtr accepter, AccepterID aID)
 {
+	if (m_shutdownAccept)
+	{
+		LOGI("shutdown accepter. aID=" << aID);
+		return;
+	}
 	auto iter = m_mapAccepterConfig.find(aID);
 	if (iter == m_mapAccepterConfig.end())
 	{
-		LOGE("Unknown DoAccept Result Error. ec=" << ec << ", aID=" << aID);
+		LOGE("Unknown AccepterID aID=" << aID);
 		return;
 	}
 	if (ec)
@@ -109,15 +126,6 @@ void CTcpSessionManager::OnAcceptNewClient(zsummer::network::ErrorCode ec, CTcpS
 		LOGE("DoAccept Result Error. ec=" << ec << ", traits=" << iter->second.first);
 		return;
 	}
-
-	if (m_shutdownAccept)
-	{
-		LOGI("shutdown accepter. aID=" << aID);
-		return;
-	}
-	
-	
-
 
 	std::string remoteIP;
 	unsigned short remotePort = 0;
@@ -171,13 +179,13 @@ void CTcpSessionManager::OnAcceptNewClient(zsummer::network::ErrorCode ec, CTcpS
 		iter->second.second.currentLinked++;
 		iter->second.second.totalAcceptCount++;
 
-		m_lastSessionID++;
+		m_lastSessionID = NextSessionID(m_lastSessionID);
 		CTcpSessionPtr session(new CTcpSession());
 		s->Initialize(m_summer);
 		if (session->BindTcpSocketPrt(s, aID, m_lastSessionID, iter->second.first))
 		{
-			m_mapTcpSessionPtr[MERGEBIGID(aID, m_lastSessionID)] = session;
-			Post(std::bind(&CMessageDispatcher::DispatchOnSessionEstablished, &CMessageDispatcher::getRef(), aID, m_lastSessionID));
+			m_mapTcpSessionPtr[m_lastSessionID] = session;
+			Post(std::bind(&CMessageDispatcher::DispatchOnSessionEstablished, &CMessageDispatcher::getRef(), m_lastSessionID));
 		}
 	}
 	
@@ -191,12 +199,12 @@ void CTcpSessionManager::OnAcceptNewClient(zsummer::network::ErrorCode ec, CTcpS
 
 
 
-void CTcpSessionManager::KickSession(AccepterID aID, SessionID sID)
+void CTcpSessionManager::KickSession(SessionID sID)
 {
-	auto iter = m_mapTcpSessionPtr.find(MERGEBIGID(aID, sID));
+	auto iter = m_mapTcpSessionPtr.find(sID);
 	if (iter == m_mapTcpSessionPtr.end())
 	{
-		LOGW("KickSession NOT FOUND SessionID. AccepterID=" << aID << ", SessionID=" << sID);
+		LOGW("KickSession NOT FOUND SessionID. SessionID=" << sID);
 		return;
 	}
 	iter->second->Close();
@@ -204,79 +212,48 @@ void CTcpSessionManager::KickSession(AccepterID aID, SessionID sID)
 
 void CTcpSessionManager::OnSessionClose(AccepterID aID, SessionID sID)
 {
-	m_mapTcpSessionPtr.erase(MERGEBIGID(aID, sID));
 	m_mapAccepterConfig[aID].second.currentLinked--;
-	CMessageDispatcher::getRef().DispatchOnSessionDisconnect(aID, sID);
+	m_mapTcpSessionPtr.erase(sID);
+	CMessageDispatcher::getRef().DispatchOnSessionDisconnect(sID);
 }
 
 
 bool CTcpSessionManager::AddConnector(const tagConnctorConfigTraits & traits)
 {
-	if (m_mapConnectorConfig.find(traits.cID) != m_mapConnectorConfig.end() || traits.cID == InvalidConnectorID)
-	{
-		LOGE("AddConnector confilict ConnectorID. ConnectorID=" << traits.cID << ", remoteAdress=" << traits.remoteIP << ":" << traits.remotePort);
-		return false;
-	}
-	m_mapConnectorConfig[traits.cID].first = traits;
+	m_lastConnectID = NextConnectID(m_lastConnectID);
+	auto & pairConfig = m_mapConnectorConfig[m_lastConnectID];
+	pairConfig.first = traits;
+	pairConfig.second.cID = m_lastConnectID;
 	CTcpSocketPtr sockPtr(new zsummer::network::CTcpSocket());
 	sockPtr->Initialize(m_summer);
 	CTcpSessionPtr sessionPtr(new CTcpSession());
-	sessionPtr->BindTcpConnectorPtr(sockPtr, m_mapConnectorConfig[traits.cID]);
-	return true;
-}
-bool CTcpSessionManager::AddConnector(ConnectorID cID)
-{
-	auto founder = m_mapConnectorConfig.find(cID);
-	if (founder == m_mapConnectorConfig.end())
-	{
-		LOGE("AddConnector can not found ConnectorID. ConnectorID=" << cID);
-		return false;
-	}
-	CTcpSocketPtr sockPtr(new zsummer::network::CTcpSocket());
-	sockPtr->Initialize(m_summer);
-	CTcpSessionPtr sessionPtr(new CTcpSession());
-	sessionPtr->BindTcpConnectorPtr(sockPtr, founder->second);
+	sessionPtr->BindTcpConnectorPtr(sockPtr, pairConfig);
 	return true;
 }
 
-void CTcpSessionManager::BreakConnector(ConnectorID cID)
-{
-	auto iter = m_mapConnectorPtr.find(cID);
-	if (iter == m_mapConnectorPtr.end())
-	{
-		LOGW("BreakConnector NOT FOUND ConnectorID. ConnectorID=" << cID);
-		return;
-	}
-	iter->second->Close();
-}
 
-void CTcpSessionManager::ShutdownAllAccepter()
+void CTcpSessionManager::OnConnect(SessionID cID, bool bConnected, CTcpSessionPtr session)
 {
-	m_shutdownAccept = true;
-}
-
-void CTcpSessionManager::OnConnectorStatus(ConnectorID connectorID, bool bConnected, CTcpSessionPtr session)
-{
-	auto config = m_mapConnectorConfig.find(connectorID);
+	auto config = m_mapConnectorConfig.find(cID);
 	if (config == m_mapConnectorConfig.end())
 	{
-		LOGE("Unkwon Connector. Not Found ConnectorID=" << connectorID);
+		LOGE("Unkwon Connector. Not Found ConnectorID=" << cID);
 		return;
 	}
 	if (bConnected)
 	{
-		m_mapConnectorPtr[connectorID] = session;
+		m_mapTcpSessionPtr[cID] = session;
 		config->second.second.curReconnectCount = 0;
-		Post(std::bind(&CMessageDispatcher::DispatchOnConnectorEstablished, &CMessageDispatcher::getRef(), connectorID));
+		Post(std::bind(&CMessageDispatcher::DispatchOnSessionEstablished, &CMessageDispatcher::getRef(), cID));
 		return;
 	}
 
 
-	auto iter = m_mapConnectorPtr.find(connectorID);
-	if (!bConnected && iter != m_mapConnectorPtr.end())
+	auto iter = m_mapTcpSessionPtr.find(cID);
+	if (!bConnected && iter != m_mapTcpSessionPtr.end())
 	{
-		m_mapConnectorPtr.erase(connectorID);
-		Post(std::bind(&CMessageDispatcher::DispatchOnConnectorDisconnect, &CMessageDispatcher::getRef(), connectorID));
+		m_mapTcpSessionPtr.erase(cID);
+		Post(std::bind(&CMessageDispatcher::DispatchOnSessionDisconnect, &CMessageDispatcher::getRef(), cID));
 	}
 
 	if (!bConnected
@@ -288,58 +265,32 @@ void CTcpSessionManager::OnConnectorStatus(ConnectorID connectorID, bool bConnec
 
 		CTcpSocketPtr sockPtr(new zsummer::network::CTcpSocket());
 		sockPtr->Initialize(m_summer);
-
-		static const bool EnableFastConnect = false;//fast reconnect.  Be careful of remote server access denied.
-		if (config->second.second.curReconnectCount == 1 && EnableFastConnect)
-		{
-			Post(std::bind(&CTcpSession::BindTcpConnectorPtr, session, sockPtr, config->second));
-		}
-		else
-		{
-			CreateTimer(config->second.first.reconnectInterval, std::bind(&CTcpSession::BindTcpConnectorPtr, session, sockPtr, config->second));
-		}
+		CreateTimer(config->second.first.reconnectInterval, std::bind(&CTcpSession::BindTcpConnectorPtr, session, sockPtr, config->second));
+		LOGW("Try reconnect current count=" << config->second.second.curReconnectCount << ", total reconnect = " << config->second.second.totalConnectCount << ". Traits=" << config->second.first);
 	}
-	else if (config->second.first.reconnectMaxCount > 0)
+	else if (config->second.first.reconnectMaxCount > 0 && m_bRunning)
 	{
 		LOGE("Try Reconnect Failed. End Try. Traits=" << config->second.first);
 	}
 }
 
 
-void CTcpSessionManager::SendOrgConnectorData(ConnectorID cID, const char * orgData, unsigned int orgDataLen)
+void CTcpSessionManager::SendOrgSessionData(SessionID sID, const char * orgData, unsigned int orgDataLen)
 {
-	auto iter = m_mapConnectorPtr.find(cID);
-	if (iter == m_mapConnectorPtr.end())
-	{
-		LOGW("SendOrgConnectorData NOT FOUND SessionID. ConnectorID=" << cID << ", dataLen=" << orgDataLen);
-		return;
-	}
-	iter->second->DoSend(orgData, orgDataLen);
-}
-void CTcpSessionManager::SendConnectorData(ConnectorID cID, ProtocolID pID, const char * userData, unsigned int userDataLen)
-{
-	WriteStreamPack ws;
-	ws << pID;
-	ws.AppendOriginalData(userData, userDataLen);
-	SendOrgConnectorData(cID, ws.GetStream(), ws.GetStreamLen());
-}
-
-void CTcpSessionManager::SendOrgSessionData(AccepterID aID, SessionID sID, const char * orgData, unsigned int orgDataLen)
-{
-	auto iter = m_mapTcpSessionPtr.find(MERGEBIGID(aID, sID));
+	auto iter = m_mapTcpSessionPtr.find(sID);
 	if (iter == m_mapTcpSessionPtr.end())
 	{
-		LOGW("SendOrgSessionData NOT FOUND SessionID. AccepterID=" << aID << ", SessionID=" << sID);
+		LOGW("SendOrgSessionData NOT FOUND SessionID.  SessionID=" << sID);
 		return;
 	}
 	iter->second->DoSend(orgData, orgDataLen);
 }
-void CTcpSessionManager::SendSessionData(AccepterID aID, SessionID sID, ProtocolID pID, const char * userData, unsigned int userDataLen)
+void CTcpSessionManager::SendSessionData(SessionID sID, ProtoID pID, const char * userData, unsigned int userDataLen)
 {
 	WriteStreamPack ws;
 	ws << pID;
 	ws.AppendOriginalData(userData, userDataLen);
-	SendOrgSessionData(aID, sID, ws.GetStream(), ws.GetStreamLen());
+	SendOrgSessionData(sID, ws.GetStream(), ws.GetStreamLen());
 }
 
 

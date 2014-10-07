@@ -65,7 +65,7 @@ public:
 	void BindTcpConnectorPtr(CTcpSocketPtr sockptr, const std::pair<tagConnctorConfigTraits, tagConnctorInfo> & config);
 	void DoSend(const char *buf, unsigned int len);
 	void Close();
-
+	SessionID GetAcceptID(){ return m_acceptID; }
 private:
 	void CleanSession(bool isCleanAllData);
 
@@ -85,7 +85,6 @@ private:
 	CTcpSocketPtr  m_sockptr;
 	SessionID m_sessionID = InvalidSeesionID; 
 	AccepterID m_acceptID = InvalidAccepterID;
-	ConnectorID m_connectorID = InvalidConnectorID;
 	ProtoType m_protoType = PT_TCP;
 	unsigned int m_pulseInterval = 0;
 	zsummer::network::TimerID m_pulseTimerID = zsummer::network::InvalidTimerID;

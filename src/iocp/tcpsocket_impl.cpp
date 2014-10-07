@@ -63,7 +63,7 @@ CTcpSocketImpl::~CTcpSocketImpl()
 {
 	if (m_onConnectHandler || m_onRecvHandler || m_onSendHandler)
 	{
-		LCE("CTcpSocketImpl::~CTcpSocketImpl[" << this << "] Destruct CTcpSocketImpl Error. socket handle not invalid and some request was not completed. " << GetTcpSocketImplStatus());
+		LCT("CTcpSocketImpl::~CTcpSocketImpl[" << this << "] Destruct CTcpSocketImpl Error. socket handle not invalid and some request was not completed. " << GetTcpSocketImplStatus());
 	}	
 	if (m_socket != INVALID_SOCKET)
 	{
@@ -196,14 +196,14 @@ bool CTcpSocketImpl::DoConnect(std::string remoteIP, unsigned short remotePort, 
 
 bool CTcpSocketImpl::DoSend(char * buf, unsigned int len, const _OnSendHandler &handler)
 {
+	if (m_nLinkStatus != LS_ESTABLISHED)
+	{
+		LCT("CTcpSocketImpl::DoSend[" << this << "] socket status != LS_ESTABLISHED." << GetTcpSocketImplStatus());
+		return false;
+	}
 	if (!m_summer)
 	{
 		LCF("CTcpSocketImpl::DoSend[" << this << "] m_summer pointer uninitialize." << GetTcpSocketImplStatus());
-		return false;
-	}
-	if (m_nLinkStatus != LS_ESTABLISHED)
-	{
-		LCW("CTcpSocketImpl::DoSend[" << this << "] socket status != LS_ESTABLISHED." << GetTcpSocketImplStatus());
 		return false;
 	}
 	if (m_onSendHandler)
@@ -237,14 +237,14 @@ bool CTcpSocketImpl::DoSend(char * buf, unsigned int len, const _OnSendHandler &
 
 bool CTcpSocketImpl::DoRecv(char * buf, unsigned int len, const _OnRecvHandler & handler)
 {
+	if (m_nLinkStatus != LS_ESTABLISHED)
+	{
+		LCT("CTcpSocketImpl::DoRecv[" << this << "] socket status != LS_ESTABLISHED. " << GetTcpSocketImplStatus());
+		return false;
+	}
 	if (!m_summer)
 	{
 		LCF("CTcpSocketImpl::DoRecv[" << this << "] m_summer pointer uninitialize." << GetTcpSocketImplStatus());
-		return false;
-	}
-	if (m_nLinkStatus != LS_ESTABLISHED)
-	{
-		LCW("CTcpSocketImpl::DoRecv[" << this << "] socket status != LS_ESTABLISHED. " << GetTcpSocketImplStatus());
 		return false;
 	}
 	if (m_onRecvHandler)

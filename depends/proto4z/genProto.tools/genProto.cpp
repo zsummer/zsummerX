@@ -58,7 +58,16 @@ bool genCppFileContent(std::string path, std::string filename, std::string attr,
 
 	for (auto &info : stores)
 	{
-		if (info._type == GT_DataConstValue)
+		if (info._type == GT_DataInclude)
+		{
+			text += "#include <" + info._include._filename + ".h> ";
+			if (!info._include._desc.empty())
+			{
+				text += "//" + info._include._desc;
+			}
+			text += LFCR;
+		}
+		else if (info._type == GT_DataConstValue)
 		{
 			text += "const " + getCppType(info._const._type) + " " + info._const._name + " = " + info._const._value + "; ";
 			if (!info._const._desc.empty())
@@ -323,8 +332,25 @@ ParseCode genProto::ParseConfig()
 				break;
 			}
 			std::string stype = ele->Name();
-
-			if (stype == "const")
+			if (stype == "include")
+			{
+				DataInclude dc;
+				if (!ele->Attribute("name"))
+				{
+					LOGE("Attribute Error. ");
+					return PC_ERROR;
+				}
+				dc._filename = ele->Attribute("name");
+				if (ele->Attribute("desc"))
+				{
+					dc._desc = ele->Attribute("desc");
+				}
+				StoreInfo info;
+				info._include = dc;
+				info._type = GT_DataInclude;
+				m_vctStoreInfo.push_back(info);
+			}
+			else if (stype == "const")
 			{
 				DataConstValue dc;
 				if (!ele->Attribute("type") || !ele->Attribute("name") || !ele->Attribute("value"))

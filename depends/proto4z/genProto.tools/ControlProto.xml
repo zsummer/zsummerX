@@ -6,7 +6,7 @@
 </ProtoTraits>
 
 <Proto>
-
+  <include name="stdio" desc="stdio.h" />
   <!-- 支持常量类型 如下是示例代码-->
   <!-- 服务类型 -->
   <const name="DBServer" type="ui16" value="1" desc=""/>

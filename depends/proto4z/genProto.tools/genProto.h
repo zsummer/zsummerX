@@ -60,7 +60,7 @@
 #include "genProto.h"
 using namespace tinyxml2;
 
-//支持的的数据类型
+//support data type
 static  std::map<std::string, std::string> xmlTypeToCppType = {
 		{ "i8", "char" },
 		{ "ui8", "unsigned char" },
@@ -75,7 +75,7 @@ static  std::map<std::string, std::string> xmlTypeToCppType = {
 		{ "string", "std::string" },
 };
 
-//数据类型对应的初始化数值
+//data default init value
 static  std::map<std::string, std::string> xmlTypeToCppDefaultValue = {
 		{ "i8", "'\0'" },
 		{ "ui8", "0" },
@@ -89,8 +89,14 @@ static  std::map<std::string, std::string> xmlTypeToCppDefaultValue = {
 		{ "double", "0.0" },
 };
 
+//include file name, without suffix
+struct DataInclude
+{
+	std::string _filename;
+	std::string _desc;
+};
 
-//支持数组类型
+//array type
 struct DataArray
 {
 	std::string _type;
@@ -98,7 +104,7 @@ struct DataArray
 	std::string _desc;
 };
 
-//支持字典类型
+//dict type
 struct DataMap
 {
 	std::string _typeKey;
@@ -107,7 +113,7 @@ struct DataMap
 	std::string _desc;
 };
 
-//支持常量类型
+//const type
 struct DataConstValue
 {
 	std::string _type;
@@ -116,7 +122,7 @@ struct DataConstValue
 	std::string _desc;
 };
 
-//支持结构体类型
+//struct type
 struct DataStruct
 {
 	std::string _name;
@@ -130,7 +136,7 @@ struct DataStruct
 	std::vector<DataMember> _members;
 };
 
-//支持协议封包类型
+//proto type
 struct DataProto
 {
 	DataConstValue _const;
@@ -138,16 +144,17 @@ struct DataProto
 };
 
 
-//协议ID类型
+//proto id type
 const std::string ProtoIDType = "ui16";
 
-//生成的代码换行
+//lfcr
 const std::string LFCR = " \r\n ";
 
 
-//语法分析用的通用类型.
+//store type enum
 enum StoreType
 {
+	GT_DataInclude,
 	GT_DataArray,
 	GT_DataMap,
 	GT_DataConstValue,
@@ -155,10 +162,11 @@ enum StoreType
 	GT_DataProto,
 };
 
-//语法分析用的通用数据结构
+//general store type
 struct StoreInfo
 {
 	StoreType _type;
+	DataInclude _include;
 	DataArray _array;
 	DataMap _map;
 	DataConstValue _const;
@@ -166,7 +174,7 @@ struct StoreInfo
 };
 
 
-//生成代码
+//gen code file
 bool genCppFile(std::string path, std::string filename, std::string attr, std::vector<StoreInfo> & stores);
 bool genLuaFile(std::string path, std::string filename, std::string attr, std::vector<StoreInfo> & stores);
 bool genCSharpFile(std::string path, std::string filename, std::string attr, std::vector<StoreInfo> & stores);
@@ -175,7 +183,7 @@ bool genJsFile(std::string path, std::string filename, std::string attr, std::ve
 
 
 
-//语法分析结果
+//parse
 enum ParseCode
 {
 	PC_SUCCESS,
@@ -184,15 +192,15 @@ enum ParseCode
 };
 
 
-//语法分析和代码生成
+//manager
 class genProto
 {
-	//初始化信息
+	//init
 	std::string m_fileName;
 	std::string m_fileConfigAttr = ".xml";
 	std::string m_fileCacheAttr = ".xml.cache";
 
-	//cache分析数据
+	//cache data
 	unsigned short m_curNo = 0;
 	std::string m_md5;
 	struct DataCache
@@ -202,22 +210,22 @@ class genProto
 	};
 	std::map<std::string, DataCache> m_mapCacheNo;
 
-	//xml分析数据
+	//xml data
 	unsigned short m_minNo = 0;
 	unsigned short m_maxNo = 0;
 	std::vector<StoreInfo> m_vctStoreInfo;
 
 public:
-	//filename不包含文件后缀
+	//filename without suffix
 	genProto(std::string filename){	m_fileName = filename;}
 
-	//分析cache
+	//parse cache
 	ParseCode ParseCache();
-	//分析协议配置
+	//parse config
 	ParseCode ParseConfig();
-	//生成对应语言的代码
+	//gen code
 	ParseCode GenCode();
-	//写入cache
+	//write cache
 	ParseCode WriteCache();
 };
 

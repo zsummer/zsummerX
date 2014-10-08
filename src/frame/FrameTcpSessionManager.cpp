@@ -89,7 +89,7 @@ void CTcpSessionManager::Run()
 
 
 
-bool CTcpSessionManager::AddAcceptor(const tagAcceptorConfigTraits &traits)
+AccepterID CTcpSessionManager::AddAcceptor(const tagAcceptorConfigTraits &traits)
 {
 	m_lastAcceptID++;
 	auto & pairConfig = m_mapAccepterConfig[m_lastAcceptID];
@@ -100,12 +100,12 @@ bool CTcpSessionManager::AddAcceptor(const tagAcceptorConfigTraits &traits)
 	if (!accepter->OpenAccept(traits.listenIP.c_str(), traits.listenPort))
 	{
 		LOGE("AddAcceptor OpenAccept Failed. traits=" << traits);
-		return false;
+		return InvalidAccepterID;
 	}
 	m_mapAccepterPtr[m_lastAcceptID] = accepter;
 	CTcpSocketPtr newclient(new zsummer::network::CTcpSocket);
 	accepter->DoAccept(newclient, std::bind(&CTcpSessionManager::OnAcceptNewClient, this, std::placeholders::_1, std::placeholders::_2, accepter, pairConfig.second.aID));
-	return true;
+	return m_lastAcceptID;
 }
 
 void CTcpSessionManager::OnAcceptNewClient(zsummer::network::ErrorCode ec, CTcpSocketPtr s, CTcpAcceptPtr accepter, AccepterID aID)
@@ -218,7 +218,7 @@ void CTcpSessionManager::OnSessionClose(AccepterID aID, SessionID sID)
 }
 
 
-bool CTcpSessionManager::AddConnector(const tagConnctorConfigTraits & traits)
+SessionID CTcpSessionManager::AddConnector(const tagConnctorConfigTraits & traits)
 {
 	m_lastConnectID = NextConnectID(m_lastConnectID);
 	auto & pairConfig = m_mapConnectorConfig[m_lastConnectID];
@@ -228,7 +228,7 @@ bool CTcpSessionManager::AddConnector(const tagConnctorConfigTraits & traits)
 	sockPtr->Initialize(m_summer);
 	CTcpSessionPtr sessionPtr(new CTcpSession());
 	sessionPtr->BindTcpConnectorPtr(sockPtr, pairConfig);
-	return true;
+	return m_lastConnectID;
 }
 
 

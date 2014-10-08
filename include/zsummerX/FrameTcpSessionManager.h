@@ -68,10 +68,10 @@ public:
 
 public:
 	//! add acceptor under the configure.
-	bool AddAcceptor(const tagAcceptorConfigTraits &traits);
+	AccepterID AddAcceptor(const tagAcceptorConfigTraits &traits);
 
 	//! add connector under the configure.
-	bool AddConnector(const tagConnctorConfigTraits & traits);
+	SessionID AddConnector(const tagConnctorConfigTraits & traits);
 
 public:
 	//send original data. can repeat call because it's used send queue in internal implementation.

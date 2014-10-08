@@ -164,8 +164,6 @@ int main(int argc, char* argv[])
 
 	schedule.Stop();
 
-	//日志服务不需要显式调用停止接口
-	//InterfaceLogger::GetInstance()->Stop();
 	return 0;
 }
 

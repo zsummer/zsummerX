@@ -35,8 +35,8 @@
  */
 
 
-//! zsummerX的测试文件
-//! 该测试提供最简单的HTTP协议的监听,建立连接,收发数据的 客户端和服务端实例代码.
+//! zsummerX  http proto test
+
 
 
 #include <zsummerX/FrameHeader.h>
@@ -45,7 +45,7 @@
 using namespace zsummer::log4z;
 
 std::string g_remoteIP = "0.0.0.0";
-unsigned short g_remotePort = 8090;
+unsigned short g_remotePort = 8081;
 unsigned short g_startIsConnector = 0;  //0 listen, 1 connect
 
 
@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
 	{
 		cout <<"please input like example:" << endl;
 		cout << "tcpTest remoteIP remotePort startType maxClient sendType interval" << endl;
-		cout << "./tcpTest 0.0.0.0 81 0" << endl;
+		cout << "./tcpTest 0.0.0.0 8081 0" << endl;
 		cout << "startType: 0 server, 1 client" << endl;
 		return 0;
 	}
@@ -77,26 +77,26 @@ int main(int argc, char* argv[])
 	
 	if (!g_startIsConnector)
 	{
-		//! 启动日志服务
+		//! start log4z 
 		ILog4zManager::GetInstance()->Config("server.cfg");
 		ILog4zManager::GetInstance()->Start();
 	}
 	else
 	{
-		//! 启动日志服务
+		//! start log4z 
 		ILog4zManager::GetInstance()->Config("client.cfg");
 		ILog4zManager::GetInstance()->Start();
 	}
 	LOGI("g_remoteIP=" << g_remoteIP << ", g_remotePort=" << g_remotePort << ", g_startIsConnector=" << g_startIsConnector );
 
 
-	//! step 1. 开启Manager.
+	//! step 1. start frame manager.
 	CTcpSessionManager::getRef().Start();
 
 
 	if (g_startIsConnector) //client
 	{
-		//响应连接成功事件
+		//callback when connect success.
 		auto connectedfun = [](SessionID cID)
 		{
 			LOGI("send to ConnectorID=" << cID);
@@ -112,7 +112,7 @@ int main(int argc, char* argv[])
 			CTcpSessionManager::getRef().SendOrgSessionData(cID, wh.GetStream(), wh.GetStreamLen());
 		};
 
-		//响应消息_ResultSequence
+		//callback when receive http data
 		auto msg_ResultSequence_fun = [](SessionID cID, const zsummer::proto4z::HTTPHeadMap &head, const std::string & body)
 		{
 			auto fouder = head.find("RESPONSE");
@@ -124,20 +124,20 @@ int main(int argc, char* argv[])
 			if (fouder->second != "200")
 			{
 				LOGE("response error. error code=" << fouder->second);
-				//CTcpSessionManager::getRef().AddConnector(1);
 				return false;
 			}
 			LOGI("response success. content=" << body);
+			//step 3. stop
 			CTcpSessionManager::getRef().Stop();
 			return true;
 		};
 
-		//! 注册事件和消息
-		CMessageDispatcher::getRef().RegisterOnSessionEstablished(connectedfun); //!注册连接成功处理函数
-		CMessageDispatcher::getRef().RegisterOnSessionHTTPMessage(msg_ResultSequence_fun);//!注册消息
+		//! register event and message
+		CMessageDispatcher::getRef().RegisterOnSessionEstablished(connectedfun); //!connect success
+		CMessageDispatcher::getRef().RegisterOnSessionHTTPMessage(msg_ResultSequence_fun);//! message
 
 
-		//添加一个connector
+		//add connector
 		tagConnctorConfigTraits traits;
 		traits.remoteIP = g_remoteIP;
 		traits.remotePort = g_remotePort;
@@ -146,13 +146,13 @@ int main(int argc, char* argv[])
 		traits.reconnectMaxCount = 0;
 		CTcpSessionManager::getRef().AddConnector(traits);
 
-		//! step 2 启动主循环
+		//! step 2 running
 		CTcpSessionManager::getRef().Run();
 	}
 	else
 	{
 
-		//响应消息_ResultSequence
+		//result when receive http data
 		auto msg_ResultSequence_fun = [](SessionID sID, const zsummer::proto4z::HTTPHeadMap &head, const std::string & body)
 		{
 			auto fouder = head.find("GET");
@@ -172,18 +172,19 @@ int main(int argc, char* argv[])
 			wh.AddHead("Connection", "Keep-Alive");
 			wh.Response("200", "What's your name ?");
 			CTcpSessionManager::getRef().SendOrgSessionData( sID, wh.GetStream(), wh.GetStreamLen());
+			//step 3. stop server.
 			CTcpSessionManager::getRef().CreateTimer(1000,std::bind(&CTcpSessionManager::Stop, CTcpSessionManager::getPtr()));
 			return false;
 		};
 
-		//! 注册事件和消息
-		CMessageDispatcher::getRef().RegisterOnSessionHTTPMessage(msg_ResultSequence_fun);//!注册消息
+		//! register message
+		CMessageDispatcher::getRef().RegisterOnSessionHTTPMessage(msg_ResultSequence_fun);
 
 		tagAcceptorConfigTraits traits;
 		traits.listenPort = g_remotePort;
 		traits.protoType = PT_HTTP;
 		CTcpSessionManager::getRef().AddAcceptor(traits);
-		//! step 2 启动主循环
+		//! step 2 running
 		CTcpSessionManager::getRef().Run();
 	}
 	

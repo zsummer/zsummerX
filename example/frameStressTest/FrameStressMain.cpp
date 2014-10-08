@@ -35,10 +35,8 @@
  */
 
 
-//! frame模块压力测试
-//! frame封装在网络部分使用单例模式, 如果需要使用多线程 需要在业务层由用户开辟线程池处理.
-//! 如果需要在zsummerX的网络部分使用多线程 请参考tcpTest实例调用zsummerX的原始接口实现.
-
+//! frame module stress test
+//! frame module used 'single sodule', if you need use multi-thread then you can create thread at user-code-layer, and you can look the example 'tcpStressTest'.
 
 #include <zsummerX/FrameHeader.h>
 #include <zsummerX/FrameTcpSessionManager.h>
@@ -46,24 +44,25 @@
 #include <unordered_map>
 using namespace zsummer::log4z;
 
-//! 默认启动参数
-std::string g_remoteIP = "0.0.0.0"; //如果作为服务端来使用 这里是监听地址
-unsigned short g_remotePort = 8081; //同上
-unsigned short g_startType = 0;  //0 作为服务器启动, 1 作为客户端启动
-unsigned short g_maxClient = 100; //如果是服务端 这里是限制客户端的个数 超出的会被踢掉, 如果是客户端 这里是启动的客户端总数.
-unsigned short g_sendType = 0; //0 ping-pong test, 1 flood test
-unsigned int   g_intervalMs = 0; // 如果是flood test, 这里的间隔应该大于0, 单位是毫秒.
+//! default value
+std::string g_remoteIP = "0.0.0.0"; 
+unsigned short g_remotePort = 8081; 
+unsigned short g_startType = 0;  //0 start with server module, 1 start with client module. 
+unsigned short g_maxClient = 100; //if start with server it is client limite count. else other it is the start client count.
+unsigned short g_sendType = 0; //0 ping-pong test, 1 flooding test
+unsigned int   g_intervalMs = 0; // if start client with flood test, it's flooding interval by millionsecond.
 
 
 
-//! g_testStr用来在压力测试中发送统一大小的消息.
+//! send this data by test
 std::string g_testStr;
 
-//!收发包测试统计数据
+//!statistic 
 unsigned long long g_totalEchoCount = 0;
 unsigned long long g_lastEchoCount = 0;
 unsigned long long g_totalSendCount = 0;
 unsigned long long g_totalRecvCount = 0;
+//!statistic monitor
 void MonitorFunc()
 {
 	LOGI("per seconds Echos Count=" << (g_totalEchoCount - g_lastEchoCount) / 5
@@ -73,41 +72,36 @@ void MonitorFunc()
 };
 
 /*
-* 测试代码中定义了4个协议 用来实现心跳机制和echo发包.
-* ECHO包是两个协议号 一个用来客户端发送 一个用来服务端回复.
+* define some proto used to test.
 */
-#define C2S_HEARTBEAT ProtoID(10000)
-#define S2C_HEARTBEAT ProtoID(10000)
 
+// client pulse
+#define C2S_Pulse ProtoID(10000)
+//server pulse
+#define S2C_Pulse ProtoID(10000)
+
+//client request
 #define C2S_ECHO_REQ ProtoID(10002)
+//server result
 #define S2C_ECHO_ACK ProtoID(10003)
 
-/*管理连接状态
-*在这个测试代码中 把服务端和客户端的心跳管理都放在了这个一个类中.
-* 该心跳机制实现策略是:
-*  在连接建立事件触发时 初始化心跳时间戳
-*  在收到对方心跳消息后更新时间戳
-*  在本地心跳定时器触发时检测时间(同时发送心跳给对方)
-*  在连接断开事件触发后清除时间戳
-*
-* 该心跳策略在本测试代码中是单向的 因此上面定义的协议号相同 这个并不影响.
-* 如果需要在心跳包携带额外的数据, 例如检测时间延迟, 则可以把心跳包改为REQ-ACK形式(添加一个ACK即可). 在REQ中发送本地时间 在ACK时候检测时间差.
-*/
 
-class CStressHeartBeatManager
+//make heartbeat mechanisms.
+//mechanisms: register pulse timer, send pulse proto when timer trigger.  check last remote pulse time when trigger.
+class CStressHeartbeatManager
 {
 public:
-	CStressHeartBeatManager()
+	CStressHeartbeatManager()
 	{
-		CMessageDispatcher::getRef().RegisterOnSessionEstablished(std::bind(&CStressHeartBeatManager::OnSessionEstablished, this,
+		CMessageDispatcher::getRef().RegisterOnSessionEstablished(std::bind(&CStressHeartbeatManager::OnSessionEstablished, this,
 			std::placeholders::_1));
-		CMessageDispatcher::getRef().RegisterOnSessionDisconnect(std::bind(&CStressHeartBeatManager::OnSessionDisconnect, this,
+		CMessageDispatcher::getRef().RegisterOnSessionDisconnect(std::bind(&CStressHeartbeatManager::OnSessionDisconnect, this,
 			std::placeholders::_1));
-		CMessageDispatcher::getRef().RegisterOnSessionPulse(std::bind(&CStressHeartBeatManager::OnSessionPulse, this,
+		CMessageDispatcher::getRef().RegisterOnSessionPulse(std::bind(&CStressHeartbeatManager::OnSessionPulse, this,
 			std::placeholders::_1, std::placeholders::_2));
-		CMessageDispatcher::getRef().RegisterSessionMessage(S2C_HEARTBEAT, std::bind(&CStressHeartBeatManager::OnMsgPulse, this,
+		CMessageDispatcher::getRef().RegisterSessionMessage(S2C_Pulse, std::bind(&CStressHeartbeatManager::OnMsgPulse, this,
 			std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-		CMessageDispatcher::getRef().RegisterSessionMessage(C2S_HEARTBEAT, std::bind(&CStressHeartBeatManager::OnMsgPulse, this,
+		CMessageDispatcher::getRef().RegisterSessionMessage(S2C_Pulse, std::bind(&CStressHeartbeatManager::OnMsgPulse, this,
 			std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	}
 	
@@ -139,11 +133,11 @@ public:
 		WriteStreamPack pack;
 		if (IsConnectID(sID))
 		{
-			pack << C2S_HEARTBEAT;
+			pack << C2S_Pulse;
 		}
 		else
 		{
-			pack << S2C_HEARTBEAT;
+			pack << S2C_Pulse;
 		}
 		CTcpSessionManager::getRef().SendOrgSessionData(sID, pack.GetStream(), pack.GetStreamLen());
 	}
@@ -156,13 +150,14 @@ private:
 	std::unordered_map<SessionID, time_t> m_sessionPulse;
 };
 
+//client handler
+// ping-pong module test: 
+//			1. send first message to server when client connect server success.
+//			2. send message to server again when receive server echo.
+// flooding module test:
+//			1. create a timer used to send one message to server when client connect server success.
+//			2. create a timer used to send next message again when the last timer trigger and send message.
 
-/* 测试客户端handler类
-* 如果启动客户端用来做ping-pong压力测试, 则流程不存在定时器 流程如下 
-*  在connector成功后发送第一个send包(ping), 然后在每次recv的时候(pong)向服务器send包(pong).
-* 如果启动客户端用来做flood压力测试, 则每个连接都需要创建一个定时器 流程如下
-*  在connector成功后 send定时器启动, 并以指定定时器间隔时间持续send.
-*/
 class CStressClientHandler
 {
 public:
@@ -235,8 +230,8 @@ private:
 
 
 /*
-* 服务端handler类
-* 服务端逻辑较为简单 只要收到消息包 立刻echo回去就可以.
+* server handler
+* echo data when receive client message.
 */
 class CStressServerHandler
 {
@@ -271,7 +266,7 @@ int main(int argc, char* argv[])
 {
 
 #ifndef _WIN32
-	//! linux下需要屏蔽的一些信号
+	//! ignore some signal
 	signal( SIGHUP, SIG_IGN );
 	signal( SIGALRM, SIG_IGN ); 
 	signal( SIGPIPE, SIG_IGN );
@@ -330,15 +325,15 @@ int main(int argc, char* argv[])
 
 	CTcpSessionManager::getRef().CreateTimer(5000, MonitorFunc);
 
-	//创建心跳管理handler的实例 只要创建即可, 构造函数中会注册对应事件
-	CStressHeartBeatManager statusManager;
+	//build heartbeat manager
+	CStressHeartbeatManager statusManager;
 
-	//这里创建服务handler和客户端handler 根据启动参数不同添加不同角色.
+	//build client and server
 	CStressClientHandler client;
 	CStressServerHandler server;
 	if (g_startType) //client
 	{
-		//添加多个connector.
+		//add connector.
 		for (int i = 0; i < g_maxClient; ++i)
 		{
 			tagConnctorConfigTraits traits;
@@ -353,7 +348,7 @@ int main(int argc, char* argv[])
 	}
 	else
 	{
-		//添加acceptor
+		//add acceptor
 		tagAcceptorConfigTraits traits;
 		traits.listenPort = g_remotePort;
 		traits.maxSessions = g_maxClient;
@@ -363,7 +358,7 @@ int main(int argc, char* argv[])
 		CTcpSessionManager::getRef().AddAcceptor(traits);
 	}
 
-	//启动主循环.
+	//running
 	CTcpSessionManager::getRef().Run();
 
 	return 0;

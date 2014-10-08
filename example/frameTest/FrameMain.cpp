@@ -80,13 +80,13 @@ int main(int argc, char* argv[])
 	
 	if (!g_startIsConnector)
 	{
-		//! 启动日志服务
+		//! start log4z service
 		ILog4zManager::GetInstance()->Config("server.cfg");
 		ILog4zManager::GetInstance()->Start();
 	}
 	else
 	{
-		//! 启动日志服务
+		//! start log4z service
 		ILog4zManager::GetInstance()->Config("client.cfg");
 		ILog4zManager::GetInstance()->Start();
 	}

@@ -48,45 +48,6 @@
 #else
 #include "epoll/udpsocket_impl.h"
 #endif
-namespace zsummer
-{
-	namespace network
-	{
-		class CUdpSocket
-		{
-		public:
-			CUdpSocket(){}
-			~CUdpSocket(){}
-			bool Initialize(CZSummerPtr summer, const char *localIP, unsigned short localPort = 0)
-			{
-				return m_impl.Initialize(summer, localIP, localPort);
-			}
-
-			//handle: std::function<void (ErrorCode, const char*, unsigned short, int)>
-			template<typename H>
-			bool DoRecvFrom(char * buf, unsigned int len, const H &h)
-			{
-				return m_impl.DoRecv(buf, len, h);
-			}
-
-			//handle: std::function<void(ErrorCode)>
-			//needless callback handler 
-			bool DoSendTo(char * buf, unsigned int len, const char *dstip, unsigned short dstport)
-			{
-				return m_impl.DoSend(buf, len, dstip, dstport);
-			}
-		private:
-			CUdpSocketImpl m_impl;
-		};
-	};
-	
-};
-
-
-
-
-
-
 
 
 

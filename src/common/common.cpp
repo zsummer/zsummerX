@@ -35,9 +35,7 @@
  */
 #include <atomic>
 #include <zsummerX/common/common.h>
-//init socket env
-zsummer::network::CInitEnvironment appInitEnvironment;
-LoggerId g_coreID;
+
 
 #ifdef WIN32
 #pragma comment(lib, "ws2_32")
@@ -46,7 +44,7 @@ LoggerId g_coreID;
 #pragma comment(lib, "Mswsock")
 #endif
 
-zsummer::network::CInitEnvironment::CInitEnvironment()
+zsummer::network::CEnvironment::CEnvironment()
 {
 #ifdef WIN32
 	WORD version = MAKEWORD(2,2);
@@ -56,20 +54,21 @@ zsummer::network::CInitEnvironment::CInitEnvironment()
 		assert(0);
 	}
 #endif
-	g_coreID = zsummer::log4z::ILog4zManager::GetInstance()->CreateLogger("NetWork", LOG4Z_DEFAULT_PATH, LOG_LEVEL_ERROR);
+	m_netLoggerID = zsummer::log4z::ILog4zManager::GetInstance()->CreateLogger("NetWork", LOG4Z_DEFAULT_PATH, LOG_LEVEL_ERROR);
 }
-zsummer::network::CInitEnvironment::~CInitEnvironment()
+zsummer::network::CEnvironment::~CEnvironment()
 {
 #ifdef WIN32
 	WSACleanup();
 #endif
 }
 
+//server environment.
 namespace zsummer
 {
 	namespace network
 	{
-		std::atomic_uint _g_totalCreatedCTcpSocketObjs;
-		std::atomic_uint _g_totalClosedCTcpSocketObjs;
-	};
-};
+		CEnvironment g_appEnvironment;
+	}
+}
+

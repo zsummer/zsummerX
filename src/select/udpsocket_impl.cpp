@@ -41,47 +41,45 @@ using namespace zsummer::network;
 
 
 
-CUdpSocketImpl::CUdpSocketImpl()
+CUdpSocket::CUdpSocket()
 {
-	m_register._ptr = this;
 	m_register._type = tagRegister::REG_UDP_SOCKET;
 	m_iRecvLen  = 0;
 	m_pRecvBuf = nullptr;
 }
 
 
-CUdpSocketImpl::~CUdpSocketImpl()
+CUdpSocket::~CUdpSocket()
 {
 	if (m_register._fd != -1)
 	{
 		if (m_onRecvFromHandler )
 		{
-			LCE("CUdpSocketImpl::~CUdpSocketImpl[this0x" << this << "] Destruct CUdpSocketImpl Error. socket handle not invalid and some request was not completed. fd="
+			LCE("CUdpSocket::~CUdpSocket[this0x" << this << "] Destruct CUdpSocket Error. socket handle not invalid and some request was not completed. fd="
 				<< m_register._fd );
 		}
 		closesocket(m_register._fd);
 		m_register._fd = -1;
 	}
 }
-bool  CUdpSocketImpl::Initialize(CZSummerPtr summer, const char *localIP, unsigned short localPort)
+bool  CUdpSocket::Initialize(ZSummerPtr summer, const char *localIP, unsigned short localPort)
 {
-	if (!m_summer)
+	if (m_summer)
 	{
-		LCE("CUdpSocketImpl::Initialize[this0x" << this << "] socket is aready used, m_ios not is nullptr. this=" << this);
+		LCE("CUdpSocket::Initialize[this0x" << this << "] CUdpSocket is aready Initialize, m_ios not is nullptr. this=" << this);
 		return false;
 	}
 	if (m_register._fd != -1)
 	{
-		LCE("CUdpSocketImpl::Initialize[this0x" << this << "] socket is aready used, _fd not is -1. this=" << this << ", fd=" << m_register._fd);
+		LCE("CUdpSocket::Initialize[this0x" << this << "] CUdpSocket is aready Initialize, _fd not is -1. this=" << this << ", fd=" << m_register._fd);
 		return false;
 	}
 	m_summer = summer;
-	m_register._ptr = this;
 	m_register._fd = socket(AF_INET, SOCK_DGRAM, 0);
 	m_register._linkstat = LS_WAITLINK;
 	if (m_register._fd == -1)
 	{
-		LCE("CUdpSocketImpl::Initialize[this0x" << this << "] create socket fail. this=" << this  << ", " << OSTREAM_GET_LASTERROR);
+		LCE("CUdpSocket::Initialize[this0x" << this << "] create socket fail. this=" << this  << ", " << OSTREAM_GET_LASTERROR);
 		return false;
 	}
 	SetNonBlock(m_register._fd);
@@ -91,30 +89,30 @@ bool  CUdpSocketImpl::Initialize(CZSummerPtr summer, const char *localIP, unsign
 	localAddr.sin_port = htons(localPort);
 	if (bind(m_register._fd, (sockaddr *) &localAddr, sizeof(localAddr)) != 0)
 	{
-		LCE("CUdpSocketImpl::Initialize[this0x" << this << "]: socket bind err, " << OSTREAM_GET_LASTERROR);
+		LCE("CUdpSocket::Initialize[this0x" << this << "]: socket bind err, " << OSTREAM_GET_LASTERROR);
 		closesocket(m_register._fd);
 		m_register._fd = -1;
 		return false;
 	}
-	if (!m_summer->m_impl.RegisterEvent(0, m_register))
+	if (!m_summer->RegisterEvent(0, m_register))
 	{
-		LCF("CUdpSocketImpl::Initialize[this0x" << this << "] EPOLL_CTL_ADD error. _register =" << m_register << ", " << OSTREAM_GET_LASTERROR);
+		LCF("CUdpSocket::Initialize[this0x" << this << "] EPOLL_CTL_ADD error. _register =" << m_register << ", " << OSTREAM_GET_LASTERROR);
 		return false;
 	}
 	m_register._linkstat = LS_ESTABLISHED;
 	return true;
 }
 
-bool CUdpSocketImpl::DoSend(char * buf, unsigned int len, const char *dstip, unsigned short dstport)
+bool CUdpSocket::DoSendTo(char * buf, unsigned int len, const char *dstip, unsigned short dstport)
 {
 	if (!m_summer)
 	{
-		LCE("CUdpSocketImpl::DoSend[this0x" << this << "] IIOServer not bind!");
+		LCE("CUdpSocket::DoSend[this0x" << this << "] IIOServer not bind!");
 		return false;
 	}
 	if (len == 0 || len >1500)
 	{
-		LCE("CUdpSocketImpl::DoSend[this0x" << this << "] argument err! len=" << len);
+		LCE("CUdpSocket::DoSend[this0x" << this << "] argument err! len=" << len);
 		return false;
 	}
 	sockaddr_in addr;
@@ -126,27 +124,27 @@ bool CUdpSocketImpl::DoSend(char * buf, unsigned int len, const char *dstip, uns
 }
 
 
-bool CUdpSocketImpl::DoRecv(char * buf, unsigned int len, const _OnRecvFromHandler& handler)
+bool CUdpSocket::DoRecvFrom(char * buf, unsigned int len, const _OnRecvFromHandler& handler)
 {
 	if (!m_summer)
 	{
-		LCE("CUdpSocketImpl::DoRecv[this0x" << this << "] m_summer not bind!");
+		LCE("CUdpSocket::DoRecv[this0x" << this << "] m_summer not bind!");
 		return false;
 	}
 	if (len == 0 || len >1500)
 	{
-		LCE("CUdpSocketImpl::DoRecv[this0x" << this << "] argument err! len=" << len);
+		LCE("CUdpSocket::DoRecv[this0x" << this << "] argument err! len=" << len);
 		return false;
 	}
 	if (len == 0 )
 	{
-		LCE("CUdpSocketImpl::DoRecv[this0x" << this << "] argument err !!!  len==0");
+		LCE("CUdpSocket::DoRecv[this0x" << this << "] argument err !!!  len==0");
 		return false;
 	}
 	
 	if (m_pRecvBuf || m_iRecvLen != 0 || m_onRecvFromHandler)
 	{
-		LCE("CUdpSocketImpl::DoRecv[this0x" << this << "] (m_pRecvBuf != nullptr || m_iRecvLen != 0) == TRUE");
+		LCE("CUdpSocket::DoRecv[this0x" << this << "] (m_pRecvBuf != nullptr || m_iRecvLen != 0) == TRUE");
 		return false;
 	}
 
@@ -154,27 +152,32 @@ bool CUdpSocketImpl::DoRecv(char * buf, unsigned int len, const _OnRecvFromHandl
 	m_pRecvBuf = buf;
 	m_iRecvLen = len;
 	m_register._rd = true;
-	if (!m_summer->m_impl.RegisterEvent(1, m_register))
+	m_register._udpsocketPtr = shared_from_this();
+	if (!m_summer->RegisterEvent(1, m_register))
 	{
-		LCF("CUdpSocketImpl::DoRecv[this0x" << this << "] EPOLLMod error. m_register=" << m_register << ", " << OSTREAM_GET_LASTERROR);
+		LCF("CUdpSocket::DoRecv[this0x" << this << "] EPOLLMod error. m_register=" << m_register << ", " << OSTREAM_GET_LASTERROR);
 		m_onRecvFromHandler = nullptr;
 		m_pRecvBuf = nullptr;
 		m_iRecvLen = 0;
+		m_register._udpsocketPtr.reset();
 		return false;
 	}
 	m_onRecvFromHandler = handler;
+	
 	return true;
 }
 
 
-bool CUdpSocketImpl::OnSelectMessage(int type, bool rd, bool wt)
+bool CUdpSocket::OnSelectMessage(int type, bool rd, bool wt)
 {
+	std::shared_ptr<CUdpSocket> guad(m_register._udpsocketPtr);
+	m_register._udpsocketPtr.reset();
+
 	if (!m_onRecvFromHandler)
 	{
-		LCE("CUdpSocketImpl::OnSelectMessage[this0x" << this << "] unknown error");
+		LCE("CUdpSocket::OnSelectMessage[this0x" << this << "] unknown error");
 		return false;
 	}
-
 
 	if (rd && m_onRecvFromHandler)
 	{
@@ -182,9 +185,9 @@ bool CUdpSocketImpl::OnSelectMessage(int type, bool rd, bool wt)
 		onRecv.swap(m_onRecvFromHandler);
 		m_register._rd = false;
 
-		if (!m_summer->m_impl.RegisterEvent(1, m_register))
+		if (!m_summer->RegisterEvent(1, m_register))
 		{
-			LCF("CUdpSocketImpl::OnSelectMessage[this0x" << this << "] EPOLLMod error. m_register=" << m_register << ", " << OSTREAM_GET_LASTERROR);
+			LCF("CUdpSocket::OnSelectMessage[this0x" << this << "] EPOLLMod error. m_register=" << m_register << ", " << OSTREAM_GET_LASTERROR);
 			return false;
 		}
 
@@ -197,13 +200,13 @@ bool CUdpSocketImpl::OnSelectMessage(int type, bool rd, bool wt)
 		m_iRecvLen = 0;
 		if (ret == 0 || (ret ==-1 && !IS_WOULDBLOCK) )
 		{
-			LCE("CUdpSocketImpl::OnSelectMessage[this0x" << this << "] recv error.  m_register=" << m_register << ", ret=" << ret << ", " << OSTREAM_GET_LASTERROR);
+			LCE("CUdpSocket::OnSelectMessage[this0x" << this << "] recv error.  m_register=" << m_register << ", ret=" << ret << ", " << OSTREAM_GET_LASTERROR);
 			onRecv(EC_ERROR, "", 0, 0);
 			return false;
 		}
 		if (ret == -1)
 		{
-			LCE("CUdpSocketImpl::OnSelectMessage[this0x" << this << "] recv error.  m_register=" << m_register << ", ret=" << ret << ", " << OSTREAM_GET_LASTERROR);
+			LCE("CUdpSocket::OnSelectMessage[this0x" << this << "] recv error.  m_register=" << m_register << ", ret=" << ret << ", " << OSTREAM_GET_LASTERROR);
 			onRecv(EC_ERROR, "", 0, 0);
 			return false;
 		}

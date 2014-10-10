@@ -37,27 +37,46 @@
 #define _ZSUMMERX_TCPSOCKET_IMPL_H_
 
 #include "common_impl.h"
-#include "../zsummer.h"
+#include "iocp_impl.h"
 namespace zsummer
 {
 	namespace network
 	{
-		class CTcpSocketImpl
+		class CTcpSocket : public std::enable_shared_from_this<CTcpSocket>
 		{
 		public:
 
-			CTcpSocketImpl();
-			~CTcpSocketImpl();
-			bool Initialize(CZSummerPtr summer);
+			CTcpSocket();
+			~CTcpSocket();
+			//! Initialize an attach socket to zsummer pump.
+			//if the socket is used to connect,  It's need initialize before call DoConnect 
+			// if the socket is used to accept new socket, It's need initialize after OnAccept. 
+			bool Initialize(ZSummerPtr summer);
 			inline bool GetPeerInfo(std::string& remoteIP, unsigned short &remotePort)
 			{
 				remoteIP = m_remoteIP;
 				remotePort = m_remotePort;
 				return true;
 			}
+			//! handle: void(zsummer::network::ErrorCode);
+			//! handle: ErrorCode: 0 success. other code is failed  and can see error code in enum ErrorCode 
 			bool DoConnect(std::string remoteIP, unsigned short remotePort, const _OnConnectHandler & handler);
+			//!handle:  void(ErrorCode, int)
+			//!handle:  ErrorCode: 0 success. other code is failed  and can see error code in enum ErrorCode 
+			//!handle:  int: is transfer length. if not all data already transfer that you need call DoSend transfer the remnant data.
+			//! warning: when  handler is not callback ,  the function can not call repeat. if you have some question maybe you need read the test or implementation .
+			//!          so,  when you want  repeat send data without care the callback , you need encapsulate the send operate via a send queue like the StressTest/FrameTest source code
 			bool DoSend(char * buf, unsigned int len, const _OnSendHandler &handler);
+			//!handle:  void(ErrorCode, int)
+			//!handle:  ErrorCode: 0 success. other code is failed  and can see error code in enum ErrorCode 
+			//!handle:  int: is received data  length. it maybe short than you want received data (len).
+			//! buf: you recv buffer memory address . you would block the buffer still the handler callback .
+			//! len: you want recv data for max bytes .
+			//! warning: when  handler is not callback ,  the function can not call repeat. if you have some question maybe you need read the test or implementation .
 			bool DoRecv(char * buf, unsigned int len, const _OnRecvHandler & handler);
+			//close this socket.
+			//warning : at a safe close method , if you have DoConnect/DoRecv/DoSend request and not all callback. you need wait callback .  the callback will return with a error code.
+			//         if you have not the operate and when you DoClose the socket and immediate destroy this class object . in next do zsummerx's RunOnce(), callback may be return and call operate in the bad memory . 
 			bool DoClose();
 		public:
 			bool AttachSocket(SOCKET s, std::string remoteIP, unsigned short remotePort);
@@ -65,7 +84,7 @@ namespace zsummer
 			std::string GetTcpSocketImplStatus();
 		public:
 			//private
-			CZSummerPtr  m_summer;
+			ZSummerPtr  m_summer;
 			SOCKET		m_socket = INVALID_SOCKET;
 			std::string m_remoteIP;
 			unsigned short m_remotePort = 0;
@@ -88,6 +107,8 @@ namespace zsummer
 			//status
 			int m_nLinkStatus = LS_UNINITIALIZE;
 		};
+		typedef std::shared_ptr<CTcpSocket> CTcpSocketPtr;
+
 	}
 }
 

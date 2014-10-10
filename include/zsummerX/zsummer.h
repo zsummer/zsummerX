@@ -71,55 +71,7 @@
 #include "epoll/epoll_impl.h"
 #endif
 
-namespace zsummer
-{
-	namespace network
-	{
 
-		class CZSummer :public std::enable_shared_from_this<CZSummer>
-		{
-		public:
-			CZSummer(){}
-			~CZSummer(){}
-			inline bool Initialize()
-			{
-				return m_impl.Initialize();
-			}
-			inline void RunOnce()
-			{
-				m_impl.RunOnce();
-			}
-
-			//handle: std::function<void()>
-			//switch initiative, in the multi-thread it's switch call thread simultaneously.
-			template<typename H>
-			inline void Post(const H &h)
-			{
-				m_impl.Post(h);
-			}
-
-			//handle: std::function<void(unsigned long long)>
-			template<typename H>
-			inline TimerID CreateTimer(unsigned int delayms, const H &h)
-			{
-				return m_impl.CreateTimer(delayms, h);
-			}
-			inline bool CancelTimer(TimerID timerID)
-			{
-				return m_impl.CancelTimer(timerID);
-			}
-			friend class CTcpSocketImpl;
-			friend class CUdpSocketImpl;
-			friend class CTcpAcceptImpl;
-		private:
-			CZSummerImpl m_impl;
-		};
-
-		typedef std::shared_ptr<CZSummer> CZSummerPtr;
-
-	};
-	
-};
 
 
 

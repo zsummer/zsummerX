@@ -43,12 +43,12 @@ namespace zsummer
 {
 	namespace network
 	{
-		class CZSummerImpl
+		class ZSummer : public std::enable_shared_from_this<ZSummer>
 		{
 		public:
 			typedef std::vector<void*> MessageStack;
-			CZSummerImpl();
-			~CZSummerImpl();
+			ZSummer(){}
+			~ZSummer(){}
 			bool Initialize();
 			void RunOnce();
 
@@ -70,7 +70,7 @@ namespace zsummer
 			bool RegisterEvent(int op/* 0 add,  1 mod, 2 del*/, tagRegister &reg);
 			void PostMessage(const _OnPostHandler &handle);
 		private:
-			std::string GetZSummerImplStatus();
+			std::string ZSummerSection();
 		private:
 			//线程消息
 			SOCKET		m_sockpair[2];
@@ -81,6 +81,7 @@ namespace zsummer
 			//! timmer
 			CTimer m_timer;
 		};
+		typedef std::shared_ptr<ZSummer> ZSummerPtr;
 	}
 
 }

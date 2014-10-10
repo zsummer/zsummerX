@@ -41,11 +41,11 @@
 using namespace zsummer::proto4z;
 
 
+
+
 CTcpSession::CTcpSession()
 {
 }
-
-
 
 CTcpSession::~CTcpSession()
 {
@@ -60,7 +60,7 @@ CTcpSession::~CTcpSession()
 		m_freeCache.pop();
 	}
 	m_sockptr.reset();
-	LOGI("~CTcpSession. global _g_totalCreatedCTcpSocketObjs=" << zsummer::network::_g_totalCreatedCTcpSocketObjs << ", _g_totalClosedCTcpSocketObjs=" << zsummer::network::_g_totalClosedCTcpSocketObjs);
+	LOGI("~CTcpSession. global totalCreatedCTcpSocketObjs=" << zsummer::network::g_appEnvironment.GetCreatedSocketCount() << ", _g_totalClosedCTcpSocketObjs=" << zsummer::network::g_appEnvironment.GetClosedSocketCount());
 }
 void CTcpSession::CleanSession(bool isCleanAllData)
 {
@@ -118,7 +118,7 @@ void CTcpSession::BindTcpConnectorPtr(CTcpSocketPtr sockptr, const std::pair<tag
 		std::bind(&CTcpSession::OnConnected, shared_from_this(), std::placeholders::_1, config));
 	if (!connectRet)
 	{
-		LOGF("DoConnected Failed: traits=" << config.first);
+		LOGE("DoConnected Failed: traits=" << config.first);
 		return ;
 	}
 	LOGI("DoConnected : traits=" << config.first);
@@ -132,8 +132,9 @@ void CTcpSession::OnConnected(zsummer::network::ErrorCode ec, const std::pair<ta
 {
 	if (ec)
 	{
-		LOGE("OnConnected failed. ec=" << ec 
+		LOGW("OnConnected failed. ec=" << ec 
 			<< ",  config=" << config.first);
+		m_sockptr.reset();
 		CTcpSessionManager::getRef().OnConnect(config.second.cID, false, shared_from_this());
 		return;
 	}
@@ -315,7 +316,7 @@ void CTcpSession::DoSend(const char *buf, unsigned int len)
 }
 
 
-void CTcpSession::OnSend(zsummer::network::ErrorCode ec,  int nSentLen)
+void CTcpSession::OnSend(zsummer::network::ErrorCode ec, int nSentLen)
 {
 	if (ec)
 	{
@@ -381,6 +382,7 @@ void CTcpSession::OnHeartbeat()
 void CTcpSession::OnClose()
 {
 	LOGI("Client Closed!");
+	m_sockptr.reset();
 	if (m_pulseTimerID != zsummer::network::InvalidTimerID)
 	{
 		CTcpSessionManager::getRef().CancelTimer(m_pulseTimerID);

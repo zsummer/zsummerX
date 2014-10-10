@@ -46,7 +46,7 @@
 using namespace zsummer::log4z;
 
 std::string g_remoteIP = "0.0.0.0";
-unsigned short g_remotePort = 81;
+unsigned short g_remotePort = 8081;
 unsigned short g_startType = 0;  //0 listen, 1 connect
 unsigned short g_maxClient = 1; //0 echo send, 1 direct send
 unsigned short g_sendType = 0; //0 echo send, 1 direct send
@@ -73,7 +73,7 @@ int main(int argc, char* argv[])
 	{
 		cout << "please input like example:" << endl;
 		cout << "tcpTest remoteIP remotePort startType maxClient sendType interval" << endl;
-		cout << "./tcpTest 0.0.0.0 81 0" << endl;
+		cout << "./tcpTest 0.0.0.0 8081 0" << endl;
 		cout << "startType: 0 server, 1 client" << endl;
 		cout << "maxClient: limit max" << endl;
 		cout << "sendType: 0 echo send, 1 direct send" << endl;

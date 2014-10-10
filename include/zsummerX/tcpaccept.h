@@ -47,34 +47,7 @@
 #include "epoll/tcpaccept_impl.h"
 #endif
 
-namespace zsummer
-{
-	namespace network
-	{
-		class CTcpAccept
-		{
-		public:
-			CTcpAccept(CZSummerPtr summer){ m_impl.Initialize(summer); }
-			~CTcpAccept(){}
-			//open and  listen 
-			bool OpenAccept(const char * ip, unsigned short port)
-			{
-				return m_impl.OpenAccept(ip, port);
-			}
 
-			//handle: std::function<void(ErrorCode, CTcpSocketPtr)>
-			template<typename H>
-			bool DoAccept(CTcpSocketPtr &s, const H &h)
-			{
-				return m_impl.DoAccept(s, h);
-			}
-		private:
-			CTcpAcceptImpl m_impl;
-		};
-		typedef std::shared_ptr<CTcpAccept> CTcpAcceptPtr;
-	};
-	
-};
 
 
 

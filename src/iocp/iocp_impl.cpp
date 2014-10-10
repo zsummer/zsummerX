@@ -42,11 +42,11 @@
 
 using namespace zsummer::network;
 
-void CZSummerImpl::RunOnce()
+void ZSummer::RunOnce()
 {
 	if (m_io == NULL)
 	{
-		LCF("CZSummerImpl::RunOnce[this0x" << this << "] Can't Run Once. server not initialize or initialize false." << GetZSummerImplStatus());
+		LCF("ZSummer::RunOnce[this0x" << this << "] server not initialize or initialize false." <<ZSummerSection());
 		return;
 	}
 
@@ -56,17 +56,14 @@ void CZSummerImpl::RunOnce()
 
 	BOOL bRet = GetQueuedCompletionStatus(m_io, &dwTranceCount, &uComKey, &pOverlapped, m_timer.GetNextExpireTime()/*INFINITE*/);
 
-	//检查定时器超时状态
+	m_timer.CheckTimer();
+	if (!bRet && !pOverlapped)
 	{
-		m_timer.CheckTimer();
-		if (!bRet && !pOverlapped)
-		{
-			//TIMEOUT
-			return;
-		}
+		//TIMEOUT
+		return;
 	}
 	
-	//! 检查自定义通知
+	//! user post
 	if (uComKey == PCK_USER_DATA)
 	{
 		_OnPostHandler * func = (_OnPostHandler*) pOverlapped;
@@ -75,34 +72,39 @@ void CZSummerImpl::RunOnce()
 		return;
 	}
 	
-	//! 处理来自网络的通知
-	
-	unsigned char type = HandlerFromOverlaped(pOverlapped)->_type;
-	switch (type)
+	//! network data
+	tagReqHandle & req = *(HandlerFromOverlaped(pOverlapped));
+	switch (req._type)
 	{
 	case tagReqHandle::HANDLE_ACCEPT:
 		{
-			CTcpAcceptImpl *pKey = (CTcpAcceptImpl *) uComKey;
-			pKey->OnIOCPMessage(bRet);
+			if (req._tcpAccept)
+			{
+				req._tcpAccept->OnIOCPMessage(bRet);
+			}
 		}
 		break;
 	case tagReqHandle::HANDLE_RECV:
 	case tagReqHandle::HANDLE_SEND:
 	case tagReqHandle::HANDLE_CONNECT:
 		{
-			CTcpSocketImpl *pKey = (CTcpSocketImpl *) uComKey;
-			pKey->OnIOCPMessage(bRet, dwTranceCount, type);
+			if (req._tcpSocket)
+			{
+				req._tcpSocket->OnIOCPMessage(bRet, dwTranceCount, req._type);
+			}
 		}
 		break;
 	case tagReqHandle::HANDLE_SENDTO:
 	case tagReqHandle::HANDLE_RECVFROM:
 		{
-			CUdpSocketImpl * pKey = (CUdpSocketImpl*) uComKey;
-			pKey->OnIOCPMessage(bRet, dwTranceCount, type);
+			if (req._udpSocket)
+			{
+				req._udpSocket->OnIOCPMessage(bRet, dwTranceCount, req._type);
+			}
 		}
 		break;
 	default:
-		LCE("CZSummerImpl::RunOnce[this0x" << this << "]GetQueuedCompletionStatus undefined type=" << type << GetZSummerImplStatus());
+		LCE("ZSummer::RunOnce[this0x" << this << "]GetQueuedCompletionStatus undefined type=" << req._type << ZSummerSection());
 	}
 	
 }

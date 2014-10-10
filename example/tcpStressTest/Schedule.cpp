@@ -41,8 +41,9 @@
 
 CSchedule::CSchedule()
 {
-	m_summer = zsummer::network::CZSummerPtr(new zsummer::network::CZSummer());
-	m_accept = zsummer::network::CTcpAcceptPtr(new zsummer::network::CTcpAccept(m_summer));
+	m_summer = zsummer::network::ZSummerPtr(new zsummer::network::ZSummer());
+	m_accept = zsummer::network::CTcpAcceptPtr(new zsummer::network::CTcpAccept());
+	m_accept->Initialize(m_summer);
 }
 
 

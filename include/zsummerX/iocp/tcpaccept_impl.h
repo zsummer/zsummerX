@@ -37,25 +37,24 @@
 #define _ZSUMMERX_TCPACCEPT_IMPL_H_
 
 #include "common_impl.h"
-#include "../zsummer.h"
-#include "../tcpsocket.h"
+#include "iocp_impl.h"
+#include "tcpsocket_impl.h"
 namespace zsummer
 {
 	namespace network
 	{
-		class CTcpAcceptImpl
+		class CTcpAccept : public std::enable_shared_from_this<CTcpAccept>
 		{
 		public:
-
-			CTcpAcceptImpl();
-			~CTcpAcceptImpl();
-			bool Initialize(CZSummerPtr summer);
+			CTcpAccept();
+			~CTcpAccept();
+			bool Initialize(ZSummerPtr summer);
 			bool OpenAccept(const char * ip, unsigned short port);
 			bool DoAccept(CTcpSocketPtr& s, const _OnAcceptHandler &handler);
 			bool OnIOCPMessage(BOOL bSuccess);
 
 			//config
-			CZSummerPtr m_summer;
+			ZSummerPtr m_summer;
 
 
 			std::string		m_ip;
@@ -75,6 +74,8 @@ namespace zsummer
 			//status
 			int m_nLinkStatus;
 		};
+		typedef std::shared_ptr<CTcpAccept> CTcpAcceptPtr;
+
 	}
 
 }

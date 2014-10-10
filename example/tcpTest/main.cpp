@@ -56,11 +56,11 @@ using namespace zsummer::network;
 
 
 std::string g_remoteIP = "0.0.0.0";
-unsigned short g_remotePort = 81;
+unsigned short g_remotePort = 8081;
 unsigned short g_startType = 0;  //0 listen, 1 connect
 bool g_runing = true;
 
-CZSummerPtr summer; //ioserver
+ZSummerPtr summer; //ioserver
 CTcpAcceptPtr accepter; //accept
 CTcpSocketPtr ts;//socket need create before accept.
 
@@ -187,7 +187,7 @@ int main(int argc, char* argv[])
 	{
 		cout << "please input like example:" << endl;
 		cout << "tcpTest remoteIP remotePort startType" << endl;
-		cout << "./tcpTest 0.0.0.0 81 0" << endl;
+		cout << "./tcpTest 0.0.0.0 8081 0" << endl;
 		cout << "startType: 0 server, 1 client" << endl;
 		return 0;
 	}
@@ -222,12 +222,13 @@ int main(int argc, char* argv[])
 
 	
 
-	summer = std::shared_ptr<CZSummer>(new CZSummer);
+	summer = std::shared_ptr<ZSummer>(new ZSummer);
 	summer->Initialize();
 
 	if (g_startType == 0)
 	{
-		accepter = std::shared_ptr<CTcpAccept>(new CTcpAccept(summer));
+		accepter = std::shared_ptr<CTcpAccept>(new CTcpAccept());
+		accepter->Initialize(summer);
 		ts = std::shared_ptr<CTcpSocket>(new CTcpSocket);
 		if (!accepter->OpenAccept(g_remoteIP.c_str(), g_remotePort))
 		{

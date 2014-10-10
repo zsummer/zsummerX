@@ -124,9 +124,15 @@ public:
 	void OnSessionPulse(SessionID sID, unsigned int pulseInterval)
 	{
 		auto iter = m_sessionPulse.find(sID);
-		if (iter == m_sessionPulse.end() || time(NULL) - iter->second > pulseInterval / 1000 * 2)
+		if (iter == m_sessionPulse.end())
 		{
-			LOGI("remote session lost. sID=" << sID << ", timeout=" << time(NULL) - iter->second);
+			LOGI("remote session lost. sID=" << sID );
+			CTcpSessionManager::getRef().KickSession(sID);
+			return;
+		}
+		if (time(NULL) - iter->second > pulseInterval / 1000 * 2)
+		{
+			LOGI("remote session timeout. sID=" << sID << ", timeout=" << time(NULL) - iter->second);
 			CTcpSessionManager::getRef().KickSession(sID);
 			return;
 		}
@@ -342,7 +348,7 @@ int main(int argc, char* argv[])
 			traits.reconnectInterval = 5000;
 			traits.reconnectMaxCount = 5;
 			traits.rc4TcpEncryption = "yawei.zhang@foxmail.com";
-			traits.pulseInterval = 10000;
+			traits.pulseInterval = 500000;
 			CTcpSessionManager::getRef().AddConnector(traits);
 		}
 	}
@@ -353,7 +359,7 @@ int main(int argc, char* argv[])
 		traits.listenPort = g_remotePort;
 		traits.maxSessions = g_maxClient;
 		traits.rc4TcpEncryption = "yawei.zhang@foxmail.com";
-		traits.pulseInterval = 10000;
+		traits.pulseInterval = 500000;
 		//traits.whitelistIP.push_back("127.0.");
 		CTcpSessionManager::getRef().AddAcceptor(traits);
 	}

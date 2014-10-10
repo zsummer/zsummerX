@@ -9,7 +9,7 @@
 * 
 * ===============================================================================
 * 
-* Copyright (C) 2013 YaweiZhang <yawei_zhang@foxmail.com>.
+* Copyright (C) 2013-2014 YaweiZhang <yawei_zhang@foxmail.com>.
 * 
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -43,47 +43,35 @@ namespace zsummer
 {
 	namespace network
 	{
-		class CZSummerImpl
+		class ZSummer : public std::enable_shared_from_this<ZSummer>
 		{
 		public:
 			typedef std::vector<void*> MessageStack;
-			CZSummerImpl();
-			~CZSummerImpl();
+			ZSummer(){}
+			~ZSummer(){}
 			bool Initialize();
 			void RunOnce();
 
 			template <typename handle>
-			inline void Post(const handle &h)
-			{
-				PostMessage(h);
-			}
-			inline unsigned long long CreateTimer(unsigned int delayms, const _OnTimerHandler &handle)
-			{
-				return m_timer.CreateTimer(delayms, handle);
-			}
-			inline bool CancelTimer(unsigned long long timerID)
-			{
-				return m_timer.CancelTimer(timerID);
-			}
+			inline void Post(const handle &h){PostMessage(h);}
+			inline unsigned long long CreateTimer(unsigned int delayms, const _OnTimerHandler &handle){return m_timer.CreateTimer(delayms, handle);}
+			inline bool CancelTimer(unsigned long long timerID){return m_timer.CancelTimer(timerID);}
 
 		public:
 			bool RegisterEvent(int op, tagRegister &reg);
 			void PostMessage(const _OnPostHandler &handle);
 		private:
-			std::string GetZSummerImplStatus();
+			std::string ZSummerSection();
 		private:
 			int	m_epoll = InvalideFD;
-			//! 网络消息
 			epoll_event m_events[5000] = {};
-			//线程消息
 			int		m_sockpair[2] = {};
 			tagRegister m_register;
 			MessageStack m_stackMessages;
 			std::mutex	 m_stackMessagesLock;
-
-			//! timmer
 			CTimer m_timer;
 		};
+		typedef std::shared_ptr<ZSummer> ZSummerPtr;
 	}
 
 }

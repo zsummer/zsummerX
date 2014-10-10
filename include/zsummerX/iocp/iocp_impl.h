@@ -47,66 +47,62 @@ namespace zsummer
 {
 	namespace network
 	{
-		//! ÏûÏ¢±Ã, message loop.
-		class CZSummerImpl
+		//! ioserver, message loop.
+		class ZSummer :public std::enable_shared_from_this<ZSummer>
 		{
 		public:
+			ZSummer(){m_io = NULL;}
+			~ZSummer(){}
 
-			CZSummerImpl()
-			{
-				m_io = NULL;
-			}
-			~CZSummerImpl()
-			{
-			}
-			inline bool Initialize()
-			{
-				if (m_io != NULL)
-				{
-					LCF("CZSummerImpl::RunOnce[this0x" << this << "] iocp is craeted !" << GetZSummerImplStatus());
-					return false;
-				}
-				m_io = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, NULL, 1);
-				if (!m_io)
-				{
-					LCF("CZSummerImpl::RunOnce[this0x" << this << "] CreateIoCompletionPort False!" << GetZSummerImplStatus());
-					return false;
-				}
-				return true;
-			}
+			inline bool Initialize();
 			void RunOnce();
-			template <typename handle>
-			inline void Post(const handle &h)
-			{
-				PostMsg(PCK_USER_DATA, h);
-			}
-
+			//handle: std::function<void()>
+			//switch initiative, in the multi-thread it's switch call thread simultaneously.
+			inline void Post(const _OnPostHandler &h){ PostMsg(PCK_USER_DATA, h); }
+			inline unsigned long long CreateTimer(unsigned int delayms, const _OnTimerHandler &handle){return m_timer.CreateTimer(delayms, handle);}
+			inline bool CancelTimer(unsigned long long timerID){return m_timer.CancelTimer(timerID);}
+		private:
 			inline void PostMsg(POST_COM_KEY pck, const _OnPostHandler &handle)
 			{
 				_OnPostHandler *ptr = new _OnPostHandler(handle);
-				PostQueuedCompletionStatus(m_io, 0, pck,(LPOVERLAPPED)(ptr));
+				PostQueuedCompletionStatus(m_io, 0, pck, (LPOVERLAPPED)(ptr));
 			}
-			inline unsigned long long CreateTimer(unsigned int delayms, const _OnTimerHandler &handle)
-			{
-				return m_timer.CreateTimer(delayms, handle);
-			}
-			inline bool CancelTimer(unsigned long long timerID)
-			{
-				return m_timer.CancelTimer(timerID);
-			}
-			inline std::string GetZSummerImplStatus()
+			inline std::string ZSummerSection()
 			{
 				std::stringstream os;
-				os << " CZSummerImpl Status: m_iocp=" << (void*)m_io << ", current total timer=" << m_timer.GetTimersCount();
+				os << " ZSummerSection: m_iocp=" << (void*)m_io << ", current total timer=" << m_timer.GetTimersCount();
 				return os.str();
 			}
 		public:
-			//! IOCP¾ä±ú
 			HANDLE m_io;
 			CTimer m_timer;
-
-
 		};
+
+		typedef std::shared_ptr<ZSummer> ZSummerPtr;
+		inline bool ZSummer::Initialize()
+		{
+			if (m_io != NULL)
+			{
+				LCF("ZSummer::RunOnce[this0x" << this << "] iocp is craeted !" << ZSummerSection());
+				return false;
+			}
+			m_io = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, NULL, 1);
+			if (!m_io)
+			{
+				LCF("ZSummer::RunOnce[this0x" << this << "] CreateIoCompletionPort False!" << ZSummerSection());
+				return false;
+			}
+			return true;
+		}
+
+
+
+
+
+
+
+
+
 	}
 
 }

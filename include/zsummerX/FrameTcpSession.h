@@ -75,7 +75,7 @@ private:
 
 	void OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen);
 	
-	void OnSend(zsummer::network::ErrorCode ec,  int nSentLen);
+	void OnSend(zsummer::network::ErrorCode ec, int nSentLen);
 
 	void OnHeartbeat();
 	
@@ -98,8 +98,6 @@ private:
 	
 	//! 
 	MessageChunk m_recving;
-
-
 	MessageChunk m_sending;
 	unsigned int m_sendingCurIndex = 0;
 	//! 

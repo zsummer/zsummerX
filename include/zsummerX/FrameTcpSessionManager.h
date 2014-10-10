@@ -91,13 +91,13 @@ private:
 	void OnConnect(SessionID cID, bool bConnected, CTcpSessionPtr session);
 	void OnAcceptNewClient(zsummer::network::ErrorCode ec, CTcpSocketPtr s, CTcpAcceptPtr accepter, AccepterID aID);
 private:
-	CZSummerPtr m_summer;
+	ZSummerPtr m_summer;
 	bool  m_bRunning = true;
-	bool  m_shutdownAccept = false;
+	unsigned int  m_onlineConnectCounts = 0;//counts online connect when zsummerx will exit
 
-	SessionID m_lastAcceptID = 0;
-	SessionID m_lastSessionID = 0;
-	SessionID m_lastConnectID = 0;
+	SessionID m_lastAcceptID = 0; //accept ID sequence. range  [0 - -1)
+	SessionID m_lastSessionID = 0;//session ID sequence. range  [0 - __MIDDLE_SEGMENT_VALUE)
+	SessionID m_lastConnectID = 0;//connect ID sequence. range  [__MIDDLE_SEGMENT_VALUE - -1)
 
 	std::unordered_map<AccepterID, CTcpAcceptPtr> m_mapAccepterPtr;
 	std::unordered_map<SessionID, CTcpSessionPtr> m_mapTcpSessionPtr;

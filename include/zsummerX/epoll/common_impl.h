@@ -9,7 +9,7 @@
 * 
 * ===============================================================================
 * 
-* Copyright (C) 2013 YaweiZhang <yawei_zhang@foxmail.com>.
+* Copyright (C) 2013-2014 YaweiZhang <yawei_zhang@foxmail.com>.
 * 
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -67,7 +67,9 @@ namespace zsummer
 			epoll_data_t data;//      User data variable 
 		};
 #endif
-
+		class CTcpSocket;
+		class CTcpAccept;
+		class CUdpSocket;
 		const int InvalideFD = -1;
 		struct tagRegister
 		{
@@ -84,7 +86,11 @@ namespace zsummer
 			unsigned char _type = REG_INVALID; //register type
 			unsigned char _linkstat = LS_UNINITIALIZE;
 			int			  _fd = InvalideFD;   //file descriptor
-			void *		  _ptr = nullptr;  //user pointer
+			std::shared_ptr<CTcpSocket> _tcpSocketSendPtr;
+			std::shared_ptr<CTcpSocket> _tcpSocketRecvPtr;
+			std::shared_ptr<CTcpSocket> _tcpSocketConnectPtr;
+			std::shared_ptr<CTcpAccept> _tcpacceptPtr;
+			std::shared_ptr<CUdpSocket> _udpsocketPtr;
 		};
 
 		template <class T>
@@ -92,8 +98,7 @@ namespace zsummer
 		{
 			t << "RegisterEvent Info: epoll_event.events[" << reg._event.events
 				<< "] _type[" << (int)reg._type << "] _linkstat[" << (int)reg._linkstat
-				<< "] _fd[" << reg._fd << "] _ptr[" << (void*)reg._ptr
-				<< "] Notes: REG_INVALID[" << tagRegister::REG_INVALID << "] REG_ZSUMMER[" << tagRegister::REG_ZSUMMER
+				<< "] _fd[" << reg._fd << "]  Notes: REG_INVALID[" << tagRegister::REG_INVALID << "] REG_ZSUMMER[" << tagRegister::REG_ZSUMMER
 				<< "] REG_TCP_SOCKET[" << tagRegister::REG_TCP_SOCKET << "] REG_TCP_ACCEPT[" << tagRegister::REG_TCP_ACCEPT
 				<< "] REG_UDP_SOCKET[" << tagRegister::REG_UDP_SOCKET
 				<< "] EPOLL_CTL_ADD[" << EPOLL_CTL_ADD << "] EPOLL_CTL_MOD[" << EPOLL_CTL_MOD << "] EPOLL_CTL_DEL[" << EPOLL_CTL_DEL

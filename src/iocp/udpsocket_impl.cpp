@@ -41,38 +41,37 @@ using namespace zsummer::network;
 
 
 
-CUdpSocketImpl::CUdpSocketImpl()
+CUdpSocket::CUdpSocket()
 {
 	m_socket=INVALID_SOCKET;
 	memset(&m_addr, 0, sizeof(m_addr));
 
 	//recv
-	memset(&m_recvHandle, 0, sizeof(m_recvHandle));
+	memset(&m_recvHandle._overlapped, 0, sizeof(m_recvHandle._overlapped));
 	m_recvHandle._type = tagReqHandle::HANDLE_RECVFROM;
 	m_recvWSABuf.buf = NULL;
 	m_recvWSABuf.len = 0;
-	m_recvLock = false;
 
 	m_nLinkStatus = LS_UNINITIALIZE;
 
 }
 
 
-CUdpSocketImpl::~CUdpSocketImpl()
+CUdpSocket::~CUdpSocket()
 {
 	if (m_socket != INVALID_SOCKET)
 	{
-		if (m_recvLock)
+		if (m_onRecvHander)
 		{
-			LCE("Destruct CUdpSocketImpl Error. socket handle not invalid and some request was not completed. socket=" 
-				<< (unsigned int)m_socket  << ", m_recvLock=" << m_recvLock );
+			LCE("Destruct CUdpSocket Error. socket handle not invalid and some request was not completed. socket=" 
+				<< (unsigned int)m_socket << ", m_onRecvHander=" << (bool)m_onRecvHander);
 		}
 		closesocket(m_socket);
 		m_socket = INVALID_SOCKET;
 	}
 }
 
-bool CUdpSocketImpl::Initialize(CZSummerPtr summer, const char *localIP, unsigned short localPort)
+bool CUdpSocket::Initialize(ZSummerPtr summer, const char *localIP, unsigned short localPort)
 {
 	if (m_socket != INVALID_SOCKET)
 	{
@@ -103,7 +102,7 @@ bool CUdpSocketImpl::Initialize(CZSummerPtr summer, const char *localIP, unsigne
 		return false;
 	}
 	
-	if (CreateIoCompletionPort((HANDLE)m_socket, m_summer->m_impl.m_io, (ULONG_PTR)this, 1) == NULL)
+	if (CreateIoCompletionPort((HANDLE)m_socket, m_summer->m_io, (ULONG_PTR)this, 1) == NULL)
 	{
 		LCE("CUdpSocket::bind socket to IOCP error. socket="<< (unsigned int) m_socket << ", ERRCODE=" << GetLastError());
 		closesocket(m_socket);
@@ -118,22 +117,22 @@ bool CUdpSocketImpl::Initialize(CZSummerPtr summer, const char *localIP, unsigne
 
 
 
-bool CUdpSocketImpl::DoSend(char * buf, unsigned int len, const char *dstip, unsigned short dstport)
+bool CUdpSocket::DoSendTo(char * buf, unsigned int len, const char *dstip, unsigned short dstport)
 {
 	if (!m_summer)
 	{
-		LCF("CUdpSocketImpl::DoSend IIOServer pointer uninitialize.socket=" << (unsigned int) m_socket);
+		LCF("CUdpSocket::DoSend IIOServer pointer uninitialize.socket=" << (unsigned int) m_socket);
 		return false;
 	}
 	if (m_nLinkStatus != LS_ESTABLISHED)
 	{
-		LCF("CUdpSocketImpl::DoSendto socket status != LS_ESTABLISHED. socket="<<(unsigned int) m_socket);
+		LCF("CUdpSocket::DoSendto socket status != LS_ESTABLISHED. socket="<<(unsigned int) m_socket);
 		return false;
 	}
 
 	if (len == 0 || len >1200)
 	{
-		LCF("CUdpSocketImpl::DoSend length is error. socket="<<(unsigned int) m_socket);
+		LCF("CUdpSocket::DoSend length is error. socket="<<(unsigned int) m_socket);
 		return false;
 	}
 
@@ -146,34 +145,34 @@ bool CUdpSocketImpl::DoSend(char * buf, unsigned int len, const char *dstip, uns
 }
 
 
-bool CUdpSocketImpl::DoRecv(char * buf, unsigned int len, const _OnRecvFromHandler& handler)
+bool CUdpSocket::DoRecvFrom(char * buf, unsigned int len, const _OnRecvFromHandler& handler)
 {
 	if (!m_summer)
 	{
-		LCF("CUdpSocketImpl::DoRecv IIOServer pointer uninitialize.socket=" << (unsigned int) m_socket);
+		LCF("CUdpSocket::DoRecv IIOServer pointer uninitialize.socket=" << (unsigned int) m_socket);
 		return false;
 	}
 	if (m_nLinkStatus != LS_ESTABLISHED)
 	{
-		LCF("CUdpSocketImpl::DoRecv socket status != LS_ESTABLISHED. socket="<<(unsigned int) m_socket);
+		LCF("CUdpSocket::DoRecv socket status != LS_ESTABLISHED. socket="<<(unsigned int) m_socket);
 		return false;
 	}
 
 	if (len == 0)
 	{
-		LCF("CUdpSocketImpl::DoRecv length is 0. socket="<<(unsigned int) m_socket);
+		LCF("CUdpSocket::DoRecv length is 0. socket="<<(unsigned int) m_socket);
 		return false;
 	}
 
-	if (m_recvLock)
+	if (m_onRecvHander)
 	{
-		LCF("CUdpSocketImpl::DoRecv  is locking. socket="<<(unsigned int) m_socket);
+		LCF("CUdpSocket::DoRecv  is locking. socket="<<(unsigned int) m_socket);
 		return false;
 	}
 
 	m_recvWSABuf.buf = buf;
 	m_recvWSABuf.len = len;
-	m_onRecvHander = handler;
+
 
 	sizeof(&m_recvFrom, 0, sizeof(m_recvFrom));
 	m_recvFromLen = sizeof(m_recvFrom);
@@ -186,19 +185,21 @@ bool CUdpSocketImpl::DoRecv(char * buf, unsigned int len, const _OnRecvFromHandl
 			LCE("CUdpSocket::DoRecv DoRecv failed and ERRCODE!=ERROR_IO_PENDING, socket="<< (unsigned int) m_socket << ", ERRCODE=" << WSAGetLastError());
 			m_recvWSABuf.buf = nullptr;
 			m_recvWSABuf.len = 0;
-			m_onRecvHander = nullptr;
 			return false;
 		}
 	}
-	m_recvLock = true;
+	m_onRecvHander = handler;
+	m_recvHandle._udpSocket = shared_from_this();
 	return true;
 }
 
-bool CUdpSocketImpl::OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned char cType)
+bool CUdpSocket::OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned char cType)
 {
 	if (cType == tagReqHandle::HANDLE_RECVFROM)
 	{
-		m_recvLock = false;
+		std::shared_ptr<CUdpSocket> guad(m_recvHandle._udpSocket);
+		m_recvHandle._udpSocket.reset();
+
 		m_recvWSABuf.buf = nullptr;
 		m_recvWSABuf.len = 0;
 		_OnRecvFromHandler onRecv;
@@ -211,7 +212,6 @@ bool CUdpSocketImpl::OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned 
 		{
 			onRecv(EC_ERROR, "0.0.0.0", 0,0);
 		}
-
 	}
 	return true;
 }

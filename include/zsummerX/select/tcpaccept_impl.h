@@ -9,7 +9,7 @@
 * 
 * ===============================================================================
 * 
-* Copyright (C) 2013 YaweiZhang <yawei_zhang@foxmail.com>.
+* Copyright (C) 2013-2014 YaweiZhang <yawei_zhang@foxmail.com>.
 * 
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -38,8 +38,8 @@
 #define _ZSUMMER_TCPACCEPT_IMPL_H_
 
 #include "common_impl.h"
-#include "../zsummer.h"
-#include "../tcpsocket.h"
+#include "select_impl.h"
+#include "tcpsocket_impl.h"
 /*
 *	CTcpAccept: EPOLL LT EPOLLONESHOT模式 每次MOD accept一次 以尽量保持和IOCP的PROACTOR设计的一致性
 */
@@ -48,21 +48,21 @@ namespace zsummer
 {
 	namespace network
 	{
-		class CTcpAcceptImpl
+		class CTcpAccept :public std::enable_shared_from_this<CTcpAccept>
 		{
 		public:
-			CTcpAcceptImpl();
-			~CTcpAcceptImpl();
-			bool Initialize(CZSummerPtr summer);
+			CTcpAccept();
+			~CTcpAccept();
+			bool Initialize(ZSummerPtr summer);
 			bool OpenAccept(std::string listenIP, unsigned short listenPort);
 			bool DoAccept(CTcpSocketPtr &s, const _OnAcceptHandler &handle);
 			void OnSelectMessage();
 			bool Close();
 
 		private:
-			std::string GetAcceptImplStatus();
+			std::string AcceptSection();
 		private:
-			CZSummerPtr 		m_summer;
+			ZSummerPtr 		m_summer;
 			std::string		m_listenIP;
 			short			m_listenPort = 0;
 
@@ -71,8 +71,8 @@ namespace zsummer
 			tagRegister m_register; //! epoll 注册事件
 			_OnAcceptHandler m_onAcceptHandler;
 			CTcpSocketPtr  m_client;
-
 		};
+		typedef std::shared_ptr<CTcpAccept> CTcpAcceptPtr;
 	}
 }
 

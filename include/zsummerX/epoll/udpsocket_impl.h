@@ -9,7 +9,7 @@
 * 
 * ===============================================================================
 * 
-* Copyright (C) 2013 YaweiZhang <yawei_zhang@foxmail.com>.
+* Copyright (C) 2013-2014 YaweiZhang <yawei_zhang@foxmail.com>.
 * 
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -40,31 +40,32 @@
 
 
 #include "common_impl.h"
-#include "../zsummer.h"
+#include "epoll_impl.h"
 
 namespace zsummer
 {
 	namespace network
 	{
 
-		class CUdpSocketImpl
+		class CUdpSocket : public std::enable_shared_from_this<CUdpSocket>
 		{
 		public:
 			// const char * remoteIP, unsigned short remotePort, nTranslate
-			CUdpSocketImpl();
-			~CUdpSocketImpl();
-			bool Initialize(CZSummerPtr summer, const char *localIP, unsigned short localPort);
-			bool DoRecv(char * buf, unsigned int len, const _OnRecvFromHandler& handler);
-			bool DoSend(char * buf, unsigned int len, const char *dstip, unsigned short dstport);
+			CUdpSocket();
+			~CUdpSocket();
+			bool Initialize(ZSummerPtr summer, const char *localIP, unsigned short localPort);
+			bool DoRecvFrom(char * buf, unsigned int len, const _OnRecvFromHandler& handler);
+			bool DoSendTo(char * buf, unsigned int len, const char *dstip, unsigned short dstport);
 			bool OnEPOLLMessage(int type, int flag);
 		public:
-			CZSummerPtr m_summer;
+			ZSummerPtr m_summer;
 			tagRegister m_register;
 
 			_OnRecvFromHandler m_onRecvFromHandler;
 			unsigned int m_iRecvLen;
 			char	*	 m_pRecvBuf;
 		};
+		typedef std::shared_ptr<CUdpSocket> CUdpSocketPtr;
 	}
 
 }

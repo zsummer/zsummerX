@@ -46,7 +46,7 @@ CTcpSessionManager & CTcpSessionManager::getRef()
 }
 CTcpSessionManager::CTcpSessionManager()
 {
-	m_summer = std::shared_ptr<zsummer::network::CZSummer>(new zsummer::network::CZSummer());
+	m_summer = std::shared_ptr<zsummer::network::ZSummer>(new zsummer::network::ZSummer());
 }
 
 bool CTcpSessionManager::Start()
@@ -66,15 +66,27 @@ void CTcpSessionManager::Stop()
 
 void CTcpSessionManager::SafeStop()
 {
-	m_shutdownAccept = true;
 	m_bRunning = false;
+
+	//at first close the session from accept.
+	m_onlineConnectCounts = 0;
 	for (auto m : m_mapTcpSessionPtr)
 	{
 		if (IsConnectID(m.first))
 		{
 			m_mapConnectorConfig[m.first].second.curReconnectCount = -1;
+			m_onlineConnectCounts++;
+			continue;
 		}
 		m.second->Close();
+	}
+	//if only have the connect session then close all.
+	if (m_mapTcpSessionPtr.size() == m_onlineConnectCounts)
+	{
+		for (auto m : m_mapTcpSessionPtr)
+		{
+			m.second->Close();
+		}
 	}
 }
 void CTcpSessionManager::Run()
@@ -96,7 +108,8 @@ AccepterID CTcpSessionManager::AddAcceptor(const tagAcceptorConfigTraits &traits
 	pairConfig.first = traits;
 	pairConfig.second.aID = m_lastAcceptID;
 
-	CTcpAcceptPtr accepter(new zsummer::network::CTcpAccept(m_summer));
+	CTcpAcceptPtr accepter(new zsummer::network::CTcpAccept());
+	accepter->Initialize(m_summer);
 	if (!accepter->OpenAccept(traits.listenIP.c_str(), traits.listenPort))
 	{
 		LOGE("AddAcceptor OpenAccept Failed. traits=" << traits);
@@ -110,7 +123,7 @@ AccepterID CTcpSessionManager::AddAcceptor(const tagAcceptorConfigTraits &traits
 
 void CTcpSessionManager::OnAcceptNewClient(zsummer::network::ErrorCode ec, CTcpSocketPtr s, CTcpAcceptPtr accepter, AccepterID aID)
 {
-	if (m_shutdownAccept)
+	if (!m_bRunning)
 	{
 		LOGI("shutdown accepter. aID=" << aID);
 		return;
@@ -215,6 +228,10 @@ void CTcpSessionManager::OnSessionClose(AccepterID aID, SessionID sID)
 	m_mapAccepterConfig[aID].second.currentLinked--;
 	m_mapTcpSessionPtr.erase(sID);
 	CMessageDispatcher::getRef().DispatchOnSessionDisconnect(sID);
+	if (!m_bRunning && m_mapTcpSessionPtr.size() <= m_onlineConnectCounts)
+	{
+		CreateTimer(1000, std::bind(&CTcpSessionManager::SafeStop, CTcpSessionManager::getPtr()));
+	}
 }
 
 

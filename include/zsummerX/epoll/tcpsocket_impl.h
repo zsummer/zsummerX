@@ -9,7 +9,7 @@
 * 
 * ===============================================================================
 * 
-* Copyright (C) 2013 YaweiZhang <yawei_zhang@foxmail.com>.
+* Copyright (C) 2013-2014 YaweiZhang <yawei_zhang@foxmail.com>.
 * 
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -40,19 +40,19 @@
 
 
 #include "common_impl.h"
-#include "../zsummer.h"
+#include "epoll_impl.h"
 
 namespace zsummer
 {
 	namespace network
 	{
 
-		class CTcpSocketImpl
+		class CTcpSocket : public std::enable_shared_from_this<CTcpSocket>
 		{
 		public:
-			CTcpSocketImpl();
-			~CTcpSocketImpl();
-			bool Initialize(CZSummerPtr summer);
+			CTcpSocket();
+			~CTcpSocket();
+			bool Initialize(ZSummerPtr summer);
 			inline bool GetPeerInfo(std::string& remoteIP, unsigned short &remotePort)
 			{
 				remoteIP = m_remoteIP;
@@ -65,20 +65,17 @@ namespace zsummer
 			bool DoClose();
 
 			
-
+		public:
 			void OnPostClose();
-
-			void OnEPOLLMessage(int type, int flag);
+			void OnEPOLLMessage(int flag, bool err);
 			bool AttachSocket(int s, std::string remoteIP, unsigned short remotePort);
-
 		private:
-			std::string GetSocketStatus();
+			std::string SocketSection();
 		private:
-			CZSummerPtr m_summer;
+			ZSummerPtr m_summer;
 			std::string m_remoteIP;
 			unsigned short m_remotePort = 0;
 			tagRegister m_register;
-			
 			
 			_OnConnectHandler m_onConnectHandler;
 
@@ -86,11 +83,11 @@ namespace zsummer
 			unsigned int m_iRecvLen = 0;
 			char	*	 m_pRecvBuf = NULL;
 
-
 			_OnSendHandler m_onSendHandler;
 			unsigned int m_iSendLen = 0;
 			char *		 m_pSendBuf = NULL;
 		};
+		typedef std::shared_ptr<CTcpSocket> CTcpSocketPtr;
 	}
 
 }

@@ -9,7 +9,7 @@
  * 
  * ===============================================================================
  * 
- * Copyright (C) 2013 YaweiZhang <yawei_zhang@foxmail.com>.
+ * Copyright (C) 2013-2014 YaweiZhang <yawei_zhang@foxmail.com>.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -40,25 +40,22 @@
 
 
 using namespace zsummer::network;
-CTcpAcceptImpl::CTcpAcceptImpl()
+CTcpAccept::CTcpAccept()
 {
-	
 	//listen
+	memset(&m_handle._overlapped, 0, sizeof(m_handle._overlapped));
 	m_server = INVALID_SOCKET;
 	memset(&m_addr, 0, sizeof(m_addr));
-	memset(&m_handle, 0, sizeof(m_handle));
 	m_handle._type = tagReqHandle::HANDLE_ACCEPT;
 
 	//client
 	m_socket = INVALID_SOCKET;
 	memset(m_recvBuf, 0, sizeof(m_recvBuf));
-	
 	m_recvLen = 0;
-
 	//status
 	m_nLinkStatus = LS_UNINITIALIZE;
 }
-CTcpAcceptImpl::~CTcpAcceptImpl()
+CTcpAccept::~CTcpAccept()
 {
 	if (m_server != INVALID_SOCKET)
 	{
@@ -72,13 +69,13 @@ CTcpAcceptImpl::~CTcpAcceptImpl()
 	}
 }
 
-bool CTcpAcceptImpl::Initialize(CZSummerPtr summer)
+bool CTcpAccept::Initialize(ZSummerPtr summer)
 {
 	m_summer = summer;
 	return true;
 }
 
-bool CTcpAcceptImpl::OpenAccept(const char * ip, unsigned short port)
+bool CTcpAccept::OpenAccept(const char * ip, unsigned short port)
 {
 	if (!m_summer)
 	{
@@ -127,7 +124,7 @@ bool CTcpAcceptImpl::OpenAccept(const char * ip, unsigned short port)
 		return false;
 	}
 
-	if (CreateIoCompletionPort((HANDLE)m_server, m_summer->m_impl.m_io, (ULONG_PTR)this, 1) == NULL)
+	if (CreateIoCompletionPort((HANDLE)m_server, m_summer->m_io, (ULONG_PTR)this, 1) == NULL)
 	{
 		LCF("server bind iocp err, ERRCODE=" << WSAGetLastError() << "   ip=" << ip << ", port=" << port);
 		closesocket(m_server);
@@ -135,12 +132,10 @@ bool CTcpAcceptImpl::OpenAccept(const char * ip, unsigned short port)
 		return false;
 	}
 	m_nLinkStatus = LS_ESTABLISHED;
-	memset(&m_handle, 0, sizeof(m_handle));
-	m_handle._type = tagReqHandle::HANDLE_ACCEPT;
 	return true;
 }
 
-bool CTcpAcceptImpl::DoAccept(CTcpSocketPtr & s, const _OnAcceptHandler& handler)
+bool CTcpAccept::DoAccept(CTcpSocketPtr & s, const _OnAcceptHandler& handler)
 {
 	if (m_onAcceptHandler)
 	{
@@ -175,10 +170,14 @@ bool CTcpAcceptImpl::DoAccept(CTcpSocketPtr & s, const _OnAcceptHandler& handler
 		}
 	}
 	m_onAcceptHandler = handler;
+	m_handle._tcpAccept = shared_from_this();
 	return true;
 }
-bool CTcpAcceptImpl::OnIOCPMessage(BOOL bSuccess)
+bool CTcpAccept::OnIOCPMessage(BOOL bSuccess)
 {
+	std::shared_ptr<CTcpAccept> guad(m_handle._tcpAccept);
+	m_handle._tcpAccept.reset();
+
 	_OnAcceptHandler onAccept;
 	onAccept.swap(m_onAcceptHandler);
 	if (bSuccess)
@@ -200,7 +199,7 @@ bool CTcpAcceptImpl::OnIOCPMessage(BOOL bSuccess)
 		int tmp1 = 0;
 		int tmp2 = 0;
 		GetAcceptExSockaddrs(m_recvBuf, m_recvLen, sizeof(SOCKADDR_IN)+16, sizeof(SOCKADDR_IN)+16, &paddr1, &tmp1, &paddr2, &tmp2);
-		m_client->m_impl.AttachSocket(m_socket, inet_ntoa(((sockaddr_in*)paddr2)->sin_addr), ntohs(((sockaddr_in*)paddr2)->sin_port));
+		m_client->AttachSocket(m_socket, inet_ntoa(((sockaddr_in*)paddr2)->sin_addr), ntohs(((sockaddr_in*)paddr2)->sin_port));
 		onAccept(EC_SUCCESS, m_client);
 	}
 	else

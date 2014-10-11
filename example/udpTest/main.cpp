@@ -38,8 +38,7 @@
 //! main文件
 
 #include <signal.h>
-#include <zsummerX/zsummer.h>
-#include <zsummerX/udpsocket.h>
+#include <zsummerX/zsummerX.h>
 #include <log4z/log4z.h>
 #include <proto4z/proto4z.h>
 using namespace std;

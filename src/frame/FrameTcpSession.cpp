@@ -34,9 +34,9 @@
  * (end of COPYRIGHT)
  */
 
-#include <zsummerX/FrameTcpSession.h>
-#include <zsummerX/FrameTcpSessionManager.h>
-#include <zsummerX/FrameMessageDispatch.h>
+#include <zsummerX/frame/FrameTcpSession.h>
+#include <zsummerX/frame/FrameTcpSessionManager.h>
+#include <zsummerX/frame/FrameMessageDispatch.h>
 
 using namespace zsummer::proto4z;
 

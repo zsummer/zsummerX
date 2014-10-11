@@ -65,32 +65,8 @@
     <ClInclude Include="..\include\zsummerX\common\common.h">
       <Filter>include\common</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\zsummerX\tcpaccept.h">
-      <Filter>include\interface</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\zsummerX\tcpsocket.h">
-      <Filter>include\interface</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\zsummerX\udpsocket.h">
-      <Filter>include\interface</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\zsummerX\zsummer.h">
-      <Filter>include\interface</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\zsummerX\timer\timer.h">
       <Filter>include\timer</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\zsummerX\FrameHeader.h">
-      <Filter>include\interface</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\zsummerX\FrameMessageDispatch.h">
-      <Filter>include\interface</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\zsummerX\FrameTcpSession.h">
-      <Filter>include\interface</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\zsummerX\FrameTcpSessionManager.h">
-      <Filter>include\interface</Filter>
     </ClInclude>
     <ClInclude Include="..\include\zsummerX\select\common_impl.h">
       <Filter>include\impl</Filter>
@@ -106,6 +82,12 @@
     </ClInclude>
     <ClInclude Include="..\include\zsummerX\select\select_impl.h">
       <Filter>include\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\zsummerX\frameX.h">
+      <Filter>include\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\zsummerX\zsummerX.h">
+      <Filter>include\interface</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

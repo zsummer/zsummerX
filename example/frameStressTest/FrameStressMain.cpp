@@ -38,9 +38,7 @@
 //! frame module stress test
 //! frame module used 'single sodule', if you need use multi-thread then you can create thread at user-code-layer, and you can look the example 'tcpStressTest'.
 
-#include <zsummerX/FrameHeader.h>
-#include <zsummerX/FrameTcpSessionManager.h>
-#include <zsummerX/FrameMessageDispatch.h>
+#include <zsummerX/frameX.h>
 #include <unordered_map>
 using namespace zsummer::log4z;
 

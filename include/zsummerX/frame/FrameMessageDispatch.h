@@ -39,7 +39,7 @@
 
 #ifndef ZSUMMER_MSG_MANAGER_H_
 #define ZSUMMER_MSG_MANAGER_H_
-#include <zsummerX/FrameHeader.h>
+#include <zsummerX/frame/FrameHeader.h>
 
 
 class CMessageDispatcher

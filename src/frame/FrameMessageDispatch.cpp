@@ -34,8 +34,8 @@
  * (end of COPYRIGHT)
  */
 
-#include <zsummerX/FrameHeader.h>
-#include <zsummerX/FrameMessageDispatch.h>
+#include <zsummerX/frame/FrameHeader.h>
+#include <zsummerX/frame/FrameMessageDispatch.h>
 using namespace zsummer::proto4z;
 
 CMessageDispatcher & CMessageDispatcher::getRef()

@@ -36,72 +36,25 @@
 
 
 /*
- * AUTHORS:  YaweiZhang <yawei_zhang@foxmail.com>
- * VERSION:  2.0.0
- * PURPOSE:  A lightweight C++ library for network.
- * CREATION: 2014.8.19
- * LCHANGE:  -
- * LICENSE:  Expat/MIT License, See Copyright Notice at the begin of this file.
- */
-
-
-/*
  * tencent QQ group:19811947
  * mail: yawei_zhang@foxmail.com
  */
 
+//easy use zsummerX
+//include this file to use the frame 
+
+#ifndef _ZSUMMERX_FRAME_H_
+#define _ZSUMMERX_FRAME_H_
 
 
-// a IO pump class.
-// encapsulate the select / IOCP / EPOLL operate.
-
-#ifndef _ZSUMMERX_ZSUMMER_H_
-#define _ZSUMMERX_ZSUMMER_H_
-
-
-// default in windows use IOCP implementation
-// default in linux use EPOLL LT implementation 
-// default in mac use select implementaion
-// if can't compile on  some other system , you can try compile used ZSUMMERX_USE_SELECT.  It's be force compiled with select implementation.
-#ifdef ZSUMMERX_USE_SELECT
-#include "select/select_impl.h"
-#elif WIN32
-#include "iocp/iocp_impl.h"
-#else
-#include "epoll/epoll_impl.h"
-#endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#include "frame/FrameHeader.h"
+#include "frame/FrameMessageDispatch.h"
+#include "frame/FrameTcpSessionManager.h"
 
 
 
 
 #endif
-
-
-
-
-
-
 
 
 

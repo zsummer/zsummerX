@@ -31,20 +31,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\zsummerX\common\common.h" />
-    <ClInclude Include="..\include\zsummerX\FrameHeader.h" />
-    <ClInclude Include="..\include\zsummerX\FrameMessageDispatch.h" />
-    <ClInclude Include="..\include\zsummerX\FrameTcpSession.h" />
-    <ClInclude Include="..\include\zsummerX\FrameTcpSessionManager.h" />
+    <ClInclude Include="..\include\zsummerX\frameX.h" />
     <ClInclude Include="..\include\zsummerX\iocp\common_impl.h" />
     <ClInclude Include="..\include\zsummerX\iocp\iocp_impl.h" />
     <ClInclude Include="..\include\zsummerX\iocp\tcpaccept_impl.h" />
     <ClInclude Include="..\include\zsummerX\iocp\tcpsocket_impl.h" />
     <ClInclude Include="..\include\zsummerX\iocp\udpsocket_impl.h" />
-    <ClInclude Include="..\include\zsummerX\tcpaccept.h" />
-    <ClInclude Include="..\include\zsummerX\tcpsocket.h" />
     <ClInclude Include="..\include\zsummerX\timer\timer.h" />
-    <ClInclude Include="..\include\zsummerX\udpsocket.h" />
-    <ClInclude Include="..\include\zsummerX\zsummer.h" />
+    <ClInclude Include="..\include\zsummerX\zsummerX.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{06D64BC9-7AD1-40A1-835A-54BCC3ABFE39}</ProjectGuid>

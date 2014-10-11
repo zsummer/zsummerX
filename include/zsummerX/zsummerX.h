@@ -35,19 +35,56 @@
  */
 
 
+/*
+ * AUTHORS:  YaweiZhang <yawei_zhang@foxmail.com>
+ * VERSION:  4.1.0
+ * PURPOSE:  A lightweight C++ library for network.
+ * CREATION: 2014.8.19
+ * LCHANGE:  -
+ * LICENSE:  Expat/MIT License, See Copyright Notice at the begin of this file.
+ */
 
 
-#ifndef _ZSUMMERX_UDPSOCKET_H_
-#define _ZSUMMERX_UDPSOCKET_H_
+/*
+ * tencent QQ group:19811947
+ * mail: yawei_zhang@foxmail.com
+ */
 
-// encapsulate the udp socket  operate.
+
+
+//inlucde this file to use zsummerX
+
+#ifndef _ZSUMMERX_ZSUMMER_H_
+#define _ZSUMMERX_ZSUMMER_H_
+
+
+// default in windows use IOCP implementation
+// default in linux use EPOLL LT implementation 
+// default in mac use select implementaion
+// if can't compile on  some other system , you can try compile used ZSUMMERX_USE_SELECT.  It's be force compiled with select implementation.
 #ifdef ZSUMMERX_USE_SELECT
+#include "select/select_impl.h"
 #include "select/udpsocket_impl.h"
+#include "select/tcpsocket_impl.h"
+#include "select/tcpaccept_impl.h"
 #elif WIN32
+#include "iocp/iocp_impl.h"
+#include "iocp/tcpsocket_impl.h"
 #include "iocp/udpsocket_impl.h"
+#include "iocp/tcpaccept_impl.h"
 #else
+#include "epoll/epoll_impl.h"
+#include "epoll/tcpsocket_impl.h"
 #include "epoll/udpsocket_impl.h"
+#include "epoll/tcpaccept_impl.h"
 #endif
+
+
+
+
+
+
+
 
 
 

@@ -40,10 +40,7 @@
 #ifndef ZSUMMER_HEADER_H_
 #define ZSUMMER_HEADER_H_
 
-#include <zsummerX/zsummer.h>
-#include <zsummerX/tcpaccept.h>
-#include <zsummerX/tcpsocket.h>
-#include <zsummerX/udpsocket.h>
+#include <zsummerX/zsummerX.h>
 
 #include <iostream>
 #include <queue>

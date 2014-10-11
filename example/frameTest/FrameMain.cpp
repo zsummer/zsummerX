@@ -41,9 +41,7 @@
 
 
 
-#include <zsummerX/FrameHeader.h>
-#include <zsummerX/FrameTcpSessionManager.h>
-#include <zsummerX/FrameMessageDispatch.h>
+#include <zsummerX/frameX.h>
 using namespace zsummer::log4z;
 
 //default param

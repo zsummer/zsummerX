@@ -301,6 +301,10 @@ void CTcpSessionManager::SendOrgSessionData(SessionID sID, const char * orgData,
 		return;
 	}
 	iter->second->DoSend(orgData, orgDataLen);
+	//trace log
+	{
+		LOGT("SendOrgSessionData Len=" << orgDataLen << ",binarydata=" << zsummer::log4z::BinaryBlock(orgData, orgDataLen >= 10 ? 10 : orgDataLen));
+	}
 }
 void CTcpSessionManager::SendSessionData(SessionID sID, ProtoID pID, const char * userData, unsigned int userDataLen)
 {
@@ -308,6 +312,10 @@ void CTcpSessionManager::SendSessionData(SessionID sID, ProtoID pID, const char 
 	ws << pID;
 	ws.AppendOriginalData(userData, userDataLen);
 	SendOrgSessionData(sID, ws.GetStream(), ws.GetStreamLen());
+	//trace log
+	{
+		LOGT("SendSessionData ProtoID=" << pID << ",  userDataLen=" << userDataLen);
+	}
 }
 
 

@@ -86,20 +86,20 @@ void MonitorFunc()
 
 //make heartbeat mechanisms.
 //mechanisms: register pulse timer, send pulse proto when timer trigger.  check last remote pulse time when trigger.
-class CStressHeartbeatManager
+class CHeartbeatManager
 {
 public:
-	CStressHeartbeatManager()
+	CHeartbeatManager()
 	{
-		CMessageDispatcher::getRef().RegisterOnSessionEstablished(std::bind(&CStressHeartbeatManager::OnSessionEstablished, this,
+		CMessageDispatcher::getRef().RegisterOnSessionEstablished(std::bind(&CHeartbeatManager::OnSessionEstablished, this,
 			std::placeholders::_1));
-		CMessageDispatcher::getRef().RegisterOnSessionDisconnect(std::bind(&CStressHeartbeatManager::OnSessionDisconnect, this,
+		CMessageDispatcher::getRef().RegisterOnSessionDisconnect(std::bind(&CHeartbeatManager::OnSessionDisconnect, this,
 			std::placeholders::_1));
-		CMessageDispatcher::getRef().RegisterOnSessionPulse(std::bind(&CStressHeartbeatManager::OnSessionPulse, this,
+		CMessageDispatcher::getRef().RegisterOnSessionPulse(std::bind(&CHeartbeatManager::OnSessionPulse, this,
 			std::placeholders::_1, std::placeholders::_2));
-		CMessageDispatcher::getRef().RegisterSessionMessage(S2C_Pulse, std::bind(&CStressHeartbeatManager::OnMsgPulse, this,
+		CMessageDispatcher::getRef().RegisterSessionMessage(S2C_Pulse, std::bind(&CHeartbeatManager::OnMsgPulse, this,
 			std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-		CMessageDispatcher::getRef().RegisterSessionMessage(S2C_Pulse, std::bind(&CStressHeartbeatManager::OnMsgPulse, this,
+		CMessageDispatcher::getRef().RegisterSessionMessage(S2C_Pulse, std::bind(&CHeartbeatManager::OnMsgPulse, this,
 			std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	}
 	
@@ -330,7 +330,7 @@ int main(int argc, char* argv[])
 	CTcpSessionManager::getRef().CreateTimer(5000, MonitorFunc);
 
 	//build heartbeat manager
-	CStressHeartbeatManager statusManager;
+	CHeartbeatManager heartbeatManager;
 
 	//build client and server
 	CStressClientHandler client;

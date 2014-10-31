@@ -131,7 +131,18 @@ namespace zsummer
 						}
 						//erase the pointer from timer queue before call handler.
 						m_queTimer.erase(iter);
-						(*handler)();
+						try
+						{
+							(*handler)();
+						}
+						catch (std::runtime_error e)
+						{
+							LCW("OnTimerHandler have runtime_error exception. err=" << e.what());
+						}
+						catch (...)
+						{
+							LCW("OnTimerHandler have unknown exception.");
+						}
 						delete handler;
 					}
 					

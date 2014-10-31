@@ -112,7 +112,7 @@ AccepterID CTcpSessionManager::AddAcceptor(const tagAcceptorConfigTraits &traits
 	accepter->Initialize(m_summer);
 	if (!accepter->OpenAccept(traits.listenIP.c_str(), traits.listenPort))
 	{
-		LOGE("AddAcceptor OpenAccept Failed. traits=" << traits);
+		LCE("AddAcceptor OpenAccept Failed. traits=" << traits);
 		return InvalidAccepterID;
 	}
 	m_mapAccepterPtr[m_lastAcceptID] = accepter;
@@ -125,18 +125,18 @@ void CTcpSessionManager::OnAcceptNewClient(zsummer::network::ErrorCode ec, CTcpS
 {
 	if (!m_bRunning)
 	{
-		LOGI("shutdown accepter. aID=" << aID);
+		LCI("shutdown accepter. aID=" << aID);
 		return;
 	}
 	auto iter = m_mapAccepterConfig.find(aID);
 	if (iter == m_mapAccepterConfig.end())
 	{
-		LOGE("Unknown AccepterID aID=" << aID);
+		LCE("Unknown AccepterID aID=" << aID);
 		return;
 	}
 	if (ec)
 	{
-		LOGE("DoAccept Result Error. ec=" << ec << ", traits=" << iter->second.first);
+		LCE("DoAccept Result Error. ec=" << ec << ", traits=" << iter->second.first);
 		return;
 	}
 
@@ -163,7 +163,7 @@ void CTcpSessionManager::OnAcceptNewClient(zsummer::network::ErrorCode ec, CTcpS
 
 		if (!checkSucess)
 		{
-			LOGW("Accept New Client Check Whitelist Failed remoteAdress=" << remoteIP << ":" << remotePort
+			LCW("Accept New Client Check Whitelist Failed remoteAdress=" << remoteIP << ":" << remotePort
 				<< ", trais=" << iter->second.first);
 
 			CTcpSocketPtr newclient(new zsummer::network::CTcpSocket);
@@ -173,7 +173,7 @@ void CTcpSessionManager::OnAcceptNewClient(zsummer::network::ErrorCode ec, CTcpS
 		}
 		else
 		{
-			LOGI("Accept New Client Check Whitelist Success remoteAdress=" << remoteIP << ":" << remotePort
+			LCI("Accept New Client Check Whitelist Success remoteAdress=" << remoteIP << ":" << remotePort
 				<< ", trais=" << iter->second.first);
 		}
 	}
@@ -182,12 +182,12 @@ void CTcpSessionManager::OnAcceptNewClient(zsummer::network::ErrorCode ec, CTcpS
 
 	if (iter->second.second.currentLinked >= iter->second.first.maxSessions)
 	{
-		LOGW("Accept New Client. Too Many Sessions And The new socket will closed. remoteAddress=" << remoteIP << ":" << remotePort 
+		LCW("Accept New Client. Too Many Sessions And The new socket will closed. remoteAddress=" << remoteIP << ":" << remotePort 
 			<< ", Aready linked sessions = " << iter->second.second.currentLinked << ", trais=" << iter->second.first);
 	}
 	else
 	{
-		LOGD("Accept New Client. Accept new Sessions. The new socket  remoteAddress=" << remoteIP << ":" << remotePort 
+		LCD("Accept New Client. Accept new Sessions. The new socket  remoteAddress=" << remoteIP << ":" << remotePort 
 			<< ", Aready linked sessions = " << iter->second.second.currentLinked << ", trais=" << iter->second.first);
 		iter->second.second.currentLinked++;
 		iter->second.second.totalAcceptCount++;
@@ -217,7 +217,7 @@ void CTcpSessionManager::KickSession(SessionID sID)
 	auto iter = m_mapTcpSessionPtr.find(sID);
 	if (iter == m_mapTcpSessionPtr.end())
 	{
-		LOGW("KickSession NOT FOUND SessionID. SessionID=" << sID);
+		LCW("KickSession NOT FOUND SessionID. SessionID=" << sID);
 		return;
 	}
 	iter->second->Close();
@@ -254,7 +254,7 @@ void CTcpSessionManager::OnConnect(SessionID cID, bool bConnected, CTcpSessionPt
 	auto config = m_mapConnectorConfig.find(cID);
 	if (config == m_mapConnectorConfig.end())
 	{
-		LOGE("Unkwon Connector. Not Found ConnectorID=" << cID);
+		LCE("Unkwon Connector. Not Found ConnectorID=" << cID);
 		return;
 	}
 	if (bConnected)
@@ -283,11 +283,11 @@ void CTcpSessionManager::OnConnect(SessionID cID, bool bConnected, CTcpSessionPt
 		CTcpSocketPtr sockPtr(new zsummer::network::CTcpSocket());
 		sockPtr->Initialize(m_summer);
 		CreateTimer(config->second.first.reconnectInterval, std::bind(&CTcpSession::BindTcpConnectorPtr, session, sockPtr, config->second));
-		LOGW("Try reconnect current count=" << config->second.second.curReconnectCount << ", total reconnect = " << config->second.second.totalConnectCount << ". Traits=" << config->second.first);
+		LCW("Try reconnect current count=" << config->second.second.curReconnectCount << ", total reconnect = " << config->second.second.totalConnectCount << ". Traits=" << config->second.first);
 	}
 	else if (config->second.first.reconnectMaxCount > 0 && m_bRunning)
 	{
-		LOGE("Try Reconnect Failed. End Try. Traits=" << config->second.first);
+		LCE("Try Reconnect Failed. End Try. Traits=" << config->second.first);
 	}
 }
 
@@ -297,13 +297,13 @@ void CTcpSessionManager::SendOrgSessionData(SessionID sID, const char * orgData,
 	auto iter = m_mapTcpSessionPtr.find(sID);
 	if (iter == m_mapTcpSessionPtr.end())
 	{
-		LOGW("SendOrgSessionData NOT FOUND SessionID.  SessionID=" << sID);
+		LCW("SendOrgSessionData NOT FOUND SessionID.  SessionID=" << sID);
 		return;
 	}
 	iter->second->DoSend(orgData, orgDataLen);
 	//trace log
 	{
-		LOGT("SendOrgSessionData Len=" << orgDataLen << ",binarydata=" << zsummer::log4z::BinaryBlock(orgData, orgDataLen >= 10 ? 10 : orgDataLen));
+		LCT("SendOrgSessionData Len=" << orgDataLen << ",binarydata=" << zsummer::log4z::BinaryBlock(orgData, orgDataLen >= 10 ? 10 : orgDataLen));
 	}
 }
 void CTcpSessionManager::SendSessionData(SessionID sID, ProtoID pID, const char * userData, unsigned int userDataLen)
@@ -314,7 +314,7 @@ void CTcpSessionManager::SendSessionData(SessionID sID, ProtoID pID, const char 
 	SendOrgSessionData(sID, ws.GetStream(), ws.GetStreamLen());
 	//trace log
 	{
-		LOGT("SendSessionData ProtoID=" << pID << ",  userDataLen=" << userDataLen);
+		LCT("SendSessionData ProtoID=" << pID << ",  userDataLen=" << userDataLen);
 	}
 }
 

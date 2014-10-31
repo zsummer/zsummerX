@@ -150,7 +150,18 @@ void ZSummer::RunOnce()
 			for (auto pfunc : msgs)
 			{
 				_OnPostHandler * p = (_OnPostHandler*)pfunc;
-				(*p)();
+				try
+				{
+					(*p)();
+				}
+				catch (std::runtime_error e)
+				{
+					LCW("OnPostHandler have runtime_error exception. err=" << e.what());
+				}
+				catch (...)
+				{
+					LCW("OnPostHandler have unknown exception.");
+				}
 				delete p;
 			}
 		}

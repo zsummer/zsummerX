@@ -67,7 +67,18 @@ void ZSummer::RunOnce()
 	if (uComKey == PCK_USER_DATA)
 	{
 		_OnPostHandler * func = (_OnPostHandler*) pOverlapped;
-		(*func)();
+		try
+		{
+			(*func)();
+		}
+		catch (std::runtime_error e)
+		{
+			LCW("OnPostHandler have runtime_error exception. err=" << e.what());
+		}
+		catch (...)
+		{
+			LCW("OnPostHandler have unknown exception.");
+		}
 		delete func;
 		return;
 	}

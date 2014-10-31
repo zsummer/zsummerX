@@ -60,7 +60,7 @@ CTcpSession::~CTcpSession()
 		m_freeCache.pop();
 	}
 	m_sockptr.reset();
-	LOGI("~CTcpSession. global totalCreatedCTcpSocketObjs=" << zsummer::network::g_appEnvironment.GetCreatedSocketCount() << ", _g_totalClosedCTcpSocketObjs=" << zsummer::network::g_appEnvironment.GetClosedSocketCount());
+	LCI("~CTcpSession. global totalCreatedCTcpSocketObjs=" << zsummer::network::g_appEnvironment.GetCreatedSocketCount() << ", _g_totalClosedCTcpSocketObjs=" << zsummer::network::g_appEnvironment.GetClosedSocketCount());
 }
 void CTcpSession::CleanSession(bool isCleanAllData)
 {
@@ -95,7 +95,7 @@ bool CTcpSession::BindTcpSocketPrt(CTcpSocketPtr sockptr, AccepterID aID, Sessio
 	m_pulseInterval = traits.pulseInterval;
 	if (!DoRecv())
 	{
-		LOGW("BindTcpSocketPrt Failed.");
+		LCW("BindTcpSocketPrt Failed.");
 		return false;
 	}
 	if (traits.pulseInterval > 0)
@@ -118,10 +118,10 @@ void CTcpSession::BindTcpConnectorPtr(CTcpSocketPtr sockptr, const std::pair<tag
 		std::bind(&CTcpSession::OnConnected, shared_from_this(), std::placeholders::_1, config));
 	if (!connectRet)
 	{
-		LOGE("DoConnected Failed: traits=" << config.first);
+		LCE("DoConnected Failed: traits=" << config.first);
 		return ;
 	}
-	LOGI("DoConnected : traits=" << config.first);
+	LCI("DoConnected : traits=" << config.first);
 	return ;
 }
 
@@ -132,13 +132,13 @@ void CTcpSession::OnConnected(zsummer::network::ErrorCode ec, const std::pair<ta
 {
 	if (ec)
 	{
-		LOGW("OnConnected failed. ec=" << ec 
+		LCW("OnConnected failed. ec=" << ec 
 			<< ",  config=" << config.first);
 		m_sockptr.reset();
 		CTcpSessionManager::getRef().OnConnect(config.second.cID, false, shared_from_this());
 		return;
 	}
-	LOGI("OnConnected success.  config=" << config.first);
+	LCI("OnConnected success.  config=" << config.first);
 	
 	if (!DoRecv())
 	{
@@ -182,7 +182,7 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 {
 	if (ec)
 	{
-		LOGD("remote socket closed");
+		LCD("remote socket closed");
 		OnClose();
 		return;
 	}
@@ -202,7 +202,7 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 			if (ret.first == zsummer::proto4z::IRT_CORRUPTION
 				|| (ret.first == zsummer::proto4z::IRT_SHORTAGE && ret.second + m_recving.bufflen > SEND_RECV_CHUNK_SIZE))
 			{
-				LOGT("killed socket: CheckBuffIntegrity error ");
+				LCT("killed socket: CheckBuffIntegrity error ");
 				m_sockptr->DoClose();
 				OnClose();
 				return;
@@ -216,7 +216,7 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 				bool bOrgReturn  = CMessageDispatcher::getRef().DispatchOrgSessionMessage(m_sessionID, m_recving.buff + usedIndex, ret.second);
 				if (!bOrgReturn)
 				{
-					LOGW("Dispatch Message failed. ");
+					LCW("Dispatch Message failed. ");
 					continue;
 				}
 				ReadStreamPack rs(m_recving.buff + usedIndex, ret.second);
@@ -226,7 +226,7 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 			}
 			catch (std::runtime_error e)
 			{
-				LOGW("MessageEntry catch one exception: " << e.what());
+				LCW("MessageEntry catch one exception: " << e.what());
 				m_sockptr->DoClose();
 				OnClose();
 				return;
@@ -242,7 +242,7 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 				head, body, usedLen);
 			if (ret == zsummer::proto4z::IRT_CORRUPTION)
 			{
-				LOGT("killed socket: CheckHTTPBuffIntegrity error ");
+				LCT("killed socket: CheckHTTPBuffIntegrity error ");
 				m_sockptr->DoClose();
 				OnClose();
 				return;
@@ -253,7 +253,7 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 			}
 			if (CMessageDispatcher::getRef().DispatchSessionHTTPMessage(m_sessionID, head, body))
 			{
-				LOGT("killed socket: DispatchSessionHTTPMessage error ");
+				LCT("killed socket: DispatchSessionHTTPMessage error ");
 				m_sockptr->DoClose();
 				OnClose();
 				return;
@@ -310,7 +310,7 @@ void CTcpSession::DoSend(const char *buf, unsigned int len)
 		bool sendRet = m_sockptr->DoSend(m_sending.buff, m_sending.bufflen, std::bind(&CTcpSession::OnSend, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
 		if (!sendRet)
 		{
-			LOGW("Send Failed");
+			LCW("Send Failed");
 		}
 	}
 }
@@ -320,7 +320,7 @@ void CTcpSession::OnSend(zsummer::network::ErrorCode ec, int nSentLen)
 {
 	if (ec)
 	{
-		LOGD("remote socket closed");
+		LCD("remote socket closed");
 		return ;
 	}
 	m_sendingCurIndex += nSentLen;
@@ -329,7 +329,7 @@ void CTcpSession::OnSend(zsummer::network::ErrorCode ec, int nSentLen)
 		bool sendRet = m_sockptr->DoSend(m_sending.buff + m_sendingCurIndex, m_sending.bufflen - m_sendingCurIndex, std::bind(&CTcpSession::OnSend, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
 		if (!sendRet)
 		{
-			LOGW("Send Failed");
+			LCW("Send Failed");
 			return;
 		}
 		
@@ -362,7 +362,7 @@ void CTcpSession::OnSend(zsummer::network::ErrorCode ec, int nSentLen)
 			bool sendRet = m_sockptr->DoSend(m_sending.buff, m_sending.bufflen, std::bind(&CTcpSession::OnSend, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
 			if (!sendRet)
 			{
-				LOGW("Send Failed");
+				LCW("Send Failed");
 				return;
 			}
 		}
@@ -381,7 +381,7 @@ void CTcpSession::OnHeartbeat()
 
 void CTcpSession::OnClose()
 {
-	LOGI("Client Closed!");
+	LCI("Client Closed!");
 	m_sockptr.reset();
 	if (m_pulseTimerID != zsummer::network::InvalidTimerID)
 	{

@@ -76,7 +76,7 @@ public:
 public:
 	//send original data. can repeat call because it's used send queue in internal implementation.
 	void SendOrgSessionData(SessionID sID, const char * orgData, unsigned int orgDataLen);
-	//send logic data with protocol id 
+	//send LCIc data with protocol id 
 	void SendSessionData(SessionID sID, ProtoID pID, const char * userData, unsigned int userDataLen);
 
 	//close session socket.

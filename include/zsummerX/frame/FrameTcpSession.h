@@ -67,7 +67,7 @@ public:
 	void Close();
 	SessionID GetAcceptID(){ return m_acceptID; }
 private:
-	void CleanSession(bool isCleanAllData);
+	void CleanSession(bool isCleanAllData, std::string rc4TcpEncryption);
 
 	bool DoRecv();
 
@@ -77,7 +77,7 @@ private:
 	
 	void OnSend(zsummer::network::ErrorCode ec, int nSentLen);
 
-	void OnHeartbeat();
+	void OnPulseTimer();
 	
 	void OnClose();
 
@@ -100,15 +100,19 @@ private:
 	MessageChunk m_recving;
 	MessageChunk m_sending;
 	unsigned int m_sendingCurIndex = 0;
-	//! 
+
+	//! send data queue
 	std::queue<MessagePack *> m_sendque;
 	std::queue<MessagePack *> m_freeCache;
 
-	//! 
+	//! rc encrypt
 	std::string m_rc4Encrypt;
 	CRC4Encryption m_rc4StateRead;
 	CRC4Encryption m_rc4StateWrite;
 
+	//! flash policy 
+	bool m_bFirstRecvData = true;
+	bool m_bOpenFlashPolicy = false;
 };
 
 #endif

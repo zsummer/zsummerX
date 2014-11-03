@@ -57,7 +57,7 @@ public:
 	inline void RegisterSessionMessage(ProtoID protocolID, const OnMessageFunction & msgfun){ m_mapSessionDispatch[protocolID].push_back(msgfun); }
 	inline void RegisterSessionDefaultMessage(const OnMessageFunction & msgfun){ m_vctDefaultSessionDispatch.push_back(msgfun); }
 
-	//event
+	//event. can use method IsSessionID or IsConnectID to resolution who is the sessionID
 	inline void RegisterOnSessionEstablished(const OnSessionEstablished & fun){m_vctOnSessionEstablished.push_back(fun); }
 	inline void RegisterOnSessionDisconnect(const OnSessionDisconnect & fun){ m_vctOnSessionDisconnect.push_back(fun); }
 

@@ -86,6 +86,7 @@ struct tagAcceptorConfigTraits
 	unsigned short listenPort = 81;
 	ProtoType protoType = PT_TCP;
 	std::string rc4TcpEncryption = ""; //empty is not encryption
+	bool openFlashPolicy = false;
 	unsigned int pulseInterval = 30000;
 	unsigned int maxSessions = 5000;
 	std::vector<std::string> whitelistIP;

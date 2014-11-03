@@ -62,18 +62,24 @@ CTcpSession::~CTcpSession()
 	m_sockptr.reset();
 	LCI("~CTcpSession. global totalCreatedCTcpSocketObjs=" << zsummer::network::g_appEnvironment.GetCreatedSocketCount() << ", _g_totalClosedCTcpSocketObjs=" << zsummer::network::g_appEnvironment.GetClosedSocketCount());
 }
-void CTcpSession::CleanSession(bool isCleanAllData)
+void CTcpSession::CleanSession(bool isCleanAllData, std::string rc4TcpEncryption)
 {
 	m_sockptr.reset();
 	m_sessionID = InvalidSeesionID;
 	m_acceptID = InvalidAccepterID;
 	m_pulseTimerID = zsummer::network::InvalidTimerID;
-	m_rc4StateRead.MakeSBox(m_rc4Encrypt);
-	m_rc4StateWrite.MakeSBox(m_rc4Encrypt);
 
 	m_recving.bufflen = 0;
 	m_sending.bufflen = 0;
 	m_sendingCurIndex = 0;
+
+	m_rc4Encrypt = rc4TcpEncryption;
+	m_rc4StateRead.MakeSBox(m_rc4Encrypt);
+	m_rc4StateWrite.MakeSBox(m_rc4Encrypt);
+
+	m_bFirstRecvData = true;
+	m_bOpenFlashPolicy = false;
+
 	if (isCleanAllData)
 	{
 		while (!m_sendque.empty())
@@ -86,13 +92,15 @@ void CTcpSession::CleanSession(bool isCleanAllData)
 
 bool CTcpSession::BindTcpSocketPrt(CTcpSocketPtr sockptr, AccepterID aID, SessionID sID, const tagAcceptorConfigTraits &traits)
 {
-	m_rc4Encrypt = traits.rc4TcpEncryption;
-	CleanSession(true);
+	
+	CleanSession(true, traits.rc4TcpEncryption);
 	m_sockptr = sockptr;
 	m_sessionID = sID;
 	m_acceptID = aID;
 	m_protoType = traits.protoType;
 	m_pulseInterval = traits.pulseInterval;
+	m_bOpenFlashPolicy = traits.openFlashPolicy;
+
 	if (!DoRecv())
 	{
 		LCW("BindTcpSocketPrt Failed.");
@@ -100,15 +108,14 @@ bool CTcpSession::BindTcpSocketPrt(CTcpSocketPtr sockptr, AccepterID aID, Sessio
 	}
 	if (traits.pulseInterval > 0)
 	{
-		m_pulseTimerID = CTcpSessionManager::getRef().CreateTimer(traits.pulseInterval, std::bind(&CTcpSession::OnHeartbeat, shared_from_this()));
+		m_pulseTimerID = CTcpSessionManager::getRef().CreateTimer(traits.pulseInterval, std::bind(&CTcpSession::OnPulseTimer, shared_from_this()));
 	}
 	return true;
 }
 
 void CTcpSession::BindTcpConnectorPtr(CTcpSocketPtr sockptr, const std::pair<tagConnctorConfigTraits, tagConnctorInfo> & config)
 {
-	m_rc4Encrypt = config.first.rc4TcpEncryption;
-	CleanSession(config.first.reconnectCleanAllData);
+	CleanSession(config.first.reconnectCleanAllData, config.first.rc4TcpEncryption);
 	m_sockptr = sockptr;
 	m_sessionID = config.second.cID;
 	m_protoType = config.first.protoType;
@@ -147,7 +154,7 @@ void CTcpSession::OnConnected(zsummer::network::ErrorCode ec, const std::pair<ta
 	}
 	if (m_pulseInterval > 0)
 	{
-		m_pulseTimerID = CTcpSessionManager::getRef().CreateTimer(config.first.pulseInterval, std::bind(&CTcpSession::OnHeartbeat, shared_from_this()));
+		m_pulseTimerID = CTcpSessionManager::getRef().CreateTimer(config.first.pulseInterval, std::bind(&CTcpSession::OnPulseTimer, shared_from_this()));
 	}
 	
 	
@@ -186,11 +193,55 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 		OnClose();
 		return;
 	}
-	if (!m_rc4Encrypt.empty())
-	{
-		m_rc4StateRead.RC4Encryption((unsigned char*)m_recving.buff + m_recving.bufflen, nRecvedLen);
-	}
 	m_recving.bufflen += nRecvedLen;
+
+	// skip encrypt the flash policy data if that open flash policy.
+	// skip encrypt when the rc4 encrypt sbox is empty.
+	{
+		unsigned int encryptBegin = 0;
+		do 
+		{
+			//process something when recv first data.
+			// flash policy process
+			const char * flashPolicyRequestString = "<policy-file-request/>"; //string length is 23 byte, contain null-terminator character.
+			unsigned int flashPolicyRequestSize = 23;
+			if (m_bFirstRecvData && m_bOpenFlashPolicy && m_acceptID != InvalidAccepterID && m_recving.bufflen >= flashPolicyRequestSize)
+			{
+				std::string tmp;
+				tmp.assign(m_recving.buff, flashPolicyRequestSize-1);
+				if (tmp.compare(flashPolicyRequestString) == 0)
+				{
+					m_recving.bufflen -= flashPolicyRequestSize;
+					memmove(m_recving.buff, m_recving.buff + flashPolicyRequestSize, m_recving.bufflen);
+
+					const char * flashPolicyResponseString = R"---(<cross-domain-policy><allow-access-from domain="*" to-ports="*"/></cross-domain-policy>)---";
+					unsigned int flashPolicyResponseSize = (unsigned int)strlen(flashPolicyResponseString)+1;
+					DoSend(flashPolicyResponseString, flashPolicyResponseSize);
+				}
+				m_bFirstRecvData = false;
+			}
+			else if (m_bFirstRecvData)
+			{
+				//do other something.
+
+				//do other something end.
+				m_bFirstRecvData = false;
+			}
+			
+			if (m_rc4Encrypt.empty() || m_recving.bufflen == 0)
+			{
+				break;
+			}
+			
+			unsigned int needEncry = nRecvedLen;
+			if (m_recving.bufflen < (unsigned int)nRecvedLen)
+			{
+				needEncry = m_recving.bufflen;
+			}
+			m_rc4StateRead.RC4Encryption((unsigned char*)m_recving.buff + m_recving.bufflen - needEncry, needEncry);
+		} while (0);
+		
+	}
 
 	//分包
 	unsigned int usedIndex = 0;
@@ -369,14 +420,14 @@ void CTcpSession::OnSend(zsummer::network::ErrorCode ec, int nSentLen)
 	}
 }
 
-void CTcpSession::OnHeartbeat()
+void CTcpSession::OnPulseTimer()
 {
 	CMessageDispatcher::getRef().DispatchOnSessionPulse(m_sessionID, m_pulseInterval);
 	if (m_pulseTimerID == zsummer::network::InvalidTimerID || m_pulseInterval == 0)
 	{
 		return;
 	}
-	m_pulseTimerID = CTcpSessionManager::getRef().CreateTimer(m_pulseInterval, std::bind(&CTcpSession::OnHeartbeat, shared_from_this()));
+	m_pulseTimerID = CTcpSessionManager::getRef().CreateTimer(m_pulseInterval, std::bind(&CTcpSession::OnPulseTimer, shared_from_this()));
 }
 
 void CTcpSession::OnClose()

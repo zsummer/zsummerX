@@ -333,10 +333,9 @@ int main(int argc, char* argv[])
 	CHeartbeatManager heartbeatManager;
 
 	//build client and server
-	CStressClientHandler client;
-	CStressServerHandler server;
 	if (g_startType) //client
 	{
+		CStressClientHandler client;
 		//add connector.
 		for (int i = 0; i < g_maxClient; ++i)
 		{
@@ -349,21 +348,26 @@ int main(int argc, char* argv[])
 			traits.pulseInterval = 500000;
 			CTcpSessionManager::getRef().AddConnector(traits);
 		}
+		//running
+		CTcpSessionManager::getRef().Run();
 	}
 	else
 	{
+		CStressServerHandler server;
 		//add acceptor
 		tagAcceptorConfigTraits traits;
 		traits.listenPort = g_remotePort;
 		traits.maxSessions = g_maxClient;
 		traits.rc4TcpEncryption = "yawei.zhang@foxmail.com";
+		//traits.openFlashPolicy = true;
 		traits.pulseInterval = 500000;
 		//traits.whitelistIP.push_back("127.0.");
 		CTcpSessionManager::getRef().AddAcceptor(traits);
+		//running
+		CTcpSessionManager::getRef().Run();
 	}
 
-	//running
-	CTcpSessionManager::getRef().Run();
+
 
 	return 0;
 }

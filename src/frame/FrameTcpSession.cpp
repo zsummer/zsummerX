@@ -198,7 +198,6 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 	// skip encrypt the flash policy data if that open flash policy.
 	// skip encrypt when the rc4 encrypt sbox is empty.
 	{
-		unsigned int encryptBegin = 0;
 		do 
 		{
 			//process something when recv first data.

@@ -204,7 +204,7 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 			// flash policy process
 			const char * flashPolicyRequestString = "<policy-file-request/>"; //string length is 23 byte, contain null-terminator character.
 			unsigned int flashPolicyRequestSize = 23;
-			if (m_bFirstRecvData && m_bOpenFlashPolicy && m_acceptID != InvalidAccepterID && m_recving.bufflen >= flashPolicyRequestSize)
+			if (m_bFirstRecvData && m_bOpenFlashPolicy && m_acceptID != InvalidAccepterID && m_recving.bufflen == flashPolicyRequestSize)
 			{
 				std::string tmp;
 				tmp.assign(m_recving.buff, flashPolicyRequestSize-1);

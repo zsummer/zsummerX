@@ -121,6 +121,21 @@ AccepterID CTcpSessionManager::AddAcceptor(const tagAcceptorConfigTraits &traits
 	return m_lastAcceptID;
 }
 
+AccepterID CTcpSessionManager::GetAccepterID(SessionID sID)
+{
+	if (!IsSessionID(sID))
+	{
+		return InvalidAccepterID;
+	}
+	auto founder = m_mapTcpSessionPtr.find(sID);
+	if (founder == m_mapTcpSessionPtr.end())
+	{
+		return InvalidAccepterID;
+	}
+	return founder->second->GetAcceptID();
+}
+
+
 void CTcpSessionManager::OnAcceptNewClient(zsummer::network::ErrorCode ec, CTcpSocketPtr s, CTcpAcceptPtr accepter, AccepterID aID)
 {
 	if (!m_bRunning)

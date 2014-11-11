@@ -72,7 +72,7 @@ public:
 	inline void DispatchOnSessionEstablished(SessionID sID);
 	inline void DispatchOnSessionDisconnect(SessionID sID);
 	inline void DispatchOnSessionPulse(SessionID sID, unsigned int pulseInterval);
-	inline bool DispatchSessionHTTPMessage(SessionID sID, const zsummer::proto4z::HTTPHeadMap &head, const std::string & body);
+	inline bool DispatchSessionHTTPMessage(SessionID sID, const zsummer::proto4z::PairString & commonLine, const zsummer::proto4z::HTTPHeadMap &head, const std::string & body);
 
 	private:
 		//!message
@@ -245,14 +245,15 @@ inline void CMessageDispatcher::DispatchOnSessionPulse(SessionID sID, unsigned i
 }
 
 
-inline bool  CMessageDispatcher::DispatchSessionHTTPMessage(SessionID sID, const zsummer::proto4z::HTTPHeadMap &head, const std::string & body)
+inline bool  CMessageDispatcher::DispatchSessionHTTPMessage(SessionID sID, const zsummer::proto4z::PairString & commonLine, const zsummer::proto4z::HTTPHeadMap &head, const std::string & body)
 {
 	try
 	{
 		for (auto & fun : m_vctSessionHTTPMessage)
 		{
-			LCT("Entry DispatchSessionHTTPMessage  SessionID=" << sID << ", head count=" << head.size() << ", bodySize=" << body.length());
-			if (!fun(sID, head, body))
+			LCT("Entry DispatchSessionHTTPMessage  SessionID=" << sID << ", commond=" << commonLine.first << ", commondValue=" << commonLine.second
+				<< ", head count=" << head.size() << ", bodySize=" << body.length());
+			if (!fun(sID, commonLine, head, body))
 			{
 				return false;
 			}

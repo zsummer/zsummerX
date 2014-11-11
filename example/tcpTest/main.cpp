@@ -145,7 +145,7 @@ void SendOneMsg()
 	if (usedSocket && summer && g_runing)
 	{
 		sprintf(sendBuffer, "%s", "hellow");
-		sendBufferLen = strlen(sendBuffer) + 1;
+		sendBufferLen = (int)strlen(sendBuffer) + 1;
 		usedSocket->DoSend(sendBuffer, sendBufferLen, OnSocketSend);// safe-warning: one socket can't concurrent call this method without wait callback. 
 	}
 }

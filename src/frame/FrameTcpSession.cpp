@@ -285,14 +285,16 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 		}
 		else
 		{
-			zsummer::proto4z::HTTPHeadMap head;
 			std::string body;
 			unsigned int usedLen = 0;
-			auto ret = zsummer::proto4z::CheckHTTPBuffIntegrity(m_recving.buff + usedIndex, m_recving.bufflen - usedIndex, SEND_RECV_CHUNK_SIZE - usedIndex,
-				head, body, usedLen);
+			auto ret = zsummer::proto4z::CheckHTTPBuffIntegrity(m_recving.buff + usedIndex, 
+				m_recving.bufflen - usedIndex, 
+				SEND_RECV_CHUNK_SIZE - usedIndex,
+				m_httpHadHeader, m_httpIsChunked, m_httpCommonLine, m_httpHeader,
+				body, usedLen);
 			if (ret == zsummer::proto4z::IRT_CORRUPTION)
 			{
-				LCT("killed socket: CheckHTTPBuffIntegrity error ");
+				LCT("killed http socket: CheckHTTPBuffIntegrity error sID=" << m_sessionID);
 				m_sockptr->DoClose();
 				OnClose();
 				return;
@@ -301,9 +303,14 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 			{
 				break;
 			}
-			if (CMessageDispatcher::getRef().DispatchSessionHTTPMessage(m_sessionID, head, body))
+			if (!m_httpHadHeader)
 			{
-				LCT("killed socket: DispatchSessionHTTPMessage error ");
+				m_httpHadHeader = true;
+			}
+			
+			if (CMessageDispatcher::getRef().DispatchSessionHTTPMessage(m_sessionID, m_httpCommonLine, m_httpHeader, body))
+			{
+				LCT("killed socket: user request for close.  sID=" << m_sessionID);
 				m_sockptr->DoClose();
 				OnClose();
 				return;

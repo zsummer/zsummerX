@@ -113,6 +113,12 @@ private:
 	//! flash policy 
 	bool m_bFirstRecvData = true;
 	bool m_bOpenFlashPolicy = false;
+
+	//! http status data
+	bool m_httpHadHeader = false;
+	bool m_httpIsChunked = false;
+	zsummer::proto4z::PairString  m_httpCommonLine;
+	zsummer::proto4z::HTTPHeadMap m_httpHeader;
 };
 
 #endif

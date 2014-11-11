@@ -97,37 +97,36 @@ int main(int argc, char* argv[])
 		//callback when connect success.
 		auto connectedfun = [](SessionID cID)
 		{
+//			std::string jsonString = R"---(data={%22uid%22:10001,%22session%22:%220192023a7bbd73250516f069df18b500%22})---";
+			std::string jsonString = R"---(data=)---";
+			jsonString += zsummer::proto4z::urlEncode(std::string(R"---({"uid":10001,"session":"0192023a7bbd73250516f069df18b500"})---"));
+
 			LOGI("send to ConnectorID=" << cID);
 			zsummer::proto4z::WriteHTTP wh;
-			wh.AddHead("Accept", " text/html, application/xhtml+xml, */*");
-			wh.AddHead("Accept-Language", "zh-CN");
-			wh.AddHead("User-Agent", "Mozilla/5.0 ");
-			wh.AddHead("Accept-Encoding", "utf8");
-			wh.AddHead("Host", "www.baidu.com");
-			wh.AddHead("DNT", "1");
-			wh.AddHead("Connection", "Keep-Alive");
-			wh.Get("/");
+// 			wh.AddHead("Accept", " text/html, application/xhtml+xml, */*");
+// 			wh.AddHead("Accept-Language", "zh-CN");
+// 			wh.AddHead("User-Agent", "Mozilla/5.0 ");
+			wh.AddHead("Content-Type", "application/x-www-form-urlencoded");
+//			wh.AddHead("Accept-Encoding", "utf8");
+			wh.AddHead("Host", "10.0.0.197");
+//			wh.AddHead("DNT", "1");
+//			wh.AddHead("Connection", "Keep-Alive");
+			wh.Post("/user/oauth", jsonString);
 			CTcpSessionManager::getRef().SendOrgSessionData(cID, wh.GetStream(), wh.GetStreamLen());
 		};
 
 		//callback when receive http data
-		auto msg_ResultSequence_fun = [](SessionID cID, const zsummer::proto4z::HTTPHeadMap &head, const std::string & body)
+		auto msg_ResultSequence_fun = [](SessionID cID, const zsummer::proto4z::PairString &commondLine, const zsummer::proto4z::HTTPHeadMap &head, const std::string & body)
 		{
-			auto fouder = head.find("RESPONSE");
-			if (fouder == head.end())
+			if (commondLine.second != "200")
 			{
-				LOGE("response error.");
-				return false;
+				LOGI("response false. commond=" << commondLine.first << ", commondvalue=" << commondLine.second);
+				return true;
 			}
-			if (fouder->second != "200")
-			{
-				LOGE("response error. error code=" << fouder->second);
-				return false;
-			}
-			LOGI("response success. content=" << body);
+			LOGI("response success. commond=" << commondLine.first << ", commondvalue=" << commondLine.second << ", content=" << body);
 			//step 3. stop
 			CTcpSessionManager::getRef().Stop();
-			return true;
+			return false;
 		};
 
 		//! register event and message
@@ -151,15 +150,9 @@ int main(int argc, char* argv[])
 	{
 
 		//result when receive http data
-		auto msg_ResultSequence_fun = [](SessionID sID, const zsummer::proto4z::HTTPHeadMap &head, const std::string & body)
+		auto msg_ResultSequence_fun = [](SessionID sID, const zsummer::proto4z::PairString &commondLine, const zsummer::proto4z::HTTPHeadMap &head, const std::string & body)
 		{
-			auto fouder = head.find("GET");
-			if (fouder == head.end())
-			{
-				LOGE("not found GET.");
-				return false;
-			}
-			LOGI("GET  content=" << fouder->second);
+			LOGI("recv request. commond=" << commondLine.first << ", commondvalue=" << commondLine.second);
 			zsummer::proto4z::WriteHTTP wh;
 			wh.AddHead("Accept", " text/html, application/xhtml+xml, */*");
 			wh.AddHead("Accept-Language", "zh-CN");
@@ -171,7 +164,7 @@ int main(int argc, char* argv[])
 			wh.Response("200", "What's your name ?");
 			CTcpSessionManager::getRef().SendOrgSessionData( sID, wh.GetStream(), wh.GetStreamLen());
 			//step 3. stop server.
-			CTcpSessionManager::getRef().CreateTimer(1000,std::bind(&CTcpSessionManager::Stop, CTcpSessionManager::getPtr()));
+		//	CTcpSessionManager::getRef().CreateTimer(1000,std::bind(&CTcpSessionManager::Stop, CTcpSessionManager::getPtr()));
 			return false;
 		};
 

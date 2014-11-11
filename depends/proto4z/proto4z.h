@@ -66,6 +66,9 @@
  *  Add genProto tools
  * VERSION 1.0.0 <DATE: 2014.08.20>
  *  Add HTTP proto
+ * VERSION 1.1.0 <DATE: 2014.11.11>
+ *  support http chunked header
+ *  support http decode and encode method
  * 
  */
 #pragma once
@@ -167,7 +170,7 @@ inline ZSummer_EndianType __LocalEndianType();
 //////////////////////////////////////////////////////////////////////////
 
 
-enum INTEGRITY_RET_TYPE : unsigned char
+enum INTEGRITY_RET_TYPE
 {
 	IRT_SUCCESS = 0,
 	IRT_SHORTAGE = 1,
@@ -1130,8 +1133,9 @@ private:
 inline std::string urlEncode(const std::string & orgString)
 {
 	std::string ret;
-	for (auto  ch : orgString)
+	for (int i = 0; i < orgString.length(); ++i)
 	{
+		char ch = orgString[i];
 		if (ch == '\0')
 		{
 			break;

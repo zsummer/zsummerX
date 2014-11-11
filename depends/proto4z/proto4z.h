@@ -962,7 +962,7 @@ ReadStream<StreamHeadTrait>::ReadStream(const char *pAttachData, Integer attachD
 template<class StreamHeadTrait>
 inline void ReadStream<StreamHeadTrait>::CheckMoveCursor(Integer unit)
 {
-	if (m_cursor >= m_maxDataLen)
+	if (m_cursor > m_maxDataLen)
 	{
 		throw std::runtime_error("bound over. cursor in end-of-data.");
 	}

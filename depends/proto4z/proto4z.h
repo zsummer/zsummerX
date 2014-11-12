@@ -1133,7 +1133,7 @@ private:
 inline std::string urlEncode(const std::string & orgString)
 {
 	std::string ret;
-	for (int i = 0; i < orgString.length(); ++i)
+	for (int i = 0; i < (int)orgString.length(); ++i)
 	{
 		char ch = orgString[i];
 		if (ch == '\0')
@@ -1218,7 +1218,7 @@ inline unsigned int InnerReadLine(const char * buff, unsigned int curBuffLen, un
 	
 	unsigned int cursor = 0;
 	short readStatus = 0;
-	unsigned char isIntegrityData = IRT_SHORTAGE;
+	INTEGRITY_RET_TYPE isIntegrityData = IRT_SHORTAGE;
 
 	outStringKey.clear();
 	outStringValue.clear();
@@ -1305,6 +1305,7 @@ inline INTEGRITY_RET_TYPE CheckHTTPBuffIntegrity(const char * buff, unsigned int
 		isChunked = false;
 	}
 	int bodyLenght = -1;
+	usedCount = 0;
 	PairString keyValue;
 
 	//extract head

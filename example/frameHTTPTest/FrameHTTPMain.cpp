@@ -121,12 +121,14 @@ int main(int argc, char* argv[])
 			if (commondLine.second != "200")
 			{
 				LOGI("response false. commond=" << commondLine.first << ", commondvalue=" << commondLine.second);
-				return true;
+				CTcpSessionManager::getRef().KickSession(cID);
+				return ;
 			}
 			LOGI("response success. commond=" << commondLine.first << ", commondvalue=" << commondLine.second << ", content=" << body);
+			CTcpSessionManager::getRef().KickSession(cID);
 			//step 3. stop
-			CTcpSessionManager::getRef().Stop();
-			return false;
+			//CTcpSessionManager::getRef().Stop();
+			return ;
 		};
 
 		//! register event and message
@@ -163,9 +165,10 @@ int main(int argc, char* argv[])
 			wh.AddHead("Connection", "Keep-Alive");
 			wh.Response("200", "What's your name ?");
 			CTcpSessionManager::getRef().SendOrgSessionData( sID, wh.GetStream(), wh.GetStreamLen());
+			CTcpSessionManager::getRef().CreateTimer(2000, std::bind(&CTcpSessionManager::KickSession, CTcpSessionManager::getPtr(), sID));
 			//step 3. stop server.
 		//	CTcpSessionManager::getRef().CreateTimer(1000,std::bind(&CTcpSessionManager::Stop, CTcpSessionManager::getPtr()));
-			return false;
+			return ;
 		};
 
 		//! register message

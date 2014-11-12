@@ -166,7 +166,7 @@ typedef std::function < void(SessionID) > OnSessionEstablished;
 typedef std::function < void(SessionID) > OnSessionDisconnect;
 
 //register http proto message 
-typedef std::function < bool(SessionID, const zsummer::proto4z::PairString &, const zsummer::proto4z::HTTPHeadMap& /*head*/, const std::string & /*body*/) > OnHTTPMessageFunction;
+typedef std::function < void (SessionID, const zsummer::proto4z::PairString &, const zsummer::proto4z::HTTPHeadMap& /*head*/, const std::string & /*body*/) > OnHTTPMessageFunction;
 
 //register pulse timer .  you can register this to implement heartbeat . 
 typedef std::function < void(SessionID, unsigned int/*pulse interval*/) > OnSessionPulseTimer;

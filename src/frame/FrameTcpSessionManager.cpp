@@ -299,11 +299,15 @@ void CTcpSessionManager::OnConnect(SessionID cID, bool bConnected, CTcpSessionPt
 		sockPtr->Initialize(m_summer);
 		CreateTimer(config->second.first.reconnectInterval, std::bind(&CTcpSession::BindTcpConnectorPtr, session, sockPtr, config->second));
 		LCW("Try reconnect current count=" << config->second.second.curReconnectCount << ", total reconnect = " << config->second.second.totalConnectCount << ". Traits=" << config->second.first);
+		return;//try reconnect
 	}
-	else if (config->second.first.reconnectMaxCount > 0 && m_bRunning)
+	
+	if (config->second.first.reconnectMaxCount > 0 && m_bRunning)
 	{
 		LCE("Try Reconnect Failed. End Try. Traits=" << config->second.first);
 	}
+	//connect faild . clean data
+	m_mapConnectorConfig.erase(config);
 }
 
 

@@ -253,10 +253,7 @@ inline bool  CMessageDispatcher::DispatchSessionHTTPMessage(SessionID sID, const
 		{
 			LCT("Entry DispatchSessionHTTPMessage  SessionID=" << sID << ", commond=" << commonLine.first << ", commondValue=" << commonLine.second
 				<< ", head count=" << head.size() << ", bodySize=" << body.length());
-			if (!fun(sID, commonLine, head, body))
-			{
-				return false;
-			}
+			fun(sID, commonLine, head, body);
 			LCT("Leave DispatchSessionHTTPMessage  SessionID=" << sID);
 		}
 		return true;

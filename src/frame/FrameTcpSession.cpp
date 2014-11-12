@@ -45,10 +45,15 @@ using namespace zsummer::proto4z;
 
 CTcpSession::CTcpSession()
 {
+	zsummer::network::g_appEnvironment.AddCreatedSessionCount();
+	LCI("CTcpSession. total CTcpSocket object count =[create:" << zsummer::network::g_appEnvironment.GetCreatedSocketCount() << ", close:" << zsummer::network::g_appEnvironment.GetClosedSocketCount() << "], total CTcpSession object count =[create:"
+		<< zsummer::network::g_appEnvironment.GetCreatedSessionCount() << ", close:" << zsummer::network::g_appEnvironment.GetClosedSessionCount()
+		<< "]");
 }
 
 CTcpSession::~CTcpSession()
 {
+	zsummer::network::g_appEnvironment.AddClosedSessionCount();
 	while (!m_sendque.empty())
 	{
 		delete m_sendque.front();
@@ -60,7 +65,9 @@ CTcpSession::~CTcpSession()
 		m_freeCache.pop();
 	}
 	m_sockptr.reset();
-	LCI("~CTcpSession. global totalCreatedCTcpSocketObjs=" << zsummer::network::g_appEnvironment.GetCreatedSocketCount() << ", _g_totalClosedCTcpSocketObjs=" << zsummer::network::g_appEnvironment.GetClosedSocketCount());
+	LCI("~CTcpSession. total CTcpSocket object count =[create:" << zsummer::network::g_appEnvironment.GetCreatedSocketCount() << ", close:" << zsummer::network::g_appEnvironment.GetClosedSocketCount() << "], total CTcpSession object count =[create:"
+		<< zsummer::network::g_appEnvironment.GetCreatedSessionCount() << ", close:" << zsummer::network::g_appEnvironment.GetClosedSessionCount()
+		<< "]");
 }
 void CTcpSession::CleanSession(bool isCleanAllData, std::string rc4TcpEncryption)
 {
@@ -308,13 +315,7 @@ void CTcpSession::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 				m_httpHadHeader = true;
 			}
 			
-			if (CMessageDispatcher::getRef().DispatchSessionHTTPMessage(m_sessionID, m_httpCommonLine, m_httpHeader, body))
-			{
-				LCT("killed socket: user request for close.  sID=" << m_sessionID);
-				m_sockptr->DoClose();
-				OnClose();
-				return;
-			}
+			CMessageDispatcher::getRef().DispatchSessionHTTPMessage(m_sessionID, m_httpCommonLine, m_httpHeader, body);
 			usedIndex += usedLen;
 		}
 		

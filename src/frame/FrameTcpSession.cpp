@@ -69,7 +69,7 @@ CTcpSession::~CTcpSession()
 		<< zsummer::network::g_appEnvironment.GetCreatedSessionCount() << ", close:" << zsummer::network::g_appEnvironment.GetClosedSessionCount()
 		<< "]");
 }
-void CTcpSession::CleanSession(bool isCleanAllData, std::string rc4TcpEncryption)
+void CTcpSession::CleanSession(bool isCleanAllData, const std::string &rc4TcpEncryption)
 {
 	m_sockptr.reset();
 	m_sessionID = InvalidSeesionID;
@@ -97,7 +97,7 @@ void CTcpSession::CleanSession(bool isCleanAllData, std::string rc4TcpEncryption
 	}
 }
 
-bool CTcpSession::BindTcpSocketPrt(CTcpSocketPtr sockptr, AccepterID aID, SessionID sID, const tagAcceptorConfigTraits &traits)
+bool CTcpSession::BindTcpSocketPrt(const CTcpSocketPtr &sockptr, AccepterID aID, SessionID sID, const tagAcceptorConfigTraits &traits)
 {
 	
 	CleanSession(true, traits.rc4TcpEncryption);
@@ -120,7 +120,7 @@ bool CTcpSession::BindTcpSocketPrt(CTcpSocketPtr sockptr, AccepterID aID, Sessio
 	return true;
 }
 
-void CTcpSession::BindTcpConnectorPtr(CTcpSocketPtr sockptr, const std::pair<tagConnctorConfigTraits, tagConnctorInfo> & config)
+void CTcpSession::BindTcpConnectorPtr(const CTcpSocketPtr &sockptr, const std::pair<tagConnctorConfigTraits, tagConnctorInfo> & config)
 {
 	CleanSession(config.first.reconnectCleanAllData, config.first.rc4TcpEncryption);
 	m_sockptr = sockptr;

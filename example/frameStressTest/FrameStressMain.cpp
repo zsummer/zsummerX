@@ -344,7 +344,7 @@ int main(int argc, char* argv[])
 			traits.remotePort = g_remotePort;
 			traits.reconnectInterval = 5000;
 			traits.reconnectMaxCount = 5;
-			traits.rc4TcpEncryption = "yawei.zhang@foxmail.com";
+//			traits.rc4TcpEncryption = "yawei.zhang@foxmail.com";
 			traits.pulseInterval = 500000;
 			CTcpSessionManager::getRef().AddConnector(traits);
 		}
@@ -358,7 +358,7 @@ int main(int argc, char* argv[])
 		tagAcceptorConfigTraits traits;
 		traits.listenPort = g_remotePort;
 		traits.maxSessions = g_maxClient;
-		traits.rc4TcpEncryption = "yawei.zhang@foxmail.com";
+//		traits.rc4TcpEncryption = "yawei.zhang@foxmail.com";
 		//traits.openFlashPolicy = true;
 		traits.pulseInterval = 500000;
 		//traits.whitelistIP.push_back("127.0.");

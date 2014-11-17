@@ -112,12 +112,12 @@ void OnServerSocketRecv(ErrorCode ec, int recvLength)
 	LOGI("recv client msg len = " << recvLength << ", msg :" << recvBuffer);
 	memcpy(sendBuffer, recvBuffer, recvLength);
 	sendBufferLen = recvLength;
-	bool ret = usedSocket->DoSend(sendBuffer, sendBufferLen, OnSocketSend);// safe-warning: can't call this method again when last DoSend request not return. 
+	bool ret = usedSocket->DoSend(sendBuffer, sendBufferLen, std::bind(OnSocketSend, std::placeholders::_1, std::placeholders::_2));// safe-warning: can't call this method again when last DoSend request not return. 
 	if (!ret)
 	{
 		return;
 	}
-	ret = usedSocket->DoRecv(recvBuffer, recvBufferLen, OnServerSocketRecv);
+	ret = usedSocket->DoRecv(recvBuffer, recvBufferLen, std::bind(OnServerSocketRecv, std::placeholders::_1, std::placeholders::_2));
 	if (!ret)
 	{
 		return;
@@ -134,9 +134,9 @@ void OnAcceptSocket(ErrorCode ec, CTcpSocketPtr s)
 	}
 	usedSocket = s;
 	usedSocket->Initialize(summer);
-	usedSocket->DoRecv(recvBuffer, recvBufferLen, OnServerSocketRecv);
+	usedSocket->DoRecv(recvBuffer, recvBufferLen, std::bind(OnServerSocketRecv, std::placeholders::_1, std::placeholders::_2));
 	ts = std::shared_ptr<CTcpSocket>(new CTcpSocket);
-	accepter->DoAccept(ts, OnAcceptSocket);
+	accepter->DoAccept(ts, std::bind(OnAcceptSocket, std::placeholders::_1, std::placeholders::_2));
 };
 
 
@@ -146,7 +146,7 @@ void SendOneMsg()
 	{
 		sprintf(sendBuffer, "%s", "hellow");
 		sendBufferLen = (int)strlen(sendBuffer) + 1;
-		usedSocket->DoSend(sendBuffer, sendBufferLen, OnSocketSend);// safe-warning: one socket can't concurrent call this method without wait callback. 
+		usedSocket->DoSend(sendBuffer, sendBufferLen, std::bind(OnSocketSend, std::placeholders::_1, std::placeholders::_2));// safe-warning: one socket can't concurrent call this method without wait callback. 
 	}
 }
 void OnClientSocektRecv(ErrorCode ec, int recvLength)
@@ -157,8 +157,8 @@ void OnClientSocektRecv(ErrorCode ec, int recvLength)
 		return;
 	}
 	LOGI("recv server msg len = " << recvLength << ", msg :" << recvBuffer);
-	summer->CreateTimer(1000, SendOneMsg);
-	bool ret = usedSocket->DoRecv(recvBuffer, recvBufferLen, OnClientSocektRecv);
+	summer->CreateTimer(1000, std::bind(SendOneMsg));
+	bool ret = usedSocket->DoRecv(recvBuffer, recvBufferLen, std::bind( OnClientSocektRecv, std::placeholders::_1, std::placeholders::_2));
 	if (!ret) { g_runing = false; return; };
 };
 
@@ -171,8 +171,8 @@ void OnConnect(ErrorCode ec)
 		g_runing = false;
 		return;
 	}
-	usedSocket->DoRecv(recvBuffer, recvBufferLen, OnClientSocektRecv);
-	summer->CreateTimer(1000, SendOneMsg);
+	usedSocket->DoRecv(recvBuffer, recvBufferLen, std::bind(OnClientSocektRecv, std::placeholders::_1, std::placeholders::_2));
+	summer->CreateTimer(1000, std::bind(SendOneMsg));
 };
 
 
@@ -233,13 +233,13 @@ int main(int argc, char* argv[])
 			return 0;
 		}
 		
-		accepter->DoAccept(ts, OnAcceptSocket);
+		accepter->DoAccept(ts, std::bind(OnAcceptSocket, std::placeholders::_1, std::placeholders::_2));
 	}
 	else
 	{
 		usedSocket = std::shared_ptr<CTcpSocket>(new CTcpSocket);
 		usedSocket->Initialize(summer);
-		usedSocket->DoConnect(g_remoteIP.c_str(), g_remotePort, OnConnect);
+		usedSocket->DoConnect(g_remoteIP.c_str(), g_remotePort, std::bind(OnConnect, std::placeholders::_1));
 	}
 	
 	while (g_runing)

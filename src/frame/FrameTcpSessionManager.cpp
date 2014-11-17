@@ -136,7 +136,7 @@ AccepterID CTcpSessionManager::GetAccepterID(SessionID sID)
 }
 
 
-void CTcpSessionManager::OnAcceptNewClient(zsummer::network::ErrorCode ec, CTcpSocketPtr s, CTcpAcceptPtr accepter, AccepterID aID)
+void CTcpSessionManager::OnAcceptNewClient(zsummer::network::ErrorCode ec, const CTcpSocketPtr& s, const CTcpAcceptPtr &accepter, AccepterID aID)
 {
 	if (!m_bRunning)
 	{
@@ -264,7 +264,7 @@ SessionID CTcpSessionManager::AddConnector(const tagConnctorConfigTraits & trait
 }
 
 
-void CTcpSessionManager::OnConnect(SessionID cID, bool bConnected, CTcpSessionPtr session)
+void CTcpSessionManager::OnConnect(SessionID cID, bool bConnected, const CTcpSessionPtr &session)
 {
 	auto config = m_mapConnectorConfig.find(cID);
 	if (config == m_mapConnectorConfig.end())

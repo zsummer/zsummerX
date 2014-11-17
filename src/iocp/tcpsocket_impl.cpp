@@ -89,7 +89,7 @@ std::string CTcpSocket::GetTcpSocketImplStatus()
 }
 
 //new socket to connect, or accept established socket
-bool CTcpSocket::Initialize(ZSummerPtr summer)
+bool CTcpSocket::Initialize(const ZSummerPtr& summer)
 {
 	m_summer = summer;
 	if (m_nLinkStatus != LS_UNINITIALIZE)
@@ -144,7 +144,7 @@ typedef  BOOL (PASCAL  *ConnectEx)(  SOCKET s,  const struct sockaddr* name,  in
 			 PVOID lpSendBuffer,  DWORD dwSendDataLength,  LPDWORD lpdwBytesSent,
 			 LPOVERLAPPED lpOverlapped);
 
-bool CTcpSocket::DoConnect(std::string remoteIP, unsigned short remotePort, const _OnConnectHandler & handler)
+bool CTcpSocket::DoConnect(const std::string& remoteIP, unsigned short remotePort, _OnConnectHandler && handler)
 {
 	if (!m_summer)
 	{
@@ -191,7 +191,7 @@ bool CTcpSocket::DoConnect(std::string remoteIP, unsigned short remotePort, cons
 		}
 
 	}
-	m_onConnectHandler = handler;
+	m_onConnectHandler = std::move(handler);
 	m_connectHandle._tcpSocket = shared_from_this();
 	return true;
 }
@@ -199,7 +199,7 @@ bool CTcpSocket::DoConnect(std::string remoteIP, unsigned short remotePort, cons
 
 
 
-bool CTcpSocket::DoSend(char * buf, unsigned int len, const _OnSendHandler &handler)
+bool CTcpSocket::DoSend(char * buf, unsigned int len, _OnSendHandler &&handler)
 {
 	if (m_nLinkStatus != LS_ESTABLISHED)
 	{
@@ -236,13 +236,13 @@ bool CTcpSocket::DoSend(char * buf, unsigned int len, const _OnSendHandler &hand
 			return false;
 		}
 	}
-	m_onSendHandler = handler;
+	m_onSendHandler = std::move(handler);
 	m_sendHandle._tcpSocket = shared_from_this();
 	return true;
 }
 
 
-bool CTcpSocket::DoRecv(char * buf, unsigned int len, const _OnRecvHandler & handler)
+bool CTcpSocket::DoRecv(char * buf, unsigned int len, _OnRecvHandler && handler)
 {
 	if (m_nLinkStatus != LS_ESTABLISHED)
 	{
@@ -282,7 +282,7 @@ bool CTcpSocket::DoRecv(char * buf, unsigned int len, const _OnRecvHandler & han
 			return false;
 		}
 	}
-	m_onRecvHandler = handler;
+	m_onRecvHandler = std::move(handler);
 	m_recvHandle._tcpSocket = shared_from_this();
 	return true;
 }
@@ -291,10 +291,8 @@ void CTcpSocket::OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned char
 {
 	if (cType == tagReqHandle::HANDLE_CONNECT)
 	{
-		_OnConnectHandler onConnect;
-		onConnect.swap(m_onConnectHandler);
-		std::shared_ptr<CTcpSocket> guad(m_connectHandle._tcpSocket);
-		m_connectHandle._tcpSocket.reset();
+		_OnConnectHandler onConnect(std::move(m_onConnectHandler));
+		std::shared_ptr<CTcpSocket> guad(std::move(m_connectHandle._tcpSocket));
 		if (!onConnect)
 		{
 			return;
@@ -323,10 +321,8 @@ void CTcpSocket::OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned char
 
 	if (cType == tagReqHandle::HANDLE_SEND)
 	{
-		_OnSendHandler onSend;
-		onSend.swap(m_onSendHandler);
-		std::shared_ptr<CTcpSocket> guad(m_sendHandle._tcpSocket);
-		m_sendHandle._tcpSocket.reset();
+		_OnSendHandler onSend(std::move(m_onSendHandler));
+		std::shared_ptr<CTcpSocket> guad(std::move(m_sendHandle._tcpSocket));
 		if (!onSend)
 		{
 			return;
@@ -340,10 +336,8 @@ void CTcpSocket::OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned char
 	}
 	else if (cType == tagReqHandle::HANDLE_RECV)
 	{
-		std::shared_ptr<CTcpSocket> guad(m_recvHandle._tcpSocket);
-		m_recvHandle._tcpSocket.reset();
-		_OnRecvHandler onRecv;
-		onRecv.swap(m_onRecvHandler);
+		std::shared_ptr<CTcpSocket> guad(std::move(m_recvHandle._tcpSocket));
+		_OnRecvHandler onRecv(std::move(m_onRecvHandler));
 		if (!onRecv)
 		{
 			return;

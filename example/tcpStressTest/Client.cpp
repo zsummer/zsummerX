@@ -219,7 +219,7 @@ void CClient::MessageEntry(zsummer::proto4z::ReadStream<zsummer::proto4z::Defaul
 
 void CClient::DoSend(unsigned short protocolID, unsigned long long clientTick, const std::string& text)
 {
-	zsummer::proto4z::WriteStream<DefaultStreamHeadTraits> ws;
+	zsummer::proto4z::WriteStream<DefaultStreamHeadTraits> ws(zsummer::proto4z::UBT_STATIC_AUTO);
 	ws << protocolID << clientTick << text;
 	DoSend(ws.GetStream(), ws.GetStreamLen());
 }

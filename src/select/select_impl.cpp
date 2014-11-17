@@ -163,9 +163,9 @@ bool ZSummer::RegisterEvent(int op, tagRegister & reg)
 }
 
 
-void ZSummer::PostMessage(const _OnPostHandler &handle)
+void ZSummer::PostMessage(_OnPostHandler &&handle)
 {
-	_OnPostHandler * pHandler = new _OnPostHandler(handle);
+	_OnPostHandler * pHandler = new _OnPostHandler(std::move(handle));
 	m_stackMessagesLock.lock();
 	m_stackMessages.push_back(pHandler);
 	m_stackMessagesLock.unlock();

@@ -71,7 +71,7 @@ CUdpSocket::~CUdpSocket()
 	}
 }
 
-bool CUdpSocket::Initialize(ZSummerPtr summer, const char *localIP, unsigned short localPort)
+bool CUdpSocket::Initialize(const ZSummerPtr &summer, const char *localIP, unsigned short localPort)
 {
 	if (m_socket != INVALID_SOCKET)
 	{
@@ -145,7 +145,7 @@ bool CUdpSocket::DoSendTo(char * buf, unsigned int len, const char *dstip, unsig
 }
 
 
-bool CUdpSocket::DoRecvFrom(char * buf, unsigned int len, const _OnRecvFromHandler& handler)
+bool CUdpSocket::DoRecvFrom(char * buf, unsigned int len, _OnRecvFromHandler&& handler)
 {
 	if (!m_summer)
 	{
@@ -188,7 +188,7 @@ bool CUdpSocket::DoRecvFrom(char * buf, unsigned int len, const _OnRecvFromHandl
 			return false;
 		}
 	}
-	m_onRecvHander = handler;
+	m_onRecvHander = std::move(handler);
 	m_recvHandle._udpSocket = shared_from_this();
 	return true;
 }
@@ -197,13 +197,11 @@ bool CUdpSocket::OnIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned char
 {
 	if (cType == tagReqHandle::HANDLE_RECVFROM)
 	{
-		std::shared_ptr<CUdpSocket> guad(m_recvHandle._udpSocket);
-		m_recvHandle._udpSocket.reset();
-
+		std::shared_ptr<CUdpSocket> guad(std::move(m_recvHandle._udpSocket));
+		_OnRecvFromHandler onRecv(std::move(m_onRecvHander));
 		m_recvWSABuf.buf = nullptr;
 		m_recvWSABuf.len = 0;
-		_OnRecvFromHandler onRecv;
-		onRecv.swap(m_onRecvHander);
+		
 		if (bSuccess && dwTranceCount > 0)
 		{
 			onRecv(EC_SUCCESS, inet_ntoa(m_recvFrom.sin_addr), ntohs(m_recvFrom.sin_port), dwTranceCount);

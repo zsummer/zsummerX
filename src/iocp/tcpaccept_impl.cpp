@@ -69,7 +69,7 @@ CTcpAccept::~CTcpAccept()
 	}
 }
 
-bool CTcpAccept::Initialize(ZSummerPtr summer)
+bool CTcpAccept::Initialize(ZSummerPtr& summer)
 {
 	m_summer = summer;
 	return true;
@@ -135,7 +135,7 @@ bool CTcpAccept::OpenAccept(const char * ip, unsigned short port)
 	return true;
 }
 
-bool CTcpAccept::DoAccept(CTcpSocketPtr & s, const _OnAcceptHandler& handler)
+bool CTcpAccept::DoAccept(const CTcpSocketPtr & s, _OnAcceptHandler&& handler)
 {
 	if (m_onAcceptHandler)
 	{
@@ -169,17 +169,14 @@ bool CTcpAccept::DoAccept(CTcpSocketPtr & s, const _OnAcceptHandler& handler)
 			return false;
 		}
 	}
-	m_onAcceptHandler = handler;
+	m_onAcceptHandler = std::move(handler);
 	m_handle._tcpAccept = shared_from_this();
 	return true;
 }
 bool CTcpAccept::OnIOCPMessage(BOOL bSuccess)
 {
-	std::shared_ptr<CTcpAccept> guad(m_handle._tcpAccept);
-	m_handle._tcpAccept.reset();
-
-	_OnAcceptHandler onAccept;
-	onAccept.swap(m_onAcceptHandler);
+	std::shared_ptr<CTcpAccept> guad( std::move(m_handle._tcpAccept));
+	_OnAcceptHandler onAccept(std::move(m_onAcceptHandler));
 	if (bSuccess)
 	{
 		{

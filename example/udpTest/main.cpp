@@ -239,9 +239,9 @@ int main(int argc, char* argv[])
 		nLast[2] = g_totalSend;
 		nLast[3] = g_totalRecv;
 
-		summer->CreateTimer(5*1000, doTimer);
+		summer->CreateTimer(5 * 1000, std::bind(doTimer));
 	};
-	summer->CreateTimer(5*1000, doTimer);
+	summer->CreateTimer(5*1000, std::bind(doTimer));
 	do
 	{
 		summer->RunOnce();

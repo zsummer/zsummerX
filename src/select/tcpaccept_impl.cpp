@@ -65,7 +65,7 @@ std::string CTcpAccept::AcceptSection()
 		<< ", m_client=" << m_client.use_count() << "m_register=" << m_register;
 	return os.str();
 }
-bool CTcpAccept::Initialize(ZSummerPtr summer)
+bool CTcpAccept::Initialize(const ZSummerPtr &summer)
 {
 	m_summer = summer;
 	m_register._linkstat = LS_WAITLINK;
@@ -73,7 +73,7 @@ bool CTcpAccept::Initialize(ZSummerPtr summer)
 }
 
 
-bool CTcpAccept::OpenAccept(std::string listenIP, unsigned short listenPort)
+bool CTcpAccept::OpenAccept(const std::string& listenIP, unsigned short listenPort)
 {
 	if (!m_summer)
 	{
@@ -133,7 +133,7 @@ bool CTcpAccept::OpenAccept(std::string listenIP, unsigned short listenPort)
 	return true;
 }
 
-bool CTcpAccept::DoAccept(CTcpSocketPtr &s, const _OnAcceptHandler &handle)
+bool CTcpAccept::DoAccept(const CTcpSocketPtr &s, _OnAcceptHandler && handle)
 {
 	if (m_onAcceptHandler)
 	{
@@ -155,15 +155,14 @@ bool CTcpAccept::DoAccept(CTcpSocketPtr &s, const _OnAcceptHandler &handle)
 		return false;
 	}
 
-	m_onAcceptHandler = handle;
+	m_onAcceptHandler = std::move(handle);
 	m_client = s;
 	
 	return true;
 }
 void CTcpAccept::OnSelectMessage()
 {
-	std::shared_ptr<CTcpAccept> guard(m_register._tcpacceptPtr);
-	m_register._tcpacceptPtr.reset();
+	std::shared_ptr<CTcpAccept> guard(std::move(m_register._tcpacceptPtr));
 
 	if (!m_onAcceptHandler)
 	{
@@ -176,10 +175,9 @@ void CTcpAccept::OnSelectMessage()
 		return ;
 	}
 
-	_OnAcceptHandler onAccept;
-	onAccept.swap(m_onAcceptHandler);
-	CTcpSocketPtr ps(m_client);
-	m_client.reset();
+	_OnAcceptHandler onAccept(std::move(m_onAcceptHandler));
+	CTcpSocketPtr ps(std::move(m_client));
+
 	m_register._rd = false;
 	m_summer->RegisterEvent(1,m_register);
 

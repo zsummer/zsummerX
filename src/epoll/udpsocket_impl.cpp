@@ -66,7 +66,7 @@ CUdpSocket::~CUdpSocket()
 		m_register._fd = -1;
 	}
 }
-bool  CUdpSocket::Initialize(ZSummerPtr summer, const char *localIP, unsigned short localPort)
+bool  CUdpSocket::Initialize(const ZSummerPtr &summer, const char *localIP, unsigned short localPort)
 {
 	if (m_summer)
 	{
@@ -128,7 +128,7 @@ bool CUdpSocket::DoSendTo(char * buf, unsigned int len, const char *dstip, unsig
 }
 
 
-bool CUdpSocket::DoRecvFrom(char * buf, unsigned int len, const _OnRecvFromHandler& handler)
+bool CUdpSocket::DoRecvFrom(char * buf, unsigned int len, _OnRecvFromHandler&& handler)
 {
 	if (!m_summer)
 	{
@@ -164,7 +164,7 @@ bool CUdpSocket::DoRecvFrom(char * buf, unsigned int len, const _OnRecvFromHandl
 		m_iRecvLen = 0;
 		return false;
 	}
-	m_onRecvFromHandler = handler;
+	m_onRecvFromHandler = std::move(handler);
 	m_register._udpsocketPtr = shared_from_this();
 	return true;
 }
@@ -177,8 +177,7 @@ bool CUdpSocket::OnEPOLLMessage(int type, int flag)
 		LCE("CUdpSocket::OnEPOLLMessage[this0x" << this << "] unknown error");
 		return false;
 	}
-	std::shared_ptr<CUdpSocket> guad(m_register._udpsocketPtr);
-	m_register._udpsocketPtr.reset();
+	std::shared_ptr<CUdpSocket> guad(std::move(m_register._udpsocketPtr));
 	if (flag & EPOLLHUP || flag & EPOLLERR)
 	{
 		if (flag & EPOLLHUP)
@@ -191,8 +190,7 @@ bool CUdpSocket::OnEPOLLMessage(int type, int flag)
 		}
 		if (m_onRecvFromHandler)
 		{
-			_OnRecvFromHandler onRecv;
-			onRecv.swap(m_onRecvFromHandler);
+			_OnRecvFromHandler onRecv(std::move(m_onRecvFromHandler));
 			m_pRecvBuf = nullptr;
 			m_iRecvLen = 0;
 			onRecv(EC_ERROR, "", 0, 0);
@@ -202,8 +200,7 @@ bool CUdpSocket::OnEPOLLMessage(int type, int flag)
 
 	if (flag & EPOLLIN && m_onRecvFromHandler)
 	{
-		_OnRecvFromHandler onRecv;
-		onRecv.swap(m_onRecvFromHandler);
+		_OnRecvFromHandler onRecv(std::move(m_onRecvFromHandler));
 		m_register._event.events = m_register._event.events&~EPOLLIN;
 
 		if (!m_summer->RegisterEvent(EPOLL_CTL_MOD, m_register))

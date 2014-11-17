@@ -62,7 +62,7 @@ CUdpSocket::~CUdpSocket()
 		m_register._fd = -1;
 	}
 }
-bool  CUdpSocket::Initialize(ZSummerPtr summer, const char *localIP, unsigned short localPort)
+bool  CUdpSocket::Initialize(const ZSummerPtr & summer, const char *localIP, unsigned short localPort)
 {
 	if (m_summer)
 	{
@@ -124,7 +124,7 @@ bool CUdpSocket::DoSendTo(char * buf, unsigned int len, const char *dstip, unsig
 }
 
 
-bool CUdpSocket::DoRecvFrom(char * buf, unsigned int len, const _OnRecvFromHandler& handler)
+bool CUdpSocket::DoRecvFrom(char * buf, unsigned int len, _OnRecvFromHandler && handler)
 {
 	if (!m_summer)
 	{
@@ -162,7 +162,7 @@ bool CUdpSocket::DoRecvFrom(char * buf, unsigned int len, const _OnRecvFromHandl
 		m_register._udpsocketPtr.reset();
 		return false;
 	}
-	m_onRecvFromHandler = handler;
+	m_onRecvFromHandler = std::move(handler);
 	
 	return true;
 }
@@ -170,8 +170,8 @@ bool CUdpSocket::DoRecvFrom(char * buf, unsigned int len, const _OnRecvFromHandl
 
 bool CUdpSocket::OnSelectMessage(int type, bool rd, bool wt)
 {
-	std::shared_ptr<CUdpSocket> guad(m_register._udpsocketPtr);
-	m_register._udpsocketPtr.reset();
+	std::shared_ptr<CUdpSocket> guad(std::move(m_register._udpsocketPtr));
+
 
 	if (!m_onRecvFromHandler)
 	{
@@ -181,8 +181,7 @@ bool CUdpSocket::OnSelectMessage(int type, bool rd, bool wt)
 
 	if (rd && m_onRecvFromHandler)
 	{
-		_OnRecvFromHandler onRecv;
-		onRecv.swap(m_onRecvFromHandler);
+		_OnRecvFromHandler onRecv(std::move(m_onRecvFromHandler));
 		m_register._rd = false;
 
 		if (!m_summer->RegisterEvent(1, m_register))

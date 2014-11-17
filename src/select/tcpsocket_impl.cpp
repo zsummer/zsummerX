@@ -74,7 +74,7 @@ std::string CTcpSocket::SocketSection()
 	return os.str();
 }
 
-bool CTcpSocket::Initialize(ZSummerPtr summer)
+bool CTcpSocket::Initialize(const ZSummerPtr & summer)
 {
 	 m_summer = summer;
 	if (m_register._linkstat != LS_UNINITIALIZE)
@@ -108,7 +108,7 @@ bool CTcpSocket::Initialize(ZSummerPtr summer)
 
 	return true;
 }
-bool CTcpSocket::AttachSocket(SOCKET s, std::string remoteIP, unsigned short remotePort)
+bool CTcpSocket::AttachSocket(SOCKET s, const std::string& remoteIP, unsigned short remotePort)
 {
 	 m_register._fd = s;
 	 m_remoteIP = remoteIP;
@@ -120,7 +120,7 @@ bool CTcpSocket::AttachSocket(SOCKET s, std::string remoteIP, unsigned short rem
 
 
 
-bool CTcpSocket::DoConnect(std::string remoteIP, unsigned short remotePort, const _OnConnectHandler & handler)
+bool CTcpSocket::DoConnect(const std::string & remoteIP, unsigned short remotePort, _OnConnectHandler && handler)
 {
 	if (!m_summer)
 	{
@@ -165,12 +165,12 @@ bool CTcpSocket::DoConnect(std::string remoteIP, unsigned short remotePort, cons
 		m_register._tcpSocketConnectPtr.reset();
 		return false;
 	}
-	m_onConnectHandler = handler;
+	m_onConnectHandler = std::move(handler);
 	return true;
 }
 
 
-bool CTcpSocket::DoSend(char * buf, unsigned int len, const _OnSendHandler &handler)
+bool CTcpSocket::DoSend(char * buf, unsigned int len, _OnSendHandler && handler)
 {
 	if (m_register._linkstat != LS_ESTABLISHED)
 	{
@@ -216,13 +216,13 @@ bool CTcpSocket::DoSend(char * buf, unsigned int len, const _OnSendHandler &hand
 		DoClose();
 		return false;
 	}
-	m_onSendHandler = handler;
+	m_onSendHandler = std::move(handler);
 	
 	return true;
 }
 
 
-bool CTcpSocket::DoRecv(char * buf, unsigned int len, const _OnRecvHandler & handler)
+bool CTcpSocket::DoRecv(char * buf, unsigned int len, _OnRecvHandler && handler)
 {
 	if (m_register._linkstat != LS_ESTABLISHED)
 	{
@@ -266,7 +266,7 @@ bool CTcpSocket::DoRecv(char * buf, unsigned int len, const _OnRecvHandler & han
 		m_register._tcpSocketRecvPtr.reset();
 		return false;
 	}
-	m_onRecvHandler = handler;
+	m_onRecvHandler = std::move(handler);
 	
 	return true;
 }
@@ -285,10 +285,8 @@ void CTcpSocket::OnSelectMessage(bool rd, bool wt, bool err)
 
 	if (linkstat == LS_WAITLINK)
 	{
-		std::shared_ptr<CTcpSocket> guad(m_register._tcpSocketConnectPtr);
-		m_register._tcpSocketConnectPtr.reset();
-		_OnConnectHandler onConnect;
-		onConnect.swap(m_onConnectHandler);
+		std::shared_ptr<CTcpSocket> guad(std::move(m_register._tcpSocketConnectPtr));
+		_OnConnectHandler onConnect(std::move(m_onConnectHandler));
 		int errCode = 0;
 		socklen_t len = sizeof(int);
 		if (err || getsockopt(m_register._fd, SOL_SOCKET, SO_ERROR, (char*)&errCode, &len) != 0 || errCode != 0)
@@ -313,8 +311,7 @@ void CTcpSocket::OnSelectMessage(bool rd, bool wt, bool err)
 
 	if (rd && m_onRecvHandler)
 	{
-		std::shared_ptr<CTcpSocket> guad(m_register._tcpSocketRecvPtr);
-		m_register._tcpSocketRecvPtr.reset();
+		std::shared_ptr<CTcpSocket> guad(std::move(m_register._tcpSocketRecvPtr));
 
 		int ret = recv(m_register._fd, m_pRecvBuf, m_iRecvLen, 0);
 		m_register._rd = false;
@@ -328,8 +325,7 @@ void CTcpSocket::OnSelectMessage(bool rd, bool wt, bool err)
 			m_register._linkstat = LS_CLOSED;
 			if (rd && m_onRecvHandler)
 			{
-				_OnRecvHandler onRecv;
-				onRecv.swap(m_onRecvHandler);
+				_OnRecvHandler onRecv(std::move(m_onRecvHandler));
 				onRecv(ec, 0);
 			}
 			if (!m_onSendHandler && !m_onRecvHandler)
@@ -343,8 +339,7 @@ void CTcpSocket::OnSelectMessage(bool rd, bool wt, bool err)
 		}
 		else if (ret != -1)
 		{
-			_OnRecvHandler onRecv;
-			onRecv.swap(m_onRecvHandler);
+			_OnRecvHandler onRecv(std::move(m_onRecvHandler));
 			m_pRecvBuf = NULL;
 			m_iRecvLen = 0;
 			onRecv(EC_SUCCESS,ret);
@@ -353,8 +348,7 @@ void CTcpSocket::OnSelectMessage(bool rd, bool wt, bool err)
 	}
 	else if (wt && m_onSendHandler)
 	{
-		std::shared_ptr<CTcpSocket> guad(m_register._tcpSocketSendPtr);
-		m_register._tcpSocketSendPtr.reset();
+		std::shared_ptr<CTcpSocket> guad(std::move(m_register._tcpSocketSendPtr));
 
 		int ret = send(m_register._fd, m_pSendBuf, m_iSendLen, 0);
 		m_register._wt = false;
@@ -379,8 +373,7 @@ void CTcpSocket::OnSelectMessage(bool rd, bool wt, bool err)
 		}
 		else if (ret != -1)
 		{
-			_OnSendHandler onSend;
-			onSend.swap(m_onSendHandler);
+			_OnSendHandler onSend(std::move(m_onSendHandler));
 			m_pSendBuf = NULL;
 			m_iSendLen = 0;
 			onSend(EC_SUCCESS, ret);

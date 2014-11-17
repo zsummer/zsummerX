@@ -152,6 +152,15 @@ void CTcpSessionManager::OnAcceptNewClient(zsummer::network::ErrorCode ec, const
 	if (ec)
 	{
 		LCE("DoAccept Result Error. ec=" << ec << ", traits=" << iter->second.first);
+		
+		CTcpSocketPtr newclient(new zsummer::network::CTcpSocket);
+		newclient->Initialize(m_summer);
+		auto &&handler = std::bind(&CTcpSessionManager::OnAcceptNewClient, this, std::placeholders::_1, std::placeholders::_2, accepter, aID);
+		auto timer = [accepter, newclient, handler]()
+		{
+			accepter->DoAccept(newclient, std::move(handler));
+		};
+		CreateTimer(5000, std::move(timer));
 		return;
 	}
 

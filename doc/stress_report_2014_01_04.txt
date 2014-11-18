@@ -22,7 +22,8 @@ linux     zsummer_11x_tcp   1           9529            0.1049  		15%
 linux     zsummer_11x_udp   1           10348           0.0964      15%  
 
 
-
+###备注
+本次测试因虚拟机测试不当造成系统性能非常低效 造成linux和windows对比数据差距过大
 
 
 ###

@@ -1,6 +1,6 @@
 200字节
 测试平台  			测试对象          			连接数      	echo包速度     	CPU server
-windows I5			asio-ping-pong						1					 		42K           	17
+windows I5			asio-ping-pong						1					 		39K           	17
 
 windows I5			zsummer-ping-pong					1					 		48K           	17
 windows I5			zsummer-ping-pong					5					 		127K           	18
@@ -15,14 +15,24 @@ windows I5			zsummerX-frame-ping-pong	5				 			129K          	22
 windows I5			zsummerX-frame-ping-pong	10				 		140K          	23
 
 windows下的虚拟机 使用两个核心
-debian I5			zsummer-ping-pong					1					 		43K           		15
-debian I5			zsummer-ping-pong					5					 		150K           		-
-debian I5			zsummer-ping-pong					10				 		175K          		-
+debian I5			asio-ping-pong							1					 		46K           		15
 
-debian I5			zsummerX-ping-pong				1				 			42K          			15
-debian I5			zsummerX-ping-pong				5				 			138K          		-
-debian I5			zsummerX-ping-pong				10				 		158K          		-
+debian I5			zsummer-ping-pong						1					 		43K           		15
+debian I5			zsummer-ping-pong						5					 		150K           		-
+debian I5			zsummer-ping-pong						10				 		175K          		-
 
-debian I5			zsummerX-frame-ping-pong	1				 			48K          			15
-debian I5			zsummerX-frame-ping-pong	5				 			152K          		-
-debian I5			zsummerX-frame-ping-pong	10				 		176K          		-
+debian I5			zsummerX-ping-pong					1				 			42K          			15
+debian I5			zsummerX-ping-pong					5				 			138K          		-
+debian I5			zsummerX-ping-pong					10				 		158K          		-
+
+debian I5			zsummerX-frame-ping-pong		1				 			48K          			15
+debian I5			zsummerX-frame-ping-pong		5				 			152K          		-
+debian I5			zsummerX-frame-ping-pong		10				 		176K          		-
+
+debian I5			zsummerX-frame-select				1				 			46K          			15
+debian I5			zsummerX-frame-select				5				 			87K          			-
+debian I5			zsummerX-frame-select				10				 		94K          			-
+
+debian I5			zsummerX-tcp-select					1				 			47K          			15
+debian I5			zsummerX-tcp-select					5				 			83K          			-
+debian I5			zsummerX-tcp-select					10				 		88K          			-

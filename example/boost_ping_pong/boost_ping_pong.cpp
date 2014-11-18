@@ -18,8 +18,7 @@ int main(int argc, char* argv[])
 	char buffSend[PACK_LEN];
 	char buffRecv[PACK_LEN];
 	std::string fillstring;
-	fillstring.resize(1000,'z');
-	std::string textCache;
+	fillstring.resize(200,'z');
 	cout <<"input 1:server, 0:client" << endl;
 	int nServer = 0;
 	cin >> nServer;
@@ -40,8 +39,7 @@ int main(int argc, char* argv[])
 		curSend += trans;
 		if (curSend != totalNeedSend)
 		{
-			client->async_write_some(boost::asio::buffer(buffSend+curSend, totalNeedSend - curSend), 
-					std::bind(onSend, std::placeholders::_1, std::placeholders::_2, curSend, totalNeedSend, client));
+			cout << "error" << endl;
 		}
 		else
 		{
@@ -50,11 +48,12 @@ int main(int argc, char* argv[])
 	};
 	auto sendOnce=[&](SocketPtr client)
 	{
-		WriteStream<DefaultStreamHeadTraits> ws(buffSend, PACK_LEN);
+		WriteStream<DefaultStreamHeadTraits> ws;
 		ws << (unsigned short) 1; //protocol id
 		ws <<(unsigned long long) NOW_TIME; // local tick count
 		ws << fillstring; // append text, fill the length protocol.
-		client->async_write_some(boost::asio::buffer(ws.GetStream(), ws.GetStreamLen()), 
+		memcpy(buffSend, ws.GetStream(), ws.GetStreamLen());
+		client->async_write_some(boost::asio::buffer(buffSend, ws.GetStreamLen()),
 					std::bind(onSend, std::placeholders::_1, std::placeholders::_2, 0, ws.GetStreamLen(), client));
 	};
 	std::function<void (const boost::system::error_code&,std::size_t, std::size_t, SocketPtr)> onRecv=
@@ -91,7 +90,7 @@ int main(int argc, char* argv[])
 			case 1:
 				{
 					unsigned long long localTick = 0;
-					textCache.clear();
+					std::string textCache;
 					rs >> localTick >> textCache;
 					unsigned long long cur = NOW_TIME;
 					if (nServer)

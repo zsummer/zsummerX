@@ -325,7 +325,7 @@ int main(int argc, char* argv[])
 
 	CTcpSessionManager::getRef().Start();
 
-	g_testStr.resize(1024, 's');
+	g_testStr.resize(200, 's');
 
 	CTcpSessionManager::getRef().CreateTimer(5000, MonitorFunc);
 

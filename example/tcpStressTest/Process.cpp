@@ -54,7 +54,7 @@ bool CProcess::start()
 	return true;
 }
 
-void CProcess::Stop()
+void CProcess::stop()
 {
 	_running = false;
 }

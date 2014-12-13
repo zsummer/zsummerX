@@ -49,7 +49,7 @@ private:
 	typedef std::unordered_map<ProtoID, std::vector<OnMessageFunction> > MapProtoDispatch;
 public:
 	static MessageDispatcher & getRef();
-	static MessageDispatcher * getPtr(){ return &getRef(); }
+	inline static MessageDispatcher * getPtr(){ return &getRef(); }
 	~MessageDispatcher(){};
 
 	//message

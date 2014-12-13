@@ -119,7 +119,7 @@ int main(int argc, char* argv[])
 			LOGI("recv ConnectorID = " << cID << ", msg = " << msg);
 
 			//! step 3 stop server
-			TcpSessionManager::getRef().Stop();
+			TcpSessionManager::getRef().stop();
 		};
 
 		//! register event and message
@@ -153,7 +153,7 @@ int main(int argc, char* argv[])
 			TcpSessionManager::getRef().sendOrgSessionData(sID, ws.getStream(), ws.getStreamLen());
 
 			//! step 3 stop server after 1 second.
-			TcpSessionManager::getRef().createTimer(1000, [](){TcpSessionManager::getRef().Stop(); });
+			TcpSessionManager::getRef().createTimer(1000, [](){TcpSessionManager::getRef().stop(); });
 		};
 
 

@@ -162,7 +162,7 @@ int main(int argc, char* argv[])
 		memcpy(&nLast, &temp, sizeof(temp));
 	}
 
-	schedule.Stop();
+	schedule.stop();
 
 	return 0;
 }

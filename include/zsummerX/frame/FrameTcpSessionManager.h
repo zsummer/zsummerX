@@ -49,10 +49,10 @@ private:
 
 public://!get the single and global object pointer   
 	static TcpSessionManager & getRef();
-	static TcpSessionManager * getPtr(){ return &getRef(); };
+	inline static TcpSessionManager * getPtr(){ return &getRef(); };
 public:
 	bool start();
-	void Stop();
+	void stop();
 	void run();
 
 public:

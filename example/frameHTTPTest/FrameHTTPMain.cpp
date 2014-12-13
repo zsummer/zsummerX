@@ -127,7 +127,7 @@ int main(int argc, char* argv[])
 			LOGI("response success. commond=" << commondLine.first << ", commondvalue=" << commondLine.second << ", content=" << body);
 			TcpSessionManager::getRef().kickSession(cID);
 			//step 3. stop
-			//TcpSessionManager::getRef().Stop();
+			//TcpSessionManager::getRef().stop();
 			return ;
 		};
 
@@ -167,7 +167,7 @@ int main(int argc, char* argv[])
 			TcpSessionManager::getRef().sendOrgSessionData( sID, wh.getStream(), wh.getStreamLen());
 			TcpSessionManager::getRef().createTimer(2000, std::bind(&TcpSessionManager::kickSession, TcpSessionManager::getPtr(), sID));
 			//step 3. stop server.
-		//	TcpSessionManager::getRef().createTimer(1000,std::bind(&TcpSessionManager::Stop, TcpSessionManager::getPtr()));
+		//	TcpSessionManager::getRef().createTimer(1000,std::bind(&TcpSessionManager::stop, TcpSessionManager::getPtr()));
 			return ;
 		};
 

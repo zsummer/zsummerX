@@ -48,7 +48,7 @@ public:
 	CSchedule();
 	//! 启动与停止
 	void start();
-	void Stop();
+	void stop();
 	//! 线程
 	void run();
 

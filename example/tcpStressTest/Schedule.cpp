@@ -82,7 +82,7 @@ void CSchedule::start()
 
 	_thread = std::thread(std::bind(&CSchedule::run, this));
 }
-void CSchedule::Stop()
+void CSchedule::stop()
 {
 	_running = false;
 }

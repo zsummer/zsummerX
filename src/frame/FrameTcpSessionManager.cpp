@@ -59,7 +59,7 @@ bool TcpSessionManager::start()
 	return true;
 }
 
-void TcpSessionManager::Stop()
+void TcpSessionManager::stop()
 {
 	post(std::bind(&TcpSessionManager::safeStop, this));
 }

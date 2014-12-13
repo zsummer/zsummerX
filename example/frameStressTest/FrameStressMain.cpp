@@ -263,7 +263,7 @@ public:
 
 void sigFun(int sig)
 {
-	TcpSessionManager::getRef().Stop();
+	TcpSessionManager::getRef().stop();
 }
 
 int main(int argc, char* argv[])

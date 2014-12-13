@@ -49,7 +49,7 @@ public:
 	CProcess();
 	//! 启动与停止
 	bool start();
-	void Stop();
+	void stop();
 	//! 线程
 	void run();
 	//!

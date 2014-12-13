@@ -58,7 +58,7 @@ namespace zsummer
 
 
 			std::string		_ip;
-			unsigned short			_port = 0;
+			unsigned short	_port = 0;
 			//listen
 			SOCKET			_server = INVALID_SOCKET;
 			SOCKADDR_IN		_addr;

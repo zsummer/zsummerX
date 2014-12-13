@@ -1,4 +1,4 @@
-﻿/*
+/*
  * zsummerX License
  * -----------
  * 
@@ -76,20 +76,20 @@ int main(int argc, char* argv[])
 	if (!g_startIsConnector)
 	{
 		//! start log4z 
-		ILog4zManager::GetInstance()->Config("server.cfg");
-		ILog4zManager::GetInstance()->Start();
+		ILog4zManager::getPtr()->config("server.cfg");
+		ILog4zManager::getPtr()->start();
 	}
 	else
 	{
 		//! start log4z 
-		ILog4zManager::GetInstance()->Config("client.cfg");
-		ILog4zManager::GetInstance()->Start();
+		ILog4zManager::getPtr()->config("client.cfg");
+		ILog4zManager::getPtr()->start();
 	}
 	LOGI("g_remoteIP=" << g_remoteIP << ", g_remotePort=" << g_remotePort << ", g_startIsConnector=" << g_startIsConnector );
 
 
 	//! step 1. start frame manager.
-	CTcpSessionManager::getRef().Start();
+	TcpSessionManager::getRef().start();
 
 
 	if (g_startIsConnector) //client
@@ -103,16 +103,16 @@ int main(int argc, char* argv[])
 
 			LOGI("send to ConnectorID=" << cID);
 			zsummer::proto4z::WriteHTTP wh;
-// 			wh.AddHead("Accept", " text/html, application/xhtml+xml, */*");
-// 			wh.AddHead("Accept-Language", "zh-CN");
-// 			wh.AddHead("User-Agent", "Mozilla/5.0 ");
-			wh.AddHead("Content-Type", "application/x-www-form-urlencoded");
-//			wh.AddHead("Accept-Encoding", "utf8");
-			wh.AddHead("Host", "10.0.0.197");
-//			wh.AddHead("DNT", "1");
-//			wh.AddHead("Connection", "Keep-Alive");
-			wh.Post("/user/oauth", jsonString);
-			CTcpSessionManager::getRef().SendOrgSessionData(cID, wh.GetStream(), wh.GetStreamLen());
+// 			wh.addHead("Accept", " text/html, application/xhtml+xml, */*");
+// 			wh.addHead("Accept-Language", "zh-CN");
+// 			wh.addHead("User-Agent", "Mozilla/5.0 ");
+			wh.addHead("Content-Type", "application/x-www-form-urlencoded");
+//			wh.addHead("Accept-Encoding", "utf8");
+			wh.addHead("Host", "10.0.0.197");
+//			wh.addHead("DNT", "1");
+//			wh.addHead("Connection", "Keep-Alive");
+			wh.post("/user/oauth", jsonString);
+			TcpSessionManager::getRef().sendOrgSessionData(cID, wh.getStream(), wh.getStreamLen());
 		};
 
 		//callback when receive http data
@@ -121,19 +121,19 @@ int main(int argc, char* argv[])
 			if (commondLine.second != "200")
 			{
 				LOGI("response false. commond=" << commondLine.first << ", commondvalue=" << commondLine.second);
-				CTcpSessionManager::getRef().KickSession(cID);
+				TcpSessionManager::getRef().kickSession(cID);
 				return ;
 			}
 			LOGI("response success. commond=" << commondLine.first << ", commondvalue=" << commondLine.second << ", content=" << body);
-			CTcpSessionManager::getRef().KickSession(cID);
+			TcpSessionManager::getRef().kickSession(cID);
 			//step 3. stop
-			//CTcpSessionManager::getRef().Stop();
+			//TcpSessionManager::getRef().Stop();
 			return ;
 		};
 
 		//! register event and message
-		CMessageDispatcher::getRef().RegisterOnSessionEstablished(connectedfun); //!connect success
-		CMessageDispatcher::getRef().RegisterOnSessionHTTPMessage(msg_ResultSequence_fun);//! message
+		MessageDispatcher::getRef().registerOnSessionEstablished(connectedfun); //!connect success
+		MessageDispatcher::getRef().registerOnSessionHTTPMessage(msg_ResultSequence_fun);//! message
 
 
 		//add connector
@@ -143,10 +143,10 @@ int main(int argc, char* argv[])
 		traits.protoType = PT_HTTP;
 		traits.reconnectInterval = 5000;
 		traits.reconnectMaxCount = 0;
-		CTcpSessionManager::getRef().AddConnector(traits);
+		TcpSessionManager::getRef().addConnector(traits);
 
 		//! step 2 running
-		CTcpSessionManager::getRef().Run();
+		TcpSessionManager::getRef().run();
 	}
 	else
 	{
@@ -156,30 +156,30 @@ int main(int argc, char* argv[])
 		{
 			LOGI("recv request. commond=" << commondLine.first << ", commondvalue=" << commondLine.second);
 			zsummer::proto4z::WriteHTTP wh;
-			wh.AddHead("Accept", " text/html, application/xhtml+xml, */*");
-			wh.AddHead("Accept-Language", "zh-CN");
-			wh.AddHead("User-Agent", "Mozilla/5.0 ");
-			wh.AddHead("Accept-Encoding", "utf8");
-			wh.AddHead("Host", "www.baidu.com");
-			wh.AddHead("DNT", "1");
-			wh.AddHead("Connection", "Keep-Alive");
-			wh.Response("200", "What's your name ?");
-			CTcpSessionManager::getRef().SendOrgSessionData( sID, wh.GetStream(), wh.GetStreamLen());
-			CTcpSessionManager::getRef().CreateTimer(2000, std::bind(&CTcpSessionManager::KickSession, CTcpSessionManager::getPtr(), sID));
+			wh.addHead("Accept", " text/html, application/xhtml+xml, */*");
+			wh.addHead("Accept-Language", "zh-CN");
+			wh.addHead("User-Agent", "Mozilla/5.0 ");
+			wh.addHead("Accept-Encoding", "utf8");
+			wh.addHead("Host", "www.baidu.com");
+			wh.addHead("DNT", "1");
+			wh.addHead("Connection", "Keep-Alive");
+			wh.response("200", "What's your name ?");
+			TcpSessionManager::getRef().sendOrgSessionData( sID, wh.getStream(), wh.getStreamLen());
+			TcpSessionManager::getRef().createTimer(2000, std::bind(&TcpSessionManager::kickSession, TcpSessionManager::getPtr(), sID));
 			//step 3. stop server.
-		//	CTcpSessionManager::getRef().CreateTimer(1000,std::bind(&CTcpSessionManager::Stop, CTcpSessionManager::getPtr()));
+		//	TcpSessionManager::getRef().createTimer(1000,std::bind(&TcpSessionManager::Stop, TcpSessionManager::getPtr()));
 			return ;
 		};
 
 		//! register message
-		CMessageDispatcher::getRef().RegisterOnSessionHTTPMessage(msg_ResultSequence_fun);
+		MessageDispatcher::getRef().registerOnSessionHTTPMessage(msg_ResultSequence_fun);
 
 		tagAcceptorConfigTraits traits;
 		traits.listenPort = g_remotePort;
 		traits.protoType = PT_HTTP;
-		CTcpSessionManager::getRef().AddAcceptor(traits);
+		TcpSessionManager::getRef().addAcceptor(traits);
 		//! step 2 running
-		CTcpSessionManager::getRef().Run();
+		TcpSessionManager::getRef().run();
 	}
 	
 

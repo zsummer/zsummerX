@@ -39,96 +39,96 @@
 #include <zsummerX/frame/FrameTcpSessionManager.h>
 #include <zsummerX/frame/FrameMessageDispatch.h>
 
-CTcpSessionManager & CTcpSessionManager::getRef()
+TcpSessionManager & TcpSessionManager::getRef()
 {
-	static CTcpSessionManager m_manager;
-	return m_manager;
+	static TcpSessionManager _manager;
+	return _manager;
 }
-CTcpSessionManager::CTcpSessionManager()
+TcpSessionManager::TcpSessionManager()
 {
-	m_summer = std::shared_ptr<zsummer::network::ZSummer>(new zsummer::network::ZSummer());
+	_summer = std::shared_ptr<zsummer::network::ZSummer>(new zsummer::network::ZSummer());
 }
 
-bool CTcpSessionManager::Start()
+bool TcpSessionManager::start()
 {
 	
-	if (!m_summer->Initialize())
+	if (!_summer->initialize())
 	{
 		return false;
 	}
 	return true;
 }
 
-void CTcpSessionManager::Stop()
+void TcpSessionManager::Stop()
 {
-	Post(std::bind(&CTcpSessionManager::SafeStop, this));
+	post(std::bind(&TcpSessionManager::safeStop, this));
 }
 
-void CTcpSessionManager::SafeStop()
+void TcpSessionManager::safeStop()
 {
-	m_bRunning = false;
+	_running = false;
 
 	//at first close the session from accept.
-	m_onlineConnectCounts = 0;
-	for (auto m : m_mapTcpSessionPtr)
+	_onlineConnectCounts = 0;
+	for (auto m : _mapTcpSessionPtr)
 	{
-		if (IsConnectID(m.first))
+		if (isConnectID(m.first))
 		{
-			m_mapConnectorConfig[m.first].second.curReconnectCount = -1;
-			m_onlineConnectCounts++;
+			_mapConnectorConfig[m.first].second.curReconnectCount = -1;
+			_onlineConnectCounts++;
 			continue;
 		}
-		m.second->Close();
+		m.second->close();
 	}
 	//if only have the connect session then close all.
-	if (m_mapTcpSessionPtr.size() == m_onlineConnectCounts)
+	if (_mapTcpSessionPtr.size() == _onlineConnectCounts)
 	{
-		for (auto m : m_mapTcpSessionPtr)
+		for (auto m : _mapTcpSessionPtr)
 		{
-			m.second->Close();
+			m.second->close();
 		}
 	}
 }
-void CTcpSessionManager::Run()
+void TcpSessionManager::run()
 {
-	m_bRunning = true;
-	while (m_bRunning || !m_mapTcpSessionPtr.empty())
+	_running = true;
+	while (_running || !_mapTcpSessionPtr.empty())
 	{
-		m_summer->RunOnce();
+		_summer->runOnce();
 	}
 }
 
 
 
 
-AccepterID CTcpSessionManager::AddAcceptor(const tagAcceptorConfigTraits &traits)
+AccepterID TcpSessionManager::addAcceptor(const tagAcceptorConfigTraits &traits)
 {
-	m_lastAcceptID++;
-	auto & pairConfig = m_mapAccepterConfig[m_lastAcceptID];
+	_lastAcceptID++;
+	auto & pairConfig = _mapAccepterConfig[_lastAcceptID];
 	pairConfig.first = traits;
-	pairConfig.second.aID = m_lastAcceptID;
+	pairConfig.second.aID = _lastAcceptID;
 
-	CTcpAcceptPtr accepter(new zsummer::network::CTcpAccept());
-	accepter->Initialize(m_summer);
-	if (!accepter->OpenAccept(traits.listenIP.c_str(), traits.listenPort))
+	TcpAcceptPtr accepter(new zsummer::network::TcpAcceptImpl());
+	accepter->initialize(_summer);
+	if (!accepter->openAccept(traits.listenIP.c_str(), traits.listenPort))
 	{
-		LCE("AddAcceptor OpenAccept Failed. traits=" << traits);
+		LCE("addAcceptor openAccept Failed. traits=" << traits);
 		return InvalidAccepterID;
 	}
-	m_mapAccepterPtr[m_lastAcceptID] = accepter;
-	CTcpSocketPtr newclient(new zsummer::network::CTcpSocket);
-	accepter->DoAccept(newclient, std::bind(&CTcpSessionManager::OnAcceptNewClient, this, std::placeholders::_1, std::placeholders::_2, accepter, pairConfig.second.aID));
-	return m_lastAcceptID;
+	_mapAccepterPtr[_lastAcceptID] = accepter;
+	TcpSocketPtr newclient(new zsummer::network::TcpSocketImpl);
+	accepter->doAccept(newclient, std::bind(&TcpSessionManager::onAcceptNewClient, this, std::placeholders::_1, std::placeholders::_2, accepter, pairConfig.second.aID));
+	return _lastAcceptID;
 }
 
-AccepterID CTcpSessionManager::GetAccepterID(SessionID sID)
+AccepterID TcpSessionManager::getAccepterID(SessionID sID)
 {
-	if (!IsSessionID(sID))
+	if (!isSessionID(sID))
 	{
 		return InvalidAccepterID;
 	}
-	auto founder = m_mapTcpSessionPtr.find(sID);
-	if (founder == m_mapTcpSessionPtr.end())
+	auto founder = _mapTcpSessionPtr.find(sID);
+	if (founder == _mapTcpSessionPtr.end())
 	{
 		return InvalidAccepterID;
 	}
@@ -136,37 +136,37 @@ AccepterID CTcpSessionManager::GetAccepterID(SessionID sID)
 }
 
 
-void CTcpSessionManager::OnAcceptNewClient(zsummer::network::ErrorCode ec, const CTcpSocketPtr& s, const CTcpAcceptPtr &accepter, AccepterID aID)
+void TcpSessionManager::onAcceptNewClient(zsummer::network::ErrorCode ec, const TcpSocketPtr& s, const TcpAcceptPtr &accepter, AccepterID aID)
 {
-	if (!m_bRunning)
+	if (!_running)
 	{
 		LCI("shutdown accepter. aID=" << aID);
 		return;
 	}
-	auto iter = m_mapAccepterConfig.find(aID);
-	if (iter == m_mapAccepterConfig.end())
+	auto iter = _mapAccepterConfig.find(aID);
+	if (iter == _mapAccepterConfig.end())
 	{
 		LCE("Unknown AccepterID aID=" << aID);
 		return;
 	}
 	if (ec)
 	{
-		LCE("DoAccept Result Error. ec=" << ec << ", traits=" << iter->second.first);
+		LCE("doAccept Result Error. ec=" << ec << ", traits=" << iter->second.first);
 		
-		CTcpSocketPtr newclient(new zsummer::network::CTcpSocket);
-		newclient->Initialize(m_summer);
-		auto &&handler = std::bind(&CTcpSessionManager::OnAcceptNewClient, this, std::placeholders::_1, std::placeholders::_2, accepter, aID);
+		TcpSocketPtr newclient(new zsummer::network::TcpSocketImpl);
+		newclient->initialize(_summer);
+		auto &&handler = std::bind(&TcpSessionManager::onAcceptNewClient, this, std::placeholders::_1, std::placeholders::_2, accepter, aID);
 		auto timer = [accepter, newclient, handler]()
 		{
-			accepter->DoAccept(newclient, std::move(handler));
+			accepter->doAccept(newclient, std::move(handler));
 		};
-		CreateTimer(5000, std::move(timer));
+		createTimer(5000, std::move(timer));
 		return;
 	}
 
 	std::string remoteIP;
 	unsigned short remotePort = 0;
-	s->GetPeerInfo(remoteIP, remotePort);
+	s->getPeerInfo(remoteIP, remotePort);
 	
 	//! check white list
 	//! ---------------------
@@ -190,9 +190,9 @@ void CTcpSessionManager::OnAcceptNewClient(zsummer::network::ErrorCode ec, const
 			LCW("Accept New Client Check Whitelist Failed remoteAdress=" << remoteIP << ":" << remotePort
 				<< ", trais=" << iter->second.first);
 
-			CTcpSocketPtr newclient(new zsummer::network::CTcpSocket);
-			newclient->Initialize(m_summer);
-			accepter->DoAccept(newclient, std::bind(&CTcpSessionManager::OnAcceptNewClient, this, std::placeholders::_1, std::placeholders::_2, accepter, aID));
+			TcpSocketPtr newclient(new zsummer::network::TcpSocketImpl);
+			newclient->initialize(_summer);
+			accepter->doAccept(newclient, std::bind(&TcpSessionManager::onAcceptNewClient, this, std::placeholders::_1, std::placeholders::_2, accepter, aID));
 			return;
 		}
 		else
@@ -216,85 +216,85 @@ void CTcpSessionManager::OnAcceptNewClient(zsummer::network::ErrorCode ec, const
 		iter->second.second.currentLinked++;
 		iter->second.second.totalAcceptCount++;
 
-		m_lastSessionID = NextSessionID(m_lastSessionID);
-		CTcpSessionPtr session(new CTcpSession());
-		s->Initialize(m_summer);
-		if (session->BindTcpSocketPrt(s, aID, m_lastSessionID, iter->second.first))
+		_lastSessionID = nextSessionID(_lastSessionID);
+		CTcpSessionPtr session(new TcpSession());
+		s->initialize(_summer);
+		if (session->bindTcpSocketPrt(s, aID, _lastSessionID, iter->second.first))
 		{
-			m_mapTcpSessionPtr[m_lastSessionID] = session;
-			Post(std::bind(&CMessageDispatcher::DispatchOnSessionEstablished, &CMessageDispatcher::getRef(), m_lastSessionID));
+			_mapTcpSessionPtr[_lastSessionID] = session;
+			post(std::bind(&MessageDispatcher::dispatchOnSessionEstablished, &MessageDispatcher::getRef(), _lastSessionID));
 		}
 	}
 	
 	//! accept next socket.
-	CTcpSocketPtr newclient(new zsummer::network::CTcpSocket);
-	newclient->Initialize(m_summer);
-	accepter->DoAccept(newclient, std::bind(&CTcpSessionManager::OnAcceptNewClient, this, std::placeholders::_1, std::placeholders::_2, accepter,aID));
+	TcpSocketPtr newclient(new zsummer::network::TcpSocketImpl);
+	newclient->initialize(_summer);
+	accepter->doAccept(newclient, std::bind(&TcpSessionManager::onAcceptNewClient, this, std::placeholders::_1, std::placeholders::_2, accepter,aID));
 }
 
 
 
 
 
-void CTcpSessionManager::KickSession(SessionID sID)
+void TcpSessionManager::kickSession(SessionID sID)
 {
-	auto iter = m_mapTcpSessionPtr.find(sID);
-	if (iter == m_mapTcpSessionPtr.end())
+	auto iter = _mapTcpSessionPtr.find(sID);
+	if (iter == _mapTcpSessionPtr.end())
 	{
-		LCW("KickSession NOT FOUND SessionID. SessionID=" << sID);
+		LCW("kickSession NOT FOUND SessionID. SessionID=" << sID);
 		return;
 	}
-	iter->second->Close();
+	iter->second->close();
 }
 
-void CTcpSessionManager::OnSessionClose(AccepterID aID, SessionID sID)
+void TcpSessionManager::onSessionClose(AccepterID aID, SessionID sID)
 {
-	m_mapAccepterConfig[aID].second.currentLinked--;
-	m_mapTcpSessionPtr.erase(sID);
-	CMessageDispatcher::getRef().DispatchOnSessionDisconnect(sID);
-	if (!m_bRunning && m_mapTcpSessionPtr.size() <= m_onlineConnectCounts)
+	_mapAccepterConfig[aID].second.currentLinked--;
+	_mapTcpSessionPtr.erase(sID);
+	MessageDispatcher::getRef().dispatchOnSessionDisconnect(sID);
+	if (!_running && _mapTcpSessionPtr.size() <= _onlineConnectCounts)
 	{
-		CreateTimer(1000, std::bind(&CTcpSessionManager::SafeStop, CTcpSessionManager::getPtr()));
+		createTimer(1000, std::bind(&TcpSessionManager::safeStop, TcpSessionManager::getPtr()));
 	}
 }
 
 
-SessionID CTcpSessionManager::AddConnector(const tagConnctorConfigTraits & traits)
+SessionID TcpSessionManager::addConnector(const tagConnctorConfigTraits & traits)
 {
-	m_lastConnectID = NextConnectID(m_lastConnectID);
-	auto & pairConfig = m_mapConnectorConfig[m_lastConnectID];
+	_lastConnectID = nextConnectID(_lastConnectID);
+	auto & pairConfig = _mapConnectorConfig[_lastConnectID];
 	pairConfig.first = traits;
-	pairConfig.second.cID = m_lastConnectID;
-	CTcpSocketPtr sockPtr(new zsummer::network::CTcpSocket());
-	sockPtr->Initialize(m_summer);
-	CTcpSessionPtr sessionPtr(new CTcpSession());
-	sessionPtr->BindTcpConnectorPtr(sockPtr, pairConfig);
-	return m_lastConnectID;
+	pairConfig.second.cID = _lastConnectID;
+	TcpSocketPtr sockPtr(new zsummer::network::TcpSocketImpl());
+	sockPtr->initialize(_summer);
+	CTcpSessionPtr sessionPtr(new TcpSession());
+	sessionPtr->bindTcpConnectorPtr(sockPtr, pairConfig);
+	return _lastConnectID;
 }
 
 
-void CTcpSessionManager::OnConnect(SessionID cID, bool bConnected, const CTcpSessionPtr &session)
+void TcpSessionManager::onConnect(SessionID cID, bool bConnected, const CTcpSessionPtr &session)
 {
-	auto config = m_mapConnectorConfig.find(cID);
-	if (config == m_mapConnectorConfig.end())
+	auto config = _mapConnectorConfig.find(cID);
+	if (config == _mapConnectorConfig.end())
 	{
 		LCE("Unkwon Connector. Not Found ConnectorID=" << cID);
 		return;
 	}
 	if (bConnected)
 	{
-		m_mapTcpSessionPtr[cID] = session;
+		_mapTcpSessionPtr[cID] = session;
 		config->second.second.curReconnectCount = 0;
-		Post(std::bind(&CMessageDispatcher::DispatchOnSessionEstablished, &CMessageDispatcher::getRef(), cID));
+		post(std::bind(&MessageDispatcher::dispatchOnSessionEstablished, &MessageDispatcher::getRef(), cID));
 		return;
 	}
 
 
-	auto iter = m_mapTcpSessionPtr.find(cID);
-	if (!bConnected && iter != m_mapTcpSessionPtr.end())
+	auto iter = _mapTcpSessionPtr.find(cID);
+	if (!bConnected && iter != _mapTcpSessionPtr.end())
 	{
-		m_mapTcpSessionPtr.erase(cID);
-		Post(std::bind(&CMessageDispatcher::DispatchOnSessionDisconnect, &CMessageDispatcher::getRef(), cID));
+		_mapTcpSessionPtr.erase(cID);
+		post(std::bind(&MessageDispatcher::dispatchOnSessionDisconnect, &MessageDispatcher::getRef(), cID));
 	}
 
 	if (!bConnected
@@ -304,45 +304,45 @@ void CTcpSessionManager::OnConnect(SessionID cID, bool bConnected, const CTcpSes
 		config->second.second.curReconnectCount++;
 		config->second.second.totalConnectCount++;
 
-		CTcpSocketPtr sockPtr(new zsummer::network::CTcpSocket());
-		sockPtr->Initialize(m_summer);
-		CreateTimer(config->second.first.reconnectInterval, std::bind(&CTcpSession::BindTcpConnectorPtr, session, sockPtr, config->second));
+		TcpSocketPtr sockPtr(new zsummer::network::TcpSocketImpl());
+		sockPtr->initialize(_summer);
+		createTimer(config->second.first.reconnectInterval, std::bind(&TcpSession::bindTcpConnectorPtr, session, sockPtr, config->second));
 		LCW("Try reconnect current count=" << config->second.second.curReconnectCount << ", total reconnect = " << config->second.second.totalConnectCount << ". Traits=" << config->second.first);
 		return;//try reconnect
 	}
 	
-	if (config->second.first.reconnectMaxCount > 0 && m_bRunning)
+	if (config->second.first.reconnectMaxCount > 0 && _running)
 	{
 		LCE("Try Reconnect Failed. End Try. Traits=" << config->second.first);
 	}
 	//connect faild . clean data
-	m_mapConnectorConfig.erase(config);
+	_mapConnectorConfig.erase(config);
 }
 
 
-void CTcpSessionManager::SendOrgSessionData(SessionID sID, const char * orgData, unsigned int orgDataLen)
+void TcpSessionManager::sendOrgSessionData(SessionID sID, const char * orgData, unsigned int orgDataLen)
 {
-	auto iter = m_mapTcpSessionPtr.find(sID);
-	if (iter == m_mapTcpSessionPtr.end())
+	auto iter = _mapTcpSessionPtr.find(sID);
+	if (iter == _mapTcpSessionPtr.end())
 	{
-		LCW("SendOrgSessionData NOT FOUND SessionID.  SessionID=" << sID);
+		LCW("sendOrgSessionData NOT FOUND SessionID.  SessionID=" << sID);
 		return;
 	}
-	iter->second->DoSend(orgData, orgDataLen);
+	iter->second->doSend(orgData, orgDataLen);
 	//trace log
 	{
-		LCT("SendOrgSessionData Len=" << orgDataLen << ",binarydata=" << zsummer::log4z::BinaryBlock(orgData, orgDataLen >= 10 ? 10 : orgDataLen));
+		LCT("sendOrgSessionData Len=" << orgDataLen << ",binarydata=" << zsummer::log4z::BinaryBlock(orgData, orgDataLen >= 10 ? 10 : orgDataLen));
 	}
 }
-void CTcpSessionManager::SendSessionData(SessionID sID, ProtoID pID, const char * userData, unsigned int userDataLen)
+void TcpSessionManager::sendSessionData(SessionID sID, ProtoID pID, const char * userData, unsigned int userDataLen)
 {
 	WriteStreamPack ws;
 	ws << pID;
-	ws.AppendOriginalData(userData, userDataLen);
-	SendOrgSessionData(sID, ws.GetStream(), ws.GetStreamLen());
+	ws.appendOriginalData(userData, userDataLen);
+	sendOrgSessionData(sID, ws.getStream(), ws.getStreamLen());
 	//trace log
 	{
-		LCT("SendSessionData ProtoID=" << pID << ",  userDataLen=" << userDataLen);
+		LCT("sendSessionData ProtoID=" << pID << ",  userDataLen=" << userDataLen);
 	}
 }
 

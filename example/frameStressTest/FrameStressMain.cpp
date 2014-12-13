@@ -66,7 +66,7 @@ void MonitorFunc()
 	LOGI("per seconds Echos Count=" << (g_totalEchoCount - g_lastEchoCount) / 5
 		<< ", g_totalSendCount[" << g_totalSendCount << "] g_totalRecvCount[" << g_totalRecvCount << "]");
 	g_lastEchoCount = g_totalEchoCount;
-	CTcpSessionManager::getRef().CreateTimer(5000, MonitorFunc);
+	TcpSessionManager::getRef().createTimer(5000, MonitorFunc);
 };
 
 /*
@@ -91,23 +91,23 @@ class CHeartbeatManager
 public:
 	CHeartbeatManager()
 	{
-		CMessageDispatcher::getRef().RegisterOnSessionEstablished(std::bind(&CHeartbeatManager::OnSessionEstablished, this,
+		MessageDispatcher::getRef().registerOnSessionEstablished(std::bind(&CHeartbeatManager::OnSessionEstablished, this,
 			std::placeholders::_1));
-		CMessageDispatcher::getRef().RegisterOnSessionDisconnect(std::bind(&CHeartbeatManager::OnSessionDisconnect, this,
+		MessageDispatcher::getRef().registerOnSessionDisconnect(std::bind(&CHeartbeatManager::OnSessionDisconnect, this,
 			std::placeholders::_1));
-		CMessageDispatcher::getRef().RegisterOnSessionPulse(std::bind(&CHeartbeatManager::OnSessionPulse, this,
+		MessageDispatcher::getRef().registerOnSessionPulse(std::bind(&CHeartbeatManager::OnSessionPulse, this,
 			std::placeholders::_1, std::placeholders::_2));
-		CMessageDispatcher::getRef().RegisterSessionMessage(S2C_Pulse, std::bind(&CHeartbeatManager::OnMsgPulse, this,
+		MessageDispatcher::getRef().registerSessionMessage(S2C_Pulse, std::bind(&CHeartbeatManager::OnMsgPulse, this,
 			std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-		CMessageDispatcher::getRef().RegisterSessionMessage(S2C_Pulse, std::bind(&CHeartbeatManager::OnMsgPulse, this,
+		MessageDispatcher::getRef().registerSessionMessage(S2C_Pulse, std::bind(&CHeartbeatManager::OnMsgPulse, this,
 			std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	}
 	
 
 	void OnMsgPulse(SessionID sID, ProtoID pID, ReadStreamPack & pack)
 	{
-		auto iter = m_sessionPulse.find(sID);
-		if (iter != m_sessionPulse.end())
+		auto iter = _sessionPulse.find(sID);
+		if (iter != _sessionPulse.end())
 		{
 			iter->second = time(NULL);
 		}
@@ -115,27 +115,27 @@ public:
 
 	void OnSessionEstablished(SessionID sID)
 	{
-		m_sessionPulse[sID] = time(NULL);
+		_sessionPulse[sID] = time(NULL);
 		LOGI("OnSessionEstablished. sID=" << sID);
 	}
 
 	void OnSessionPulse(SessionID sID, unsigned int pulseInterval)
 	{
-		auto iter = m_sessionPulse.find(sID);
-		if (iter == m_sessionPulse.end())
+		auto iter = _sessionPulse.find(sID);
+		if (iter == _sessionPulse.end())
 		{
 			LOGI("remote session lost. sID=" << sID );
-			CTcpSessionManager::getRef().KickSession(sID);
+			TcpSessionManager::getRef().kickSession(sID);
 			return;
 		}
 		if (time(NULL) - iter->second > pulseInterval / 1000 * 2)
 		{
 			LOGI("remote session timeout. sID=" << sID << ", timeout=" << time(NULL) - iter->second);
-			CTcpSessionManager::getRef().KickSession(sID);
+			TcpSessionManager::getRef().kickSession(sID);
 			return;
 		}
 		WriteStreamPack pack;
-		if (IsConnectID(sID))
+		if (isConnectID(sID))
 		{
 			pack << C2S_Pulse;
 		}
@@ -143,15 +143,15 @@ public:
 		{
 			pack << S2C_Pulse;
 		}
-		CTcpSessionManager::getRef().SendOrgSessionData(sID, pack.GetStream(), pack.GetStreamLen());
+		TcpSessionManager::getRef().sendOrgSessionData(sID, pack.getStream(), pack.getStreamLen());
 	}
 	void OnSessionDisconnect(SessionID sID)
 	{
 		LOGI("OnSessionDisconnect. sID=" << sID );
-		m_sessionPulse.erase(sID);
+		_sessionPulse.erase(sID);
 	}
 private:
-	std::unordered_map<SessionID, time_t> m_sessionPulse;
+	std::unordered_map<SessionID, time_t> _sessionPulse;
 };
 
 //client handler
@@ -167,30 +167,30 @@ class CStressClientHandler
 public:
 	CStressClientHandler()
 	{
-		CMessageDispatcher::getRef().RegisterOnSessionEstablished(std::bind(&CStressClientHandler::OnConnected, this, std::placeholders::_1));
-		CMessageDispatcher::getRef().RegisterSessionMessage(S2C_ECHO_ACK,
+		MessageDispatcher::getRef().registerOnSessionEstablished(std::bind(&CStressClientHandler::onConnected, this, std::placeholders::_1));
+		MessageDispatcher::getRef().registerSessionMessage(S2C_ECHO_ACK,
 			std::bind(&CStressClientHandler::msg_ResultSequence_fun, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-		CMessageDispatcher::getRef().RegisterSessionMessage(S2C_ECHO_ACK,
+		MessageDispatcher::getRef().registerSessionMessage(S2C_ECHO_ACK,
 			std::bind(&CStressClientHandler::looker_ResultSequence_fun, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-		CMessageDispatcher::getRef().RegisterOnSessionDisconnect(std::bind(&CStressClientHandler::OnConnectDisconnect, this, std::placeholders::_1));
+		MessageDispatcher::getRef().registerOnSessionDisconnect(std::bind(&CStressClientHandler::OnConnectDisconnect, this, std::placeholders::_1));
 	}
 
-	void OnConnected (SessionID cID)
+	void onConnected (SessionID cID)
 	{
-		LOGI("OnConnected. ConnectorID=" << cID );
+		LOGI("onConnected. ConnectorID=" << cID );
 		WriteStreamPack ws;
 		ws << C2S_ECHO_REQ << "client request one REQ.";
-		CTcpSessionManager::getRef().SendOrgSessionData(cID, ws.GetStream(), ws.GetStreamLen());
+		TcpSessionManager::getRef().sendOrgSessionData(cID, ws.getStream(), ws.getStreamLen());
 		g_totalSendCount++;
 		if (g_sendType != 0 && g_intervalMs > 0)
 		{
-			CTcpSessionManager::getRef().CreateTimer(g_intervalMs, std::bind(&CStressClientHandler::SendFunc, this, cID));
-			m_sessionStatus[cID] = true;
+			TcpSessionManager::getRef().createTimer(g_intervalMs, std::bind(&CStressClientHandler::SendFunc, this, cID));
+			_sessionStatus[cID] = true;
 		}
 	};
 	void OnConnectDisconnect(SessionID cID)
 	{
-		m_sessionStatus[cID] = false;
+		_sessionStatus[cID] = false;
 	}
 
 	void msg_ResultSequence_fun(SessionID cID, ProtoID pID, ReadStreamPack & rs)
@@ -204,7 +204,7 @@ public:
 		{
 			WriteStreamPack ws;
 			ws << C2S_ECHO_REQ << g_testStr;
-			CTcpSessionManager::getRef().SendOrgSessionData(cID, ws.GetStream(), ws.GetStreamLen());
+			TcpSessionManager::getRef().sendOrgSessionData(cID, ws.getStream(), ws.getStreamLen());
 			g_totalSendCount++;
 		}
 	};
@@ -220,16 +220,16 @@ public:
 		{
 			WriteStreamPack ws;
 			ws << C2S_ECHO_REQ << g_testStr;
-			CTcpSessionManager::getRef().SendOrgSessionData(cID, ws.GetStream(), ws.GetStreamLen());
+			TcpSessionManager::getRef().sendOrgSessionData(cID, ws.getStream(), ws.getStreamLen());
 			g_totalSendCount++;
 		}
-		if (m_sessionStatus[cID])
+		if (_sessionStatus[cID])
 		{
-			CTcpSessionManager::getRef().CreateTimer(g_intervalMs, std::bind(&CStressClientHandler::SendFunc, this, cID));
+			TcpSessionManager::getRef().createTimer(g_intervalMs, std::bind(&CStressClientHandler::SendFunc, this, cID));
 		}
 	};
 private:
-	std::unordered_map<SessionID, bool> m_sessionStatus;
+	std::unordered_map<SessionID, bool> _sessionStatus;
 };
 
 
@@ -242,7 +242,7 @@ class CStressServerHandler
 public:
 	CStressServerHandler()
 	{
-		CMessageDispatcher::getRef().RegisterSessionMessage(C2S_ECHO_REQ,
+		MessageDispatcher::getRef().registerSessionMessage(C2S_ECHO_REQ,
 			std::bind(&CStressServerHandler::msg_RequestSequence_fun, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	}
 
@@ -253,7 +253,7 @@ public:
 		msg += " echo";
 		WriteStreamPack ws;
 		ws << S2C_ECHO_ACK << msg;
-		CTcpSessionManager::getRef().SendOrgSessionData(sID, ws.GetStream(), ws.GetStreamLen());
+		TcpSessionManager::getRef().sendOrgSessionData(sID, ws.getStream(), ws.getStreamLen());
 		g_totalEchoCount++;
 		g_totalSendCount++;
 		g_totalRecvCount++;
@@ -263,7 +263,7 @@ public:
 
 void sigFun(int sig)
 {
-	CTcpSessionManager::getRef().Stop();
+	TcpSessionManager::getRef().Stop();
 }
 
 int main(int argc, char* argv[])
@@ -310,24 +310,24 @@ int main(int argc, char* argv[])
 		g_intervalMs = atoi(argv[6]);
 
 	if (g_startType == 0)
-		ILog4zManager::GetInstance()->Config("server.cfg");
+		ILog4zManager::getPtr()->config("server.cfg");
 	else
-		ILog4zManager::GetInstance()->Config("client.cfg");
-	ILog4zManager::GetInstance()->Start();
+		ILog4zManager::getPtr()->config("client.cfg");
+	ILog4zManager::getPtr()->start();
 
 	LOGI("g_remoteIP=" << g_remoteIP << ", g_remotePort=" << g_remotePort << ", g_startType=" << g_startType
 		<< ", g_maxClient=" << g_maxClient << ", g_sendType=" << g_sendType << ", g_intervalMs=" << g_intervalMs);
 
 
-	ILog4zManager::GetInstance()->SetLoggerLevel(LOG4Z_MAIN_LOGGER_ID, LOG_LEVEL_INFO);
+	ILog4zManager::getPtr()->setLoggerLevel(LOG4Z_MAIN_LOGGER_ID, LOG_LEVEL_INFO);
 
 
 
-	CTcpSessionManager::getRef().Start();
+	TcpSessionManager::getRef().start();
 
 	g_testStr.resize(200, 's');
 
-	CTcpSessionManager::getRef().CreateTimer(5000, MonitorFunc);
+	TcpSessionManager::getRef().createTimer(5000, MonitorFunc);
 
 	//build heartbeat manager
 	CHeartbeatManager heartbeatManager;
@@ -346,10 +346,10 @@ int main(int argc, char* argv[])
 			traits.reconnectMaxCount = 5;
 //			traits.rc4TcpEncryption = "yawei.zhang@foxmail.com";
 			traits.pulseInterval = 500000;
-			CTcpSessionManager::getRef().AddConnector(traits);
+			TcpSessionManager::getRef().addConnector(traits);
 		}
 		//running
-		CTcpSessionManager::getRef().Run();
+		TcpSessionManager::getRef().run();
 	}
 	else
 	{
@@ -362,9 +362,9 @@ int main(int argc, char* argv[])
 		//traits.openFlashPolicy = true;
 		traits.pulseInterval = 500000;
 		//traits.whitelistIP.push_back("127.0.");
-		CTcpSessionManager::getRef().AddAcceptor(traits);
+		TcpSessionManager::getRef().addAcceptor(traits);
 		//running
-		CTcpSessionManager::getRef().Run();
+		TcpSessionManager::getRef().run();
 	}
 
 

@@ -39,39 +39,39 @@
 
 CProcess::CProcess()
 {
-	m_summer = zsummer::network::ZSummerPtr(new zsummer::network::ZSummer());
+	_summer = zsummer::network::ZSummerPtr(new zsummer::network::ZSummer());
 }
 
-bool CProcess::Start()
+bool CProcess::start()
 {
-	if (!m_summer->Initialize())
+	if (!_summer->initialize())
 	{
 		return false;
 	}
 	
-	std::thread t(std::bind(&CProcess::Run, this));
-	m_thread.swap(t);
+	std::thread t(std::bind(&CProcess::run, this));
+	_thread.swap(t);
 	return true;
 }
 
 void CProcess::Stop()
 {
-	m_bRunning = false;
+	_running = false;
 }
 
-void CProcess::Run()
+void CProcess::run()
 {
-	m_bRunning = true;
-	while (m_bRunning)
+	_running = true;
+	while (_running)
 	{
-		m_summer->RunOnce();
+		_summer->runOnce();
 	}
 }
 
 
-void CProcess::RecvSocketPtr(std::shared_ptr<zsummer::network::CTcpSocket> sockptr)
+void CProcess::RecvSocketPtr(std::shared_ptr<zsummer::network::TcpSocketImpl> sockptr)
 {
 	std::shared_ptr<CClient> client(new CClient(*this, sockptr));
-	client->Initialize();
+	client->initialize();
 }
 

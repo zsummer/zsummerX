@@ -47,24 +47,24 @@ class CSchedule
 public:
 	CSchedule();
 	//! 启动与停止
-	void Start();
+	void start();
 	void Stop();
 	//! 线程
-	void Run();
+	void run();
 
-	void OnAccept(zsummer::network::ErrorCode ec, CTcpSocketPtr sockptr);
+	void OnAccept(zsummer::network::ErrorCode ec, TcpSocketPtr sockptr);
 
 	void doConnect(unsigned int maxClient);
 
 	//! IOServer池
-	std::vector<CProcess *> m_process;
-	int						m_iCurProcess = 0;
+	std::vector<CProcess *> _process;
+	int						_iCurProcess = 0;
 
 
-	zsummer::network::ZSummerPtr m_summer;
-	std::thread	 m_thread;
-	zsummer::network::CTcpAcceptPtr m_accept;
-	bool	m_bRunning = false;
+	zsummer::network::ZSummerPtr _summer;
+	std::thread	 _thread;
+	zsummer::network::TcpAcceptPtr _accept;
+	bool	_running = false;
 
 };
 

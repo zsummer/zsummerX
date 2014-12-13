@@ -38,8 +38,8 @@
 #include <zsummerX/frame/FrameMessageDispatch.h>
 using namespace zsummer::proto4z;
 
-CMessageDispatcher & CMessageDispatcher::getRef()
+MessageDispatcher & MessageDispatcher::getRef()
 {
-	static CMessageDispatcher m_manager;
-	return m_manager;
+	static MessageDispatcher _manager;
+	return _manager;
 }

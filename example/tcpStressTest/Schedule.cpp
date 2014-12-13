@@ -41,16 +41,16 @@
 
 CSchedule::CSchedule()
 {
-	m_summer = zsummer::network::ZSummerPtr(new zsummer::network::ZSummer());
-	m_accept = zsummer::network::CTcpAcceptPtr(new zsummer::network::CTcpAccept());
-	m_accept->Initialize(m_summer);
+	_summer = zsummer::network::ZSummerPtr(new zsummer::network::ZSummer());
+	_accept = zsummer::network::TcpAcceptPtr(new zsummer::network::TcpAcceptImpl());
+	_accept->initialize(_summer);
 }
 
 
-void CSchedule::Start()
+void CSchedule::start()
 {
 
-	if (!m_summer->Initialize())
+	if (!_summer->initialize())
 	{
 		return ;
 	}
@@ -58,21 +58,21 @@ void CSchedule::Start()
 	for (int i=0; i< 1; i++)
 	{
 		CProcess * p = new CProcess();
-		if (p->Start())
+		if (p->start())
 		{
-			m_process.push_back(p);
+			_process.push_back(p);
 		}
 	}
 	
 	if (g_startType == 0)
 	{
-		if (m_accept->OpenAccept(g_remoteIP.c_str(), g_remotePort))
+		if (_accept->openAccept(g_remoteIP.c_str(), g_remotePort))
 		{
 			LOGI("open server port [" << g_remotePort << "] success");
 		}
-		CTcpSocketPtr s(new zsummer::network::CTcpSocket());
+		TcpSocketPtr s(new zsummer::network::TcpSocketImpl());
 		
-		m_accept->DoAccept(s, std::bind(&CSchedule::OnAccept, this, std::placeholders::_1, std::placeholders::_2));
+		_accept->doAccept(s, std::bind(&CSchedule::OnAccept, this, std::placeholders::_1, std::placeholders::_2));
 	}
 	else
 	{
@@ -80,19 +80,19 @@ void CSchedule::Start()
 	}
 
 
-	m_thread = std::thread(std::bind(&CSchedule::Run, this));
+	_thread = std::thread(std::bind(&CSchedule::run, this));
 }
 void CSchedule::Stop()
 {
-	m_bRunning = false;
+	_running = false;
 }
-void CSchedule::Run()
+void CSchedule::run()
 {
-	m_bRunning = true;
+	_running = true;
 
-	while (m_bRunning)
+	while (_running)
 	{
-		m_summer->RunOnce();
+		_summer->runOnce();
 	}
 }
 
@@ -100,20 +100,20 @@ void CSchedule::doConnect(unsigned int maxClient)
 {
 	for (unsigned int i = 1; i <= maxClient; i++)
 	{
-		CTcpSocketPtr s(new zsummer::network::CTcpSocket());
-		CProcess * proc = m_process[m_iCurProcess];
-		s->Initialize(proc->GetZSummer());
-		proc->Post(std::bind(&CProcess::RecvSocketPtr, proc, s));
-		m_iCurProcess++;
-		m_iCurProcess = m_iCurProcess%(int)m_process.size();
+		TcpSocketPtr s(new zsummer::network::TcpSocketImpl());
+		CProcess * proc = _process[_iCurProcess];
+		s->initialize(proc->GetZSummer());
+		proc->post(std::bind(&CProcess::RecvSocketPtr, proc, s));
+		_iCurProcess++;
+		_iCurProcess = _iCurProcess%(int)_process.size();
 		if (i >= 100 && maxClient > 100)
 		{
-			m_summer->CreateTimer(1000, std::bind(&CSchedule::doConnect, this, maxClient - i));
+			_summer->createTimer(1000, std::bind(&CSchedule::doConnect, this, maxClient - i));
 			break;
 		}
 	}
 }
-void CSchedule::OnAccept(zsummer::network::ErrorCode ec, CTcpSocketPtr sockptr)
+void CSchedule::OnAccept(zsummer::network::ErrorCode ec, TcpSocketPtr sockptr)
 {
 	if (ec)
 	{
@@ -123,7 +123,7 @@ void CSchedule::OnAccept(zsummer::network::ErrorCode ec, CTcpSocketPtr sockptr)
 	
 	unsigned long long allClosed = 0;
 	unsigned long long allOpen = 0;
-	for (std::vector<CProcess *>::const_iterator iter = m_process.begin(); iter != m_process.end(); ++iter)
+	for (std::vector<CProcess *>::const_iterator iter = _process.begin(); iter != _process.end(); ++iter)
 	{
 		allClosed += (*iter)->GetTotalClosed();
 		allOpen += (*iter)->GetTotalOpen();
@@ -135,14 +135,14 @@ void CSchedule::OnAccept(zsummer::network::ErrorCode ec, CTcpSocketPtr sockptr)
 	else
 	{
 		LOGD("OnAccept one socket");
-		m_iCurProcess++;
-		m_iCurProcess = m_iCurProcess % (int)m_process.size();
-		CProcess * process = m_process[m_iCurProcess];
-		sockptr->Initialize(process->GetZSummer());
-		process->Post(std::bind(&CProcess::RecvSocketPtr, process, sockptr));
+		_iCurProcess++;
+		_iCurProcess = _iCurProcess % (int)_process.size();
+		CProcess * process = _process[_iCurProcess];
+		sockptr->initialize(process->GetZSummer());
+		process->post(std::bind(&CProcess::RecvSocketPtr, process, sockptr));
 	}
 
-	CTcpSocketPtr s(new zsummer::network::CTcpSocket());
-	m_accept->DoAccept(s, std::bind(&CSchedule::OnAccept, this, std::placeholders::_1, std::placeholders::_2));
+	TcpSocketPtr s(new zsummer::network::TcpSocketImpl());
+	_accept->doAccept(s, std::bind(&CSchedule::OnAccept, this, std::placeholders::_1, std::placeholders::_2));
 }
 

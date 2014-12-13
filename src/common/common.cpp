@@ -44,7 +44,7 @@
 #pragma comment(lib, "Mswsock")
 #endif
 
-zsummer::network::CEnvironment::CEnvironment()
+zsummer::network::ZSummerEnvironment::ZSummerEnvironment()
 {
 #ifdef WIN32
 	WORD version = MAKEWORD(2,2);
@@ -54,9 +54,9 @@ zsummer::network::CEnvironment::CEnvironment()
 		assert(0);
 	}
 #endif
-	m_netLoggerID = zsummer::log4z::ILog4zManager::GetInstance()->CreateLogger("NetWork", LOG4Z_DEFAULT_PATH, LOG_LEVEL_ERROR);
+	_netLoggerID = zsummer::log4z::ILog4zManager::getRef().createLogger("NetWork", LOG4Z_DEFAULT_PATH, LOG_LEVEL_ERROR);
 }
-zsummer::network::CEnvironment::~CEnvironment()
+zsummer::network::ZSummerEnvironment::~ZSummerEnvironment()
 {
 #ifdef WIN32
 	WSACleanup();
@@ -68,7 +68,7 @@ namespace zsummer
 {
 	namespace network
 	{
-		CEnvironment g_appEnvironment;
+		ZSummerEnvironment g_appEnvironment;
 	}
 }
 

@@ -42,11 +42,11 @@
 
 using namespace zsummer::network;
 
-void ZSummer::RunOnce()
+void ZSummer::runOnce()
 {
-	if (m_io == NULL)
+	if (_io == NULL)
 	{
-		LCF("ZSummer::RunOnce[this0x" << this << "] server not initialize or initialize false." <<ZSummerSection());
+		LCF("ZSummer::runOnce[this0x" << this << "] server not initialize or initialize false." <<zsummerSection());
 		return;
 	}
 
@@ -54,9 +54,9 @@ void ZSummer::RunOnce()
 	ULONG_PTR uComKey = NULL;
 	LPOVERLAPPED pOverlapped = NULL;
 
-	BOOL bRet = GetQueuedCompletionStatus(m_io, &dwTranceCount, &uComKey, &pOverlapped, m_timer.GetNextExpireTime()/*INFINITE*/);
+	BOOL bRet = GetQueuedCompletionStatus(_io, &dwTranceCount, &uComKey, &pOverlapped, _timer.getNextExpireTime()/*INFINITE*/);
 
-	m_timer.CheckTimer();
+	_timer.checkTimer();
 	if (!bRet && !pOverlapped)
 	{
 		//TIMEOUT
@@ -91,7 +91,7 @@ void ZSummer::RunOnce()
 		{
 			if (req._tcpAccept)
 			{
-				req._tcpAccept->OnIOCPMessage(bRet);
+				req._tcpAccept->onIOCPMessage(bRet);
 			}
 		}
 		break;
@@ -101,7 +101,7 @@ void ZSummer::RunOnce()
 		{
 			if (req._tcpSocket)
 			{
-				req._tcpSocket->OnIOCPMessage(bRet, dwTranceCount, req._type);
+				req._tcpSocket->onIOCPMessage(bRet, dwTranceCount, req._type);
 			}
 		}
 		break;
@@ -110,12 +110,12 @@ void ZSummer::RunOnce()
 		{
 			if (req._udpSocket)
 			{
-				req._udpSocket->OnIOCPMessage(bRet, dwTranceCount, req._type);
+				req._udpSocket->onIOCPMessage(bRet, dwTranceCount, req._type);
 			}
 		}
 		break;
 	default:
-		LCE("ZSummer::RunOnce[this0x" << this << "]GetQueuedCompletionStatus undefined type=" << req._type << ZSummerSection());
+		LCE("ZSummer::runOnce[this0x" << this << "]GetQueuedCompletionStatus undefined type=" << req._type << zsummerSection());
 	}
 	
 }

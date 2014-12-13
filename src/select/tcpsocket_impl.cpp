@@ -42,266 +42,266 @@ using namespace zsummer::network;
 
 
 
-CTcpSocket::CTcpSocket()
+TcpSocketImpl::TcpSocketImpl()
 {
-	g_appEnvironment.AddCreatedSocketCount();
-	m_register._type = tagRegister::REG_TCP_SOCKET;
+	g_appEnvironment.addCreatedSocketCount();
+	_register._type = tagRegister::REG_TCP_SOCKET;
 }
 
 
-CTcpSocket::~CTcpSocket()
+TcpSocketImpl::~TcpSocketImpl()
 {
-	g_appEnvironment.AddClosedSocketCount();
-	if (m_onRecvHandler || m_onSendHandler || m_onConnectHandler)
+	g_appEnvironment.addClosedSocketCount();
+	if (_onRecvHandler || _onSendHandler || _onConnectHandler)
 	{
-		LCT("CTcpSocket::~CTcpSocket[this0x" << this << "] Handler status error. " << SocketSection());
+		LCT("TcpSocketImpl::~TcpSocketImpl[this0x" << this << "] Handler status error. " << socketSection());
 	}
-	if (m_register._fd != InvalideFD)
+	if (_register._fd != InvalideFD)
 	{
-		closesocket(m_register._fd);
-		m_register._fd = InvalideFD;
+		closesocket(_register._fd);
+		_register._fd = InvalideFD;
 	}
 }
 
-std::string CTcpSocket::SocketSection()
+std::string TcpSocketImpl::socketSection()
 {
 	std::stringstream os;
-	os << ";; Status: summer.user_count()=" << m_summer.use_count() << ", remoteIP=" << m_remoteIP << ", remotePort=" << m_remotePort
-		<< ", m_onConnectHandler = " << (bool)m_onConnectHandler 
-		<< ", m_onRecvHandler = " << (bool)m_onRecvHandler << ", m_pRecvBuf=" << (void*)m_pRecvBuf << ", m_iRecvLen=" << m_iRecvLen 
-		<< ", m_onSendHandler = " << (bool)m_onSendHandler << ", m_pSendBuf=" << (void*)m_pSendBuf << ", m_iSendLen=" << m_iSendLen
-		<< "; m_register=" << m_register; 
+	os << ";; Status: summer.user_count()=" << _summer.use_count() << ", remoteIP=" << _remoteIP << ", remotePort=" << _remotePort
+		<< ", _onConnectHandler = " << (bool)_onConnectHandler 
+		<< ", _onRecvHandler = " << (bool)_onRecvHandler << ", _pRecvBuf=" << (void*)_pRecvBuf << ", _iRecvLen=" << _iRecvLen 
+		<< ", _onSendHandler = " << (bool)_onSendHandler << ", _pSendBuf=" << (void*)_pSendBuf << ", _iSendLen=" << _iSendLen
+		<< "; _register=" << _register; 
 	return os.str();
 }
 
-bool CTcpSocket::Initialize(const ZSummerPtr & summer)
+bool TcpSocketImpl::initialize(const ZSummerPtr & summer)
 {
-	 m_summer = summer;
-	if (m_register._linkstat != LS_UNINITIALIZE)
+	 _summer = summer;
+	if (_register._linkstat != LS_UNINITIALIZE)
 	{
-		if (!m_summer->RegisterEvent(0, m_register))
+		if (!_summer->registerEvent(0, _register))
 		{
-			LCE("CTcpSocket::Initialize[this0x" << this << "] socket already used or not initilize." << SocketSection());
+			LCE("TcpSocketImpl::initialize[this0x" << this << "] socket already used or not initilize." << socketSection());
 			return false;
 		}
-		m_register._linkstat = LS_ESTABLISHED;
+		_register._linkstat = LS_ESTABLISHED;
 	}
 	else
 	{
-		if (m_register._fd != -1)
+		if (_register._fd != -1)
 		{
-			LCE("CTcpSocket::DoConnect[this0x" << this << "] fd aready used!" << SocketSection());
+			LCE("TcpSocketImpl::doConnect[this0x" << this << "] fd aready used!" << socketSection());
 			return false;
 		}
-		m_register._fd = socket(AF_INET, SOCK_STREAM, 0);
-		if (m_register._fd == -1)
+		_register._fd = socket(AF_INET, SOCK_STREAM, 0);
+		if (_register._fd == -1)
 		{
-			LCE("CTcpSocket::DoConnect[this0x" << this << "] fd create failed!" << SocketSection());
+			LCE("TcpSocketImpl::doConnect[this0x" << this << "] fd create failed!" << socketSection());
 			return false;
 		}
-		SetNonBlock(m_register._fd);
-		SetNoDelay(m_register._fd);
-		m_register._linkstat = LS_WAITLINK;
+		setNonBlock(_register._fd);
+		setNoDelay(_register._fd);
+		_register._linkstat = LS_WAITLINK;
 	}
 
 
 
 	return true;
 }
-bool CTcpSocket::AttachSocket(SOCKET s, const std::string& remoteIP, unsigned short remotePort)
+bool TcpSocketImpl::attachSocket(SOCKET s, const std::string& remoteIP, unsigned short remotePort)
 {
-	 m_register._fd = s;
-	 m_remoteIP = remoteIP;
-	 m_remotePort = remotePort;
-	 m_register._linkstat = LS_WAITLINK;
+	 _register._fd = s;
+	 _remoteIP = remoteIP;
+	 _remotePort = remotePort;
+	 _register._linkstat = LS_WAITLINK;
 	return true;
 }
 
 
 
 
-bool CTcpSocket::DoConnect(const std::string & remoteIP, unsigned short remotePort, _OnConnectHandler && handler)
+bool TcpSocketImpl::doConnect(const std::string & remoteIP, unsigned short remotePort, _OnConnectHandler && handler)
 {
-	if (!m_summer)
+	if (!_summer)
 	{
-		LCE("CTcpSocket::DoConnect[this0x" << this << "] summer not bind!" << SocketSection());
+		LCE("TcpSocketImpl::doConnect[this0x" << this << "] summer not bind!" << socketSection());
 		return false;
 	}
-	if (m_register._linkstat != LS_WAITLINK)
+	if (_register._linkstat != LS_WAITLINK)
 	{
-		LCE("CTcpSocket::DoConnect[this0x" << this << "] _linkstat not LS_WAITLINK!" << SocketSection());
+		LCE("TcpSocketImpl::doConnect[this0x" << this << "] _linkstat not LS_WAITLINK!" << socketSection());
 		return false;
 	}
 
-	m_register._wt = true;
+	_register._wt = true;
 
-	m_remoteIP = remoteIP;
-	m_remotePort = remotePort;
+	_remoteIP = remoteIP;
+	_remotePort = remotePort;
 	sockaddr_in addr;
 	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = inet_addr(m_remoteIP.c_str());
-	addr.sin_port = htons(m_remotePort);
+	addr.sin_addr.s_addr = inet_addr(_remoteIP.c_str());
+	addr.sin_port = htons(_remotePort);
 	
 	
-	int ret = connect(m_register._fd, (sockaddr *) &addr, sizeof(addr));
+	int ret = connect(_register._fd, (sockaddr *) &addr, sizeof(addr));
 #ifndef WIN32
 	if (ret != 0 && errno != EINPROGRESS)
 #else
 	if (ret != 0 && WSAGetLastError() != WSAEWOULDBLOCK)
 #endif
 	{
-		LCT("CTcpSocket::DoConnect[this0x" << this << "] ::connect error. " << OSTREAM_GET_LASTERROR << SocketSection());
-		closesocket(m_register._fd);
-		m_register._fd = InvalideFD;
+		LCT("TcpSocketImpl::doConnect[this0x" << this << "] ::connect error. " << OSTREAM_GET_LASTERROR << socketSection());
+		closesocket(_register._fd);
+		_register._fd = InvalideFD;
 		return false;
 	}
 	
-	m_register._tcpSocketConnectPtr = shared_from_this();
-	if (!m_summer->RegisterEvent(0, m_register))
+	_register._tcpSocketConnectPtr = shared_from_this();
+	if (!_summer->registerEvent(0, _register))
 	{
-		LCE("CTcpSocket::DoConnect[this0x" << this << "] RegisterEvent Error" << SocketSection());
-		closesocket(m_register._fd);
-		m_register._fd = InvalideFD;
-		m_register._tcpSocketConnectPtr.reset();
+		LCE("TcpSocketImpl::doConnect[this0x" << this << "] registerEvent Error" << socketSection());
+		closesocket(_register._fd);
+		_register._fd = InvalideFD;
+		_register._tcpSocketConnectPtr.reset();
 		return false;
 	}
-	m_onConnectHandler = std::move(handler);
+	_onConnectHandler = std::move(handler);
 	return true;
 }
 
 
-bool CTcpSocket::DoSend(char * buf, unsigned int len, _OnSendHandler && handler)
+bool TcpSocketImpl::doSend(char * buf, unsigned int len, _OnSendHandler && handler)
 {
-	if (m_register._linkstat != LS_ESTABLISHED)
+	if (_register._linkstat != LS_ESTABLISHED)
 	{
-		LCT("CTcpSocket::DoSend[this0x" << this << "] _linkstat not REG_ESTABLISHED_TCP!" << SocketSection());
+		LCT("TcpSocketImpl::doSend[this0x" << this << "] _linkstat not REG_ESTABLISHED_TCP!" << socketSection());
 		return false;
 	}
 
-	if (!m_summer)
+	if (!_summer)
 	{
-		LCE("CTcpSocket::DoSend[this0x" << this << "] m_summer not bind!" << SocketSection());
+		LCE("TcpSocketImpl::doSend[this0x" << this << "] _summer not bind!" << socketSection());
 		return false;
 	}
 	if (len == 0)
 	{
-		LCE("CTcpSocket::DoSend[this0x" << this << "] argument err! len ==0" << SocketSection());
+		LCE("TcpSocketImpl::doSend[this0x" << this << "] argument err! len ==0" << socketSection());
 		return false;
 	}
-	if (m_pSendBuf != NULL || m_iSendLen != 0)
+	if (_pSendBuf != NULL || _iSendLen != 0)
 	{
-		LCE("CTcpSocket::DoSend[this0x" << this << "] m_pSendBuf =" << (void *) m_pSendBuf << " m_iSendLen =" << m_iSendLen<< SocketSection());
+		LCE("TcpSocketImpl::doSend[this0x" << this << "] _pSendBuf =" << (void *) _pSendBuf << " _iSendLen =" << _iSendLen<< socketSection());
 		return false;
 	}
-	if (m_onSendHandler)
+	if (_onSendHandler)
 	{
-		LCE("CTcpSocket::DoSend[this0x" << this << "] m_onSendHandler == TRUE" << SocketSection());
+		LCE("TcpSocketImpl::doSend[this0x" << this << "] _onSendHandler == TRUE" << socketSection());
 		return false;
 	}
 
 	
 	
-	m_pSendBuf = buf;
-	m_iSendLen = len;
+	_pSendBuf = buf;
+	_iSendLen = len;
 	
 
-	m_register._wt = true;
-	m_register._tcpSocketSendPtr = shared_from_this();
-	if (!m_summer->RegisterEvent(1, m_register))
+	_register._wt = true;
+	_register._tcpSocketSendPtr = shared_from_this();
+	if (!_summer->registerEvent(1, _register))
 	{
-		LCT("CTcpSocket::DoSend[this0x" << this << "] RegisterEvent Error" << SocketSection());
-		m_pSendBuf = nullptr;
-		m_iSendLen = 0;
-		m_register._tcpSocketSendPtr.reset();
-		DoClose();
+		LCT("TcpSocketImpl::doSend[this0x" << this << "] registerEvent Error" << socketSection());
+		_pSendBuf = nullptr;
+		_iSendLen = 0;
+		_register._tcpSocketSendPtr.reset();
+		doClose();
 		return false;
 	}
-	m_onSendHandler = std::move(handler);
+	_onSendHandler = std::move(handler);
 	
 	return true;
 }
 
 
-bool CTcpSocket::DoRecv(char * buf, unsigned int len, _OnRecvHandler && handler)
+bool TcpSocketImpl::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler)
 {
-	if (m_register._linkstat != LS_ESTABLISHED)
+	if (_register._linkstat != LS_ESTABLISHED)
 	{
-		LCT("CTcpSocket::DoRecv[this0x" << this << "] type not REG_ESTABLISHED_TCP!" << SocketSection());
+		LCT("TcpSocketImpl::doRecv[this0x" << this << "] type not REG_ESTABLISHED_TCP!" << socketSection());
 		return false;
 	}
 
-	if (!m_summer)
+	if (!_summer)
 	{
-		LCE("CTcpSocket::DoRecv[this0x" << this << "] m_summer not bind!" << SocketSection());
+		LCE("TcpSocketImpl::doRecv[this0x" << this << "] _summer not bind!" << socketSection());
 		return false;
 	}
 
 	if (len == 0 )
 	{
-		LCE("CTcpSocket::DoRecv[this0x" << this << "] argument err !!!  len==0" << SocketSection());
+		LCE("TcpSocketImpl::doRecv[this0x" << this << "] argument err !!!  len==0" << socketSection());
 		return false;
 	}
-	if (m_pRecvBuf != NULL || m_iRecvLen != 0)
+	if (_pRecvBuf != NULL || _iRecvLen != 0)
 	{
-		LCE("CTcpSocket::DoRecv[this0x" << this << "]  (m_pRecvBuf != NULL || m_iRecvLen != 0) == TRUE" << SocketSection());
+		LCE("TcpSocketImpl::doRecv[this0x" << this << "]  (_pRecvBuf != NULL || _iRecvLen != 0) == TRUE" << socketSection());
 		return false;
 	}
-	if (m_onRecvHandler)
+	if (_onRecvHandler)
 	{
-		LCE("CTcpSocket::DoRecv[this0x" << this << "] (m_onRecvHandler) == TRUE" << SocketSection());
+		LCE("TcpSocketImpl::doRecv[this0x" << this << "] (_onRecvHandler) == TRUE" << socketSection());
 		return false;
 	}
 	
-	m_pRecvBuf = buf;
-	m_iRecvLen = len;
+	_pRecvBuf = buf;
+	_iRecvLen = len;
 	
 
-	m_register._rd = true;
-	m_register._tcpSocketRecvPtr = shared_from_this();
-	if (!m_summer->RegisterEvent(1, m_register))
+	_register._rd = true;
+	_register._tcpSocketRecvPtr = shared_from_this();
+	if (!_summer->registerEvent(1, _register))
 	{
-		LCT("CTcpSocket::DoRecv[this0x" << this << "] RegisterEvent Error" << SocketSection());
-		m_pRecvBuf = nullptr;
-		m_iRecvLen = 0;
-		m_register._tcpSocketRecvPtr.reset();
+		LCT("TcpSocketImpl::doRecv[this0x" << this << "] registerEvent Error" << socketSection());
+		_pRecvBuf = nullptr;
+		_iRecvLen = 0;
+		_register._tcpSocketRecvPtr.reset();
 		return false;
 	}
-	m_onRecvHandler = std::move(handler);
+	_onRecvHandler = std::move(handler);
 	
 	return true;
 }
 
 
-void CTcpSocket::OnSelectMessage(bool rd, bool wt, bool err)
+void TcpSocketImpl::onSelectMessage(bool rd, bool wt, bool err)
 {
-	unsigned char linkstat = m_register._linkstat;
+	unsigned char linkstat = _register._linkstat;
 	ErrorCode ec = EC_ERROR;
 
-	if (!m_onRecvHandler && !m_onSendHandler && !m_onConnectHandler)
+	if (!_onRecvHandler && !_onSendHandler && !_onConnectHandler)
 	{
-		LCE("CTcpSocket::OnSelectMessage[this0x" << this << "] unknown error. " << OSTREAM_GET_LASTERROR << SocketSection());
+		LCE("TcpSocketImpl::onSelectMessage[this0x" << this << "] unknown error. " << OSTREAM_GET_LASTERROR << socketSection());
 		return ;
 	}
 
 	if (linkstat == LS_WAITLINK)
 	{
-		std::shared_ptr<CTcpSocket> guad(std::move(m_register._tcpSocketConnectPtr));
-		_OnConnectHandler onConnect(std::move(m_onConnectHandler));
+		std::shared_ptr<TcpSocketImpl> guad(std::move(_register._tcpSocketConnectPtr));
+		_OnConnectHandler onConnect(std::move(_onConnectHandler));
 		int errCode = 0;
 		socklen_t len = sizeof(int);
-		if (err || getsockopt(m_register._fd, SOL_SOCKET, SO_ERROR, (char*)&errCode, &len) != 0 || errCode != 0)
+		if (err || getsockopt(_register._fd, SOL_SOCKET, SO_ERROR, (char*)&errCode, &len) != 0 || errCode != 0)
 		{
-			LOGT("OnConnect False. " << OSTREAM_GET_LASTERROR);
-			m_register._linkstat = LS_WAITLINK;
-			m_summer->RegisterEvent(2, m_register);
+			LOGT("onConnect False. " << OSTREAM_GET_LASTERROR);
+			_register._linkstat = LS_WAITLINK;
+			_summer->registerEvent(2, _register);
 			onConnect(EC_ERROR);
 			return;
 		}
 		else
 		{
-			m_register._wt =  0;
-			m_summer->RegisterEvent(1, m_register);
-			m_register._linkstat = LS_ESTABLISHED;
+			_register._wt =  0;
+			_summer->registerEvent(1, _register);
+			_register._linkstat = LS_ESTABLISHED;
 			onConnect(EC_SUCCESS);
 			return;
 		}
@@ -309,73 +309,73 @@ void CTcpSocket::OnSelectMessage(bool rd, bool wt, bool err)
 	}
 
 
-	if (rd && m_onRecvHandler)
+	if (rd && _onRecvHandler)
 	{
-		std::shared_ptr<CTcpSocket> guad(std::move(m_register._tcpSocketRecvPtr));
+		std::shared_ptr<TcpSocketImpl> guad(std::move(_register._tcpSocketRecvPtr));
 
-		int ret = recv(m_register._fd, m_pRecvBuf, m_iRecvLen, 0);
-		m_register._rd = false;
-		if (!m_summer->RegisterEvent(1, m_register))
+		int ret = recv(_register._fd, _pRecvBuf, _iRecvLen, 0);
+		_register._rd = false;
+		if (!_summer->registerEvent(1, _register))
 		{
-			LCF("CTcpSocket::OnSelectMessage[this0x" << this << "] connect true & EPOLLMod error.  " << OSTREAM_GET_LASTERROR << SocketSection());
+			LCF("TcpSocketImpl::onSelectMessage[this0x" << this << "] connect true & EPOLLMod error.  " << OSTREAM_GET_LASTERROR << socketSection());
 		}
 		if (ret == 0 || (ret == -1 && !IS_WOULDBLOCK))
 		{
 			ec = EC_ERROR;
-			m_register._linkstat = LS_CLOSED;
-			if (rd && m_onRecvHandler)
+			_register._linkstat = LS_CLOSED;
+			if (rd && _onRecvHandler)
 			{
-				_OnRecvHandler onRecv(std::move(m_onRecvHandler));
+				_OnRecvHandler onRecv(std::move(_onRecvHandler));
 				onRecv(ec, 0);
 			}
-			if (!m_onSendHandler && !m_onRecvHandler)
+			if (!_onSendHandler && !_onRecvHandler)
 			{
-				if (!m_summer->RegisterEvent(2, m_register))
+				if (!_summer->registerEvent(2, _register))
 				{
-					LCW("CTcpSocket::OnSelectMessage[this0x" << this << "] connect true & EPOLL DEL error.  " << OSTREAM_GET_LASTERROR << SocketSection());
+					LCW("TcpSocketImpl::onSelectMessage[this0x" << this << "] connect true & EPOLL DEL error.  " << OSTREAM_GET_LASTERROR << socketSection());
 				}
 			}
 			return ;
 		}
 		else if (ret != -1)
 		{
-			_OnRecvHandler onRecv(std::move(m_onRecvHandler));
-			m_pRecvBuf = NULL;
-			m_iRecvLen = 0;
+			_OnRecvHandler onRecv(std::move(_onRecvHandler));
+			_pRecvBuf = NULL;
+			_iRecvLen = 0;
 			onRecv(EC_SUCCESS,ret);
 		}
 		return;
 	}
-	else if (wt && m_onSendHandler)
+	else if (wt && _onSendHandler)
 	{
-		std::shared_ptr<CTcpSocket> guad(std::move(m_register._tcpSocketSendPtr));
+		std::shared_ptr<TcpSocketImpl> guad(std::move(_register._tcpSocketSendPtr));
 
-		int ret = send(m_register._fd, m_pSendBuf, m_iSendLen, 0);
-		m_register._wt = false;
-		if (!m_summer->RegisterEvent(1, m_register))
+		int ret = send(_register._fd, _pSendBuf, _iSendLen, 0);
+		_register._wt = false;
+		if (!_summer->registerEvent(1, _register))
 		{
-			LCF("CTcpSocket::OnSelectMessage[this0x" << this << "] connect true & EPOLLMod error. " << OSTREAM_GET_LASTERROR << SocketSection());
+			LCF("TcpSocketImpl::onSelectMessage[this0x" << this << "] connect true & EPOLLMod error. " << OSTREAM_GET_LASTERROR << socketSection());
 		}
 		
-		if ((ret == -1 && !IS_WOULDBLOCK) || m_register._linkstat == LS_CLOSED)
+		if ((ret == -1 && !IS_WOULDBLOCK) || _register._linkstat == LS_CLOSED)
 		{
 			ec = EC_ERROR;
-			m_register._linkstat = LS_CLOSED;
-			m_onSendHandler = nullptr;
-			if (!m_onSendHandler && !m_onRecvHandler)
+			_register._linkstat = LS_CLOSED;
+			_onSendHandler = nullptr;
+			if (!_onSendHandler && !_onRecvHandler)
 			{
-				if (!m_summer->RegisterEvent(2, m_register))
+				if (!_summer->registerEvent(2, _register))
 				{
-					LCW("CTcpSocket::OnSelectMessage[this0x" << this << "] connect true & EPOLL DEL error.  " << OSTREAM_GET_LASTERROR << SocketSection());
+					LCW("TcpSocketImpl::onSelectMessage[this0x" << this << "] connect true & EPOLL DEL error.  " << OSTREAM_GET_LASTERROR << socketSection());
 				}
 			}
 			return ;
 		}
 		else if (ret != -1)
 		{
-			_OnSendHandler onSend(std::move(m_onSendHandler));
-			m_pSendBuf = NULL;
-			m_iSendLen = 0;
+			_OnSendHandler onSend(std::move(_onSendHandler));
+			_pSendBuf = NULL;
+			_iSendLen = 0;
 			onSend(EC_SUCCESS, ret);
 		}
 	}
@@ -383,11 +383,11 @@ void CTcpSocket::OnSelectMessage(bool rd, bool wt, bool err)
 }
 
 
-bool CTcpSocket::DoClose()
+bool TcpSocketImpl::doClose()
 {
-	if (m_register._fd != InvalideFD)
+	if (_register._fd != InvalideFD)
 	{
-		shutdown(m_register._fd, SHUT_RDWR);
+		shutdown(_register._fd, SHUT_RDWR);
 	}
 	return true;
 }

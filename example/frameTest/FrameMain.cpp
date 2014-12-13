@@ -79,20 +79,20 @@ int main(int argc, char* argv[])
 	if (!g_startIsConnector)
 	{
 		//! start log4z service
-		ILog4zManager::GetInstance()->Config("server.cfg");
-		ILog4zManager::GetInstance()->Start();
+		ILog4zManager::getPtr()->config("server.cfg");
+		ILog4zManager::getPtr()->start();
 	}
 	else
 	{
 		//! start log4z service
-		ILog4zManager::GetInstance()->Config("client.cfg");
-		ILog4zManager::GetInstance()->Start();
+		ILog4zManager::getPtr()->config("client.cfg");
+		ILog4zManager::getPtr()->start();
 	}
 	LOGI("g_remoteIP=" << g_remoteIP << ", g_remotePort=" << g_remotePort << ", g_startIsConnector=" << g_startIsConnector );
 
 
 	//! step 1. start Manager.
-	CTcpSessionManager::getRef().Start();
+	TcpSessionManager::getRef().start();
 
 
 	//! define protocol id
@@ -108,7 +108,7 @@ int main(int argc, char* argv[])
 			LOGI("send to ConnectorID=" << cID << ", msg=hello");
 			WriteStreamPack ws;
 			ws << _RequestSequence << "hello";
-			CTcpSessionManager::getRef().SendOrgSessionData(cID, ws.GetStream(), ws.GetStreamLen());
+			TcpSessionManager::getRef().sendOrgSessionData(cID, ws.getStream(), ws.getStreamLen());
 		};
 
 		//process message _ResultSequence
@@ -119,12 +119,12 @@ int main(int argc, char* argv[])
 			LOGI("recv ConnectorID = " << cID << ", msg = " << msg);
 
 			//! step 3 stop server
-			CTcpSessionManager::getRef().Stop();
+			TcpSessionManager::getRef().Stop();
 		};
 
 		//! register event and message
-		CMessageDispatcher::getRef().RegisterOnSessionEstablished(connectedfun); //!register connect success
-		CMessageDispatcher::getRef().RegisterSessionMessage(_ResultSequence, msg_ResultSequence_fun);//!register message for protoID: _ResultSequence
+		MessageDispatcher::getRef().registerOnSessionEstablished(connectedfun); //!register connect success
+		MessageDispatcher::getRef().registerSessionMessage(_ResultSequence, msg_ResultSequence_fun);//!register message for protoID: _ResultSequence
 
 		//add connector
 		tagConnctorConfigTraits traits;
@@ -132,10 +132,10 @@ int main(int argc, char* argv[])
 		traits.remotePort = 81;
 		traits.reconnectInterval = 5000;
 		traits.reconnectMaxCount = 5;
-		CTcpSessionManager::getRef().AddConnector(traits);
+		TcpSessionManager::getRef().addConnector(traits);
 
 		//! step 2 running
-		CTcpSessionManager::getRef().Run();
+		TcpSessionManager::getRef().run();
 	}
 	else
 	{
@@ -150,23 +150,23 @@ int main(int argc, char* argv[])
 			LOGI("send echo SessionID = " << sID  << ", msg = " << msg);
 			WriteStreamPack ws;
 			ws << _ResultSequence << msg;
-			CTcpSessionManager::getRef().SendOrgSessionData(sID, ws.GetStream(), ws.GetStreamLen());
+			TcpSessionManager::getRef().sendOrgSessionData(sID, ws.getStream(), ws.getStreamLen());
 
 			//! step 3 stop server after 1 second.
-			CTcpSessionManager::getRef().CreateTimer(1000, [](){CTcpSessionManager::getRef().Stop(); });
+			TcpSessionManager::getRef().createTimer(1000, [](){TcpSessionManager::getRef().Stop(); });
 		};
 
 
-		CMessageDispatcher::getRef().RegisterSessionMessage(_RequestSequence, msg_RequestSequence_fun); //!register message for protoID: _RequestSequence
+		MessageDispatcher::getRef().registerSessionMessage(_RequestSequence, msg_RequestSequence_fun); //!register message for protoID: _RequestSequence
 
 		//add Acceptor
 		tagAcceptorConfigTraits traits;
 		traits.listenPort = 81;
 		traits.maxSessions = 1;
 		traits.whitelistIP.push_back("127.0.");
-		CTcpSessionManager::getRef().AddAcceptor(traits);
+		TcpSessionManager::getRef().addAcceptor(traits);
 		//! step 2 running
-		CTcpSessionManager::getRef().Run();
+		TcpSessionManager::getRef().run();
 	}
 	
 

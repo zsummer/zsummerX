@@ -52,9 +52,9 @@ int main(int argc, char* argv[])
 		ws << (unsigned short) 1; //protocol id
 		ws <<(unsigned long long) NOW_TIME; // local tick count
 		ws << fillstring; // append text, fill the length protocol.
-		memcpy(buffSend, ws.GetStream(), ws.GetStreamLen());
-		client->async_write_some(boost::asio::buffer(buffSend, ws.GetStreamLen()),
-					std::bind(onSend, std::placeholders::_1, std::placeholders::_2, 0, ws.GetStreamLen(), client));
+		memcpy(buffSend, ws.getStream(), ws.getStreamLen());
+		client->async_write_some(boost::asio::buffer(buffSend, ws.getStreamLen()),
+					std::bind(onSend, std::placeholders::_1, std::placeholders::_2, 0, ws.getStreamLen(), client));
 	};
 	std::function<void (const boost::system::error_code&,std::size_t, std::size_t, SocketPtr)> onRecv=
 		[&](const boost::system::error_code& ec,std::size_t trans, std::size_t curRecv, SocketPtr client)
@@ -65,10 +65,10 @@ int main(int argc, char* argv[])
 			return;
 		}
 		curRecv += trans;
-		auto ret = CheckBuffIntegrity<DefaultStreamHeadTraits>(buffRecv, curRecv, PACK_LEN);
+		auto ret = checkBuffIntegrity<DefaultStreamHeadTraits>(buffRecv, curRecv, PACK_LEN);
 		if (ret.first == zsummer::proto4z::IRT_CORRUPTION)
 		{
-			cout <<"killed socket: CheckBuffIntegrity error " <<endl;
+			cout <<"killed socket: checkBuffIntegrity error " <<endl;
 			return ;
 		}
 		if (ret.first == zsummer::proto4z::IRT_SHORTAGE)

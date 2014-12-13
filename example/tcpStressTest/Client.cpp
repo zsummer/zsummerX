@@ -37,80 +37,80 @@
 #include "Client.h"
 using namespace zsummer::proto4z;
 
-CClient::CClient(CProcess &proc, CTcpSocketPtr sockptr):m_process(proc)
+CClient::CClient(CProcess &proc, TcpSocketPtr sockptr):_process(proc)
 {
-	m_sockptr = sockptr;
-	memset(&m_recving, 0, sizeof(m_recving));
+	_sockptr = sockptr;
+	memset(&_recving, 0, sizeof(_recving));
 }
 
 CClient::~CClient()
 {
-	while (!m_sendque.empty())
+	while (!_sendque.empty())
 	{
-		delete m_sendque.front();
-		m_sendque.pop();
+		delete _sendque.front();
+		_sendque.pop();
 	}
 	LOGI("~CClient");
 	
 }
 
-void CClient::Initialize()
+void CClient::initialize()
 {
 	
 	if (g_startType == 0)
 	{
-		DoRecv();
-		m_bEstablished = true;
-		m_process.AddTotalOpen(1);
+		doRecv();
+		_bEstablished = true;
+		_process.AddTotalOpen(1);
 	}
 	else
 	{
-		m_sockptr->DoConnect(g_remoteIP, g_remotePort, std::bind(& CClient::OnConnected, shared_from_this(), std::placeholders::_1));
+		_sockptr->doConnect(g_remoteIP, g_remotePort, std::bind(& CClient::onConnected, shared_from_this(), std::placeholders::_1));
 	}	
 }
 
 void CClient::SendOnce()
 {
-	if (!m_bEstablished)
+	if (!_bEstablished)
 	{
 		LOGD("client is dead. no send again");
 		return;
 	}
-	DoSend(1, NOW_TIME, g_text);
+	doSend(1, NOW_TIME, g_text);
 	if (g_sendType != 0)
 	{
 		if (g_intervalMs > 0)
 		{
-			m_process.GetZSummer()->CreateTimer(g_intervalMs, std::bind(&CClient::SendOnce, shared_from_this()));
+			_process.GetZSummer()->createTimer(g_intervalMs, std::bind(&CClient::SendOnce, shared_from_this()));
 		}
 		else
 		{
-			if (m_lastDelayTime < 2000)
+			if (_lastDelayTime < 2000)
 			{
-				m_process.GetZSummer()->Post(std::bind(&CClient::SendOnce, shared_from_this()));
+				_process.GetZSummer()->post(std::bind(&CClient::SendOnce, shared_from_this()));
 			}
 			else
 			{
-				m_process.GetZSummer()->CreateTimer(100, std::bind(&CClient::SendOnce, shared_from_this()));
+				_process.GetZSummer()->createTimer(100, std::bind(&CClient::SendOnce, shared_from_this()));
 			}
 		}
 	}
 }
 
-void CClient::OnConnected(zsummer::network::ErrorCode ec)
+void CClient::onConnected(zsummer::network::ErrorCode ec)
 {
 	if (ec)
 	{
-		LOGD("OnConnected failed. ec=" << ec);
+		LOGD("onConnected failed. ec=" << ec);
 		return;
 	}
-	LOGD("OnConnected success");
-	DoRecv();
-	m_bEstablished = true;
-	m_process.AddTotalOpen(1);
+	LOGD("onConnected success");
+	doRecv();
+	_bEstablished = true;
+	_process.AddTotalOpen(1);
 	if (g_intervalMs > 0)
 	{
-		m_process.GetZSummer()->CreateTimer(g_intervalMs, std::bind(&CClient::SendOnce, shared_from_this()));
+		_process.GetZSummer()->createTimer(g_intervalMs, std::bind(&CClient::SendOnce, shared_from_this()));
 	}
 	else
 	{
@@ -118,43 +118,43 @@ void CClient::OnConnected(zsummer::network::ErrorCode ec)
 	}
 }
 
-void CClient::DoRecv()
+void CClient::doRecv()
 {
-	m_recving._len = 0;
-	bool bSuccess = m_sockptr->DoRecv(m_recving._orgdata, (int)2, std::bind(&CClient::OnRecv, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
+	_recving._len = 0;
+	bool bSuccess = _sockptr->doRecv(_recving._orgdata, (int)2, std::bind(&CClient::onRecv, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
 	if (!bSuccess)
 	{
-		OnClose();
+		onClose();
 	}
 }
 
-void CClient::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
+void CClient::onRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 {
 	if (ec)
 	{
 		LOGD("remote socket closed");
-		OnClose();
+		onClose();
 		return;
 	}
 
-	m_recving._len += nRecvedLen;
+	_recving._len += nRecvedLen;
 
-	auto ret = zsummer::proto4z::CheckBuffIntegrity<zsummer::proto4z::DefaultStreamHeadTraits>(m_recving._orgdata, m_recving._len, _MSG_BUF_LEN);
+	auto ret = zsummer::proto4z::checkBuffIntegrity<zsummer::proto4z::DefaultStreamHeadTraits>(_recving._orgdata, _recving._len, _MSG_BUF_LEN);
 	if (ret.first == zsummer::proto4z::IRT_CORRUPTION)
 	{
-		LOGD("killed socket: CheckBuffIntegrity error ");
-		m_sockptr->DoClose();
-		OnClose();
+		LOGD("killed socket: checkBuffIntegrity error ");
+		_sockptr->doClose();
+		onClose();
 		return;
 	}
 	if (ret.first == zsummer::proto4z::IRT_SHORTAGE)
 	{
-		m_sockptr->DoRecv(m_recving._orgdata + m_recving._len, ret.second, std::bind(&CClient::OnRecv, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
+		_sockptr->doRecv(_recving._orgdata + _recving._len, ret.second, std::bind(&CClient::onRecv, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
 		return ;
 	}
 
 	//! 解包完成 进行消息处理
-	zsummer::proto4z::ReadStream<DefaultStreamHeadTraits> rs(m_recving._orgdata, m_recving._len);
+	zsummer::proto4z::ReadStream<DefaultStreamHeadTraits> rs(_recving._orgdata, _recving._len);
 	try
 	{
 		MessageEntry(rs);
@@ -162,14 +162,14 @@ void CClient::OnRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 	catch (std::runtime_error e)
 	{
 		LOGD("MessageEntry catch one exception: "<< e.what() );
-		m_sockptr->DoClose();
-		OnClose();
+		_sockptr->doClose();
+		onClose();
 		return ;
 	}
-	m_process.AddTotalRecvLen(m_recving._len);
-	m_process.AddTotalRecvCount(1);
+	_process.AddTotalRecvLen(_recving._len);
+	_process.AddTotalRecvCount(1);
 	//! 继续收包
-	DoRecv();
+	doRecv();
 }
 
 void CClient::MessageEntry(zsummer::proto4z::ReadStream<zsummer::proto4z::DefaultStreamHeadTraits> & rs)
@@ -182,11 +182,11 @@ void CClient::MessageEntry(zsummer::proto4z::ReadStream<zsummer::proto4z::Defaul
 	case 1:
 		{
 			unsigned long long clientTick = 0;
-			m_recvTextCache.clear();
-			rs >> clientTick >> m_recvTextCache;
+			_recvTextCache.clear();
+			rs >> clientTick >> _recvTextCache;
 			if (g_startType == 0)
 			{
-				DoSend(protocolID, clientTick, m_recvTextCache);
+				doSend(protocolID, clientTick, _recvTextCache);
 			}
 			else
 			{
@@ -197,9 +197,9 @@ void CClient::MessageEntry(zsummer::proto4z::ReadStream<zsummer::proto4z::Defaul
 					throw std::runtime_error("now time < last time");
 				}
 				tick -= clientTick;
-				m_lastDelayTime = tick;
-				m_process.AddTotalEcho(1);
-				m_process.AddTotalEchoTime(tick);
+				_lastDelayTime = tick;
+				_process.AddTotalEcho(1);
+				_process.AddTotalEchoTime(tick);
 				if (g_sendType == 0)
 				{
 					SendOnce();
@@ -217,75 +217,75 @@ void CClient::MessageEntry(zsummer::proto4z::ReadStream<zsummer::proto4z::Defaul
 
 
 
-void CClient::DoSend(unsigned short protocolID, unsigned long long clientTick, const std::string& text)
+void CClient::doSend(unsigned short protocolID, unsigned long long clientTick, const std::string& text)
 {
 	zsummer::proto4z::WriteStream<DefaultStreamHeadTraits> ws(zsummer::proto4z::UBT_STATIC_AUTO);
 	ws << protocolID << clientTick << text;
-	DoSend(ws.GetStream(), ws.GetStreamLen());
+	doSend(ws.getStream(), ws.getStreamLen());
 }
 
-void CClient::DoSend(char *buf, unsigned short len)
+void CClient::doSend(char *buf, unsigned short len)
 {
-	if (m_sendLen != 0)
+	if (_sendLen != 0)
 	{
 		Packet *pack = new Packet;
 		memcpy(pack->_orgdata, buf, len);
 		pack->_len = len;
-		m_sendque.push(pack);
+		_sendque.push(pack);
 	}
 	else
 	{
-		memcpy(m_sendBuff, buf, len);
-		m_sendLen = len;
-		m_curSendLen = 0;
-		m_sockptr->DoSend(m_sendBuff, m_sendLen, std::bind(&CClient::OnSend, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
+		memcpy(_sendBuff, buf, len);
+		_sendLen = len;
+		_curSendLen = 0;
+		_sockptr->doSend(_sendBuff, _sendLen, std::bind(&CClient::onSend, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
 	}
 }
 
 
-void CClient::OnSend(zsummer::network::ErrorCode ec,  int nSentLen)
+void CClient::onSend(zsummer::network::ErrorCode ec,  int nSentLen)
 {
 	if (ec)
 	{
 		LOGD("remote socket closed");
 		return ;
 	}
-	m_curSendLen += nSentLen;
-	if (m_curSendLen < m_sendLen)
+	_curSendLen += nSentLen;
+	if (_curSendLen < _sendLen)
 	{
-		m_sockptr->DoSend(m_sendBuff+m_curSendLen, m_sendLen - m_curSendLen, std::bind(&CClient::OnSend, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
+		_sockptr->doSend(_sendBuff+_curSendLen, _sendLen - _curSendLen, std::bind(&CClient::onSend, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
 	}
-	else if (m_curSendLen == m_sendLen)
+	else if (_curSendLen == _sendLen)
 	{
-		m_process.AddTotalSendCount(1);
-		m_process.AddTotalSendLen(m_curSendLen);
-		m_curSendLen = 0;
-		m_sendLen = 0;
-		if (!m_sendque.empty())
+		_process.AddTotalSendCount(1);
+		_process.AddTotalSendLen(_curSendLen);
+		_curSendLen = 0;
+		_sendLen = 0;
+		if (!_sendque.empty())
 		{
 			do
 			{
-				Packet *pack = m_sendque.front();
-				if (_SEND_BUF_LEN - m_sendLen < pack->_len)
+				Packet *pack = _sendque.front();
+				if (_SEND_BUF_LEN - _sendLen < pack->_len)
 				{
 					break;
 				}
-				m_sendque.pop();
-				memcpy(m_sendBuff+m_sendLen, pack->_orgdata, pack->_len);
-				m_sendLen += pack->_len;
+				_sendque.pop();
+				memcpy(_sendBuff+_sendLen, pack->_orgdata, pack->_len);
+				_sendLen += pack->_len;
 				delete pack;
 
-			} while (!m_sendque.empty());
+			} while (!_sendque.empty());
 			
-			m_sockptr->DoSend(m_sendBuff, m_sendLen, std::bind(&CClient::OnSend, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
+			_sockptr->doSend(_sendBuff, _sendLen, std::bind(&CClient::onSend, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
 		}
 	}
 }
 
-void CClient::OnClose()
+void CClient::onClose()
 {
 	LOGI("Client Closed!");
-	m_process.AddTotalClosed(1);
-	m_bEstablished = false;
+	_process.AddTotalClosed(1);
+	_bEstablished = false;
 }
 

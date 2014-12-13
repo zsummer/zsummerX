@@ -56,7 +56,7 @@ struct Picnic
 	char		   sendData[_MSG_BUF_LEN];
 	std::string textCache;
 	unsigned long long _reqTime;
-	CUdpSocketPtr sock;
+	UdpSocketPtr sock;
 };
 typedef std::shared_ptr<Picnic> PicnicPtr;
 
@@ -73,7 +73,7 @@ void doSend(const char *remoteIP, unsigned short remotePort, unsigned short prot
 	ws << protocolID; //protocol id
 	ws << pic->_reqTime; // local tick count
 	ws << g_fillString; // append text, fill the length protocol.
-	pic->sock->DoSendTo(ws.GetStream(), ws.GetStreamLen(), remoteIP, remotePort);
+	pic->sock->doSendTo(ws.getStream(), ws.getStreamLen(), remoteIP, remotePort);
 	g_totalSend++;
 };
 
@@ -85,7 +85,7 @@ void onRecv(ErrorCode ec, const char *remoteIP, unsigned short remotePort, int t
 		return;
 	}
 
-	auto ret = zsummer::proto4z::CheckBuffIntegrity<DefaultStreamHeadTraits>(pic->recvData, translate, _MSG_BUF_LEN);
+	auto ret = zsummer::proto4z::checkBuffIntegrity<DefaultStreamHeadTraits>(pic->recvData, translate, _MSG_BUF_LEN);
 	if (ret.first == IRT_SUCCESS)
 	{
 		//! 解包
@@ -131,7 +131,7 @@ void onRecv(ErrorCode ec, const char *remoteIP, unsigned short remotePort, int t
 		{
 			LOGE("MessageEntry catch one exception: "<< e.what() );
 		}
-		pic->sock->DoRecvFrom(pic->recvData, _MSG_BUF_LEN, std::bind(onRecv, 
+		pic->sock->doRecvFrom(pic->recvData, _MSG_BUF_LEN, std::bind(onRecv, 
 			std::placeholders::_1,
 			std::placeholders::_2,
 			std::placeholders::_3,
@@ -168,18 +168,18 @@ int main(int argc, char* argv[])
 	unsigned int maxClient = atoi(argv[4]);
 	if (g_type ==1)
 	{
-		zsummer::log4z::ILog4zManager::GetInstance()->Config("server.cfg");
-		zsummer::log4z::ILog4zManager::GetInstance()->Start();
+		zsummer::log4z::ILog4zManager::getPtr()->config("server.cfg");
+		zsummer::log4z::ILog4zManager::getPtr()->start();
 	}
 	else
 	{
-		zsummer::log4z::ILog4zManager::GetInstance()->Config("client.cfg");
-		zsummer::log4z::ILog4zManager::GetInstance()->Start();
+		zsummer::log4z::ILog4zManager::getPtr()->config("client.cfg");
+		zsummer::log4z::ILog4zManager::getPtr()->start();
 	}
 	LOGI("ip=" << ip << ", port=" << port << ", type=" << g_type << ", maxClients=" << maxClient);
 	
 	zsummer::network::ZSummerPtr summer(new zsummer::network::ZSummer());
-	summer->Initialize();
+	summer->initialize();
 
 	g_fillString.resize(1000, 'z');
 	g_totalEcho = 0;
@@ -191,9 +191,9 @@ int main(int argc, char* argv[])
 	if (g_type == 0)
 	{
 		PicnicPtr pic(new Picnic());
-		pic->sock = std::make_shared<CUdpSocket>();
-		pic->sock->Initialize(summer, ip.c_str(), port);
-		pic->sock->DoRecvFrom(pic->recvData, _MSG_BUF_LEN, std::bind(onRecv,
+		pic->sock = std::make_shared<UdpSocketImpl>();
+		pic->sock->initialize(summer, ip.c_str(), port);
+		pic->sock->doRecvFrom(pic->recvData, _MSG_BUF_LEN, std::bind(onRecv,
 			std::placeholders::_1,
 			std::placeholders::_2,
 			std::placeholders::_3,
@@ -206,19 +206,19 @@ int main(int argc, char* argv[])
 		for (unsigned int i = 0; i < maxClient; i++)
 		{
 			PicnicPtr picc(new Picnic);
-			picc->sock = std::make_shared<CUdpSocket>();
-			if (!picc->sock->Initialize(summer, "0.0.0.0", 0))
+			picc->sock = std::make_shared<UdpSocketImpl>();
+			if (!picc->sock->initialize(summer, "0.0.0.0", 0))
 			{
 				LOGI("init udp socket error.");
 				continue;
 			}
-			picc->sock->DoRecvFrom(picc->recvData, _MSG_BUF_LEN, std::bind(onRecv,
+			picc->sock->doRecvFrom(picc->recvData, _MSG_BUF_LEN, std::bind(onRecv,
 				std::placeholders::_1,
 				std::placeholders::_2,
 				std::placeholders::_3,
 				std::placeholders::_4,
 				picc));
-			summer->CreateTimer(rand()%1000+1000,std::bind(doSend,ip.c_str(), port, 1, NOW_TIME, picc));
+			summer->createTimer(rand()%1000+1000,std::bind(doSend,ip.c_str(), port, 1, NOW_TIME, picc));
 		}
 
 	}
@@ -239,12 +239,12 @@ int main(int argc, char* argv[])
 		nLast[2] = g_totalSend;
 		nLast[3] = g_totalRecv;
 
-		summer->CreateTimer(5 * 1000, std::bind(doTimer));
+		summer->createTimer(5 * 1000, std::bind(doTimer));
 	};
-	summer->CreateTimer(5*1000, std::bind(doTimer));
+	summer->createTimer(5*1000, std::bind(doTimer));
 	do
 	{
-		summer->RunOnce();
+		summer->runOnce();
 	} while (true);
 	return 0;
 }

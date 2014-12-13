@@ -109,14 +109,14 @@ int main(int argc, char* argv[])
 	if (g_startType == 0)
 	{
 		//! 启动日志服务
-		ILog4zManager::GetInstance()->Config("server.cfg");
-		ILog4zManager::GetInstance()->Start();
+		ILog4zManager::getPtr()->config("server.cfg");
+		ILog4zManager::getPtr()->start();
 	}
 	else
 	{
 				//! 启动日志服务
-		ILog4zManager::GetInstance()->Config("client.cfg");
-		ILog4zManager::GetInstance()->Start();
+		ILog4zManager::getPtr()->config("client.cfg");
+		ILog4zManager::getPtr()->start();
 	}
 	LOGI("g_remoteIP=" << g_remoteIP << ", g_remotePort=" << g_remotePort << ", g_startType=" << g_startType 
 		<< ", g_maxClient=" << g_maxClient << ", g_sendType=" << g_sendType << ", g_intervalMs=" << g_intervalMs);
@@ -125,7 +125,7 @@ int main(int argc, char* argv[])
 
 	//! 启动调度器
 	CSchedule schedule;
-	schedule.Start();
+	schedule.start();
 
 
 	//main线程用于服务状态统计与输出
@@ -137,7 +137,7 @@ int main(int argc, char* argv[])
 		std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 		memset(&temp, 0, sizeof(temp));
 
-		for (std::vector<CProcess *>::const_iterator iter = schedule.m_process.begin(); iter != schedule.m_process.end(); ++iter)
+		for (std::vector<CProcess *>::const_iterator iter = schedule._process.begin(); iter != schedule._process.end(); ++iter)
 		{
 			temp[0] += (*iter)->GetTotalRecvLen();
 			temp[1] += (*iter)->GetTotalSendLen();

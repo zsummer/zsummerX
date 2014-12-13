@@ -42,7 +42,7 @@
 
 using namespace zsummer::network;
 
-bool ZSummer::Initialize()
+bool ZSummer::initialize()
 {
 	//////////////////////////////////////////////////////////////////////////
 	//create socket pair
@@ -51,74 +51,74 @@ bool ZSummer::Initialize()
 	pairAddr.sin_family = AF_INET;
 	pairAddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	SOCKET acpt = socket(AF_INET, SOCK_STREAM, 0);
-	m_sockpair[0] = socket(AF_INET, SOCK_STREAM, 0);
-	m_sockpair[1] = socket(AF_INET, SOCK_STREAM, 0);
-	if (m_sockpair[0] == -1 || m_sockpair[1] == -1 || acpt == -1)
+	_sockpair[0] = socket(AF_INET, SOCK_STREAM, 0);
+	_sockpair[1] = socket(AF_INET, SOCK_STREAM, 0);
+	if (_sockpair[0] == -1 || _sockpair[1] == -1 || acpt == -1)
 	{
-		LCF("ZSummerImpl::Initialize[this0x" << this << "] bind sockpair socket error. " << ZSummerSection());
+		LCF("ZSummerImpl::initialize[this0x" << this << "] bind sockpair socket error. " << zsummerSection());
 		return false;
 	}
 	if (::bind(acpt, (sockaddr*)&pairAddr, sizeof(pairAddr)) == -1)
 	{
-		LCF("CZSummerImpl::Initialize[this0x" << this << "] bind sockpair socket error. " << ZSummerSection());
+		LCF("CZSummerImpl::initialize[this0x" << this << "] bind sockpair socket error. " << zsummerSection());
 		closesocket(acpt);
-		closesocket(m_sockpair[0]);
-		closesocket(m_sockpair[1]);
+		closesocket(_sockpair[0]);
+		closesocket(_sockpair[1]);
 		return false;
 	}
 	if (listen(acpt, 1) == -1)
 	{
-		LCF("CZSummerImpl::Initialize[this0x" << this << "] listen sockpair socket error. " << ZSummerSection());
+		LCF("CZSummerImpl::initialize[this0x" << this << "] listen sockpair socket error. " << zsummerSection());
 		closesocket(acpt);
-		closesocket(m_sockpair[0]);
-		closesocket(m_sockpair[1]);
+		closesocket(_sockpair[0]);
+		closesocket(_sockpair[1]);
 		return false;
 	}
 	socklen_t len = sizeof(pairAddr);
 	if (getsockname(acpt, (sockaddr*)&pairAddr, &len) != 0)
 	{
-		LCF("CZSummerImpl::Initialize[this0x" << this << "] getsockname sockpair socket error. " << ZSummerSection());
+		LCF("CZSummerImpl::initialize[this0x" << this << "] getsockname sockpair socket error. " << zsummerSection());
 		closesocket(acpt);
-		closesocket(m_sockpair[0]);
-		closesocket(m_sockpair[1]);
+		closesocket(_sockpair[0]);
+		closesocket(_sockpair[1]);
 		return false;
 	}
 
-	if (::connect(m_sockpair[0], (sockaddr*)&pairAddr, sizeof(pairAddr)) == -1)
+	if (::connect(_sockpair[0], (sockaddr*)&pairAddr, sizeof(pairAddr)) == -1)
 	{
-		LCF("CZSummerImpl::Initialize[this0x" << this << "] connect sockpair socket error. " << ZSummerSection());
+		LCF("CZSummerImpl::initialize[this0x" << this << "] connect sockpair socket error. " << zsummerSection());
 		closesocket(acpt);
-		closesocket(m_sockpair[0]);
-		closesocket(m_sockpair[1]);
+		closesocket(_sockpair[0]);
+		closesocket(_sockpair[1]);
 		return false;
 	}
-	m_sockpair[1] = accept(acpt, (sockaddr*)&pairAddr, &len);
-	if (m_sockpair[1] == -1)
+	_sockpair[1] = accept(acpt, (sockaddr*)&pairAddr, &len);
+	if (_sockpair[1] == -1)
 	{
-		LCF("CZSummerImpl::Initialize[this0x" << this << "] accept sockpair socket error. " << ZSummerSection());
+		LCF("CZSummerImpl::initialize[this0x" << this << "] accept sockpair socket error. " << zsummerSection());
 		closesocket(acpt);
-		closesocket(m_sockpair[0]);
-		closesocket(m_sockpair[1]);
+		closesocket(_sockpair[0]);
+		closesocket(_sockpair[1]);
 		return false;
 	}
 	closesocket(acpt);
 
-	SetNonBlock(m_sockpair[0]);
-	SetNonBlock(m_sockpair[1]);
-	SetNoDelay(m_sockpair[0]);
-	SetNoDelay(m_sockpair[1]);
+	setNonBlock(_sockpair[0]);
+	setNonBlock(_sockpair[1]);
+	setNoDelay(_sockpair[0]);
+	setNoDelay(_sockpair[1]);
 
 	return true;
 }
 
-bool ZSummer::RegisterEvent(int op, tagRegister & reg)
+bool ZSummer::registerEvent(int op, tagRegister & reg)
 {
 	if (op == 1)
 	{
-		auto founder = std::find_if(m_poolRegister.begin(), m_poolRegister.end(), [&reg](const tagRegister & r){ return reg._fd == r._fd; });
-		if (founder == m_poolRegister.end())
+		auto founder = std::find_if(_poolRegister.begin(), _poolRegister.end(), [&reg](const tagRegister & r){ return reg._fd == r._fd; });
+		if (founder == _poolRegister.end())
 		{
-			LOGE("ZSummer::RegisterEvent not found register. op=" << op << ", reg._type=" << reg._type);
+			LOGE("ZSummer::registerEvent not found register. op=" << op << ", reg._type=" << reg._type);
 			return false;
 		}
 		else
@@ -129,22 +129,22 @@ bool ZSummer::RegisterEvent(int op, tagRegister & reg)
 	}
 	else
 	{
-		auto founder = std::find_if(m_poolRegister.begin(), m_poolRegister.end(), [&reg](const tagRegister & r){ return reg._fd == r._fd; });
-		if (founder == m_poolRegister.end())
+		auto founder = std::find_if(_poolRegister.begin(), _poolRegister.end(), [&reg](const tagRegister & r){ return reg._fd == r._fd; });
+		if (founder == _poolRegister.end())
 		{
 			if (op == 0)
 			{
-				if (m_poolRegister.size() >= FD_SETSIZE)
+				if (_poolRegister.size() >= FD_SETSIZE)
 				{
-					LOGE("ZSummer::RegisterEvent add. register is too many. op=" << op << ", reg=" << reg);
+					LOGE("ZSummer::registerEvent add. register is too many. op=" << op << ", reg=" << reg);
 					return false;
 				}
-				m_poolRegister.push_back(reg);
+				_poolRegister.push_back(reg);
 				return true;
 			}
 			else
 			{
-				LOGE("ZSummer::RegisterEvent del. register not found. op=" << op << ", reg=" << reg);
+				LOGE("ZSummer::registerEvent del. register not found. op=" << op << ", reg=" << reg);
 				return false;
 			}
 
@@ -153,10 +153,10 @@ bool ZSummer::RegisterEvent(int op, tagRegister & reg)
 		{
 			if (op	== 0)
 			{
-				LOGE("CZSummerImpl::RegisterEvent add. register aready exsit. op=" << op << ", reg=" << reg);
+				LOGE("CZSummerImpl::registerEvent add. register aready exsit. op=" << op << ", reg=" << reg);
 				return false;
 			}
-			m_poolRegister.erase(founder);
+			_poolRegister.erase(founder);
 		}
 	}
 	return true;
@@ -166,26 +166,26 @@ bool ZSummer::RegisterEvent(int op, tagRegister & reg)
 void ZSummer::PostMessage(_OnPostHandler &&handle)
 {
 	_OnPostHandler * pHandler = new _OnPostHandler(std::move(handle));
-	m_stackMessagesLock.lock();
-	m_stackMessages.push_back(pHandler);
-	m_stackMessagesLock.unlock();
+	_stackMessagesLock.lock();
+	_stackMessages.push_back(pHandler);
+	_stackMessagesLock.unlock();
 	char c='0';
-	send(m_sockpair[0], &c, 1, 0);
+	send(_sockpair[0], &c, 1, 0);
 }
 
-std::string ZSummer::ZSummerSection()
+std::string ZSummer::zsummerSection()
 {
 	std::stringstream os;
-	m_stackMessagesLock.lock();
-	MessageStack::size_type msgSize = m_stackMessages.size();
-	m_stackMessagesLock.unlock();
-	os << " ZSummerSection:  m_sockpair[2]={" << m_sockpair[0] << "," << m_sockpair[1] << "}"
-		<< " m_stackMessages.size()=" << msgSize << ", current total timer=" << m_timer.GetTimersCount()
-		<< " m_poolRegister=" << m_poolRegister.size();
+	_stackMessagesLock.lock();
+	MessageStack::size_type msgSize = _stackMessages.size();
+	_stackMessagesLock.unlock();
+	os << " zsummerSection:  _sockpair[2]={" << _sockpair[0] << "," << _sockpair[1] << "}"
+		<< " _stackMessages.size()=" << msgSize << ", current total timer=" << _timer.GetTimersCount()
+		<< " _poolRegister=" << _poolRegister.size();
 	return os.str();
 }
 
-void ZSummer::RunOnce()
+void ZSummer::runOnce()
 {
 	int nfds = 0;
 	fd_set fdr;
@@ -194,7 +194,7 @@ void ZSummer::RunOnce()
 	FD_ZERO(&fdr);
 	FD_ZERO(&fdw);
 	FD_ZERO(&fde);
-	for (auto & r : m_poolRegister)
+	for (auto & r : _poolRegister)
 	{
 		if (r._rd)
 		{
@@ -218,14 +218,14 @@ void ZSummer::RunOnce()
 			}
 		}
 	}
-	FD_SET(m_sockpair[1], &fdr);
-	if (m_sockpair[1] > nfds)
+	FD_SET(_sockpair[1], &fdr);
+	if (_sockpair[1] > nfds)
 	{
-		nfds = (int)m_sockpair[1];
+		nfds = (int)_sockpair[1];
 	}
 
 	timeval tv;
-	unsigned int ms = m_timer.GetNextExpireTime();
+	unsigned int ms = _timer.getNextExpireTime();
 	tv.tv_sec = ms / 1000;
 	tv.tv_usec = (ms % 1000) * 1000;
 
@@ -234,7 +234,7 @@ void ZSummer::RunOnce()
 	{
 		if (IS_EINTR)
 		{
-			LCT("CZSummerImpl::RunOnce[this0x" << this << "]  select err!  " << OSTREAM_GET_LASTERROR << ", " << ZSummerSection());
+			LCT("CZSummerImpl::runOnce[this0x" << this << "]  select err!  " << OSTREAM_GET_LASTERROR << ", " << zsummerSection());
 			return; //! error
 		}
 		return;
@@ -242,19 +242,19 @@ void ZSummer::RunOnce()
 
 	//check timer
 	{
-		m_timer.CheckTimer();
+		_timer.checkTimer();
 		if (retCount == 0) return;//timeout
 	}
 
-	if (FD_ISSET(m_sockpair[1], &fdr))
+	if (FD_ISSET(_sockpair[1], &fdr))
 	{
 		char buf[1000];
-		while (recv(m_sockpair[1], buf, 1000, 0) > 0);
+		while (recv(_sockpair[1], buf, 1000, 0) > 0);
 
 		MessageStack msgs;
-		m_stackMessagesLock.lock();
-		msgs.swap(m_stackMessages);
-		m_stackMessagesLock.unlock();
+		_stackMessagesLock.lock();
+		msgs.swap(_stackMessages);
+		_stackMessagesLock.unlock();
 
 		for (auto pfunc : msgs)
 		{
@@ -276,7 +276,7 @@ void ZSummer::RunOnce()
 	}
 	
 
-	PoolReggister poolRegister = m_poolRegister;
+	PoolReggister poolRegister = _poolRegister;
 	for (auto & r : poolRegister)
 	{
 		//tagHandle  type
@@ -286,7 +286,7 @@ void ZSummer::RunOnce()
 			{
 				if (r._tcpacceptPtr)
 				{
-					r._tcpacceptPtr->OnSelectMessage();
+					r._tcpacceptPtr->onSelectMessage();
 				}
 			}
 		}
@@ -298,17 +298,17 @@ void ZSummer::RunOnce()
 			{
 				if (r._rd && r._tcpSocketRecvPtr)
 				{
-					r._tcpSocketRecvPtr->OnSelectMessage(true, false, true);
+					r._tcpSocketRecvPtr->onSelectMessage(true, false, true);
 				}
 				if (r._wt)
 				{
 					if (r._tcpSocketSendPtr)
 					{
-						r._tcpSocketSendPtr->OnSelectMessage(false, true, true);
+						r._tcpSocketSendPtr->onSelectMessage(false, true, true);
 					}
 					if (r._tcpSocketConnectPtr)
 					{
-						r._tcpSocketConnectPtr->OnSelectMessage(false, true, true);
+						r._tcpSocketConnectPtr->onSelectMessage(false, true, true);
 					}
 				}
 			}
@@ -316,17 +316,17 @@ void ZSummer::RunOnce()
 			{
 				if (rd && r._tcpSocketRecvPtr)
 				{
-					r._tcpSocketRecvPtr->OnSelectMessage(true, false, false);
+					r._tcpSocketRecvPtr->onSelectMessage(true, false, false);
 				}
 				if (wt)
 				{
 					if (r._tcpSocketSendPtr)
 					{
-						r._tcpSocketSendPtr->OnSelectMessage(false, true, false);
+						r._tcpSocketSendPtr->onSelectMessage(false, true, false);
 					}
 					if (r._tcpSocketConnectPtr)
 					{
-						r._tcpSocketConnectPtr->OnSelectMessage(false, true, false);
+						r._tcpSocketConnectPtr->onSelectMessage(false, true, false);
 					}
 				}
 			}
@@ -339,14 +339,14 @@ void ZSummer::RunOnce()
 			{
 				if (r._udpsocketPtr)
 				{
-					r._udpsocketPtr->OnSelectMessage(r._type, rd, wt);
+					r._udpsocketPtr->onSelectMessage(r._type, rd, wt);
 				}
 			}
 		}
 		else
 		{
 			
-			LCE("ZSummerImpl::RunOnce[this0x" << this << "] check register event type failed !!  type=" << r << ZSummerSection());
+			LCE("ZSummerImpl::runOnce[this0x" << this << "] check register event type failed !!  type=" << r << zsummerSection());
 		}
 	}
 

@@ -1,27 +1,23 @@
 
 
-
 aux_source_directory(./ source)    
-if(ZSUMMERX_USE_SELECT)
-	set(BINNAME ${PROJECT_NAME}_select${LIB_SUFFIX})
+
+
+set(EXECUTABLE_OUTPUT_PATH ${example_SOURCE_DIR}/bin)
+if(APPLE)
 else()
-	set(BINNAME ${PROJECT_NAME}${LIB_SUFFIX})
+	add_executable(${PROJECT_NAME}${LIB_SUFFIX} ${source})
+	target_link_libraries(${PROJECT_NAME}${LIB_SUFFIX} zsummerX${LIB_SUFFIX} log4z${LIB_SUFFIX} pthread  rt)
 endif()
 
+add_executable(${PROJECT_NAME}_select${LIB_SUFFIX} ${source})
+target_link_libraries(${PROJECT_NAME}_select${LIB_SUFFIX} zsummerX_select${LIB_SUFFIX} log4z${LIB_SUFFIX} pthread  rt)
 
-set(EXECUTABLE_OUTPUT_PATH ${BIN_DIR})
+set_target_properties(${PROJECT_NAME}_select${LIB_SUFFIX} PROPERTIES COMPILE_DEFINITIONS "ZSUMMERX_USE_SELECT=1")
 
-add_executable(${BINNAME} ${source})
-
-if(WIN32)
-  target_link_libraries(${BINNAME} ${ZSUMMERX_LIB_NAME}${LIB_SUFFIX} log4z${LIB_SUFFIX})
-else()
-  if (APPLE)
-    target_link_libraries(${BINNAME} ${ZSUMMERX_LIB_NAME}${LIB_SUFFIX} log4z${LIB_SUFFIX} pthread )
-  else()
-    target_link_libraries(${BINNAME} ${ZSUMMERX_LIB_NAME}${LIB_SUFFIX} log4z${LIB_SUFFIX} pthread rt)
-  endif()
-endif()
-
-
+ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+ 	add_definitions(-Wall -g -ggdb -O0 -std=c++11 -D_GLIBCXX_USE_NANOSLEEP)
+ else()
+ 	add_definitions(-Wall  -O2 -DNDEBUG -std=c++11 -D_GLIBCXX_USE_NANOSLEEP)
+ endif()
 

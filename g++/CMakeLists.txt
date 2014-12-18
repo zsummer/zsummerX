@@ -2,25 +2,47 @@ cmake_minimum_required(VERSION 2.6)
 project(makelib)
 
 
-aux_source_directory(${ZSUMMERX_SRC_DIR}/common COMMON)
+aux_source_directory(${ZSUMMERX_SRC_DIR}/common COMMON_SRC)
 
-if(WIN32)
-aux_source_directory(${ZSUMMERX_SRC_DIR}/iocp NETWORK)
+aux_source_directory(${ZSUMMERX_SRC_DIR}/select SELECT_SRC)
+
+aux_source_directory(${ZSUMMERX_SRC_DIR}/epoll EPOLL_SRC)
+
+aux_source_directory(${ZSUMMERX_SRC_DIR}/timer TIMER_SRC)
+
+aux_source_directory(${ZSUMMERX_SRC_DIR}/frame FRAME_SRC)
+
+if(APPLE)
 else()
-aux_source_directory(${ZSUMMERX_SRC_DIR}/epoll NETWORK)
-endif(WIN32)
+add_library(zsummerX${LIB_SUFFIX} STATIC ${COMMON_SRC} ${EPOLL_SRC} ${TIMER_SRC} ${FRAME_SRC})
+endif()
 
-aux_source_directory(${ZSUMMERX_SRC_DIR}/timer TIMER)
+add_library(zsummerX_select${LIB_SUFFIX} STATIC ${COMMON_SRC} ${SELECT_SRC} ${TIMER_SRC} ${FRAME_SRC})
+set_target_properties(zsummerX_select${LIB_SUFFIX} PROPERTIES COMPILE_DEFINITIONS "ZSUMMERX_USE_SELECT=1")
 
-aux_source_directory(${ZSUMMERX_SRC_DIR}/frame FRAME)
+ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+ 	add_definitions(-Wall -g -ggdb -O0 -std=c++11 -D_GLIBCXX_USE_NANOSLEEP)
+ else()
+ 	add_definitions(-Wall  -O2 -DNDEBUG -std=c++11 -D_GLIBCXX_USE_NANOSLEEP)
+ endif()
 
-set(source  ${COMMON} ${TIMER} ${FRAME} ${NETWORK})
+add_definitions(-Wall -std=c++11)
+
+
+
 
 set(LIBRARY_OUTPUT_PATH ${ZSUMMERX_LIB_DIR})
 
-add_library(${ZSUMMERX_LIB_NAME}${LIB_SUFFIX} STATIC ${source})
 
-install(TARGETS ${ZSUMMERX_LIB_NAME}${LIB_SUFFIX} 
+if(APPLE)
+else()
+install(TARGETS zsummerX${LIB_SUFFIX}
 	LIBRARY DESTINATION lib
 	ARCHIVE DESTINATION lib)
+endif()
+
+install(TARGETS zsummerX_select${LIB_SUFFIX}
+	LIBRARY DESTINATION lib
+	ARCHIVE DESTINATION lib)
+
 install(DIRECTORY ${zsummerX_SOURCE_DIR}/include/zsummerX  DESTINATION include)

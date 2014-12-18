@@ -71,7 +71,7 @@
 #include "iocp/udpsocket_impl.h"
 #include "iocp/tcpaccept_impl.h"
 #else
-#if __APPLE__ 
+#if __APPLE__ || ZSUMMERX_USE_SELECT
 #include "select/select_impl.h"
 #include "select/udpsocket_impl.h"
 #include "select/tcpsocket_impl.h"

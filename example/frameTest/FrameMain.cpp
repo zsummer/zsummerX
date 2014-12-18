@@ -161,9 +161,9 @@ int main(int argc, char* argv[])
 
 		//add Acceptor
 		tagAcceptorConfigTraits traits;
-		traits.listenPort = 81;
+		traits.listenPort = 8081;
 		traits.maxSessions = 1;
-		traits.whitelistIP.push_back("127.0.");
+		//!traits.whitelistIP.push_back("127.0.");
 		TcpSessionManager::getRef().addAcceptor(traits);
 		//! step 2 running
 		TcpSessionManager::getRef().run();

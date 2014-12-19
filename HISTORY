@@ -1,2 +1,33 @@
 HISTORY for zsummerX
-2013.9.28
+
+build 2013.9.28
+
+v1.0 preview 2013.12.3
+  have valid test: tcp server, tcp client, udp server, udp client in example.
+
+v1.0 2013.12.7
+  stress
+
+v1.2 2014.5.16
+  update protocol
+
+v2.0 2014.8.19
+  better stable, succinctly and usefull interface.
+
+v3.0 2014.9.21
+  add select implementation
+
+v4.0 2014.10.8
+  simplify frame dispatch design
+
+v4.2 2014.11.18
+  add trace log when use frame send orgData.
+  frame protocol max size default set limit 48 k.
+  catch runtime error when call user OnPostHandler and OnTimerHandler.
+  support flash policy request
+  support http chunked header 
+  optimize performance used c++11 move
+
+v4.6 2014.12.19
+  new naming notations
+  support iOS

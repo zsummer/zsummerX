@@ -26,7 +26,6 @@ set_target_properties(zsummerX_select${LIB_SUFFIX} PROPERTIES COMPILE_DEFINITION
  	add_definitions(-Wall  -O2 -DNDEBUG -std=c++11 -D_GLIBCXX_USE_NANOSLEEP)
  endif()
 
-add_definitions(-Wall -std=c++11)
 
 
 

@@ -5,13 +5,15 @@ aux_source_directory(./ source)
 
 set(EXECUTABLE_OUTPUT_PATH ${example_SOURCE_DIR}/bin)
 if(APPLE)
+	add_executable(${PROJECT_NAME}_select${LIB_SUFFIX} ${source})
+	target_link_libraries(${PROJECT_NAME}_select${LIB_SUFFIX} zsummerX_select${LIB_SUFFIX} log4z${LIB_SUFFIX} pthread)
 else()
+	add_executable(${PROJECT_NAME}_select${LIB_SUFFIX} ${source})
+	target_link_libraries(${PROJECT_NAME}_select${LIB_SUFFIX} zsummerX_select${LIB_SUFFIX} log4z${LIB_SUFFIX} pthread  rt)
 	add_executable(${PROJECT_NAME}${LIB_SUFFIX} ${source})
 	target_link_libraries(${PROJECT_NAME}${LIB_SUFFIX} zsummerX${LIB_SUFFIX} log4z${LIB_SUFFIX} pthread  rt)
 endif()
 
-add_executable(${PROJECT_NAME}_select${LIB_SUFFIX} ${source})
-target_link_libraries(${PROJECT_NAME}_select${LIB_SUFFIX} zsummerX_select${LIB_SUFFIX} log4z${LIB_SUFFIX} pthread  rt)
 
 set_target_properties(${PROJECT_NAME}_select${LIB_SUFFIX} PROPERTIES COMPILE_DEFINITIONS "ZSUMMERX_USE_SELECT=1")
 

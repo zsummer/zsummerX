@@ -56,6 +56,7 @@ bool TcpSessionManager::start()
 	{
 		return false;
 	}
+	_running = true;
 	return true;
 }
 
@@ -89,15 +90,21 @@ void TcpSessionManager::safeStop()
 		}
 	}
 }
+
 void TcpSessionManager::run()
 {
-	_running = true;
 	while (_running || !_mapTcpSessionPtr.empty())
 	{
 		_summer->runOnce();
 	}
 }
-
+void TcpSessionManager::runOnce()
+{
+	if (_running || !_mapTcpSessionPtr.empty())
+	{
+		_summer->runOnce();
+	}
+}
 
 
 

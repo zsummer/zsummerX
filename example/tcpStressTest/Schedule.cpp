@@ -42,7 +42,7 @@
 CSchedule::CSchedule()
 {
 	_summer = zsummer::network::ZSummerPtr(new zsummer::network::ZSummer());
-	_accept = zsummer::network::TcpAcceptPtr(new zsummer::network::TcpAcceptImpl());
+	_accept = zsummer::network::TcpAcceptPtr(new zsummer::network::TcpAccept());
 	_accept->initialize(_summer);
 }
 
@@ -70,7 +70,7 @@ void CSchedule::start()
 		{
 			LOGI("open server port [" << g_remotePort << "] success");
 		}
-		TcpSocketPtr s(new zsummer::network::TcpSocketImpl());
+		TcpSocketPtr s(new zsummer::network::TcpSocket());
 		
 		_accept->doAccept(s, std::bind(&CSchedule::OnAccept, this, std::placeholders::_1, std::placeholders::_2));
 	}
@@ -100,7 +100,7 @@ void CSchedule::doConnect(unsigned int maxClient)
 {
 	for (unsigned int i = 1; i <= maxClient; i++)
 	{
-		TcpSocketPtr s(new zsummer::network::TcpSocketImpl());
+		TcpSocketPtr s(new zsummer::network::TcpSocket());
 		CProcess * proc = _process[_iCurProcess];
 		s->initialize(proc->GetZSummer());
 		proc->post(std::bind(&CProcess::RecvSocketPtr, proc, s));
@@ -142,7 +142,7 @@ void CSchedule::OnAccept(zsummer::network::ErrorCode ec, TcpSocketPtr sockptr)
 		process->post(std::bind(&CProcess::RecvSocketPtr, process, sockptr));
 	}
 
-	TcpSocketPtr s(new zsummer::network::TcpSocketImpl());
+	TcpSocketPtr s(new zsummer::network::TcpSocket());
 	_accept->doAccept(s, std::bind(&CSchedule::OnAccept, this, std::placeholders::_1, std::placeholders::_2));
 }
 

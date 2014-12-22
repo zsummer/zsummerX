@@ -69,7 +69,7 @@ void CProcess::run()
 }
 
 
-void CProcess::RecvSocketPtr(std::shared_ptr<zsummer::network::TcpSocketImpl> sockptr)
+void CProcess::RecvSocketPtr(std::shared_ptr<zsummer::network::TcpSocket> sockptr)
 {
 	std::shared_ptr<CClient> client(new CClient(*this, sockptr));
 	client->initialize();

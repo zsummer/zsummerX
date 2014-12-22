@@ -128,8 +128,8 @@ struct tagConnctorInfo
 
 //----------------------------------------
 class TcpSession;
-typedef std::shared_ptr<zsummer::network::TcpSocketImpl> TcpSocketPtr;
-typedef std::shared_ptr<zsummer::network::TcpAcceptImpl> TcpAcceptPtr;
+typedef std::shared_ptr<zsummer::network::TcpSocket> TcpSocketPtr;
+typedef std::shared_ptr<zsummer::network::TcpAccept> TcpAcceptPtr;
 typedef std::shared_ptr<zsummer::network::ZSummer> ZSummerPtr;
 typedef std::shared_ptr<TcpSession> CTcpSessionPtr;
 

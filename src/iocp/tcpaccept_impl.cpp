@@ -40,7 +40,7 @@
 
 
 using namespace zsummer::network;
-TcpAcceptImpl::TcpAcceptImpl()
+TcpAccept::TcpAccept()
 {
 	//listen
 	memset(&_handle._overlapped, 0, sizeof(_handle._overlapped));
@@ -55,7 +55,7 @@ TcpAcceptImpl::TcpAcceptImpl()
 	//status
 	_nLinkStatus = LS_UNINITIALIZE;
 }
-TcpAcceptImpl::~TcpAcceptImpl()
+TcpAccept::~TcpAccept()
 {
 	if (_server != INVALID_SOCKET)
 	{
@@ -69,24 +69,24 @@ TcpAcceptImpl::~TcpAcceptImpl()
 	}
 }
 
-bool TcpAcceptImpl::initialize(ZSummerPtr& summer)
+bool TcpAccept::initialize(ZSummerPtr& summer)
 {
 	_summer = summer;
 	return true;
 }
 
-bool TcpAcceptImpl::openAccept(const char * ip, unsigned short port)
+bool TcpAccept::openAccept(const char * ip, unsigned short port)
 {
 	if (!_summer)
 	{
-		LCF("TcpAcceptImpl _summer is nullptr!  ip=" << ip << ", port=" << port);
+		LCF("TcpAccept _summer is nullptr!  ip=" << ip << ", port=" << port);
 		assert(0);
 		return false;
 	}
 
 	if (_server != INVALID_SOCKET)
 	{
-		LCF("TcpAcceptImpl socket is arealy used!  ip=" << ip << ", port=" << port);
+		LCF("TcpAccept socket is arealy used!  ip=" << ip << ", port=" << port);
 		assert(0);
 		return false;
 	}
@@ -94,7 +94,7 @@ bool TcpAcceptImpl::openAccept(const char * ip, unsigned short port)
 	_server = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
 	if (_server == INVALID_SOCKET)
 	{
-		LCF("TcpAcceptImpl server can't create socket!   ip=" << ip << ", port=" << port);
+		LCF("TcpAccept server can't create socket!   ip=" << ip << ", port=" << port);
 		assert(0);
 		return false;
 	}
@@ -135,7 +135,7 @@ bool TcpAcceptImpl::openAccept(const char * ip, unsigned short port)
 	return true;
 }
 
-bool TcpAcceptImpl::doAccept(const TcpSocketPtr & s, _OnAcceptHandler&& handler)
+bool TcpAccept::doAccept(const TcpSocketPtr & s, _OnAcceptHandler&& handler)
 {
 	if (_onAcceptHandler)
 	{
@@ -173,9 +173,9 @@ bool TcpAcceptImpl::doAccept(const TcpSocketPtr & s, _OnAcceptHandler&& handler)
 	_handle._tcpAccept = shared_from_this();
 	return true;
 }
-bool TcpAcceptImpl::onIOCPMessage(BOOL bSuccess)
+bool TcpAccept::onIOCPMessage(BOOL bSuccess)
 {
-	std::shared_ptr<TcpAcceptImpl> guad( std::move(_handle._tcpAccept));
+	std::shared_ptr<TcpAccept> guad( std::move(_handle._tcpAccept));
 	_OnAcceptHandler onAccept(std::move(_onAcceptHandler));
 	if (bSuccess)
 	{

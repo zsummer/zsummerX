@@ -67,7 +67,7 @@ public:
 		_summer->post(h);
 	}
 	//接收一个socket
-	void RecvSocketPtr(std::shared_ptr<zsummer::network::TcpSocketImpl> sockptr);
+	void RecvSocketPtr(std::shared_ptr<zsummer::network::TcpSocket> sockptr);
 
 	//all use
 public:

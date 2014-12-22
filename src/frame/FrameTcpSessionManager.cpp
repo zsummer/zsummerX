@@ -108,7 +108,7 @@ AccepterID TcpSessionManager::addAcceptor(const tagAcceptorConfigTraits &traits)
 	pairConfig.first = traits;
 	pairConfig.second.aID = _lastAcceptID;
 
-	TcpAcceptPtr accepter(new zsummer::network::TcpAcceptImpl());
+	TcpAcceptPtr accepter(new zsummer::network::TcpAccept());
 	accepter->initialize(_summer);
 	if (!accepter->openAccept(traits.listenIP.c_str(), traits.listenPort))
 	{
@@ -116,7 +116,7 @@ AccepterID TcpSessionManager::addAcceptor(const tagAcceptorConfigTraits &traits)
 		return InvalidAccepterID;
 	}
 	_mapAccepterPtr[_lastAcceptID] = accepter;
-	TcpSocketPtr newclient(new zsummer::network::TcpSocketImpl);
+	TcpSocketPtr newclient(new zsummer::network::TcpSocket);
 	accepter->doAccept(newclient, std::bind(&TcpSessionManager::onAcceptNewClient, this, std::placeholders::_1, std::placeholders::_2, accepter, pairConfig.second.aID));
 	return _lastAcceptID;
 }
@@ -153,7 +153,7 @@ void TcpSessionManager::onAcceptNewClient(zsummer::network::ErrorCode ec, const 
 	{
 		LCE("doAccept Result Error. ec=" << ec << ", traits=" << iter->second.first);
 		
-		TcpSocketPtr newclient(new zsummer::network::TcpSocketImpl);
+		TcpSocketPtr newclient(new zsummer::network::TcpSocket);
 		newclient->initialize(_summer);
 		auto &&handler = std::bind(&TcpSessionManager::onAcceptNewClient, this, std::placeholders::_1, std::placeholders::_2, accepter, aID);
 		auto timer = [accepter, newclient, handler]()
@@ -190,7 +190,7 @@ void TcpSessionManager::onAcceptNewClient(zsummer::network::ErrorCode ec, const 
 			LCW("Accept New Client Check Whitelist Failed remoteAdress=" << remoteIP << ":" << remotePort
 				<< ", trais=" << iter->second.first);
 
-			TcpSocketPtr newclient(new zsummer::network::TcpSocketImpl);
+			TcpSocketPtr newclient(new zsummer::network::TcpSocket);
 			newclient->initialize(_summer);
 			accepter->doAccept(newclient, std::bind(&TcpSessionManager::onAcceptNewClient, this, std::placeholders::_1, std::placeholders::_2, accepter, aID));
 			return;
@@ -227,7 +227,7 @@ void TcpSessionManager::onAcceptNewClient(zsummer::network::ErrorCode ec, const 
 	}
 	
 	//! accept next socket.
-	TcpSocketPtr newclient(new zsummer::network::TcpSocketImpl);
+	TcpSocketPtr newclient(new zsummer::network::TcpSocket);
 	newclient->initialize(_summer);
 	accepter->doAccept(newclient, std::bind(&TcpSessionManager::onAcceptNewClient, this, std::placeholders::_1, std::placeholders::_2, accepter,aID));
 }
@@ -265,7 +265,7 @@ SessionID TcpSessionManager::addConnector(const tagConnctorConfigTraits & traits
 	auto & pairConfig = _mapConnectorConfig[_lastConnectID];
 	pairConfig.first = traits;
 	pairConfig.second.cID = _lastConnectID;
-	TcpSocketPtr sockPtr(new zsummer::network::TcpSocketImpl());
+	TcpSocketPtr sockPtr(new zsummer::network::TcpSocket());
 	sockPtr->initialize(_summer);
 	CTcpSessionPtr sessionPtr(new TcpSession());
 	sessionPtr->bindTcpConnectorPtr(sockPtr, pairConfig);
@@ -304,7 +304,7 @@ void TcpSessionManager::onConnect(SessionID cID, bool bConnected, const CTcpSess
 		config->second.second.curReconnectCount++;
 		config->second.second.totalConnectCount++;
 
-		TcpSocketPtr sockPtr(new zsummer::network::TcpSocketImpl());
+		TcpSocketPtr sockPtr(new zsummer::network::TcpSocket());
 		sockPtr->initialize(_summer);
 		createTimer(config->second.first.reconnectInterval, std::bind(&TcpSession::bindTcpConnectorPtr, session, sockPtr, config->second));
 		LCW("Try reconnect current count=" << config->second.second.curReconnectCount << ", total reconnect = " << config->second.second.totalConnectCount << ". Traits=" << config->second.first);

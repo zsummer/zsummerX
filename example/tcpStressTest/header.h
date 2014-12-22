@@ -64,7 +64,7 @@ struct Packet
 	char		   _orgdata[_MSG_BUF_LEN];
 };
 typedef std::shared_ptr<Packet> PacketPtr;
-typedef std::shared_ptr<zsummer::network::TcpSocketImpl> TcpSocketPtr;
+typedef std::shared_ptr<zsummer::network::TcpSocket> TcpSocketPtr;
 
 static std::string g_text = "zsummerX:test text.........  zsummerX:test text.........  " //64
 					  "zsummerX:test text.........  zsummerX:test text.........  " //

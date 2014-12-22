@@ -39,7 +39,7 @@
 
 
 using namespace zsummer::network;
-TcpSocketImpl::TcpSocketImpl()
+TcpSocket::TcpSocket()
 {
 	g_appEnvironment.addCreatedSocketCount();
 	//recv
@@ -60,12 +60,12 @@ TcpSocketImpl::TcpSocketImpl()
 }
 
 
-TcpSocketImpl::~TcpSocketImpl()
+TcpSocket::~TcpSocket()
 {
 	g_appEnvironment.addClosedSocketCount();
 	if (_onConnectHandler || _onRecvHandler || _onSendHandler)
 	{
-		LCT("TcpSocketImpl::~TcpSocketImpl[" << this << "] Destruct TcpSocketImpl Error. socket handle not invalid and some request was not completed. " << getTcpSocketImplStatus());
+		LCT("TcpSocket::~TcpSocket[" << this << "] Destruct TcpSocket Error. socket handle not invalid and some request was not completed. " << getTcpSocketStatus());
 	}	
 	if (_socket != INVALID_SOCKET)
 	{
@@ -74,10 +74,10 @@ TcpSocketImpl::~TcpSocketImpl()
 	}
 }
 
-std::string TcpSocketImpl::getTcpSocketImplStatus()
+std::string TcpSocket::getTcpSocketStatus()
 {
 	std::stringstream os;
-	os << " TcpSocketImpl Status: _summer.use_count()=" << _summer.use_count() << ", _socket=" << _socket
+	os << " TcpSocket Status: _summer.use_count()=" << _summer.use_count() << ", _socket=" << _socket
 		<< ", _remoteIP=" << _remoteIP << ", _remotePort=" << _remotePort
 		<< ", _recvHandle=" << _recvHandle << ", _recvWSABuf[0x" << (void*)_recvWSABuf.buf << "," << _recvWSABuf.len
 		<< "], _onRecvHandler=" << (bool)_onRecvHandler << ", _sendHandle=" << _sendHandle
@@ -89,7 +89,7 @@ std::string TcpSocketImpl::getTcpSocketImplStatus()
 }
 
 //new socket to connect, or accept established socket
-bool TcpSocketImpl::initialize(const ZSummerPtr& summer)
+bool TcpSocket::initialize(const ZSummerPtr& summer)
 {
 	_summer = summer;
 	if (_nLinkStatus != LS_UNINITIALIZE)
@@ -102,7 +102,7 @@ bool TcpSocketImpl::initialize(const ZSummerPtr& summer)
 		_socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
 		if (_socket == INVALID_SOCKET)
 		{
-			LCE("TcpSocketImpl::doConnect[" << this << "] socket create error! ERRCODE=" << WSAGetLastError() << getTcpSocketImplStatus());
+			LCE("TcpSocket::doConnect[" << this << "] socket create error! ERRCODE=" << WSAGetLastError() << getTcpSocketStatus());
 			return false;
 		}
 
@@ -111,7 +111,7 @@ bool TcpSocketImpl::initialize(const ZSummerPtr& summer)
 		localAddr.sin_family = AF_INET;
 		if (bind(_socket, (sockaddr *)&localAddr, sizeof(SOCKADDR_IN)) != 0)
 		{
-			LCE("TcpSocketImpl::doConnect[" << this << "] bind local addr error! ERRCODE=" << WSAGetLastError() << getTcpSocketImplStatus());
+			LCE("TcpSocket::doConnect[" << this << "] bind local addr error! ERRCODE=" << WSAGetLastError() << getTcpSocketStatus());
 			closesocket(_socket);
 			_socket = INVALID_SOCKET;
 			return false;
@@ -120,7 +120,7 @@ bool TcpSocketImpl::initialize(const ZSummerPtr& summer)
 
 	if (CreateIoCompletionPort((HANDLE)_socket, _summer->_io, (ULONG_PTR)this, 1) == NULL)
 	{
-		LCE("TcpSocketImpl::initialize[" << this << "] bind socket to IOCP error.  ERRCODE=" << GetLastError() << getTcpSocketImplStatus());
+		LCE("TcpSocket::initialize[" << this << "] bind socket to IOCP error.  ERRCODE=" << GetLastError() << getTcpSocketStatus());
 		closesocket(_socket);
 		_socket = INVALID_SOCKET;
 		return false;
@@ -129,7 +129,7 @@ bool TcpSocketImpl::initialize(const ZSummerPtr& summer)
 }
 
 
-bool TcpSocketImpl::attachSocket(SOCKET s, std::string remoteIP, unsigned short remotePort)
+bool TcpSocket::attachSocket(SOCKET s, std::string remoteIP, unsigned short remotePort)
 {
 
 	_socket = s;
@@ -144,21 +144,21 @@ typedef  BOOL (PASCAL  *ConnectEx)(  SOCKET s,  const struct sockaddr* name,  in
 			 PVOID lpSendBuffer,  DWORD dwSendDataLength,  LPDWORD lpdwBytesSent,
 			 LPOVERLAPPED lpOverlapped);
 
-bool TcpSocketImpl::doConnect(const std::string& remoteIP, unsigned short remotePort, _OnConnectHandler && handler)
+bool TcpSocket::doConnect(const std::string& remoteIP, unsigned short remotePort, _OnConnectHandler && handler)
 {
 	if (!_summer)
 	{
-		LCF("TcpSocketImpl::doConnect[" << this << "] _summer pointer uninitialize." << getTcpSocketImplStatus());
+		LCF("TcpSocket::doConnect[" << this << "] _summer pointer uninitialize." << getTcpSocketStatus());
 		return false;
 	}
 	if (_nLinkStatus != LS_WAITLINK)
 	{
-		LCW("TcpSocketImpl::doConnect[" << this << "] socket already used or not initilize. " << getTcpSocketImplStatus());
+		LCW("TcpSocket::doConnect[" << this << "] socket already used or not initilize. " << getTcpSocketStatus());
 		return false;
 	}
 	if (_onConnectHandler)
 	{
-		LCF("TcpSocketImpl::doConnect[" << this << "] socket is connecting." << getTcpSocketImplStatus());
+		LCF("TcpSocket::doConnect[" << this << "] socket is connecting." << getTcpSocketStatus());
 		return false;
 	}
 	
@@ -168,7 +168,7 @@ bool TcpSocketImpl::doConnect(const std::string& remoteIP, unsigned short remote
 	DWORD dwSize = 0;
 	if (WSAIoctl(_socket, SIO_GET_EXTENSION_FUNCTION_POINTER, &gid, sizeof(gid), &lpConnectEx, sizeof(lpConnectEx), &dwSize, NULL, NULL) != 0)
 	{
-		LCT("TcpSocketImpl::doConnect[" << this << "] Get ConnectEx pointer err!  ERRCODE= " << WSAGetLastError() << getTcpSocketImplStatus());
+		LCT("TcpSocket::doConnect[" << this << "] Get ConnectEx pointer err!  ERRCODE= " << WSAGetLastError() << getTcpSocketStatus());
 		return false;
 	}
 
@@ -186,7 +186,7 @@ bool TcpSocketImpl::doConnect(const std::string& remoteIP, unsigned short remote
 	{
 		if (WSAGetLastError() != ERROR_IO_PENDING)
 		{
-			LCT("TcpSocketImpl::doConnect[" << this << "] doConnect failed and ERRCODE!=ERROR_IO_PENDING, ERRCODE=" << WSAGetLastError() << getTcpSocketImplStatus());
+			LCT("TcpSocket::doConnect[" << this << "] doConnect failed and ERRCODE!=ERROR_IO_PENDING, ERRCODE=" << WSAGetLastError() << getTcpSocketStatus());
 			return false;
 		}
 
@@ -199,26 +199,26 @@ bool TcpSocketImpl::doConnect(const std::string& remoteIP, unsigned short remote
 
 
 
-bool TcpSocketImpl::doSend(char * buf, unsigned int len, _OnSendHandler &&handler)
+bool TcpSocket::doSend(char * buf, unsigned int len, _OnSendHandler &&handler)
 {
 	if (_nLinkStatus != LS_ESTABLISHED)
 	{
-		LCT("TcpSocketImpl::doSend[" << this << "] socket status != LS_ESTABLISHED." << getTcpSocketImplStatus());
+		LCT("TcpSocket::doSend[" << this << "] socket status != LS_ESTABLISHED." << getTcpSocketStatus());
 		return false;
 	}
 	if (!_summer)
 	{
-		LCF("TcpSocketImpl::doSend[" << this << "] _summer pointer uninitialize." << getTcpSocketImplStatus());
+		LCF("TcpSocket::doSend[" << this << "] _summer pointer uninitialize." << getTcpSocketStatus());
 		return false;
 	}
 	if (_onSendHandler)
 	{
-		LCF("TcpSocketImpl::doSend[" << this << "] socket is sending." << getTcpSocketImplStatus());
+		LCF("TcpSocket::doSend[" << this << "] socket is sending." << getTcpSocketStatus());
 		return false;
 	}
 	if (len == 0)
 	{
-		LCF("TcpSocketImpl::doSend[" << this << "] length is 0." << getTcpSocketImplStatus());
+		LCF("TcpSocket::doSend[" << this << "] length is 0." << getTcpSocketStatus());
 		return false;
 	}
 
@@ -229,7 +229,7 @@ bool TcpSocketImpl::doSend(char * buf, unsigned int len, _OnSendHandler &&handle
 	{
 		if (WSAGetLastError() != WSA_IO_PENDING)
 		{
-			LCT("TcpSocketImpl::doSend[" << this << "] doSend failed and ERRCODE!=ERROR_IO_PENDING ERRCODE=" << WSAGetLastError() << getTcpSocketImplStatus());
+			LCT("TcpSocket::doSend[" << this << "] doSend failed and ERRCODE!=ERROR_IO_PENDING ERRCODE=" << WSAGetLastError() << getTcpSocketStatus());
 			_sendWsaBuf.buf = nullptr;
 			_sendWsaBuf.len = 0;
 			doClose();
@@ -242,26 +242,26 @@ bool TcpSocketImpl::doSend(char * buf, unsigned int len, _OnSendHandler &&handle
 }
 
 
-bool TcpSocketImpl::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler)
+bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler)
 {
 	if (_nLinkStatus != LS_ESTABLISHED)
 	{
-		LCT("TcpSocketImpl::doRecv[" << this << "] socket status != LS_ESTABLISHED. " << getTcpSocketImplStatus());
+		LCT("TcpSocket::doRecv[" << this << "] socket status != LS_ESTABLISHED. " << getTcpSocketStatus());
 		return false;
 	}
 	if (!_summer)
 	{
-		LCF("TcpSocketImpl::doRecv[" << this << "] _summer pointer uninitialize." << getTcpSocketImplStatus());
+		LCF("TcpSocket::doRecv[" << this << "] _summer pointer uninitialize." << getTcpSocketStatus());
 		return false;
 	}
 	if (_onRecvHandler)
 	{
-		LCF("TcpSocketImpl::doRecv[" << this << "] socket is recving. " << getTcpSocketImplStatus());
+		LCF("TcpSocket::doRecv[" << this << "] socket is recving. " << getTcpSocketStatus());
 		return false;
 	}
 	if (len == 0)
 	{
-		LCF("TcpSocketImpl::doRecv[" << this << "] length is 0." << getTcpSocketImplStatus());
+		LCF("TcpSocket::doRecv[" << this << "] length is 0." << getTcpSocketStatus());
 		return false;
 	}
 
@@ -275,7 +275,7 @@ bool TcpSocketImpl::doRecv(char * buf, unsigned int len, _OnRecvHandler && handl
 	{
 		if (WSAGetLastError() != WSA_IO_PENDING)
 		{
-			LCT("TcpSocketImpl::doRecv[" << this << "] doRecv failed and ERRCODE!=ERROR_IO_PENDING, ERRCODE=" << WSAGetLastError() << getTcpSocketImplStatus());
+			LCT("TcpSocket::doRecv[" << this << "] doRecv failed and ERRCODE!=ERROR_IO_PENDING, ERRCODE=" << WSAGetLastError() << getTcpSocketStatus());
 			_recvWSABuf.buf = nullptr;
 			_recvWSABuf.len = 0;
 			doClose();
@@ -287,12 +287,12 @@ bool TcpSocketImpl::doRecv(char * buf, unsigned int len, _OnRecvHandler && handl
 	return true;
 }
 
-void TcpSocketImpl::onIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned char cType)
+void TcpSocket::onIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned char cType)
 {
 	if (cType == tagReqHandle::HANDLE_CONNECT)
 	{
 		_OnConnectHandler onConnect(std::move(_onConnectHandler));
-		std::shared_ptr<TcpSocketImpl> guad(std::move(_connectHandle._tcpSocket));
+		std::shared_ptr<TcpSocket> guad(std::move(_connectHandle._tcpSocket));
 		if (!onConnect)
 		{
 			return;
@@ -304,7 +304,7 @@ void TcpSocketImpl::onIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned c
 				BOOL bTrue = TRUE;
 				if (setsockopt(_socket,IPPROTO_TCP, TCP_NODELAY, (char*)&bTrue, sizeof(bTrue)) != 0)
 				{
-					LCW("TcpSocketImpl::onIOCPMessage[" << this << "] setsockopt TCP_NODELAY fail!  last err=" << WSAGetLastError() << getTcpSocketImplStatus());
+					LCW("TcpSocket::onIOCPMessage[" << this << "] setsockopt TCP_NODELAY fail!  last err=" << WSAGetLastError() << getTcpSocketStatus());
 				}
 			}
 			onConnect(ErrorCode::EC_SUCCESS);
@@ -322,7 +322,7 @@ void TcpSocketImpl::onIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned c
 	if (cType == tagReqHandle::HANDLE_SEND)
 	{
 		_OnSendHandler onSend(std::move(_onSendHandler));
-		std::shared_ptr<TcpSocketImpl> guad(std::move(_sendHandle._tcpSocket));
+		std::shared_ptr<TcpSocket> guad(std::move(_sendHandle._tcpSocket));
 		if (!onSend)
 		{
 			return;
@@ -336,7 +336,7 @@ void TcpSocketImpl::onIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned c
 	}
 	else if (cType == tagReqHandle::HANDLE_RECV)
 	{
-		std::shared_ptr<TcpSocketImpl> guad(std::move(_recvHandle._tcpSocket));
+		std::shared_ptr<TcpSocket> guad(std::move(_recvHandle._tcpSocket));
 		_OnRecvHandler onRecv(std::move(_onRecvHandler));
 		if (!onRecv)
 		{
@@ -362,7 +362,7 @@ void TcpSocketImpl::onIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned c
 }
 
 
-bool TcpSocketImpl::doClose()
+bool TcpSocket::doClose()
 {
 	if (_nLinkStatus == LS_ESTABLISHED || _nLinkStatus == LS_WAITLINK)
 	{

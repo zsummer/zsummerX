@@ -135,7 +135,7 @@ void OnAcceptSocket(ErrorCode ec, TcpSocketPtr s)
 	usedSocket = s;
 	usedSocket->initialize(summer);
 	usedSocket->doRecv(recvBuffer, recvBufferLen, std::bind(OnServerSocketRecv, std::placeholders::_1, std::placeholders::_2));
-	ts = std::shared_ptr<TcpSocketImpl>(new TcpSocketImpl);
+	ts = std::shared_ptr<TcpSocket>(new TcpSocket);
 	accepter->doAccept(ts, std::bind(OnAcceptSocket, std::placeholders::_1, std::placeholders::_2));
 };
 
@@ -225,9 +225,9 @@ int main(int argc, char* argv[])
 
 	if (g_startType == 0)
 	{
-		accepter = std::shared_ptr<TcpAcceptImpl>(new TcpAcceptImpl());
+		accepter = std::shared_ptr<TcpAccept>(new TcpAccept());
 		accepter->initialize(summer);
-		ts = std::shared_ptr<TcpSocketImpl>(new TcpSocketImpl);
+		ts = std::shared_ptr<TcpSocket>(new TcpSocket);
 		if (!accepter->openAccept(g_remoteIP.c_str(), g_remotePort))
 		{
 			return 0;
@@ -237,7 +237,7 @@ int main(int argc, char* argv[])
 	}
 	else
 	{
-		usedSocket = std::shared_ptr<TcpSocketImpl>(new TcpSocketImpl);
+		usedSocket = std::shared_ptr<TcpSocket>(new TcpSocket);
 		usedSocket->initialize(summer);
 		usedSocket->doConnect(g_remoteIP.c_str(), g_remotePort, std::bind(onConnect, std::placeholders::_1));
 	}

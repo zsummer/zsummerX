@@ -191,7 +191,7 @@ int main(int argc, char* argv[])
 	if (g_type == 0)
 	{
 		PicnicPtr pic(new Picnic());
-		pic->sock = std::make_shared<UdpSocketImpl>();
+		pic->sock = std::make_shared<UdpSocket>();
 		pic->sock->initialize(summer, ip.c_str(), port);
 		pic->sock->doRecvFrom(pic->recvData, _MSG_BUF_LEN, std::bind(onRecv,
 			std::placeholders::_1,
@@ -206,7 +206,7 @@ int main(int argc, char* argv[])
 		for (unsigned int i = 0; i < maxClient; i++)
 		{
 			PicnicPtr picc(new Picnic);
-			picc->sock = std::make_shared<UdpSocketImpl>();
+			picc->sock = std::make_shared<UdpSocket>();
 			if (!picc->sock->initialize(summer, "0.0.0.0", 0))
 			{
 				LOGI("init udp socket error.");

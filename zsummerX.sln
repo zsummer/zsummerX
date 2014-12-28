@@ -49,6 +49,14 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tcpStressTest", "example\tc
 		{06D64BC9-7AD1-40A1-835A-54BCC3ABFE39} = {06D64BC9-7AD1-40A1-835A-54BCC3ABFE39}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "luaTest", "example\luaTest\luaTest.vcxproj", "{2A876DF9-92DD-4EEE-8792-683D0EF766DA}"
+	ProjectSection(ProjectDependencies) = postProject
+		{06D64BC9-7AD1-40A1-835A-54BCC3ABFE39} = {06D64BC9-7AD1-40A1-835A-54BCC3ABFE39}
+		{0459E5F7-73C8-4665-9E5C-355E5ADA243D} = {0459E5F7-73C8-4665-9E5C-355E5ADA243D}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lua", "depends\lua\vc\lua.vcxproj", "{0459E5F7-73C8-4665-9E5C-355E5ADA243D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -137,6 +145,22 @@ Global
 		{62F47AC3-D0C9-413C-B819-4BBD507E788A}.Release|Win32.Build.0 = Release|Win32
 		{62F47AC3-D0C9-413C-B819-4BBD507E788A}.Release|x64.ActiveCfg = Release|x64
 		{62F47AC3-D0C9-413C-B819-4BBD507E788A}.Release|x64.Build.0 = Release|x64
+		{2A876DF9-92DD-4EEE-8792-683D0EF766DA}.Debug|Win32.ActiveCfg = Debug|Win32
+		{2A876DF9-92DD-4EEE-8792-683D0EF766DA}.Debug|Win32.Build.0 = Debug|Win32
+		{2A876DF9-92DD-4EEE-8792-683D0EF766DA}.Debug|x64.ActiveCfg = Debug|x64
+		{2A876DF9-92DD-4EEE-8792-683D0EF766DA}.Debug|x64.Build.0 = Debug|x64
+		{2A876DF9-92DD-4EEE-8792-683D0EF766DA}.Release|Win32.ActiveCfg = Release|Win32
+		{2A876DF9-92DD-4EEE-8792-683D0EF766DA}.Release|Win32.Build.0 = Release|Win32
+		{2A876DF9-92DD-4EEE-8792-683D0EF766DA}.Release|x64.ActiveCfg = Release|x64
+		{2A876DF9-92DD-4EEE-8792-683D0EF766DA}.Release|x64.Build.0 = Release|x64
+		{0459E5F7-73C8-4665-9E5C-355E5ADA243D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{0459E5F7-73C8-4665-9E5C-355E5ADA243D}.Debug|Win32.Build.0 = Debug|Win32
+		{0459E5F7-73C8-4665-9E5C-355E5ADA243D}.Debug|x64.ActiveCfg = Debug|x64
+		{0459E5F7-73C8-4665-9E5C-355E5ADA243D}.Debug|x64.Build.0 = Debug|x64
+		{0459E5F7-73C8-4665-9E5C-355E5ADA243D}.Release|Win32.ActiveCfg = Release|Win32
+		{0459E5F7-73C8-4665-9E5C-355E5ADA243D}.Release|Win32.Build.0 = Release|Win32
+		{0459E5F7-73C8-4665-9E5C-355E5ADA243D}.Release|x64.ActiveCfg = Release|x64
+		{0459E5F7-73C8-4665-9E5C-355E5ADA243D}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

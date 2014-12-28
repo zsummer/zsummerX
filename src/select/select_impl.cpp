@@ -185,7 +185,7 @@ std::string ZSummer::zsummerSection()
 	return os.str();
 }
 
-void ZSummer::runOnce()
+void ZSummer::runOnce(bool isImmediately)
 {
 	int nfds = 0;
 	fd_set fdr;
@@ -225,9 +225,17 @@ void ZSummer::runOnce()
 	}
 
 	timeval tv;
-	unsigned int ms = _timer.getNextExpireTime();
-	tv.tv_sec = ms / 1000;
-	tv.tv_usec = (ms % 1000) * 1000;
+	if (isImmediately)
+	{
+		tv.tv_sec = 0;
+		tv.tv_usec = 0;
+	}
+	else
+	{
+		unsigned int ms = _timer.getNextExpireTime();
+		tv.tv_sec = ms / 1000;
+		tv.tv_usec = (ms % 1000) * 1000;
+	}
 
 	int retCount = ::select(nfds+1, &fdr, &fdw, &fde, &tv);
 	if (retCount == -1)

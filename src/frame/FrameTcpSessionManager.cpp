@@ -98,11 +98,11 @@ void TcpSessionManager::run()
 		_summer->runOnce();
 	}
 }
-void TcpSessionManager::runOnce()
+void TcpSessionManager::runOnce(bool isImmediately)
 {
 	if (_running || !_mapTcpSessionPtr.empty())
 	{
-		_summer->runOnce();
+		_summer->runOnce(isImmediately);
 	}
 }
 

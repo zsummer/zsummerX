@@ -42,7 +42,7 @@
 
 using namespace zsummer::network;
 
-void ZSummer::runOnce()
+void ZSummer::runOnce(bool isImmediately)
 {
 	if (_io == NULL)
 	{
@@ -54,7 +54,7 @@ void ZSummer::runOnce()
 	ULONG_PTR uComKey = NULL;
 	LPOVERLAPPED pOverlapped = NULL;
 
-	BOOL bRet = GetQueuedCompletionStatus(_io, &dwTranceCount, &uComKey, &pOverlapped, _timer.getNextExpireTime()/*INFINITE*/);
+	BOOL bRet = GetQueuedCompletionStatus(_io, &dwTranceCount, &uComKey, &pOverlapped, isImmediately ? 0 : _timer.getNextExpireTime()/*INFINITE*/);
 
 	_timer.checkTimer();
 	if (!bRet && !pOverlapped)

@@ -112,9 +112,9 @@ std::string ZSummer::zsummerSection()
 	return os.str();
 }
 
-void ZSummer::runOnce()
+void ZSummer::runOnce(bool isImmediately)
 {
-	int retCount = epoll_wait(_epoll, _events, 1000,   _timer.getNextExpireTime());
+	int retCount = epoll_wait(_epoll, _events, 1000,  isImmediately ? 0 : _timer.getNextExpireTime());
 	if (retCount == -1)
 	{
 		if (errno != EINTR)

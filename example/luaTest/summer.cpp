@@ -214,7 +214,7 @@ void _onConnectCallback(lua_State * L, SessionID sID)
 	index = lua_gettop(L);
 	lua_pushnumber(L, sID);
 	index = lua_gettop(L);
-	lua_call(L, 1, 0);
+	lua_pcall(L, 1, 0, 0);
 }
 
 static int registConnect(lua_State * L)
@@ -224,15 +224,13 @@ static int registConnect(lua_State * L)
 	{
 		LOGE("addConnect error. argc is not 1.  the argc=" << index);
 		lua_settop(L, 0);
-		lua_pushnil(L);
-		return 1;
+		return 0;
 	}
 	_checkCallbackTable(L, _staticConnect);
 	if (!lua_isnil(L, -1))
 	{
 		lua_settop(L, 0);
-		lua_pushnil(L);
-		return 1;
+		return 0;
 	}
 	lua_pop(L, 1);
 	lua_pushvalue(L, index);
@@ -249,11 +247,11 @@ static int registConnect(lua_State * L)
 	if (lua_isnil(L, -1))
 	{
 		lua_settop(L, 0);
-		lua_pushnil(L);
-		return 1;
+		return 0;
 	}
 
 	MessageDispatcher::getRef().registerOnSessionEstablished(std::bind(_onConnectCallback, L, std::placeholders::_1));
+	return 0;
 }
 
 

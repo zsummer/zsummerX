@@ -1,17 +1,38 @@
 require "summer"
 
-
+-- 连接成功事件
 function onConnect(sID)
 	print("session is on connected. sID=" .. sID)
+	summer.sendContent(sID, 1001, "sssssss\0")
 end
-summer.registConnect(onConnect)
+summer.registerConnect(onConnect)
+
+-- 收到消息
+function onMessage(sID, pID, content)
+	print("onMessage. sID=" .. sID .. ", pID=" .. pID .. ", content:" .. content)
+end
+summer.registerMessage(onMessage)
+
+-- 连接断开事件
+function onDisconnect(sID)
+	print("session is on disconnect. sID=" .. sID)
+end
+summer.registerDisconnect(onDisconnect)
+
+
+
+--启动网络
 summer.start()
+
+--连接服务器
 local id = summer.addConnect({ip="127.0.0.1", port=8081})
 if id == nil then
 	summer.logw("id == nil when addConnect")
 end
 summer.logi("new connect id=" .. id)
 
+--进入循环
+--如果嵌入其他程序 例如cocos2dx, 可以吧runOnce设置true然后放入update中.
 while 1 do
 	summer.runOnce()
 --	summer.runOnce(true)

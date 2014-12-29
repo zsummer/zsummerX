@@ -39,7 +39,6 @@
 #include <zsummerX/frameX.h>
 
 
-const static char * _staticConnect = "connect";
 
 
 static int logt(lua_State * L)
@@ -87,6 +86,11 @@ static int loga(lua_State * L)
 
 //////////////////////////////////////////////////////////////////////////
 
+const static char * _staticConnect = "connect";
+const static char * _staticMessage = "message";
+const static char * _staticDisconnect = "disconnect";
+
+static std::vector<lua_State*> _staticValidVM;
 
 static int start(lua_State *L)
 {
@@ -135,7 +139,7 @@ static int addConnect(lua_State *L)
 	}
 	
 	lua_getfield(L, 1, "port");
-	unsigned short port = luaL_checknumber(L, -1);
+	unsigned short port = (unsigned short)luaL_checknumber(L, -1);
 	config.remotePort = port;
 
 	
@@ -173,37 +177,24 @@ void _checkCallbackTable(lua_State *L, const char * tname)
 	lua_getfield(L, -1, tname);
 	index = lua_gettop(L);
 }
-static int registerMessage(lua_State * L)
-{
-// 	int index = lua_gettop(L);
-// 	if (index != 1)
-// 	{
-// 		LOGE("addConnect error. argc is not 1.  the argc=" << index);
-// 		lua_settop(L, 0);
-// 		lua_pushnil(L);
-// 		return 1;
-// 	}
-// 	if (!_checkCallbackTable(L, "message"))
-// 	{
-// 		lua_settop(L, 0);
-// 		lua_pushnil(L);
-// 		return 1;
-// 	}
-
-	
-	return 1;
-}
 
 
 
-void _onConnectCallback(lua_State * L, SessionID sID)
+
+
+void _onConnecterCallback(lua_State * L, SessionID sID)
 {
 	if (!isConnectID(sID))
 	{
 		return;
 	}
-	
-	// if register, don't free L before stop zsummerX,  another it's will have wrong in here.
+	auto founder = std::find_if(_staticValidVM.begin(), _staticValidVM.end(), [L](lua_State* l){return l == L; });
+	if (founder == _staticValidVM.end())
+	{
+		LOGW("_onConnecterCallback warning: L is not found . L=" << L);
+		return;
+	}
+
 	int index = lua_gettop(L);
 	_checkCallbackTable(L, _staticConnect);
 	if (lua_isnil(L, -1))
@@ -217,18 +208,19 @@ void _onConnectCallback(lua_State * L, SessionID sID)
 	lua_pcall(L, 1, 0, 0);
 }
 
-static int registConnect(lua_State * L)
+static int registerConnect(lua_State * L)
 {
 	int index = lua_gettop(L);
 	if (index != 1)
 	{
-		LOGE("addConnect error. argc is not 1.  the argc=" << index);
+		LOGE("registerConnect error. argc is not 1.  the argc=" << index);
 		lua_settop(L, 0);
 		return 0;
 	}
 	_checkCallbackTable(L, _staticConnect);
 	if (!lua_isnil(L, -1))
 	{
+		LOGE("registerMessage error. already registered.");
 		lua_settop(L, 0);
 		return 0;
 	}
@@ -237,20 +229,137 @@ static int registConnect(lua_State * L)
 	lua_setfield(L, -2, _staticConnect);
 	lua_settop(L, 0);
 
-	lua_pushfstring(L, "mycallback");
-	_checkCallbackTable(L, "zsummer");
-	lua_pop(L, 1);
-	lua_pushvalue(L, 1);
-	lua_setfield(L, -2, "zsummer");
+	MessageDispatcher::getRef().registerOnSessionEstablished(std::bind(_onConnecterCallback, L, std::placeholders::_1));
+	return 0;
+}
 
-	_checkCallbackTable(L, _staticConnect);
+
+void _onMessageCallback(lua_State * L, SessionID sID, ProtoID pID, ReadStreamPack & rs)
+{
+	if (!isConnectID(sID))
+	{
+		return;
+	}
+	auto founder = std::find_if(_staticValidVM.begin(), _staticValidVM.end(), [L](lua_State* l){return l == L; });
+	if (founder == _staticValidVM.end())
+	{
+		LOGW("_onConnecterCallback warning: L is not found . L=" << L);
+		return;
+	}
+
+	int index = lua_gettop(L);
+	_checkCallbackTable(L, _staticMessage);
 	if (lua_isnil(L, -1))
 	{
+		lua_settop(L, index);
+		return;
+	}
+	index = lua_gettop(L);
+	lua_pushinteger(L, sID);
+	lua_pushinteger(L, pID);
+	lua_pushlstring(L, rs.getStreamUnread(), rs.getStreamUnreadLen());
+	index = lua_gettop(L);
+	lua_pcall(L, 3, 0, 0);
+}
+
+static int registerMessage(lua_State * L)
+{
+	int index = lua_gettop(L);
+	if (index != 1)
+	{
+		LOGE("registerMessage error. argc is not 1.  the argc=" << index);
 		lua_settop(L, 0);
 		return 0;
 	}
+	_checkCallbackTable(L, _staticMessage);
+	if (!lua_isnil(L, -1))
+	{
+		LOGE("registerMessage error. already registered.");
+		lua_settop(L, 0);
+		return 0;
+	}
+	lua_pop(L, 1);
+	lua_pushvalue(L, index);
+	lua_setfield(L, -2, _staticMessage);
+	lua_settop(L, 0);
 
-	MessageDispatcher::getRef().registerOnSessionEstablished(std::bind(_onConnectCallback, L, std::placeholders::_1));
+	MessageDispatcher::getRef().registerSessionDefaultMessage(std::bind(_onMessageCallback, L, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+	return 0;
+}
+
+
+
+void _onDisconnectCallback(lua_State * L, SessionID sID)
+{
+	if (!isConnectID(sID))
+	{
+		return;
+	}
+	auto founder = std::find_if(_staticValidVM.begin(), _staticValidVM.end(), [L](lua_State* l){return l == L; });
+	if (founder == _staticValidVM.end())
+	{
+		LOGW("_onDisconnectCallback warning: L is not found . L=" << L);
+		return;
+	}
+
+	int index = lua_gettop(L);
+	_checkCallbackTable(L, _staticDisconnect);
+	if (lua_isnil(L, -1))
+	{
+		lua_settop(L, index);
+		return;
+	}
+	index = lua_gettop(L);
+	lua_pushinteger(L, sID);
+	index = lua_gettop(L);
+	lua_pcall(L, 1, 0, 0);
+}
+
+static int registerDisconnect(lua_State * L)
+{
+	int index = lua_gettop(L);
+	if (index != 1)
+	{
+		LOGE("registerDisconnect error. argc is not 1.  the argc=" << index);
+		lua_settop(L, 0);
+		return 0;
+	}
+	_checkCallbackTable(L, _staticDisconnect);
+	if (!lua_isnil(L, -1))
+	{
+		LOGE("registerDisconnect error. already registered.");
+		lua_settop(L, 0);
+		return 0;
+	}
+	lua_pop(L, 1);
+	lua_pushvalue(L, index);
+	lua_setfield(L, -2, _staticDisconnect);
+	lua_settop(L, 0);
+
+	MessageDispatcher::getRef().registerOnSessionDisconnect(std::bind(_onDisconnectCallback, L, std::placeholders::_1));
+	return 0;
+}
+
+
+static int sendContent(lua_State * L)
+{
+	int index = lua_gettop(L);
+	if (index != 3)
+	{
+		LOGE("sendContent error. argc is not 3.  the argc=" << index);
+		lua_settop(L, 0);
+		return 0;
+	}
+	SessionID sID = luaL_checkint(L, 1);
+	unsigned short pID = luaL_checkint(L, 2);
+
+	size_t len = 0;
+	const char * content = luaL_checklstring(L, 3, &len);
+	WriteStreamPack ws;
+	ws << pID;
+	ws.appendOriginalData(content, len);
+	TcpSessionManager::getRef().sendOrgSessionData(sID, ws.getStream(), ws.getStreamLen());
+
 	return 0;
 }
 
@@ -268,7 +377,10 @@ luaL_Reg summer[] = {
 	{ "stop", stop },
 	{ "runOnce", runOnce },
 	{ "addConnect", addConnect },
-	{ "registConnect", registConnect },
+	{ "registerConnect", registerConnect },
+	{ "registerMessage", registerMessage },
+	{ "registerDisconnect", registerDisconnect },
+	{ "sendContent", sendContent },
 
 	{ NULL, NULL }
 };
@@ -277,9 +389,33 @@ luaL_Reg summer[] = {
 
 void registerSummer(lua_State* L)
 {
+	auto founder = std::find_if(_staticValidVM.begin(), _staticValidVM.end(), [L](lua_State* l){return l == L; });
+	if (founder == _staticValidVM.end())
+	{
+		LOGI("registerSummer: L=" << L);
+		_staticValidVM.push_back(L);
+	}
+	else
+	{
+		LOGW("registerSummer warning: L is registered . L=" << L);
+	}
 	luaL_register(L, "summer", summer);
  	lua_pushcfunction(L, logi);
  	lua_setglobal(L, "print");
+}
+
+void unregisterSummer(lua_State *L)
+{
+	auto founder = std::find_if(_staticValidVM.begin(), _staticValidVM.end(), [L](lua_State* l){return l == L; });
+	if (founder != _staticValidVM.end())
+	{
+		LOGI("unregisterSummer: L=" << L);
+		_staticValidVM.erase(founder);
+	}
+	else
+	{
+		LOGW("unregisterSummer warning: L is not found. L=" << L);
+	}
 }
 
 

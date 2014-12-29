@@ -105,18 +105,16 @@ int main(int argc, char* argv[])
 		//on connect success
 		auto connectedfun = [](SessionID cID)
 		{
-			LOGI("send to ConnectorID=" << cID << ", msg=hello");
-			WriteStreamPack ws;
-			ws << _RequestSequence << "hello";
-			TcpSessionManager::getRef().sendOrgSessionData(cID, ws.getStream(), ws.getStreamLen());
+			LOGI("on connect. ID=" << cID);
+			std::string content = "hellow";
+			TcpSessionManager::getRef().sendSessionData(cID, _RequestSequence, content.c_str(), content.length() + 1);
 		};
 
 		//process message _ResultSequence
 		auto msg_ResultSequence_fun = [](SessionID cID, ProtoID pID, ReadStreamPack & rs)
 		{
-			std::string msg;
-			rs >> msg;
-			LOGI("recv ConnectorID = " << cID << ", msg = " << msg);
+			std::string content = rs.getStreamUnread();
+			LOGI("recv ConnectorID = " << cID << ", content = " << content);
 
 			//! step 3 stop server
 			TcpSessionManager::getRef().stop();
@@ -128,10 +126,8 @@ int main(int argc, char* argv[])
 
 		//add connector
 		tagConnctorConfigTraits traits;
-		traits.remoteIP = "127.0.0.1";
-		traits.remotePort = 81;
-		traits.reconnectInterval = 5000;
-		traits.reconnectMaxCount = 5;
+		traits.remoteIP = g_remoteIP;
+		traits.remotePort = g_remotePort;
 		TcpSessionManager::getRef().addConnector(traits);
 
 		//! step 2 running
@@ -143,14 +139,12 @@ int main(int argc, char* argv[])
 		//process message _RequestSequence
 		OnMessageFunction msg_RequestSequence_fun = [](SessionID sID, ProtoID pID, ReadStreamPack & rs)
 		{
-			std::string msg;
-			rs >> msg;
-			LOGI("recv SessionID = " << sID << ", msg = " << msg);
-			msg += " echo";
-			LOGI("send echo SessionID = " << sID  << ", msg = " << msg);
-			WriteStreamPack ws;
-			ws << _ResultSequence << msg;
-			TcpSessionManager::getRef().sendOrgSessionData(sID, ws.getStream(), ws.getStreamLen());
+			std::string content = rs.getStreamUnread();
+			LOGI("recv SessionID = " << sID << ", content = " << content);
+			content += " ==> echo";
+
+			TcpSessionManager::getRef().sendSessionData(sID, _ResultSequence, content.c_str(), content.length() + 1);
+
 
 			//! step 3 stop server after 1 second.
 			TcpSessionManager::getRef().createTimer(1000, [](){TcpSessionManager::getRef().stop(); });
@@ -161,7 +155,7 @@ int main(int argc, char* argv[])
 
 		//add Acceptor
 		tagAcceptorConfigTraits traits;
-		traits.listenPort = 8081;
+		traits.listenPort = g_remotePort;
 		traits.maxSessions = 1;
 		//!traits.whitelistIP.push_back("127.0.");
 		TcpSessionManager::getRef().addAcceptor(traits);

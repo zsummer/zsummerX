@@ -129,7 +129,7 @@ inline void MessageDispatcher::dispatchSessionMessage(SessionID sID, ProtoID pID
 	MapProtoDispatch::iterator iter = _mapSessionDispatch.find(pID);
 	if ((iter == _mapSessionDispatch.end() || iter->second.empty()) && _vctDefaultSessionDispatch.empty())
 	{
-		LCE("Entry dispatchSessionMessage[" << pID << "] Failed: UNKNOWN ProtoID.  SessionID=" << sID << ", ProtoID=" << pID);
+		LCW("Entry dispatchSessionMessage[" << pID << "] Failed: UNKNOWN ProtoID.  SessionID=" << sID << ", ProtoID=" << pID);
 		return;
 	}
 	try

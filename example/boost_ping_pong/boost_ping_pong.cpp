@@ -83,9 +83,9 @@ int main(int argc, char* argv[])
 		try
 		{
 			//协议流异常会被上层捕获并关闭连接
-			unsigned short protocolID = 0;
-			rs >> protocolID;
-			switch (protocolID)
+			unsigned short protoID = 0;
+			rs >> protoID;
+			switch (protoID)
 			{
 			case 1:
 				{
@@ -106,7 +106,7 @@ int main(int argc, char* argv[])
 				break;
 			default:
 				{
-					cout <<"unknown protocol id=" << protocolID <<endl;
+					cout <<"unknown protocol id=" << protoID <<endl;
 				}
 				break;
 			}

@@ -131,22 +131,75 @@ static int addConnect(lua_State *L)
 	tagConnctorConfigTraits config;
 
 
-	lua_getfield(L, 1, "ip");
-	const char * ip = luaL_checkstring(L, -1);
-	if (ip)
 	{
-		config.remoteIP = ip;
+		lua_getfield(L, 1, "ip");
+		if (lua_isnil(L, -1))
+		{
+			lua_settop(L, 0);
+			lua_pushnil(L);
+			return 1;
+		}
+		else
+		{
+			size_t len = 0;
+			const char * str = luaL_checklstring(L, -1, &len);
+			if (str && len > 0)
+			{
+				config.remoteIP.clear();
+				config.remoteIP.append(str, len);
+			}
+		}
+
 	}
-	
-	lua_getfield(L, 1, "port");
-	unsigned short port = (unsigned short)luaL_checknumber(L, -1);
-	config.remotePort = port;
 
-	
 
-	lua_pop(L, 0);
+	{
+		lua_getfield(L, 1, "port");
+		if (lua_isnil(L, -1))
+		{
+			lua_settop(L, 0);
+			lua_pushnil(L);
+			return 1;
+		}
+		else
+		{
+			config.remotePort = (unsigned short)luaL_checknumber(L, -1);
+		}
+	}
 
-	LOGD("addConnect:" << config);
+	{
+		lua_getfield(L, 1, "key");
+		if (!lua_isnil(L, -1))
+		{
+			size_t len = 0;
+			const char * str = luaL_checklstring(L, -1, &len);
+			if (str && len > 0)
+			{
+				config.rc4TcpEncryption.clear();
+				config.rc4TcpEncryption.append(str, len);
+			}
+		}
+	}
+
+	{
+		lua_getfield(L, 1, "reconnect");
+		if (!lua_isnil(L, -1))
+		{
+			config.reconnectMaxCount = (unsigned int)luaL_checknumber(L, -1);
+		}
+	}
+
+	{
+		lua_getfield(L, 1, "interval");
+		if (!lua_isnil(L, -1))
+		{
+			config.pulseInterval = (unsigned int)luaL_checknumber(L, -1);
+		}
+	}
+
+
+	lua_settop(L, 0);
+	LOGD("lua: addConnect:" << config);
 	SessionID id = TcpSessionManager::getRef().addConnector(config);
 	if (id == InvalidSeesionID)
 	{
@@ -257,7 +310,7 @@ void _onMessageCallback(lua_State * L, SessionID sID, ProtoID pID, ReadStreamPac
 	index = lua_gettop(L);
 	lua_pushinteger(L, sID);
 	lua_pushinteger(L, pID);
-	lua_pushlstring(L, rs.getStreamUnread(), rs.getStreamUnreadLen());
+	lua_pushlstring(L, rs.getStreamBody(), rs.getStreamBodyLen());
 	index = lua_gettop(L);
 	lua_pcall(L, 3, 0, 0);
 }
@@ -355,11 +408,33 @@ static int sendContent(lua_State * L)
 
 	size_t len = 0;
 	const char * content = luaL_checklstring(L, 3, &len);
-	WriteStreamPack ws;
-	ws << pID;
+	WriteStreamPack ws(pID);
 	ws.appendOriginalData(content, len);
 	TcpSessionManager::getRef().sendOrgSessionData(sID, ws.getStream(), ws.getStreamLen());
 
+	return 0;
+}
+
+static int sendData(lua_State * L)
+{
+	int index = lua_gettop(L);
+	if (index != 2)
+	{
+		LOGE("sendData error. argc is not 2.  the argc=" << index);
+		lua_settop(L, 0);
+		return 0;
+	}
+	SessionID sID = luaL_checkint(L, 1);
+	size_t len = 0;
+	const char * data = luaL_checklstring(L, 2, &len);
+	if (data == NULL || len == 0)
+	{
+		LOGE("sendData error. no any data.");
+		lua_settop(L, 0);
+		return 0;
+	}
+
+	TcpSessionManager::getRef().sendOrgSessionData(sID, data, (unsigned short)len);
 	return 0;
 }
 
@@ -373,14 +448,15 @@ luaL_Reg summer[] = {
 	{ "logf", logf },
 	{ "loga", loga },
 
-	{ "start", start },
-	{ "stop", stop },
-	{ "runOnce", runOnce },
-	{ "addConnect", addConnect },
-	{ "registerConnect", registerConnect },
-	{ "registerMessage", registerMessage },
-	{ "registerDisconnect", registerDisconnect },
-	{ "sendContent", sendContent },
+	{ "start", start }, //start network
+	{ "stop", stop }, //stop network
+	{ "runOnce", runOnce }, //message pump, run it once.
+	{ "addConnect", addConnect }, //add one connect.
+	{ "registerConnect", registerConnect }, //register event when connect success.
+	{ "registerMessage", registerMessage }, //register event when recv message.
+	{ "registerDisconnect", registerDisconnect }, //register event when disconnect.
+	{ "sendContent", sendContent }, //send content, don't care serialize and package.
+	{ "sendData", sendData }, // send original data, need to serialize and package via proto4z. 
 
 	{ NULL, NULL }
 };

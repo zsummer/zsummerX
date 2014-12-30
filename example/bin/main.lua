@@ -25,7 +25,7 @@ summer.registerDisconnect(onDisconnect)
 summer.start()
 
 --连接服务器
-local id = summer.addConnect({ip="127.0.0.1", port=8081})
+local id = summer.addConnect({ip="127.0.0.1", port=8081, reconnect=2})
 if id == nil then
 	summer.logw("id == nil when addConnect")
 end

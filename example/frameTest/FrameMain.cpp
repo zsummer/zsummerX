@@ -49,14 +49,50 @@ std::string g_remoteIP = "0.0.0.0";
 unsigned short g_remotePort = 8081;
 unsigned short g_startIsConnector = 0;  //0 listen, 1 connect
 
+//! define protocol id
+static const ProtoID _RequestID = 1001;
+static const ProtoID _ResultID = 1002;
+
+bool initEnv(int argc, char* argv[]);
+void startServer();
+void startClient();
+
+// main
+//////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char* argv[])
 {
-	if (argc == 2 && 
-		(strcmp(argv[1], "--help") == 0 
+	if (!initEnv(argc, argv))
+	{
+		return 0;
+	}
+	
+	if (g_startIsConnector) //client mod
+	{
+		startClient();
+	}
+	else
+	{
+		startServer();
+	}
+	return 0;
+}
+
+
+
+
+
+//impl
+//////////////////////////////////////////////////////////////////////////
+
+
+bool initEnv(int argc, char* argv[])
+{
+	if (argc == 2 &&
+		(strcmp(argv[1], "--help") == 0
 		|| strcmp(argv[1], "/?") == 0))
 	{
-		cout <<"please input like example:" << endl;
+		cout << "please input like example:" << endl;
 		cout << "tcpTest remoteIP remotePort startType maxClient sendType interval" << endl;
 		cout << "./tcpTest 0.0.0.0 8081 0" << endl;
 		cout << "startType: 0 server, 1 client" << endl;
@@ -75,7 +111,7 @@ int main(int argc, char* argv[])
 		g_startIsConnector = atoi(argv[3]);
 	}
 
-	
+
 	if (!g_startIsConnector)
 	{
 		//! start log4z service
@@ -88,82 +124,73 @@ int main(int argc, char* argv[])
 		ILog4zManager::getPtr()->config("client.cfg");
 		ILog4zManager::getPtr()->start();
 	}
-	LOGI("g_remoteIP=" << g_remoteIP << ", g_remotePort=" << g_remotePort << ", g_startIsConnector=" << g_startIsConnector );
+	LOGI("g_remoteIP=" << g_remoteIP << ", g_remotePort=" << g_remotePort << ", g_startIsConnector=" << g_startIsConnector);
+	return true;
+}
 
 
+void startServer()
+{
+	//! step 1. start Manager.
+	TcpSessionManager::getRef().start();
+	//process message _RequestSequence
+	OnMessageFunction msg_RequestSequence_fun = [](SessionID sID, ProtoID pID, ReadStreamPack & rs)
+	{
+		std::string content = rs.getStreamBody();
+		LOGI("recv SessionID = " << sID << ", content = " << content);
+		content += " ==> echo.";
+		TcpSessionManager::getRef().sendSessionData(sID, _ResultID, content.c_str(), content.length() + 1);
+
+		//! step 3 stop server after 1 second.
+		TcpSessionManager::getRef().createTimer(1000, [](){TcpSessionManager::getRef().stop(); });
+	};
+
+	MessageDispatcher::getRef().registerSessionMessage(_RequestID, msg_RequestSequence_fun); //!register message for protoID: _RequestSequence
+
+	//add Acceptor
+	tagAcceptorConfigTraits traits;
+	traits.listenPort = g_remotePort;
+	TcpSessionManager::getRef().addAcceptor(traits);
+
+	//! step 2 running
+	TcpSessionManager::getRef().run();
+}
+
+void startClient()
+{
 	//! step 1. start Manager.
 	TcpSessionManager::getRef().start();
 
-
-	//! define protocol id
-	static const ProtoID _RequestSequence = 1001;
-	static const ProtoID _ResultSequence = 1002;
-
-
-	if (g_startIsConnector) //client mod
+	//on connect success
+	auto connectedfun = [](SessionID cID)
 	{
-		//on connect success
-		auto connectedfun = [](SessionID cID)
-		{
-			LOGI("on connect. ID=" << cID);
-			std::string content = "hellow";
-			TcpSessionManager::getRef().sendSessionData(cID, _RequestSequence, content.c_str(), content.length() + 1);
-		};
+		LOGI("on connect. ID=" << cID);
+		std::string content = "hello";
+		TcpSessionManager::getRef().sendSessionData(cID, _RequestID, content.c_str(), content.length() + 1);
+	};
 
-		//process message _ResultSequence
-		auto msg_ResultSequence_fun = [](SessionID cID, ProtoID pID, ReadStreamPack & rs)
-		{
-			std::string content = rs.getStreamUnread();
-			LOGI("recv ConnectorID = " << cID << ", content = " << content);
-
-			//! step 3 stop server
-			TcpSessionManager::getRef().stop();
-		};
-
-		//! register event and message
-		MessageDispatcher::getRef().registerOnSessionEstablished(connectedfun); //!register connect success
-		MessageDispatcher::getRef().registerSessionMessage(_ResultSequence, msg_ResultSequence_fun);//!register message for protoID: _ResultSequence
-
-		//add connector
-		tagConnctorConfigTraits traits;
-		traits.remoteIP = g_remoteIP;
-		traits.remotePort = g_remotePort;
-		TcpSessionManager::getRef().addConnector(traits);
-
-		//! step 2 running
-		TcpSessionManager::getRef().run();
-	}
-	else
+	//process message _ResultID
+	auto msg_ResultSequence_fun = [](SessionID cID, ProtoID pID, ReadStreamPack & rs)
 	{
+		std::string content = rs.getStreamBody();
+		LOGI("recv ConnectorID = " << cID << ", content = " << content);
+		//! step 3 stop server
+		TcpSessionManager::getRef().stop();
+	};
 
-		//process message _RequestSequence
-		OnMessageFunction msg_RequestSequence_fun = [](SessionID sID, ProtoID pID, ReadStreamPack & rs)
-		{
-			std::string content = rs.getStreamUnread();
-			LOGI("recv SessionID = " << sID << ", content = " << content);
-			content += " ==> echo";
+	//! register event and message
+	MessageDispatcher::getRef().registerOnSessionEstablished(connectedfun); //!register connect success
+	MessageDispatcher::getRef().registerSessionMessage(_ResultID, msg_ResultSequence_fun);//!register message for protoID: _ResultSequence
 
-			TcpSessionManager::getRef().sendSessionData(sID, _ResultSequence, content.c_str(), content.length() + 1);
+	//add connector
+	tagConnctorConfigTraits traits;
+	traits.remoteIP = g_remoteIP;
+	traits.remotePort = g_remotePort;
+	TcpSessionManager::getRef().addConnector(traits);
 
-
-			//! step 3 stop server after 1 second.
-			TcpSessionManager::getRef().createTimer(1000, [](){TcpSessionManager::getRef().stop(); });
-		};
-
-
-		MessageDispatcher::getRef().registerSessionMessage(_RequestSequence, msg_RequestSequence_fun); //!register message for protoID: _RequestSequence
-
-		//add Acceptor
-		tagAcceptorConfigTraits traits;
-		traits.listenPort = g_remotePort;
-		traits.maxSessions = 1;
-		//!traits.whitelistIP.push_back("127.0.");
-		TcpSessionManager::getRef().addAcceptor(traits);
-		//! step 2 running
-		TcpSessionManager::getRef().run();
-	}
-	
-
-	return 0;
+	//! step 2 running
+	TcpSessionManager::getRef().run();
 }
+
+
 

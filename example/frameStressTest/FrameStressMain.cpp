@@ -134,16 +134,17 @@ public:
 			TcpSessionManager::getRef().kickSession(sID);
 			return;
 		}
-		WriteStreamPack pack;
+
 		if (isConnectID(sID))
 		{
-			pack << C2S_Pulse;
+			WriteStreamPack pack(C2S_Pulse);
+			TcpSessionManager::getRef().sendOrgSessionData(sID, pack.getStream(), pack.getStreamLen());
 		}
 		else
 		{
-			pack << S2C_Pulse;
+			WriteStreamPack pack(S2C_Pulse);
+			TcpSessionManager::getRef().sendOrgSessionData(sID, pack.getStream(), pack.getStreamLen());
 		}
-		TcpSessionManager::getRef().sendOrgSessionData(sID, pack.getStream(), pack.getStreamLen());
 	}
 	void OnSessionDisconnect(SessionID sID)
 	{
@@ -178,8 +179,8 @@ public:
 	void onConnected (SessionID cID)
 	{
 		LOGI("onConnected. ConnectorID=" << cID );
-		WriteStreamPack ws;
-		ws << C2S_ECHO_REQ << "client request one REQ.";
+		WriteStreamPack ws(C2S_ECHO_REQ);
+		ws << "client request one REQ.";
 		TcpSessionManager::getRef().sendOrgSessionData(cID, ws.getStream(), ws.getStreamLen());
 		g_totalSendCount++;
 		if (g_sendType != 0 && g_intervalMs > 0)
@@ -202,8 +203,8 @@ public:
 
 		if (g_sendType == 0 || g_intervalMs == 0) //echo send
 		{
-			WriteStreamPack ws;
-			ws << C2S_ECHO_REQ << g_testStr;
+			WriteStreamPack ws(C2S_ECHO_REQ);
+			ws << g_testStr;
 			TcpSessionManager::getRef().sendOrgSessionData(cID, ws.getStream(), ws.getStreamLen());
 			g_totalSendCount++;
 		}
@@ -218,8 +219,8 @@ public:
 	{
 		if (g_totalSendCount - g_totalRecvCount < 10000)
 		{
-			WriteStreamPack ws;
-			ws << C2S_ECHO_REQ << g_testStr;
+			WriteStreamPack ws(C2S_ECHO_REQ);
+			ws << g_testStr;
 			TcpSessionManager::getRef().sendOrgSessionData(cID, ws.getStream(), ws.getStreamLen());
 			g_totalSendCount++;
 		}
@@ -251,8 +252,8 @@ public:
 		std::string msg;
 		rs >> msg;
 		msg += " echo";
-		WriteStreamPack ws;
-		ws << S2C_ECHO_ACK << msg;
+		WriteStreamPack ws(S2C_ECHO_ACK);
+		ws << msg;
 		TcpSessionManager::getRef().sendOrgSessionData(sID, ws.getStream(), ws.getStreamLen());
 		g_totalEchoCount++;
 		g_totalSendCount++;

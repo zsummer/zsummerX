@@ -343,8 +343,7 @@ void TcpSessionManager::sendOrgSessionData(SessionID sID, const char * orgData, 
 }
 void TcpSessionManager::sendSessionData(SessionID sID, ProtoID pID, const char * userData, unsigned int userDataLen)
 {
-	WriteStreamPack ws;
-	ws << pID;
+	WriteStreamPack ws(pID);
 	ws.appendOriginalData(userData, userDataLen);
 	sendOrgSessionData(sID, ws.getStream(), ws.getStreamLen());
 	//trace log

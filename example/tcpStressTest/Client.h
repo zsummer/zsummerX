@@ -60,7 +60,7 @@ private:
 
 
 	void SendOnce();
-	void doSend(unsigned short protocolID, unsigned long long clientTick, const std::string & text);
+	void doSend(unsigned short protoID, unsigned long long clientTick, const std::string & text);
 	void doSend(char *buf, unsigned short len);
 	void onSend(zsummer::network::ErrorCode ec,  int nSentLen);
 

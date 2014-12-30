@@ -54,7 +54,7 @@ public:
 
 	//message
 	inline void registerSessionOrgMessage(const OnOrgMessageFunction & msgfun){ _vctOrgSessionDispatch.push_back(msgfun); }
-	inline void registerSessionMessage(ProtoID protocolID, const OnMessageFunction & msgfun){ _mapSessionDispatch[protocolID].push_back(msgfun); }
+	inline void registerSessionMessage(ProtoID protoID, const OnMessageFunction & msgfun){ _mapSessionDispatch[protoID].push_back(msgfun); }
 	inline void registerSessionDefaultMessage(const OnMessageFunction & msgfun){ _vctDefaultSessionDispatch.push_back(msgfun); }
 
 	//event. can use method isSessionID or isConnectID to resolution who is the sessionID
@@ -140,7 +140,6 @@ inline void MessageDispatcher::dispatchSessionMessage(SessionID sID, ProtoID pID
 			{
 				LCT("Entry dispatchSessionMessage[" << pID << "]  SessionID=" << sID);
 				msg.resetMoveCursor();
-				msg >> pID;
 				fun(sID, pID, msg);
 			}	
 		}
@@ -149,7 +148,6 @@ inline void MessageDispatcher::dispatchSessionMessage(SessionID sID, ProtoID pID
 			for (auto & fun : _vctDefaultSessionDispatch)
 			{
 				msg.resetMoveCursor();
-				msg >> pID;
 				fun(sID, pID, msg);
 			}
 		}

@@ -175,9 +175,9 @@ void CClient::onRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 void CClient::MessageEntry(zsummer::proto4z::ReadStream<zsummer::proto4z::DefaultStreamHeadTraits> & rs)
 {
 	//协议流异常会被上层捕获并关闭连接
-	unsigned short protocolID = 0;
-	rs >> protocolID;
-	switch (protocolID)
+	unsigned short protoID = 0;
+	rs >> protoID;
+	switch (protoID)
 	{
 	case 1:
 		{
@@ -186,7 +186,7 @@ void CClient::MessageEntry(zsummer::proto4z::ReadStream<zsummer::proto4z::Defaul
 			rs >> clientTick >> _recvTextCache;
 			if (g_startType == 0)
 			{
-				doSend(protocolID, clientTick, _recvTextCache);
+				doSend(protoID, clientTick, _recvTextCache);
 			}
 			else
 			{
@@ -209,7 +209,7 @@ void CClient::MessageEntry(zsummer::proto4z::ReadStream<zsummer::proto4z::Defaul
 		break;
 	default:
 		{
-			LOGI("unknown protocol id = " << protocolID);
+			LOGI("unknown protocol id = " << protoID);
 		}
 		break;
 	}
@@ -217,10 +217,10 @@ void CClient::MessageEntry(zsummer::proto4z::ReadStream<zsummer::proto4z::Defaul
 
 
 
-void CClient::doSend(unsigned short protocolID, unsigned long long clientTick, const std::string& text)
+void CClient::doSend(unsigned short protoID, unsigned long long clientTick, const std::string& text)
 {
-	zsummer::proto4z::WriteStream<DefaultStreamHeadTraits> ws(zsummer::proto4z::UBT_STATIC_AUTO);
-	ws << protocolID << clientTick << text;
+	zsummer::proto4z::WriteStream<DefaultStreamHeadTraits> ws(protoID);
+	ws << clientTick << text;
 	doSend(ws.getStream(), ws.getStreamLen());
 }
 

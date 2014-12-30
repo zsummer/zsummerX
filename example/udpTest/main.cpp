@@ -66,11 +66,10 @@ unsigned long long g_totalSend;
 unsigned long long g_totalRecv;
 
 //! 请求发送
-void doSend(const char *remoteIP, unsigned short remotePort, unsigned short protocolID, unsigned long long clientTick, PicnicPtr pic)
+void doSend(const char *remoteIP, unsigned short remotePort, unsigned short protoID, unsigned long long clientTick, PicnicPtr pic)
 {
 	pic->_reqTime = clientTick;
-	zsummer::proto4z::WriteStream<DefaultStreamHeadTraits> ws;
-	ws << protocolID; //protocol id
+	zsummer::proto4z::WriteStream<DefaultStreamHeadTraits> ws(protoID);
 	ws << pic->_reqTime; // local tick count
 	ws << g_fillString; // append text, fill the length protocol.
 	pic->sock->doSendTo(ws.getStream(), ws.getStreamLen(), remoteIP, remotePort);
@@ -93,9 +92,9 @@ void onRecv(ErrorCode ec, const char *remoteIP, unsigned short remotePort, int t
 		try
 		{
 			//协议流异常会被上层捕获并关闭连接
-			unsigned short protocolID = 0;
-			rs >> protocolID;
-			switch (protocolID)
+			unsigned short protoID = 0;
+			rs >> protoID;
+			switch (protoID)
 			{
 			case 1:
 				{
@@ -105,7 +104,7 @@ void onRecv(ErrorCode ec, const char *remoteIP, unsigned short remotePort, int t
 					g_totalRecv++;
 					if (g_type == 1)
 					{
-						doSend(remoteIP, remotePort, protocolID, clientTick, pic);
+						doSend(remoteIP, remotePort, protoID, clientTick, pic);
 					}
 					else
 					{
@@ -122,7 +121,7 @@ void onRecv(ErrorCode ec, const char *remoteIP, unsigned short remotePort, int t
 				break;
 			default:
 				{
-					LOGI("unknown protocol id = " << protocolID);
+					LOGI("unknown protocol id = " << protoID);
 				}
 				break;
 			}

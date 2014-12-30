@@ -277,9 +277,8 @@ void TcpSession::onRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 					continue;
 				}
 				ReadStreamPack rs(_recving.buff + usedIndex, ret.second);
-				ProtoID protocolID = 0;
-				rs >> protocolID;
-				MessageDispatcher::getRef().dispatchSessionMessage(_sessionID, protocolID, rs);
+				ProtoID protoID = rs.getProtoID();
+				MessageDispatcher::getRef().dispatchSessionMessage(_sessionID, protoID, rs);
 			}
 			catch (std::runtime_error e)
 			{

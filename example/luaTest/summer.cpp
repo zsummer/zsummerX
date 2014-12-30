@@ -409,7 +409,7 @@ static int sendContent(lua_State * L)
 	size_t len = 0;
 	const char * content = luaL_checklstring(L, 3, &len);
 	WriteStreamPack ws(pID);
-	ws.appendOriginalData(content, len);
+	ws.appendOriginalData(content, (unsigned short)len);
 	TcpSessionManager::getRef().sendOrgSessionData(sID, ws.getStream(), ws.getStreamLen());
 
 	return 0;
@@ -438,6 +438,19 @@ static int sendData(lua_State * L)
 	return 0;
 }
 
+static int kick(lua_State * L)
+{
+	int index = lua_gettop(L);
+	if (index != 1)
+	{
+		LOGE("kick error. argc is not 1.  the argc=" << index);
+		lua_settop(L, 0);
+		return 0;
+	}
+	SessionID sID = luaL_checkint(L, 1);
+	TcpSessionManager::getRef().kickSession(sID);
+	return 0;
+}
 
 luaL_Reg summer[] = {
 	{ "logd", logd },
@@ -457,6 +470,7 @@ luaL_Reg summer[] = {
 	{ "registerDisconnect", registerDisconnect }, //register event when disconnect.
 	{ "sendContent", sendContent }, //send content, don't care serialize and package.
 	{ "sendData", sendData }, // send original data, need to serialize and package via proto4z. 
+	{ "kick", kick }, // kick session. 
 
 	{ NULL, NULL }
 };

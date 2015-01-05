@@ -5,7 +5,7 @@ xcopy depends\\rc4 include\\rc4 /s /y  /i
 xcopy depends\\lua include\\lua /s /y  /i
 xcopy depends\\log4z\\lib lib /s /y  /i
 
-set destPath=E:\\github\\mini-breeze\\trunk
+set destPath=E:\\github\\mini-breeze
 rem set destPath=D:\\pj5\\CPP
 
 xcopy include %destPath%\\depends_win\\include /s /y  /i

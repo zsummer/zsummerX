@@ -4,21 +4,21 @@
 ### 
 测试平台  测试对象          连接数      echo包速度     平均延迟     CPU
 on windows , CPU I5-3550 4 core  @ 3.3GHz 
-windows   boost             1           31493           -      			17% 
-windows   zsummer_tcp	      1           34372						0.0276      17% 
-windows   zsummer_11x_tcp	  1           35860						0.0278      18% 
-windows   zsummer_11x_udp	  1           39640						0.0251      17% 
+windows   boost          	  1           31493           -      	17% 
+windows   zsummer_tcp	      1           34372			0.0276      17% 
+windows   zsummer_11x_tcp	  1           35860			0.0278      18% 
+windows   zsummer_11x_udp	  1           39640			0.0251      17% 
 
 on linux , CPU E5620  2 core @ 2.40GHz  
-linux     boost             1           40689           -						15%                
+linux     boost             1           40689           -			15%                
 linux     zsummer_tcp       1           43252           0.0231      15%
-linux     zsummer_11x_tcp   1           41210           0.0242  		15%
+linux     zsummer_11x_tcp   1           41210           0.0242  	15%
 linux     zsummer_11x_udp   1           50796           0.0196      15%  
 
 on linux , vmware @(windows I5-3550  @ 3.3GHz)
-linux     boost             1           9160            0.1091			15%                
+linux     boost             1           9160            0.1091		15%                
 linux     zsummer_tcp       1           9728            0.1024      15%
-linux     zsummer_11x_tcp   1           9529            0.1049  		15%
+linux     zsummer_11x_tcp   1           9529            0.1049  	15%
 linux     zsummer_11x_udp   1           10348           0.0964      15%  
 
 

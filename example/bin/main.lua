@@ -1,4 +1,3 @@
-require "summer"
 
 -- 连接成功事件
 function onConnect(sID)

@@ -2,8 +2,10 @@
 
 aux_source_directory(./ source)    
 aux_source_directory(./lua/ lua_src)  
+#aux_source_directory(./lua-5.3.0/ lua_src)  
 set(source ${source} ${lua_src})
-include_directories(./lua)
+#include_directories(./lua-5.3.0)
+include_directories(./lua/)
 set(EXECUTABLE_OUTPUT_PATH ${example_SOURCE_DIR}/bin)
 if(APPLE)
 	add_executable(${PROJECT_NAME}_select${LIB_SUFFIX} ${source})

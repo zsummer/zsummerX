@@ -215,8 +215,9 @@ static int addConnect(lua_State *L)
 
 void _checkCallbackTable(lua_State *L, const char * tname)
 {
-	int index = lua_gettop(L);
-	lua_getfield(L, LUA_GLOBALSINDEX, "summer");
+	lua_gettop(L);
+	//lua_getfield(L, LUA_GLOBALSINDEX, "summer");
+	lua_getglobal(L, "summer"); //5.3
 	luaL_checktype(L, -1, LUA_TTABLE);
 
 	lua_getfield(L, -1, "__summerCallback");
@@ -228,7 +229,6 @@ void _checkCallbackTable(lua_State *L, const char * tname)
 		lua_getfield(L, -1, "__summerCallback");
 	}
 	lua_getfield(L, -1, tname);
-	index = lua_gettop(L);
 }
 
 
@@ -403,8 +403,9 @@ static int sendContent(lua_State * L)
 		lua_settop(L, 0);
 		return 0;
 	}
-	SessionID sID = luaL_checkint(L, 1);
-	unsigned short pID = luaL_checkint(L, 2);
+	SessionID sID = (SessionID)luaL_checkinteger(L, 1);
+	unsigned short pID = (unsigned short)luaL_checkinteger(L, 2);
+
 
 	size_t len = 0;
 	const char * content = luaL_checklstring(L, 3, &len);
@@ -424,7 +425,7 @@ static int sendData(lua_State * L)
 		lua_settop(L, 0);
 		return 0;
 	}
-	SessionID sID = luaL_checkint(L, 1);
+	SessionID sID = (SessionID)luaL_checkinteger(L, 1);
 	size_t len = 0;
 	const char * data = luaL_checklstring(L, 2, &len);
 	if (data == NULL || len == 0)
@@ -447,7 +448,8 @@ static int kick(lua_State * L)
 		lua_settop(L, 0);
 		return 0;
 	}
-	SessionID sID = luaL_checkint(L, 1);
+	SessionID sID = (SessionID)luaL_checkinteger(L, 1);
+
 	TcpSessionManager::getRef().kickSession(sID);
 	return 0;
 }
@@ -489,8 +491,20 @@ void registerSummer(lua_State* L)
 	{
 		LOGW("registerSummer warning: L is registered . L=" << L);
 	}
-	luaL_register(L, "summer", summer);
- 	lua_pushcfunction(L, logi);
+
+	lua_newtable(L);
+	for (luaL_Reg *l = summer; l->name != NULL; l++) {  
+		lua_pushcclosure(L, l->func, 0);  /* closure with those upvalues */
+		lua_setfield(L, -2, l->name);
+	}
+	lua_setglobal(L, "summer");
+
+// lua5.3.0
+//	lua_newtable(L);
+//	luaL_setfuncs(L, summer, 0);
+//	lua_setglobal(L, "summer");
+
+	lua_pushcfunction(L, logi);
  	lua_setglobal(L, "print");
 }
 

@@ -45,7 +45,7 @@ int main(int argc, char* argv[])
 {
 	ILog4zManager::getRef().start();
 	int status;
-	lua_State *L = lua_open();  /* create state */
+	lua_State *L = luaL_newstate();  /* create state */
 	if (L == NULL) 
 	{
 		return EXIT_FAILURE;

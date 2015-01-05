@@ -36,3 +36,4 @@ debian I5			zsummerX-frame-select			10	 			94K          	-
 debian I5			zsummerX-tcp-select				1	 			47K          	15
 debian I5			zsummerX-tcp-select				5	 			83K          	-
 debian I5			zsummerX-tcp-select				10	 			88K          	-
+

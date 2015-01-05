@@ -38,3 +38,4 @@ windows   zsummer_tcp	      100,014      9649						 16%在1ms以内,77%在5ms以内, 6
 on linux , E5620  @ 2.40GHz  
 linux     zsummer_11x_tcp	  100,000      8931						 84%在1ms以内,14%在5ms以内, 2%在10~100ms以内          22%(15~30)    602M   单向8.9M   
 linux     zsummer_tcp	      100,000      9450						 85%在1ms以内,14%在5ms以内, 1%在10~100ms以内          21%(15~28)    611M   单向9.4M   
+

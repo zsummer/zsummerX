@@ -1,8 +1,6 @@
-local Proto = {}
-function Proto:test()
-	print("Proto:test")
-end
-function Proto:pack(val, tp)
+local ProtoCore = {}
+
+function ProtoCore:pack(val, tp, ktp, vtp)
 	print("begin pack")
 	-- base integer type
 	if tp == "i8" then
@@ -36,19 +34,56 @@ function Proto:pack(val, tp)
 		return string.pack("<d", val)
 
 	-- user type
-	elseif tp == "table" then
-		local str = ""
+	elseif tp == "struct" then
+		local date = ""
 		for i = 1, #val do
 			local v = val[val[i]]
 			if v ~= nil then
-				str = str .. Proto:pack(v.val, v.type)
+				date = date .. ProtoCore:pack(v.val, v.type, v.ktype, v.vtype)
 			end
 		end
-		return str
+		return date
+	elseif tp == "array" then
+		local date = ""
+		for i = 1, #val do
+			local v = val[i]
+			if v ~= nil then
+				date = date .. ProtoCore:pack(v, vtp)
+			end
+		end
+		return date
+	elseif tp == "map" then
+		local date = ""
+		for i = 1, #val do
+			local kv = val[i]
+			date = date .. ProtoCore:pack(kv.k, ktp)
+			date = date .. ProtoCore:pack(kv.v, vtp)
+		end
+		return date
 	else
 		print("unknown val type=" .. type(val))
 	end
 end
 
 
-return Proto
+
+function ProtoCore:new(tb)
+    local recursive = {} -- log recursive table
+    local function _copy(tb)
+        if type(tb) ~= "table" then
+            return tb
+        elseif recursive[tb] then
+            return recursive[tb]
+        end
+        local newtb = {}
+        recursive[tb] = newtb
+        for k, v in pairs(tb) do
+            newtb[_copy(k)] = _copy(v)
+        end
+        return setmetatable(newtb, getmetatable(tb))
+    end
+    return _copy(tb)
+end
+
+
+return ProtoCore

@@ -1,26 +1,28 @@
-local ProtoCore = {}
 
-function ProtoCore:pack(val, tp, ktp, vtp)
+-- 所有协议都在该table
+Protoz = {}
+
+function Protoz:__pack(val, tp)
 	print("begin pack")
 	-- base integer type
-	if tp == "i8" then
+	if tp == "i8" or tp == "char" then
 		return string.pack("<i1", val)
-	elseif tp == "ui8" then
+	elseif tp == "ui8" or tp == "unsigned char" then
 		return string.pack("<I1", val)
 
-	elseif tp == "i16" then
+	elseif tp == "i16" or tp == "short" then
 		return string.pack("<i2", val)
-	elseif tp == "ui16" then
+	elseif tp == "ui16" or tp == "unsigned short" then
 		return string.pack("<I2", val)	
 
-	elseif tp == "i32" then
+	elseif tp == "i32" or tp == "int" then
 		return string.pack("<i4", val)
-	elseif tp == "ui32" then
+	elseif tp == "ui32" or tp == "unsigned int" then
 		return string.pack("<I4", val)	
 
-	elseif tp == "i64" then
+	elseif tp == "i64" or tp == "long long" then
 		return string.pack("<i8", val)
-	elseif tp == "ui64" then
+	elseif tp == "ui64" or tp == "unsigned long long" then
 		return string.pack("<I8", val)	
 
 	-- string type
@@ -30,44 +32,51 @@ function ProtoCore:pack(val, tp, ktp, vtp)
 	-- float type
 	elseif tp == "float" then
 		return string.pack("<f", val)
-	elseif tp == "thenuble" then
+	elseif tp == "double" then
 		return string.pack("<d", val)
 
-	-- user type
-	elseif tp == "struct" then
-		local date = ""
-		for i = 1, #val do
-			local v = val[val[i]]
-			if v ~= nil then
-				date = date .. ProtoCore:pack(v.val, v.type, v.ktype, v.vtype)
-			end
-		end
-		return date
-	elseif tp == "array" then
-		local date = ""
-		for i = 1, #val do
-			local v = val[i]
-			if v ~= nil then
-				date = date .. ProtoCore:pack(v, vtp)
-			end
-		end
-		return date
-	elseif tp == "map" then
-		local date = ""
-		for i = 1, #val do
-			local kv = val[i]
-			date = date .. ProtoCore:pack(kv.k, ktp)
-			date = date .. ProtoCore:pack(kv.v, vtp)
-		end
-		return date
+	-- error
 	else
 		print("unknown val type=" .. type(val))
+		return nil
 	end
 end
 
+function Protoz:__encode(obj, protoName, data)
+	local proto = Protoz[protoName]
+	if proto = nil then
+		return nil
+	end
+
+	for i=1, #proto do
+		local pt = proto[i]
+		local val = obj[pt.name]
+		if pt.type == "normal" then
+			if type(val) ~= "table" then
+				data.data = data.data .. Protoz:__pack(val, pt.vtype)
+			else
+				Protoz:__encode(val, pt.vtype, data)
+			end
+		elseif pt.type == "array" then
+			for j =1, #val do
+				if type(val[i]) ~= "table" then
+					data.data = data.data .. Protoz:__pack(val[i], pt.vtype)
+				else
+					Protoz:__encode(val[i], pt.vtype, data)
+				end
+			end
+		end
+	end
+end
+
+function Protoz:encode(obj, protoName)
+	local data = {data=""}
+	Protoz:__encode(obj, protoName, data)
+	return data
+end
 
 
-function ProtoCore:new(tb)
+function Protoz:new(tb)
     local recursive = {} -- log recursive table
     local function _copy(tb)
         if type(tb) ~= "table" then

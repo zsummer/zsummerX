@@ -8,7 +8,7 @@ Protoz.EC_ERROR = 1
 
 Protoz.Hero = {}
 Protoz.Hero.__getName = "Hero"
-Protoz.Hero.[1] = {name = "_name", type = "string"}
+Protoz.Hero[1] = {name = "_name", type = "normal", vtype = "string"}
 
 Protoz.UserInfo = {}
 Protoz.UserInfo.__getName = "UserInfo"
@@ -29,13 +29,14 @@ local result = {_retCode = 0,
 				}
 
 
-local data = Protoz.encode(result, "LoginResult")
+local data = Protoz:encode(result, "LoginResult")
+
 
 
 local hex = ""
 for i = 1, #data do
 	hex = hex .. string.format("%02x ",string.byte(data, i))
 end
-print(hex)
+print("[" .. #hex .. "]" .. hex)
 
 

@@ -47,9 +47,9 @@ extern "C"
 
 
 
+int luaopen_summer(lua_State *L);
 
 
-void registerSummer(lua_State* L);
 
 
 

@@ -478,8 +478,7 @@ luaL_Reg summer[] = {
 };
 
 
-
-void registerSummer(lua_State* L)
+int luaopen_summer(lua_State *L)
 {
 	auto founder = std::find_if(_staticValidVM.begin(), _staticValidVM.end(), [L](lua_State* l){return l == L; });
 	if (founder == _staticValidVM.end())
@@ -506,9 +505,10 @@ void registerSummer(lua_State* L)
 
 	lua_pushcfunction(L, logi);
  	lua_setglobal(L, "print");
+	return 0;
 }
 
-void unregisterSummer(lua_State *L)
+int luaclose_summer(lua_State *L)
 {
 	auto founder = std::find_if(_staticValidVM.begin(), _staticValidVM.end(), [L](lua_State* l){return l == L; });
 	if (founder != _staticValidVM.end())
@@ -520,6 +520,7 @@ void unregisterSummer(lua_State *L)
 	{
 		LOGW("unregisterSummer warning: L is not found. L=" << L);
 	}
+	return 0;
 }
 
 

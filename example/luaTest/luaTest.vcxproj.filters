@@ -93,6 +93,9 @@
     <ClCompile Include="lua\print.c">
       <Filter>lua</Filter>
     </ClCompile>
+    <ClCompile Include="lua\lpack.c">
+      <Filter>lua</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="summer.h" />
@@ -163,6 +166,9 @@
       <Filter>lua</Filter>
     </ClInclude>
     <ClInclude Include="lua\lzio.h">
+      <Filter>lua</Filter>
+    </ClInclude>
+    <ClInclude Include="lua\lpack.h">
       <Filter>lua</Filter>
     </ClInclude>
   </ItemGroup>

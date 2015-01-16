@@ -36,6 +36,7 @@
 
 
 #include "summer.h"
+#include "lua/lpack.h"
 
 
 #include <zsummerX/frameX.h>
@@ -53,7 +54,8 @@ int main(int argc, char* argv[])
 
 	lua_gc(L, LUA_GCSTOP, 0);  /* stop collector during initialization */
 	luaL_openlibs(L);  /* open libraries */
-	registerSummer(L);
+	luaopen_summer(L);
+	luaopen_pack(L);
 	lua_gc(L, LUA_GCRESTART, 0);
 	status = luaL_dofile(L, "./main.lua");
 

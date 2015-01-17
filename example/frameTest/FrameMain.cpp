@@ -139,7 +139,7 @@ void startServer()
 		std::string content = rs.getStreamBody();
 		LOGI("recv SessionID = " << sID << ", content = " << content);
 		content += " ==> echo.";
-		TcpSessionManager::getRef().sendSessionData(sID, _ResultID, content.c_str(), content.length() + 1);
+		TcpSessionManager::getRef().sendSessionData(sID, _ResultID, content.c_str(), (unsigned int)content.length() + 1);
 
 		//! step 3 stop server after 1 second.
 		TcpSessionManager::getRef().createTimer(1000, [](){TcpSessionManager::getRef().stop(); });
@@ -166,7 +166,7 @@ void startClient()
 	{
 		LOGI("on connect. ID=" << cID);
 		std::string content = "hello";
-		TcpSessionManager::getRef().sendSessionData(cID, _RequestID, content.c_str(), content.length() + 1);
+		TcpSessionManager::getRef().sendSessionData(cID, _RequestID, content.c_str(), (unsigned int)content.length() + 1);
 	};
 
 	//process message _ResultID

@@ -209,7 +209,8 @@ function Protoz.__unpack(binData, pos, tp)
 	elseif tp == "ui32" or tp == "unsigned int" then
 		n, v = string.unpack(binData, "<I", pos)
 	elseif tp == "i64" or tp == "long long" or tp == "ui64" or tp == "unsigned long long" then
-		local n, tmp = string.unpack(binData, "<b", pos)
+		local tmp
+		n, tmp = string.unpack(binData, "<b", pos)
 		v = tmp
 		n, tmp = string.unpack(binData, "<b", pos+1)
 		v = v .. tmp

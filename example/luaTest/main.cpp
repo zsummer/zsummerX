@@ -57,6 +57,7 @@ int main(int argc, char* argv[])
 	luaL_openlibs(L);  /* open libraries */
 	luaopen_summer(L);
 	luaopen_pack(L);
+
 	lua_gc(L, LUA_GCRESTART, 0);
 	status = luaL_dofile(L, "./main.lua");
 

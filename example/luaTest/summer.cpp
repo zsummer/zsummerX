@@ -498,13 +498,6 @@ int luaopen_summer(lua_State *L)
 	}
 	lua_setglobal(L, "summer");
 
-// lua5.3.0
-//	lua_newtable(L);
-//	luaL_setfuncs(L, summer, 0);
-//	lua_setglobal(L, "summer");
-
-	lua_pushcfunction(L, logi);
- 	lua_setglobal(L, "print");
 	return 0;
 }
 

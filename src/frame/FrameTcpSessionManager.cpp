@@ -338,7 +338,7 @@ void TcpSessionManager::sendOrgSessionData(SessionID sID, const char * orgData, 
 	iter->second->doSend(orgData, orgDataLen);
 	//trace log
 	{
-		LCT("sendOrgSessionData Len=" << orgDataLen << ",binarydata=" << zsummer::log4z::BinaryBlock(orgData, orgDataLen >= 10 ? 10 : orgDataLen));
+		LCT("sendOrgSessionData Len=" << orgDataLen << ",binarydata=" << zsummer::log4z::Log4zBinary(orgData, orgDataLen >= 10 ? 10 : orgDataLen));
 	}
 }
 void TcpSessionManager::sendSessionData(SessionID sID, ProtoID pID, const char * userData, unsigned int userDataLen)

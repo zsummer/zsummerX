@@ -26,7 +26,8 @@ summer.registerConnect(onConnect)
 -- 收到消息
 function onMessage(sID, pID, content)
 	--print("onMessage. sID=" .. sID .. ", pID=" .. pID )
-	local echo = Protoz.decode(content, pID)
+	local name = Protoz.getName(pID)
+	local echo = Protoz.decode(content, name)
 	--Protoz.dump(echo)
 
 	local data = Protoz.encode({_text="test content"}, "EchoPack")

@@ -18,7 +18,7 @@ Protoz.EchoPack[1] = {name = "_text", type = "string"}
 -- 连接成功事件
 function onConnect(sID)
 	print("session is on connected. sID=" .. sID)
-  local data = Protoz.encode({_text="test content"}, "EchoPack")
+	local data = Protoz.encode({_text="test content"}, "EchoPack")
 	summer.sendContent(sID, C2S_ECHO_REQ, data)
 end
 summer.registerConnect(onConnect)
@@ -26,11 +26,11 @@ summer.registerConnect(onConnect)
 -- 收到消息
 function onMessage(sID, pID, content)
 	--print("onMessage. sID=" .. sID .. ", pID=" .. pID )
-  local echo = Protoz.decode(content, pID)
-  --Protoz.dump(echo)
+	local echo = Protoz.decode(content, pID)
+	--Protoz.dump(echo)
 
-  local data = Protoz.encode({_text="test content"}, "EchoPack")
-  summer.sendContent(sID, C2S_ECHO_REQ, data)
+	local data = Protoz.encode({_text="test content"}, "EchoPack")
+	summer.sendContent(sID, C2S_ECHO_REQ, data)
 end
 summer.registerMessage(onMessage)
 

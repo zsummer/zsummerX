@@ -69,7 +69,7 @@ unsigned long long g_totalRecv;
 void doSend(const char *remoteIP, unsigned short remotePort, unsigned short protoID, unsigned long long clientTick, PicnicPtr pic)
 {
 	pic->_reqTime = clientTick;
-	zsummer::proto4z::WriteStream<DefaultStreamHeadTraits> ws(protoID);
+	zsummer::proto4z::WriteStream ws(protoID);
 	ws << pic->_reqTime; // local tick count
 	ws << g_fillString; // append text, fill the length protocol.
 	pic->sock->doSendTo(ws.getStream(), ws.getStreamLen(), remoteIP, remotePort);
@@ -84,11 +84,11 @@ void onRecv(ErrorCode ec, const char *remoteIP, unsigned short remotePort, int t
 		return;
 	}
 
-	auto ret = zsummer::proto4z::checkBuffIntegrity<DefaultStreamHeadTraits>(pic->recvData, translate, _MSG_BUF_LEN);
+	auto ret = zsummer::proto4z::checkBuffIntegrity(pic->recvData, translate, _MSG_BUF_LEN);
 	if (ret.first == IRT_SUCCESS)
 	{
 		//! 解包
-		zsummer::proto4z::ReadStream<DefaultStreamHeadTraits> rs(pic->recvData, translate);
+		zsummer::proto4z::ReadStream rs(pic->recvData, translate);
 		try
 		{
 			//协议流异常会被上层捕获并关闭连接

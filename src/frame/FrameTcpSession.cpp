@@ -184,6 +184,7 @@ bool TcpSession::doRecv()
 
 void TcpSession::close()
 {
+	LCW("TcpSession to close socket. sID= " << _sessionID );
 	_sockptr->doClose();
 	if (_pulseTimerID != zsummer::network::InvalidTimerID)
 	{
@@ -196,7 +197,7 @@ void TcpSession::onRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 {
 	if (ec)
 	{
-		LCD("remote socket closed");
+		LCD("socket closed");
 		onClose();
 		return;
 	}
@@ -259,7 +260,7 @@ void TcpSession::onRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 			if (ret.first == zsummer::proto4z::IRT_CORRUPTION
 				|| (ret.first == zsummer::proto4z::IRT_SHORTAGE && ret.second + _recving.bufflen > SEND_RECV_CHUNK_SIZE))
 			{
-				LCT("killed socket: checkBuffIntegrity error ");
+				LCW("killed socket: checkBuffIntegrity error ");
 				_sockptr->doClose();
 				onClose();
 				return;

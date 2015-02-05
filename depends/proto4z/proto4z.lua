@@ -1,7 +1,48 @@
+
+--[[
+/*
+ * proto4z License
+ * -----------
+ * 
+ * proto4z is licensed under the terms of the MIT license reproduced below.
+ * This means that proto4z is free software and can be used for both academic
+ * and commercial purposes at absolutely no cost.
+ * 
+ * 
+ * ===============================================================================
+ * 
+ * Copyright (C) 2013-2015 YaweiZhang <yawei_zhang@foxmail.com>.
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ * 
+ * ===============================================================================
+ * 
+ * (end of COPYRIGHT)
+ */
+ ]]--
+
+
 -- proto4z core file
 -- Auther: zhangyawei
 -- mail:yawei_zhang@foxmail.com
 -- date: 2015-01-12
+
 
 
 Protoz = {}
@@ -187,9 +228,7 @@ function Protoz.__pack(val, tp)
 	elseif tp == "ui32" or tp == "unsigned int" then
 		return string.pack("<I", val)	
 	elseif tp == "i64" or tp == "long long" or tp == "ui64" or tp == "unsigned long long" then
-		local i = string.pack("<I", string.sub(val,1,5))
-		i = i .. string.pack("<I", string.sub(val,5,10))
-		return i
+		return string.sub(val, 1, 8)
 
 
 	-- string type
@@ -279,12 +318,8 @@ function Protoz.__unpack(binData, pos, tp)
 	elseif tp == "ui32" or tp == "unsigned int" then
 		n, v = string.unpack(binData, "<I", pos)
 	elseif tp == "i64" or tp == "long long" or tp == "ui64" or tp == "unsigned long long" then
-		local tmp
-		n, v = string.unpack(binData, "<I", pos)
-		tmp = string.pack("<I", v)
-		n, v = string.unpack(binData, "<I", pos+4)
-		tmp = tmp .. string.pack("<I", v)
-		v = tmp
+		v = string.sub(binData, pos, pos+7)
+		n = pos +8
 	-- string type
 	elseif tp == "string" then
 		n, v = string.unpack(binData, "<I", pos)

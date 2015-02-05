@@ -50,6 +50,7 @@
     <ClCompile Include="lua\lvm.c" />
     <ClCompile Include="lua\lzio.c" />
     <ClCompile Include="lua\print.c" />
+    <ClCompile Include="lua\protoz_bit.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="summer.cpp" />
   </ItemGroup>

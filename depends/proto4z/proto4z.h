@@ -9,7 +9,7 @@
  * 
  * ===============================================================================
  * 
- * Copyright (C) 2013-2014 YaweiZhang <yawei_zhang@foxmail.com>.
+ * Copyright (C) 2013-2015 YaweiZhang <yawei_zhang@foxmail.com>.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -183,7 +183,7 @@ public:
 	//! bNoWrite : if true then WriteStream will not do any write operation.
 	//! attachData : Attach to the existing memory.
 	inline WriteStream(ProtoInteger pID, char * attachData = NULL, Integer maxStreamLen = 0, bool bNoWrite = false);
-	inline ~WriteStream(){}
+	~WriteStream(){}
 public:
 	//get total stream buff, the pointer must be used immediately.
 	inline char* getStream();
@@ -247,7 +247,7 @@ class ReadStream
 {
 public:
 	inline ReadStream(const char *attachData, Integer attachDataLen, bool isHaveHeader = true);
-	inline ~ReadStream(){}
+	~ReadStream(){}
 public:
 	//reset cursor
 	inline void resetMoveCursor();

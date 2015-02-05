@@ -1,37 +1,38 @@
+package.path =  "../../depends/proto4z/?.lua;" .. package.path
 --require
 require("proto4z")
-C2S_Pulse = 10000
-S2C_Pulse = 10001
-C2S_ECHO_REQ = 10002
-S2C_ECHO_ACK = 10003
+require("TestProto")
+
 
 --echo pack
 
-Protoz.register(S2C_ECHO_ACK, "EchoPack")
-
-Protoz.EchoPack = {}
-Protoz.EchoPack.__getName = "EchoPack"
-Protoz.EchoPack[1] = {name = "_text", type = "string"}
-
-
+local echo = {  _iarray = {{_char=1,_uchar=2,_short=3,_ushort=4,_int=5,_uint=6,_i64="12345678",_ui64="12345678"},{_char=1,_uchar=2,_short=3,_ushort=4,_int=5,_uint=6,_i64="12345678",_ui64="12345678"}},
+				_farray = {{_float=2.235,_double=235.111},{_float=2.235,_double=235.111},},
+				_sarray = {{_string="abcdefg"},{_string="abcdefg"},{_string="abcdefg"}},
+				_imap = {{k="123", v={_char=1,_uchar=2,_short=3,_ushort=4,_int=5,_uint=6,_i64="12345678",_ui64="12345678"}}, {k="223", v={_char=1,_uchar=2,_short=3,_ushort=4,_int=5,_uint=6,_i64="12345678",_ui64="12345678"}}},
+				_fmap = {{k="523", v={_float=2.235,_double=235.111}},{k="623", v={_float=2.235,_double=235.111}}},
+				_smap = {{k="523", v={_string="abcdefg"}},{k="523", v={_string="abcdefg"}}},
+				}
 
 -- 连接成功事件
 function onConnect(sID)
 	print("session is on connected. sID=" .. sID)
-	local data = Protoz.encode({_text="test content"}, "EchoPack")
-	summer.sendContent(sID, C2S_ECHO_REQ, data)
+	local data = Protoz.encode(echo, "P2P_EchoPack")
+	Protoz.putbin(data)
+	summer.sendContent(sID, Protoz.P2P_EchoPack.__getID, data)
 end
 summer.registerConnect(onConnect)
 
 -- 收到消息
 function onMessage(sID, pID, content)
+	Protoz.putbin(content)
 	--print("onMessage. sID=" .. sID .. ", pID=" .. pID )
 	local name = Protoz.getName(pID)
 	local echo = Protoz.decode(content, name)
-	--Protoz.dump(echo)
+	Protoz.dump(echo)
 
-	local data = Protoz.encode({_text="test content"}, "EchoPack")
-	summer.sendContent(sID, C2S_ECHO_REQ, data)
+	local data = Protoz.encode(echo, "P2P_EchoPack")
+	--summer.sendContent(sID, Protoz.P2P_EchoPack.__getID, data)
 end
 summer.registerMessage(onMessage)
 

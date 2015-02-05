@@ -173,6 +173,7 @@
     <ClInclude Include="..\..\include\zsummerX\tcpsocket.h" />
     <ClInclude Include="..\..\include\zsummerX\udpsocket.h" />
     <ClInclude Include="..\..\include\zsummerX\zsummer.h" />
+    <ClInclude Include="TestProto.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="FrameStressMain.cpp" />

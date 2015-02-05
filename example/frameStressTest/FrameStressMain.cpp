@@ -40,6 +40,7 @@
 
 #include <zsummerX/frameX.h>
 #include <unordered_map>
+#include "TestProto.h"
 using namespace zsummer::log4z;
 
 //! default value
@@ -69,20 +70,6 @@ void MonitorFunc()
 	TcpSessionManager::getRef().createTimer(5000, MonitorFunc);
 };
 
-/*
-* define some proto used to test.
-*/
-
-// client pulse
-#define C2S_Pulse ProtoID(10000)
-//server pulse
-#define S2C_Pulse ProtoID(10000)
-
-//client request
-#define C2S_ECHO_REQ ProtoID(10002)
-//server result
-#define S2C_ECHO_ACK ProtoID(10003)
-
 
 //make heartbeat mechanisms.
 //mechanisms: register pulse timer, send pulse proto when timer trigger.  check last remote pulse time when trigger.
@@ -97,9 +84,9 @@ public:
 			std::placeholders::_1));
 		MessageDispatcher::getRef().registerOnSessionPulse(std::bind(&CHeartbeatManager::OnSessionPulse, this,
 			std::placeholders::_1, std::placeholders::_2));
-		MessageDispatcher::getRef().registerSessionMessage(S2C_Pulse, std::bind(&CHeartbeatManager::OnMsgPulse, this,
+		MessageDispatcher::getRef().registerSessionMessage(ID_C2S_Pulse, std::bind(&CHeartbeatManager::OnMsgPulse, this,
 			std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-		MessageDispatcher::getRef().registerSessionMessage(S2C_Pulse, std::bind(&CHeartbeatManager::OnMsgPulse, this,
+		MessageDispatcher::getRef().registerSessionMessage(ID_S2C_Pulse, std::bind(&CHeartbeatManager::OnMsgPulse, this,
 			std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	}
 	
@@ -137,12 +124,12 @@ public:
 
 		if (isConnectID(sID))
 		{
-			WriteStreamPack pack(C2S_Pulse);
+			WriteStreamPack pack(ID_C2S_Pulse);
 			TcpSessionManager::getRef().sendOrgSessionData(sID, pack.getStream(), pack.getStreamLen());
 		}
 		else
 		{
-			WriteStreamPack pack(S2C_Pulse);
+			WriteStreamPack pack(ID_S2C_Pulse);
 			TcpSessionManager::getRef().sendOrgSessionData(sID, pack.getStream(), pack.getStreamLen());
 		}
 	}
@@ -169,9 +156,9 @@ public:
 	CStressClientHandler()
 	{
 		MessageDispatcher::getRef().registerOnSessionEstablished(std::bind(&CStressClientHandler::onConnected, this, std::placeholders::_1));
-		MessageDispatcher::getRef().registerSessionMessage(S2C_ECHO_ACK,
+		MessageDispatcher::getRef().registerSessionMessage(ID_P2P_EchoPack,
 			std::bind(&CStressClientHandler::msg_ResultSequence_fun, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-		MessageDispatcher::getRef().registerSessionMessage(S2C_ECHO_ACK,
+		MessageDispatcher::getRef().registerSessionMessage(ID_P2P_EchoPack,
 			std::bind(&CStressClientHandler::looker_ResultSequence_fun, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 		MessageDispatcher::getRef().registerOnSessionDisconnect(std::bind(&CStressClientHandler::OnConnectDisconnect, this, std::placeholders::_1));
 	}
@@ -179,8 +166,40 @@ public:
 	void onConnected (SessionID cID)
 	{
 		LOGI("onConnected. ConnectorID=" << cID );
-		WriteStreamPack ws(C2S_ECHO_REQ);
-		ws << "client request one REQ.";
+		WriteStreamPack ws(ID_P2P_EchoPack);
+		P2P_EchoPack pack;
+		TestIntegerData idata;
+		idata._char = 'a';
+		idata._uchar = 100;
+		idata._short = 200;
+		idata._ushort = 300;
+		idata._int = 400;
+		idata._uint = 500;
+		idata._i64 = 600;
+		idata._ui64 = 700;
+		idata._ui128 = 255;
+
+		TestFloatData fdata;
+		fdata._float = (float)123123.111111;
+		fdata._double = 12312312.88888;
+
+		TestStringData sdata;
+		sdata._string = "abcdefg";
+
+		pack._iarray.push_back(idata);
+		pack._iarray.push_back(idata);
+		pack._farray.push_back(fdata);
+		pack._farray.push_back(fdata);
+		pack._sarray.push_back(sdata);
+		pack._sarray.push_back(sdata);
+
+		pack._imap.insert(std::make_pair("123", idata));
+		pack._imap.insert(std::make_pair("223", idata));
+		pack._fmap.insert(std::make_pair("323", fdata));
+		pack._fmap.insert(std::make_pair("423", fdata));
+		pack._smap.insert(std::make_pair("523", sdata));
+		pack._smap.insert(std::make_pair("623", sdata));
+		ws << pack;
 		TcpSessionManager::getRef().sendOrgSessionData(cID, ws.getStream(), ws.getStreamLen());
 		g_totalSendCount++;
 		if (g_sendType != 0 && g_intervalMs > 0)
@@ -196,31 +215,64 @@ public:
 
 	void msg_ResultSequence_fun(SessionID cID, ProtoID pID, ReadStreamPack & rs)
 	{
-		std::string msg;
-		rs >> msg;
+		P2P_EchoPack pack;
+		rs >> pack;
+
 		g_totalRecvCount++;
 		g_totalEchoCount++;
 
 		if (g_sendType == 0 || g_intervalMs == 0) //echo send
 		{
-			WriteStreamPack ws(C2S_ECHO_REQ);
-			ws << g_testStr;
+			WriteStreamPack ws(ID_P2P_EchoPack);
+			ws << pack;
 			TcpSessionManager::getRef().sendOrgSessionData(cID, ws.getStream(), ws.getStreamLen());
 			g_totalSendCount++;
 		}
 	};
 	void looker_ResultSequence_fun(SessionID cID, ProtoID pID, ReadStreamPack & rs)
 	{
-		std::string msg;
-		rs >> msg;
+//		P2P_EchoPack pack;
+//		rs >> pack;
 //		LOGA("looker:" <<msg);
 	};
 	void SendFunc(SessionID cID)
 	{
 		if (g_totalSendCount - g_totalRecvCount < 10000)
 		{
-			WriteStreamPack ws(C2S_ECHO_REQ);
-			ws << g_testStr;
+			WriteStreamPack ws(ID_P2P_EchoPack);
+			P2P_EchoPack pack;
+			TestIntegerData idata;
+			idata._char = 'a';
+			idata._uchar = 100;
+			idata._short = 200;
+			idata._ushort = 300;
+			idata._int = 400;
+			idata._uint = 500;
+			idata._i64 = 600;
+			idata._ui64 = 700;
+			idata._ui128 = 255;
+
+			TestFloatData fdata;
+			fdata._float = (float)123123.111111;
+			fdata._double = 12312312.88888;
+
+			TestStringData sdata;
+			sdata._string = "abcdefg";
+
+			pack._iarray.push_back(idata);
+			pack._iarray.push_back(idata);
+			pack._farray.push_back(fdata);
+			pack._farray.push_back(fdata);
+			pack._sarray.push_back(sdata);
+			pack._sarray.push_back(sdata);
+
+			pack._imap.insert(std::make_pair("123", idata));
+			pack._imap.insert(std::make_pair("223", idata));
+			pack._fmap.insert(std::make_pair("323", fdata));
+			pack._fmap.insert(std::make_pair("423", fdata));
+			pack._smap.insert(std::make_pair("523", sdata));
+			pack._smap.insert(std::make_pair("623", sdata));
+			ws << pack;
 			TcpSessionManager::getRef().sendOrgSessionData(cID, ws.getStream(), ws.getStreamLen());
 			g_totalSendCount++;
 		}
@@ -243,17 +295,16 @@ class CStressServerHandler
 public:
 	CStressServerHandler()
 	{
-		MessageDispatcher::getRef().registerSessionMessage(C2S_ECHO_REQ,
+		MessageDispatcher::getRef().registerSessionMessage(ID_P2P_EchoPack,
 			std::bind(&CStressServerHandler::msg_RequestSequence_fun, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	}
 
 	void msg_RequestSequence_fun (SessionID sID, ProtoID pID, ReadStreamPack & rs)
 	{
-		std::string msg;
-		rs >> msg;
-		msg += " echo";
-		WriteStreamPack ws(S2C_ECHO_ACK);
-		ws << msg;
+		P2P_EchoPack pack;
+		rs >> pack;
+		WriteStreamPack ws(ID_P2P_EchoPack);
+		ws << pack;
 		TcpSessionManager::getRef().sendOrgSessionData(sID, ws.getStream(), ws.getStreamLen());
 		g_totalEchoCount++;
 		g_totalSendCount++;

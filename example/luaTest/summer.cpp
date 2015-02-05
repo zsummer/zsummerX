@@ -422,13 +422,13 @@ static int sendContent(lua_State * L)
 		return 0;
 	}
 	SessionID sID = (SessionID)luaL_checkinteger(L, 1);
-	unsigned short pID = (unsigned short)luaL_checkinteger(L, 2);
+	zsummer::proto4z::ProtoInteger pID = (zsummer::proto4z::ProtoInteger)luaL_checkinteger(L, 2);
 
 
 	size_t len = 0;
 	const char * content = luaL_checklstring(L, 3, &len);
 	WriteStreamPack ws(pID);
-	ws.appendOriginalData(content, (unsigned short)len);
+	ws.appendOriginalData(content, (zsummer::proto4z::Integer)len);
 	TcpSessionManager::getRef().sendOrgSessionData(sID, ws.getStream(), ws.getStreamLen());
 
 	return 0;

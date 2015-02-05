@@ -96,6 +96,9 @@
     <ClCompile Include="lua\lpack.c">
       <Filter>lua</Filter>
     </ClCompile>
+    <ClCompile Include="lua\protoz_bit.cpp">
+      <Filter>lua</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="summer.h" />

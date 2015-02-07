@@ -36,16 +36,19 @@
 
 
 
-extern "C"
-{
+
 #include "lua.h"
 #include "lauxlib.h"
-}
-
-#include <iostream>
 #include <string.h>
+#include <stdbool.h>
+
+
+int luaopen_protoz_bit(lua_State *L);
+
+
+
 static const unsigned short __gc_localEndianType = 1;
-static inline bool islocalLittleEndian()
+static bool islocalLittleEndian()
 {
 	if (*(const unsigned char *)&__gc_localEndianType == 1)
 	{
@@ -55,31 +58,24 @@ static inline bool islocalLittleEndian()
 }
 
 
-template<class Integer>
-static Integer streamToInteger(const char stream[sizeof(Integer)])
+
+static unsigned long long streamToInteger(const char stream[])
 {
-	unsigned short integerLen = sizeof(Integer);
-	Integer integer = 0;
-	if (integerLen == 1)
+	unsigned long long integer = 0;
+	size_t len = sizeof(unsigned long long);
+	if (!islocalLittleEndian())
 	{
-		integer = (Integer)stream[0];
+		unsigned char *dst = (unsigned char*)&integer;
+		unsigned char *src = (unsigned char*)stream + sizeof(unsigned long long);
+		while (len > 0)
+		{
+			*dst++ = *--src;
+			len--;
+		}
 	}
 	else
 	{
-		if (!islocalLittleEndian())
-		{
-			unsigned char *dst = (unsigned char*)&integer;
-			unsigned char *src = (unsigned char*)stream + integerLen;
-			while (integerLen > 0)
-			{
-				*dst++ = *--src;
-				integerLen--;
-			}
-		}
-		else
-		{
-			memcpy(&integer, stream, integerLen);
-		}
+		memcpy(&integer, stream, len);
 	}
 	return integer;
 }
@@ -95,7 +91,7 @@ static int checkBitTrue(lua_State *L)
 		return 0;
 	}
 	lua_settop(L, 0);
-	unsigned long long val = streamToInteger<unsigned long long>(log);
+	unsigned long long val = streamToInteger(log);
 	if (val & (1ULL << pos))
 	{
 		lua_pushboolean(L, 1);
@@ -104,14 +100,12 @@ static int checkBitTrue(lua_State *L)
 	{
 		lua_pushnil(L);
 	}
-	
-	
 	return 1;
 }
 
 static int checkStringToBit(lua_State *L)
 {
-	size_t len = 0;
+	size_t i, len = 0;
 	const char * log = luaL_checklstring(L, 1, &len);
 	unsigned long long pos = 0;
 	if (len > 64)
@@ -119,7 +113,7 @@ static int checkStringToBit(lua_State *L)
 		return 0;
 	}
 	
-	for (size_t i = 0; i < len; i++)
+	for (i = 0; i < len; i++)
 	{
 		if (log[i] == '1')
 		{
@@ -147,7 +141,8 @@ luaL_Reg protoz_bit[] = {
 int luaopen_protoz_bit(lua_State *L)
 {
 	lua_newtable(L);
-	for (luaL_Reg *l = protoz_bit; l->name != NULL; l++) {
+	luaL_Reg *l;
+	for (l = protoz_bit; l->name != NULL; l++) {
 		lua_pushcclosure(L, l->func, 0);  /* closure with those upvalues */
 		lua_setfield(L, -2, l->name);
 	}

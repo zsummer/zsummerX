@@ -39,10 +39,11 @@
 extern "C"
 {
 #include "lua/lpack.h"
+int luaopen_protoz_bit(lua_State *L);
 }
 
 
-int luaopen_protoz_bit(lua_State *L);
+
 
 #include <zsummerX/frameX.h>
 using namespace zsummer::log4z;

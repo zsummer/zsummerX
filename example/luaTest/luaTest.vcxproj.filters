@@ -96,7 +96,7 @@
     <ClCompile Include="lua\lpack.c">
       <Filter>lua</Filter>
     </ClCompile>
-    <ClCompile Include="lua\protoz_bit.cpp">
+    <ClCompile Include="lua\protoz_bit.c">
       <Filter>lua</Filter>
     </ClCompile>
   </ItemGroup>

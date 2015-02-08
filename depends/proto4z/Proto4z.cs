@@ -117,11 +117,14 @@ namespace Proto4z
         }
         public System.Collections.Generic.List<byte> __encode()
         {
-            return new System.Collections.Generic.List<byte>(_val);
+            byte[] bin = new byte[1];
+            bin[0] = (byte)_val;
+            var ret = new System.Collections.Generic.List<byte>(bin);
+            return ret;
         }
         public int __decode(byte[] binData, ref int pos)
         {
-            _val = System.BitConverter.ToChar(binData, pos);
+            _val = (char)binData[pos];
             pos += 1;
             return pos;
         }
@@ -131,6 +134,31 @@ namespace Proto4z
             i8 child = obj as i8;
             if (child == null) return false;
             return child.val == val;
+        }
+        public bool Equals(i8 obj)
+        {
+            if ((object)obj == null)
+            {
+                return false;
+            }
+            return (obj.val == val);
+        }
+        public static bool operator ==(i8 a, i8 b)
+        {
+            if (System.Object.ReferenceEquals(a, b))
+            {
+                return true;
+            }
+            if (((object)a == null) || ((object)b == null))
+            {
+                return false;
+            }
+            return a.val == b.val;
+        }
+
+        public static bool operator !=(i8 a, i8 b)
+        {
+            return !(a == b);
         }
         public override int GetHashCode()
         {
@@ -172,11 +200,14 @@ namespace Proto4z
         }
         public System.Collections.Generic.List<byte> __encode()
         {
-            return new System.Collections.Generic.List<byte>(_val);
+            byte[] bin = new byte[1];
+            bin[0] = _val;
+            var ret = new System.Collections.Generic.List<byte>(bin);
+            return ret;
         }
         public int __decode(byte[] binData, ref int pos)
         {
-            _val = (byte)System.BitConverter.ToChar(binData, pos);
+            _val = binData[pos];
             pos += 1;
             return pos;
         }
@@ -186,6 +217,31 @@ namespace Proto4z
             ui8 child = obj as ui8;
             if (child == null) return false;
             return child.val == val;
+        }
+        public bool Equals(ui8 obj)
+        {
+            if ((object)obj == null)
+            {
+                return false;
+            }
+            return (obj.val == val);
+        }
+        public static bool operator ==(ui8 a, ui8 b)
+        {
+            if (System.Object.ReferenceEquals(a, b))
+            {
+                return true;
+            }
+            if (((object)a == null) || ((object)b == null))
+            {
+                return false;
+            }
+            return a.val == b.val;
+        }
+
+        public static bool operator !=(ui8 a, ui8 b)
+        {
+            return !(a == b);
         }
         public override int GetHashCode()
         {
@@ -251,6 +307,31 @@ namespace Proto4z
             if (child == null) return false;
             return child.val == val;
         }
+        public bool Equals(i16 obj)
+        {
+            if ((object)obj == null)
+            {
+                return false;
+            }
+            return (obj.val == val);
+        }
+        public static bool operator ==(i16 a, i16 b)
+        {
+            if (System.Object.ReferenceEquals(a, b))
+            {
+                return true;
+            }
+            if (((object)a == null) || ((object)b == null))
+            {
+                return false;
+            }
+            return a.val == b.val;
+        }
+
+        public static bool operator !=(i16 a, i16 b)
+        {
+            return !(a == b);
+        }
         public override int GetHashCode()
         {
             return val.GetHashCode();
@@ -314,6 +395,32 @@ namespace Proto4z
             if (child == null) return false;
             return child.val == val;
         }
+        public bool Equals(ui16 obj)
+        {
+            if ((object)obj == null)
+            {
+                return false;
+            }
+            return (obj.val == val) ;
+        }
+        public static bool operator ==(ui16 a, ui16 b)
+        {
+            if (System.Object.ReferenceEquals(a, b))
+            {
+                return true;
+            }
+            if (((object)a == null) || ((object)b == null))
+            {
+                return false;
+            }
+            return a.val == b.val;
+        }
+
+        public static bool operator !=(ui16 a, ui16 b)
+        {
+            return !(a == b);
+        }
+
         public override int GetHashCode()
         {
             return val.GetHashCode();
@@ -376,6 +483,31 @@ namespace Proto4z
             i32 child = obj as i32;
             if (child == null) return false;
             return child.val == val;
+        }
+        public bool Equals(i32 obj)
+        {
+            if ((object)obj == null)
+            {
+                return false;
+            }
+            return (obj.val == val);
+        }
+        public static bool operator ==(i32 a, i32 b)
+        {
+            if (System.Object.ReferenceEquals(a, b))
+            {
+                return true;
+            }
+            if (((object)a == null) || ((object)b == null))
+            {
+                return false;
+            }
+            return a.val == b.val;
+        }
+
+        public static bool operator !=(i32 a, i32 b)
+        {
+            return !(a == b);
         }
         public override int GetHashCode()
         {
@@ -441,6 +573,31 @@ namespace Proto4z
             if (child == null) return false;
             return child.val == val;
         }
+        public bool Equals(ui32 obj)
+        {
+            if ((object)obj == null)
+            {
+                return false;
+            }
+            return (obj.val == val);
+        }
+        public static bool operator ==(ui32 a, ui32 b)
+        {
+            if (System.Object.ReferenceEquals(a, b))
+            {
+                return true;
+            }
+            if (((object)a == null) || ((object)b == null))
+            {
+                return false;
+            }
+            return a.val == b.val;
+        }
+
+        public static bool operator !=(ui32 a, ui32 b)
+        {
+            return !(a == b);
+        }
         public override int GetHashCode()
         {
             return val.GetHashCode();
@@ -504,6 +661,31 @@ namespace Proto4z
             i64 child = obj as i64;
             if (child == null) return false;
             return child.val == val;
+        }
+        public bool Equals(i64 obj)
+        {
+            if ((object)obj == null)
+            {
+                return false;
+            }
+            return (obj.val == val);
+        }
+        public static bool operator ==(i64 a, i64 b)
+        {
+            if (System.Object.ReferenceEquals(a, b))
+            {
+                return true;
+            }
+            if (((object)a == null) || ((object)b == null))
+            {
+                return false;
+            }
+            return a.val == b.val;
+        }
+
+        public static bool operator !=(i64 a, i64 b)
+        {
+            return !(a == b);
         }
         public override int GetHashCode()
         {
@@ -569,6 +751,31 @@ namespace Proto4z
             if (child == null) return false;
             return child.val == val;
         }
+        public bool Equals(ui64 obj)
+        {
+            if ((object)obj == null)
+            {
+                return false;
+            }
+            return (obj.val == val);
+        }
+        public static bool operator ==(ui64 a, ui64 b)
+        {
+            if (System.Object.ReferenceEquals(a, b))
+            {
+                return true;
+            }
+            if (((object)a == null) || ((object)b == null))
+            {
+                return false;
+            }
+            return a.val == b.val;
+        }
+
+        public static bool operator !=(ui64 a, ui64 b)
+        {
+            return !(a == b);
+        }
         public override int GetHashCode()
         {
             return val.GetHashCode();
@@ -627,10 +834,6 @@ namespace Proto4z
             return pos;
         }
 
-        public int GetHashCode(Float obj)
-        {
-            return obj.val.GetHashCode();
-        }
 
         public static implicit operator Float(float val)
         {
@@ -725,6 +928,31 @@ namespace Proto4z
             String child = obj as Proto4z.String;
             if (child == null) return false;
             return child.val == val;
+        }
+        public bool Equals(Proto4z.String obj)
+        {
+            if ((object)obj == null)
+            {
+                return false;
+            }
+            return (obj.val == val);
+        }
+        public static bool operator ==(Proto4z.String a, Proto4z.String b)
+        {
+            if (System.Object.ReferenceEquals(a, b))
+            {
+                return true;
+            }
+            if (((object)a == null) || ((object)b == null))
+            {
+                return false;
+            }
+            return a.val == b.val;
+        }
+
+        public static bool operator !=(Proto4z.String a, Proto4z.String b)
+        {
+            return !(a == b);
         }
         public override int GetHashCode()
         {

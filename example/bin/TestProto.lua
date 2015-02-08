@@ -5,6 +5,7 @@ Protoz.EC_UNKNOWN_ID = 1001--unknwon id
  
 Protoz.TestIntegerData = {} --测试 
 Protoz.TestIntegerData.__getName = "TestIntegerData" 
+Protoz.TestIntegerData.__getTag = "111111101" 
 Protoz.TestIntegerData[1] = {name="_char", type="i8" }  
 Protoz.TestIntegerData[2] = {name="_uchar", type="ui8" }  
 Protoz.TestIntegerData[3] = {name="_short", type="i16" }  
@@ -17,11 +18,13 @@ Protoz.TestIntegerData[9] = {name="_ui64", type="ui64" }
  
 Protoz.TestFloatData = {} --测试 
 Protoz.TestFloatData.__getName = "TestFloatData" 
+Protoz.TestFloatData.__getTag = "11" 
 Protoz.TestFloatData[1] = {name="_float", type="float" }  
 Protoz.TestFloatData[2] = {name="_double", type="double" }  
  
 Protoz.TestStringData = {} --测试 
 Protoz.TestStringData.__getName = "TestStringData" 
+Protoz.TestStringData.__getTag = "1" 
 Protoz.TestStringData[1] = {name="_string", type="string" }  
  
 Protoz.IntArray = {}  
@@ -66,6 +69,7 @@ Protoz.register(30000,"P2P_EchoPack")
 Protoz.P2P_EchoPack = {}  
 Protoz.P2P_EchoPack.__getID = 30000 
 Protoz.P2P_EchoPack.__getName = "P2P_EchoPack" 
+Protoz.P2P_EchoPack.__getTag = "111111" 
 Protoz.P2P_EchoPack[1] = {name="_iarray", type="TestIntegerDataArray" }  
 Protoz.P2P_EchoPack[2] = {name="_farray", type="TestFloatDataArray" }  
 Protoz.P2P_EchoPack[3] = {name="_sarray", type="TestStringDataArray" }  
@@ -77,8 +81,10 @@ Protoz.register(30001,"C2S_Pulse")
 Protoz.C2S_Pulse = {}  
 Protoz.C2S_Pulse.__getID = 30001 
 Protoz.C2S_Pulse.__getName = "C2S_Pulse" 
+Protoz.C2S_Pulse.__getTag = "" 
  
 Protoz.register(30002,"S2C_Pulse") 
 Protoz.S2C_Pulse = {}  
 Protoz.S2C_Pulse.__getID = 30002 
 Protoz.S2C_Pulse.__getName = "S2C_Pulse" 
+Protoz.S2C_Pulse.__getTag = "" 

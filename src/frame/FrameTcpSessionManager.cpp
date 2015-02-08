@@ -75,7 +75,7 @@ void TcpSessionManager::safeStop()
 	{
 		if (isConnectID(m.first))
 		{
-			_mapConnectorConfig[m.first].second.curReconnectCount = -1;
+			_mapConnectorConfig[m.first].second._curReconnectCount = -1;
 			_onlineConnectCounts++;
 			continue;
 		}
@@ -113,18 +113,18 @@ AccepterID TcpSessionManager::addAcceptor(const tagAcceptorConfigTraits &traits)
 	_lastAcceptID++;
 	auto & pairConfig = _mapAccepterConfig[_lastAcceptID];
 	pairConfig.first = traits;
-	pairConfig.second.aID = _lastAcceptID;
+	pairConfig.second._aID = _lastAcceptID;
 
 	TcpAcceptPtr accepter(new zsummer::network::TcpAccept());
 	accepter->initialize(_summer);
-	if (!accepter->openAccept(traits.listenIP.c_str(), traits.listenPort))
+	if (!accepter->openAccept(traits._listenIP.c_str(), traits._listenPort))
 	{
 		LCE("addAcceptor openAccept Failed. traits=" << traits);
 		return InvalidAccepterID;
 	}
 	_mapAccepterPtr[_lastAcceptID] = accepter;
 	TcpSocketPtr newclient(new zsummer::network::TcpSocket);
-	accepter->doAccept(newclient, std::bind(&TcpSessionManager::onAcceptNewClient, this, std::placeholders::_1, std::placeholders::_2, accepter, pairConfig.second.aID));
+	accepter->doAccept(newclient, std::bind(&TcpSessionManager::onAcceptNewClient, this, std::placeholders::_1, std::placeholders::_2, accepter, pairConfig.second._aID));
 	return _lastAcceptID;
 }
 
@@ -177,10 +177,10 @@ void TcpSessionManager::onAcceptNewClient(zsummer::network::ErrorCode ec, const 
 	
 	//! check white list
 	//! ---------------------
-	if (!iter->second.first.whitelistIP.empty())
+	if (!iter->second.first._whitelistIP.empty())
 	{
 		bool checkSucess = false;
-		for (auto white : iter->second.first.whitelistIP)
+		for (auto white : iter->second.first._whitelistIP)
 		{
 			if (remoteIP.size() >= white.size())
 			{
@@ -211,17 +211,17 @@ void TcpSessionManager::onAcceptNewClient(zsummer::network::ErrorCode ec, const 
 	
 	//! check Max Sessions
 
-	if (iter->second.second.currentLinked >= iter->second.first.maxSessions)
+	if (iter->second.second._currentLinked >= iter->second.first._maxSessions)
 	{
 		LCW("Accept New Client. Too Many Sessions And The new socket will closed. remoteAddress=" << remoteIP << ":" << remotePort 
-			<< ", Aready linked sessions = " << iter->second.second.currentLinked << ", trais=" << iter->second.first);
+			<< ", Aready linked sessions = " << iter->second.second._currentLinked << ", trais=" << iter->second.first);
 	}
 	else
 	{
 		LCD("Accept New Client. Accept new Sessions. The new socket  remoteAddress=" << remoteIP << ":" << remotePort 
-			<< ", Aready linked sessions = " << iter->second.second.currentLinked << ", trais=" << iter->second.first);
-		iter->second.second.currentLinked++;
-		iter->second.second.totalAcceptCount++;
+			<< ", Aready linked sessions = " << iter->second.second._currentLinked << ", trais=" << iter->second.first);
+		iter->second.second._currentLinked++;
+		iter->second.second._totalAcceptCount++;
 
 		_lastSessionID = nextSessionID(_lastSessionID);
 		CTcpSessionPtr session(new TcpSession());
@@ -256,7 +256,7 @@ void TcpSessionManager::kickSession(SessionID sID)
 
 void TcpSessionManager::onSessionClose(AccepterID aID, SessionID sID)
 {
-	_mapAccepterConfig[aID].second.currentLinked--;
+	_mapAccepterConfig[aID].second._currentLinked--;
 	_mapTcpSessionPtr.erase(sID);
 	MessageDispatcher::getRef().dispatchOnSessionDisconnect(sID);
 	if (!_running && _mapTcpSessionPtr.size() <= _onlineConnectCounts)
@@ -271,7 +271,7 @@ SessionID TcpSessionManager::addConnector(const tagConnctorConfigTraits & traits
 	_lastConnectID = nextConnectID(_lastConnectID);
 	auto & pairConfig = _mapConnectorConfig[_lastConnectID];
 	pairConfig.first = traits;
-	pairConfig.second.cID = _lastConnectID;
+	pairConfig.second._cID = _lastConnectID;
 	TcpSocketPtr sockPtr(new zsummer::network::TcpSocket());
 	sockPtr->initialize(_summer);
 	CTcpSessionPtr sessionPtr(new TcpSession());
@@ -291,7 +291,7 @@ void TcpSessionManager::onConnect(SessionID cID, bool bConnected, const CTcpSess
 	if (bConnected)
 	{
 		_mapTcpSessionPtr[cID] = session;
-		config->second.second.curReconnectCount = 0;
+		config->second.second._curReconnectCount = 0;
 		post(std::bind(&MessageDispatcher::dispatchOnSessionEstablished, &MessageDispatcher::getRef(), cID));
 		return;
 	}
@@ -305,20 +305,20 @@ void TcpSessionManager::onConnect(SessionID cID, bool bConnected, const CTcpSess
 	}
 
 	if (!bConnected
-		&& config->second.first.reconnectMaxCount > 0
-		&& config->second.second.curReconnectCount < config->second.first.reconnectMaxCount)
+		&& config->second.first._reconnectMaxCount > 0
+		&& config->second.second._curReconnectCount < config->second.first._reconnectMaxCount)
 	{
-		config->second.second.curReconnectCount++;
-		config->second.second.totalConnectCount++;
+		config->second.second._curReconnectCount++;
+		config->second.second._totalConnectCount++;
 
 		TcpSocketPtr sockPtr(new zsummer::network::TcpSocket());
 		sockPtr->initialize(_summer);
-		createTimer(config->second.first.reconnectInterval, std::bind(&TcpSession::bindTcpConnectorPtr, session, sockPtr, config->second));
-		LCW("Try reconnect current count=" << config->second.second.curReconnectCount << ", total reconnect = " << config->second.second.totalConnectCount << ". Traits=" << config->second.first);
+		createTimer(config->second.first._reconnectInterval, std::bind(&TcpSession::bindTcpConnectorPtr, session, sockPtr, config->second));
+		LCW("Try reconnect current count=" << config->second.second._curReconnectCount << ", total reconnect = " << config->second.second._totalConnectCount << ". Traits=" << config->second.first);
 		return;//try reconnect
 	}
 	
-	if (config->second.first.reconnectMaxCount > 0 && _running)
+	if (config->second.first._reconnectMaxCount > 0 && _running)
 	{
 		LCE("Try Reconnect Failed. End Try. Traits=" << config->second.first);
 	}

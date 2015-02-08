@@ -100,35 +100,35 @@ void TcpSession::cleanSession(bool isCleanAllData, const std::string &rc4TcpEncr
 bool TcpSession::bindTcpSocketPrt(const TcpSocketPtr &sockptr, AccepterID aID, SessionID sID, const tagAcceptorConfigTraits &traits)
 {
 	
-	cleanSession(true, traits.rc4TcpEncryption);
+	cleanSession(true, traits._rc4TcpEncryption);
 	_sockptr = sockptr;
 	_sessionID = sID;
 	_acceptID = aID;
-	_protoType = traits.protoType;
-	_pulseInterval = traits.pulseInterval;
-	_bOpenFlashPolicy = traits.openFlashPolicy;
+	_protoType = traits._protoType;
+	_pulseInterval = traits._pulseInterval;
+	_bOpenFlashPolicy = traits._openFlashPolicy;
 
 	if (!doRecv())
 	{
 		LCW("bindTcpSocketPrt Failed.");
 		return false;
 	}
-	if (traits.pulseInterval > 0)
+	if (traits._pulseInterval > 0)
 	{
-		_pulseTimerID = TcpSessionManager::getRef().createTimer(traits.pulseInterval, std::bind(&TcpSession::onPulseTimer, shared_from_this()));
+		_pulseTimerID = TcpSessionManager::getRef().createTimer(traits._pulseInterval, std::bind(&TcpSession::onPulseTimer, shared_from_this()));
 	}
 	return true;
 }
 
 void TcpSession::bindTcpConnectorPtr(const TcpSocketPtr &sockptr, const std::pair<tagConnctorConfigTraits, tagConnctorInfo> & config)
 {
-	cleanSession(config.first.reconnectCleanAllData, config.first.rc4TcpEncryption);
+	cleanSession(config.first._reconnectCleanAllData, config.first._rc4TcpEncryption);
 	_sockptr = sockptr;
-	_sessionID = config.second.cID;
-	_protoType = config.first.protoType;
-	_pulseInterval = config.first.pulseInterval;
+	_sessionID = config.second._cID;
+	_protoType = config.first._protoType;
+	_pulseInterval = config.first._pulseInterval;
 
-	bool connectRet = _sockptr->doConnect(config.first.remoteIP, config.first.remotePort,
+	bool connectRet = _sockptr->doConnect(config.first._remoteIP, config.first._remotePort,
 		std::bind(&TcpSession::onConnected, shared_from_this(), std::placeholders::_1, config));
 	if (!connectRet)
 	{
@@ -149,7 +149,7 @@ void TcpSession::onConnected(zsummer::network::ErrorCode ec, const std::pair<tag
 		LCW("onConnected failed. ec=" << ec 
 			<< ",  config=" << config.first);
 		_sockptr.reset();
-		TcpSessionManager::getRef().onConnect(config.second.cID, false, shared_from_this());
+		TcpSessionManager::getRef().onConnect(config.second._cID, false, shared_from_this());
 		return;
 	}
 	LCI("onConnected success.  config=" << config.first);
@@ -161,7 +161,7 @@ void TcpSession::onConnected(zsummer::network::ErrorCode ec, const std::pair<tag
 	}
 	if (_pulseInterval > 0)
 	{
-		_pulseTimerID = TcpSessionManager::getRef().createTimer(config.first.pulseInterval, std::bind(&TcpSession::onPulseTimer, shared_from_this()));
+		_pulseTimerID = TcpSessionManager::getRef().createTimer(config.first._pulseInterval, std::bind(&TcpSession::onPulseTimer, shared_from_this()));
 	}
 	
 	

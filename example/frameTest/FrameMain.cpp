@@ -149,7 +149,7 @@ void startServer()
 
 	//add Acceptor
 	tagAcceptorConfigTraits traits;
-	traits.listenPort = g_remotePort;
+	traits._listenPort = g_remotePort;
 	TcpSessionManager::getRef().addAcceptor(traits);
 
 	//! step 2 running
@@ -184,8 +184,8 @@ void startClient()
 
 	//add connector
 	tagConnctorConfigTraits traits;
-	traits.remoteIP = g_remoteIP;
-	traits.remotePort = g_remotePort;
+	traits._remoteIP = g_remoteIP;
+	traits._remotePort = g_remotePort;
 	TcpSessionManager::getRef().addConnector(traits);
 
 	//! step 2 running

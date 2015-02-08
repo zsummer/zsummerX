@@ -138,11 +138,11 @@ int main(int argc, char* argv[])
 
 		//add connector
 		tagConnctorConfigTraits traits;
-		traits.remoteIP = g_remoteIP;
-		traits.remotePort = g_remotePort;
-		traits.protoType = PT_HTTP;
-		traits.reconnectInterval = 5000;
-		traits.reconnectMaxCount = 0;
+		traits._remoteIP = g_remoteIP;
+		traits._remotePort = g_remotePort;
+		traits._protoType = PT_HTTP;
+		traits._reconnectInterval = 5000;
+		traits._reconnectMaxCount = 0;
 		TcpSessionManager::getRef().addConnector(traits);
 
 		//! step 2 running
@@ -175,8 +175,8 @@ int main(int argc, char* argv[])
 		MessageDispatcher::getRef().registerOnSessionHTTPMessage(msg_ResultSequence_fun);
 
 		tagAcceptorConfigTraits traits;
-		traits.listenPort = g_remotePort;
-		traits.protoType = PT_HTTP;
+		traits._listenPort = g_remotePort;
+		traits._protoType = PT_HTTP;
 		TcpSessionManager::getRef().addAcceptor(traits);
 		//! step 2 running
 		TcpSessionManager::getRef().run();

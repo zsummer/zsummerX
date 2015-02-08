@@ -392,12 +392,12 @@ int main(int argc, char* argv[])
 		for (int i = 0; i < g_maxClient; ++i)
 		{
 			tagConnctorConfigTraits traits;
-			traits.remoteIP = g_remoteIP;
-			traits.remotePort = g_remotePort;
-			traits.reconnectInterval = 5000;
-			traits.reconnectMaxCount = 5;
-//			traits.rc4TcpEncryption = "yawei.zhang@foxmail.com";
-			traits.pulseInterval = 500000;
+			traits._remoteIP = g_remoteIP;
+			traits._remotePort = g_remotePort;
+			traits._reconnectInterval = 5000;
+			traits._reconnectMaxCount = 5;
+//			traits._rc4TcpEncryption = "yawei.zhang@foxmail.com";
+			traits._pulseInterval = 500000;
 			TcpSessionManager::getRef().addConnector(traits);
 		}
 		//running
@@ -408,12 +408,12 @@ int main(int argc, char* argv[])
 		CStressServerHandler server;
 		//add acceptor
 		tagAcceptorConfigTraits traits;
-		traits.listenPort = g_remotePort;
-		traits.maxSessions = g_maxClient;
-//		traits.rc4TcpEncryption = "yawei.zhang@foxmail.com";
-		//traits.openFlashPolicy = true;
-		traits.pulseInterval = 500000;
-		//traits.whitelistIP.push_back("127.0.");
+		traits._listenPort = g_remotePort;
+		traits._maxSessions = g_maxClient;
+//		traits._rc4TcpEncryption = "yawei.zhang@foxmail.com";
+		//traits._openFlashPolicy = true;
+		traits._pulseInterval = 500000;
+		//traits._whitelistIP.push_back("127.0.");
 		TcpSessionManager::getRef().addAcceptor(traits);
 		//running
 		TcpSessionManager::getRef().run();

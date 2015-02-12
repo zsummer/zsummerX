@@ -20,9 +20,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\common\common.cpp" />
-    <ClCompile Include="..\src\frame\FrameMessageDispatch.cpp" />
-    <ClCompile Include="..\src\frame\FrameTcpSession.cpp" />
-    <ClCompile Include="..\src\frame\FrameTcpSessionManager.cpp" />
+    <ClCompile Include="..\src\frame\dispatch.cpp" />
+    <ClCompile Include="..\src\frame\manager.cpp" />
+    <ClCompile Include="..\src\frame\session.cpp" />
     <ClCompile Include="..\src\select\select_impl.cpp" />
     <ClCompile Include="..\src\select\tcpaccept_impl.cpp" />
     <ClCompile Include="..\src\select\tcpsocket_impl.cpp" />
@@ -32,6 +32,10 @@
   <ItemGroup>
     <ClInclude Include="..\include\zsummerX\common\common.h" />
     <ClInclude Include="..\include\zsummerX\frameX.h" />
+    <ClInclude Include="..\include\zsummerX\frame\config.h" />
+    <ClInclude Include="..\include\zsummerX\frame\dispatch.h" />
+    <ClInclude Include="..\include\zsummerX\frame\manager.h" />
+    <ClInclude Include="..\include\zsummerX\frame\session.h" />
     <ClInclude Include="..\include\zsummerX\select\common_impl.h" />
     <ClInclude Include="..\include\zsummerX\select\select_impl.h" />
     <ClInclude Include="..\include\zsummerX\select\tcpaccept_impl.h" />

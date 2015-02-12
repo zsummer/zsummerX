@@ -9,7 +9,7 @@
  * 
  * ===============================================================================
  * 
- * Copyright (C) 2013-2014 YaweiZhang <yawei_zhang@foxmail.com>.
+ * Copyright (C) 2010-2014 YaweiZhang <yawei_zhang@foxmail.com>.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -34,29 +34,13 @@
  * (end of COPYRIGHT)
  */
 
+#include <zsummerX/frame/config.h>
+#include <zsummerX/frame/dispatch.h>
+using namespace zsummer::proto4z;
+using namespace zsummer::network;
 
-/*
- * tencent QQ group:19811947
- * mail: yawei_zhang@foxmail.com
- */
-
-//easy use zsummerX
-//include this file to use the frame 
-
-#ifndef _ZSUMMERX_FRAME_H_
-#define _ZSUMMERX_FRAME_H_
-
-
-#include "frame/FrameHeader.h"
-#include "frame/FrameMessageDispatch.h"
-#include "frame/FrameTcpSessionManager.h"
-
-
-
-
-#endif
-
-
-
-
-
+MessageDispatcher & MessageDispatcher::getRef()
+{
+	static MessageDispatcher _manager;
+	return _manager;
+}

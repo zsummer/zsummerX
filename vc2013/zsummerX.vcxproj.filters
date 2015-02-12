@@ -54,13 +54,13 @@
     <ClCompile Include="..\src\timer\timer.cpp">
       <Filter>src\timmer</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\frame\FrameMessageDispatch.cpp">
+    <ClCompile Include="..\src\frame\dispatch.cpp">
       <Filter>src\frame</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\frame\FrameTcpSession.cpp">
+    <ClCompile Include="..\src\frame\session.cpp">
       <Filter>src\frame</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\frame\FrameTcpSessionManager.cpp">
+    <ClCompile Include="..\src\frame\manager.cpp">
       <Filter>src\frame</Filter>
     </ClCompile>
   </ItemGroup>
@@ -86,22 +86,19 @@
     <ClInclude Include="..\include\zsummerX\iocp\common_impl.h">
       <Filter>include\impl</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\zsummerX\frameX.h">
-      <Filter>include\interface</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\zsummerX\zsummerX.h">
       <Filter>include\interface</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\zsummerX\frame\FrameHeader.h">
+    <ClInclude Include="..\include\zsummerX\frame\config.h">
       <Filter>include\frame</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\zsummerX\frame\FrameMessageDispatch.h">
+    <ClInclude Include="..\include\zsummerX\frame\dispatch.h">
       <Filter>include\frame</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\zsummerX\frame\FrameTcpSession.h">
+    <ClInclude Include="..\include\zsummerX\frame\session.h">
       <Filter>include\frame</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\zsummerX\frame\FrameTcpSessionManager.h">
+    <ClInclude Include="..\include\zsummerX\frame\manager.h">
       <Filter>include\frame</Filter>
     </ClInclude>
   </ItemGroup>

@@ -60,7 +60,7 @@ bool ZSummer::initialize()
 	}
 	if (::bind(acpt, (sockaddr*)&pairAddr, sizeof(pairAddr)) == -1)
 	{
-		LCF("CZSummerImpl::initialize[this0x" << this << "] bind sockpair socket error. " << zsummerSection());
+		LCF("ZSummer::initialize[this0x" << this << "] bind sockpair socket error. " << zsummerSection());
 		closesocket(acpt);
 		closesocket(_sockpair[0]);
 		closesocket(_sockpair[1]);
@@ -68,7 +68,7 @@ bool ZSummer::initialize()
 	}
 	if (listen(acpt, 1) == -1)
 	{
-		LCF("CZSummerImpl::initialize[this0x" << this << "] listen sockpair socket error. " << zsummerSection());
+		LCF("ZSummer::initialize[this0x" << this << "] listen sockpair socket error. " << zsummerSection());
 		closesocket(acpt);
 		closesocket(_sockpair[0]);
 		closesocket(_sockpair[1]);
@@ -77,7 +77,7 @@ bool ZSummer::initialize()
 	socklen_t len = sizeof(pairAddr);
 	if (getsockname(acpt, (sockaddr*)&pairAddr, &len) != 0)
 	{
-		LCF("CZSummerImpl::initialize[this0x" << this << "] getsockname sockpair socket error. " << zsummerSection());
+		LCF("ZSummer::initialize[this0x" << this << "] getsockname sockpair socket error. " << zsummerSection());
 		closesocket(acpt);
 		closesocket(_sockpair[0]);
 		closesocket(_sockpair[1]);
@@ -86,7 +86,7 @@ bool ZSummer::initialize()
 
 	if (::connect(_sockpair[0], (sockaddr*)&pairAddr, sizeof(pairAddr)) == -1)
 	{
-		LCF("CZSummerImpl::initialize[this0x" << this << "] connect sockpair socket error. " << zsummerSection());
+		LCF("ZSummer::initialize[this0x" << this << "] connect sockpair socket error. " << zsummerSection());
 		closesocket(acpt);
 		closesocket(_sockpair[0]);
 		closesocket(_sockpair[1]);
@@ -95,7 +95,7 @@ bool ZSummer::initialize()
 	_sockpair[1] = accept(acpt, (sockaddr*)&pairAddr, &len);
 	if (_sockpair[1] == -1)
 	{
-		LCF("CZSummerImpl::initialize[this0x" << this << "] accept sockpair socket error. " << zsummerSection());
+		LCF("ZSummer::initialize[this0x" << this << "] accept sockpair socket error. " << zsummerSection());
 		closesocket(acpt);
 		closesocket(_sockpair[0]);
 		closesocket(_sockpair[1]);
@@ -153,7 +153,7 @@ bool ZSummer::registerEvent(int op, tagRegister & reg)
 		{
 			if (op	== 0)
 			{
-				LOGE("CZSummerImpl::registerEvent add. register aready exsit. op=" << op << ", reg=" << reg);
+				LOGE("ZSummer::registerEvent add. register aready exsit. op=" << op << ", reg=" << reg);
 				return false;
 			}
 			_poolRegister.erase(founder);
@@ -242,7 +242,7 @@ void ZSummer::runOnce(bool isImmediately)
 	{
 		if (IS_EINTR)
 		{
-			LCT("CZSummerImpl::runOnce[this0x" << this << "]  select err!  " << OSTREAM_GET_LASTERROR << ", " << zsummerSection());
+			LCT("ZSummer::runOnce[this0x" << this << "]  select err!  " << OSTREAM_GET_LASTERROR << ", " << zsummerSection());
 			return; //! error
 		}
 		return;

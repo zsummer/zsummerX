@@ -34,12 +34,12 @@
  * (end of COPYRIGHT)
  */
 
-#include <zsummerX/frame/FrameTcpSession.h>
-#include <zsummerX/frame/FrameTcpSessionManager.h>
-#include <zsummerX/frame/FrameMessageDispatch.h>
+#include <zsummerX/frame/session.h>
+#include <zsummerX/frame/manager.h>
+#include <zsummerX/frame/dispatch.h>
 
 using namespace zsummer::proto4z;
-
+using namespace zsummer::network;
 
 
 
@@ -97,7 +97,7 @@ void TcpSession::cleanSession(bool isCleanAllData, const std::string &rc4TcpEncr
 	}
 }
 
-bool TcpSession::bindTcpSocketPrt(const TcpSocketPtr &sockptr, AccepterID aID, SessionID sID, const tagAcceptorConfigTraits &traits)
+bool TcpSession::bindTcpSocketPrt(const TcpSocketPtr &sockptr, AccepterID aID, SessionID sID, const ListenConfig &traits)
 {
 	
 	cleanSession(true, traits._rc4TcpEncryption);
@@ -115,12 +115,12 @@ bool TcpSession::bindTcpSocketPrt(const TcpSocketPtr &sockptr, AccepterID aID, S
 	}
 	if (traits._pulseInterval > 0)
 	{
-		_pulseTimerID = TcpSessionManager::getRef().createTimer(traits._pulseInterval, std::bind(&TcpSession::onPulseTimer, shared_from_this()));
+		_pulseTimerID = SessionManager::getRef().createTimer(traits._pulseInterval, std::bind(&TcpSession::onPulseTimer, shared_from_this()));
 	}
 	return true;
 }
 
-void TcpSession::bindTcpConnectorPtr(const TcpSocketPtr &sockptr, const std::pair<tagConnctorConfigTraits, tagConnctorInfo> & config)
+void TcpSession::bindTcpConnectorPtr(const TcpSocketPtr &sockptr, const std::pair<ConnectConfig, ConnectInfo> & config)
 {
 	cleanSession(config.first._reconnectCleanAllData, config.first._rc4TcpEncryption);
 	_sockptr = sockptr;
@@ -142,14 +142,14 @@ void TcpSession::bindTcpConnectorPtr(const TcpSocketPtr &sockptr, const std::pai
 
 
 
-void TcpSession::onConnected(zsummer::network::ErrorCode ec, const std::pair<tagConnctorConfigTraits, tagConnctorInfo> & config)
+void TcpSession::onConnected(zsummer::network::ErrorCode ec, const std::pair<ConnectConfig, ConnectInfo> & config)
 {
 	if (ec)
 	{
 		LCW("onConnected failed. ec=" << ec 
 			<< ",  config=" << config.first);
 		_sockptr.reset();
-		TcpSessionManager::getRef().onConnect(config.second._cID, false, shared_from_this());
+		SessionManager::getRef().onConnect(config.second._cID, false, shared_from_this());
 		return;
 	}
 	LCI("onConnected success.  config=" << config.first);
@@ -161,12 +161,12 @@ void TcpSession::onConnected(zsummer::network::ErrorCode ec, const std::pair<tag
 	}
 	if (_pulseInterval > 0)
 	{
-		_pulseTimerID = TcpSessionManager::getRef().createTimer(config.first._pulseInterval, std::bind(&TcpSession::onPulseTimer, shared_from_this()));
+		_pulseTimerID = SessionManager::getRef().createTimer(config.first._pulseInterval, std::bind(&TcpSession::onPulseTimer, shared_from_this()));
 	}
 	
 	
 	//用户在该回调中发送的第一包会跑到发送堆栈的栈顶.
-	TcpSessionManager::getRef().onConnect(_sessionID, true, shared_from_this());
+	SessionManager::getRef().onConnect(_sessionID, true, shared_from_this());
 	if (_sending.bufflen == 0 && !_sendque.empty())
 	{
 		MessagePack *tmp = _sendque.front();
@@ -188,7 +188,7 @@ void TcpSession::close()
 	_sockptr->doClose();
 	if (_pulseTimerID != zsummer::network::InvalidTimerID)
 	{
-		TcpSessionManager::getRef().cancelTimer(_pulseTimerID);
+		SessionManager::getRef().cancelTimer(_pulseTimerID);
 		_pulseTimerID = zsummer::network::InvalidTimerID;
 	}
 }
@@ -277,7 +277,7 @@ void TcpSession::onRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 					LCW("Dispatch Message failed. ");
 					continue;
 				}
-				ReadStreamPack rs(_recving.buff + usedIndex, ret.second);
+				ReadStream rs(_recving.buff + usedIndex, ret.second);
 				ProtoID protoID = rs.getProtoID();
 				MessageDispatcher::getRef().dispatchSessionMessage(_sessionID, protoID, rs);
 			}
@@ -434,7 +434,7 @@ void TcpSession::onPulseTimer()
 	{
 		return;
 	}
-	_pulseTimerID = TcpSessionManager::getRef().createTimer(_pulseInterval, std::bind(&TcpSession::onPulseTimer, shared_from_this()));
+	_pulseTimerID = SessionManager::getRef().createTimer(_pulseInterval, std::bind(&TcpSession::onPulseTimer, shared_from_this()));
 }
 
 void TcpSession::onClose()
@@ -443,17 +443,17 @@ void TcpSession::onClose()
 	_sockptr.reset();
 	if (_pulseTimerID != zsummer::network::InvalidTimerID)
 	{
-		TcpSessionManager::getRef().cancelTimer(_pulseTimerID);
+		SessionManager::getRef().cancelTimer(_pulseTimerID);
 		_pulseTimerID = zsummer::network::InvalidTimerID;
 	}
 	
 	if (isConnectID(_sessionID))
 	{
-		TcpSessionManager::getRef().onConnect(_sessionID, false, shared_from_this());
+		SessionManager::getRef().onConnect(_sessionID, false, shared_from_this());
 	}
 	else
 	{
-		TcpSessionManager::getRef().onSessionClose(_acceptID, _sessionID);
+		SessionManager::getRef().onSessionClose(_acceptID, _sessionID);
 	}
 }
 

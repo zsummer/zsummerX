@@ -1,23 +1,14 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClInclude Include="..\..\include\zsummerX\tcpaccept.h">
-      <Filter>zsummerX\interface</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\zsummerX\tcpsocket.h">
-      <Filter>zsummerX\interface</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\zsummerX\udpsocket.h">
-      <Filter>zsummerX\interface</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\zsummerX\zsummer.h">
-      <Filter>zsummerX\interface</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\depends\proto4z\proto4z.h">
       <Filter>protocol</Filter>
     </ClInclude>
     <ClInclude Include="TestProto.h">
       <Filter>main</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\zsummerX\zsummerX.h">
+      <Filter>zsummerX\interface</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

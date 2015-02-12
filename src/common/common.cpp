@@ -35,6 +35,7 @@
  */
 #include <atomic>
 #include <zsummerX/common/common.h>
+using namespace zsummer::network;
 
 
 #ifdef WIN32
@@ -44,7 +45,7 @@
 #pragma comment(lib, "Mswsock")
 #endif
 
-zsummer::network::ZSummerEnvironment::ZSummerEnvironment()
+ZSummerEnvironment::ZSummerEnvironment()
 {
 #ifdef WIN32
 	WORD version = MAKEWORD(2,2);
@@ -57,7 +58,7 @@ zsummer::network::ZSummerEnvironment::ZSummerEnvironment()
 	_netLoggerID = zsummer::log4z::ILog4zManager::getRef().createLogger("NetWork");
 	zsummer::log4z::ILog4zManager::getRef().setLoggerLevel(_netLoggerID, LOG_LEVEL_WARN);
 }
-zsummer::network::ZSummerEnvironment::~ZSummerEnvironment()
+ZSummerEnvironment::~ZSummerEnvironment()
 {
 #ifdef WIN32
 	WSACleanup();

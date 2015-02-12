@@ -27,23 +27,11 @@
     <ClInclude Include="Schedule.h">
       <Filter>main</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\zsummerX\tcpaccept.h">
-      <Filter>zsummerX\interface</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\zsummerX\tcpsocket.h">
-      <Filter>zsummerX\interface</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\zsummerX\udpsocket.h">
-      <Filter>zsummerX\interface</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\zsummerX\zsummer.h">
-      <Filter>zsummerX\interface</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\zsummerX\timer.h">
-      <Filter>zsummerX\interface</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\depends\proto4z\proto4z.h">
       <Filter>protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\zsummerX\zsummerX.h">
+      <Filter>zsummerX\interface</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -39,8 +39,9 @@
 
 
 
-#include <zsummerX/frameX.h>
+#include <zsummerX/zsummerX.h>
 using namespace zsummer::log4z;
+using namespace zsummer::network;
 
 std::string g_remoteIP = "0.0.0.0";
 unsigned short g_remotePort = 8081;
@@ -53,10 +54,10 @@ int main(int argc, char* argv[])
 		(strcmp(argv[1], "--help") == 0 
 		|| strcmp(argv[1], "/?") == 0))
 	{
-		cout <<"please input like example:" << endl;
-		cout << "tcpTest remoteIP remotePort startType maxClient sendType interval" << endl;
-		cout << "./tcpTest 0.0.0.0 8081 0" << endl;
-		cout << "startType: 0 server, 1 client" << endl;
+		std::cout << "please input like example:" << std::endl;
+		std::cout << "tcpTest remoteIP remotePort startType maxClient sendType interval" << std::endl;
+		std::cout << "./tcpTest 0.0.0.0 8081 0" << std::endl;
+		std::cout << "startType: 0 server, 1 client" << std::endl;
 		return 0;
 	}
 	if (argc > 1)
@@ -89,7 +90,7 @@ int main(int argc, char* argv[])
 
 
 	//! step 1. start frame manager.
-	TcpSessionManager::getRef().start();
+	SessionManager::getRef().start();
 
 
 	if (g_startIsConnector) //client
@@ -112,7 +113,7 @@ int main(int argc, char* argv[])
 //			wh.addHead("DNT", "1");
 //			wh.addHead("Connection", "Keep-Alive");
 			wh.post("/user/oauth", jsonString);
-			TcpSessionManager::getRef().sendOrgSessionData(cID, wh.getStream(), wh.getStreamLen());
+			SessionManager::getRef().sendOrgSessionData(cID, wh.getStream(), wh.getStreamLen());
 		};
 
 		//callback when receive http data
@@ -121,13 +122,13 @@ int main(int argc, char* argv[])
 			if (commondLine.second != "200")
 			{
 				LOGI("response false. commond=" << commondLine.first << ", commondvalue=" << commondLine.second);
-				TcpSessionManager::getRef().kickSession(cID);
+				SessionManager::getRef().kickSession(cID);
 				return ;
 			}
 			LOGI("response success. commond=" << commondLine.first << ", commondvalue=" << commondLine.second << ", content=" << body);
-			TcpSessionManager::getRef().kickSession(cID);
+			SessionManager::getRef().kickSession(cID);
 			//step 3. stop
-			//TcpSessionManager::getRef().stop();
+			//SessionManager::getRef().stop();
 			return ;
 		};
 
@@ -137,16 +138,16 @@ int main(int argc, char* argv[])
 
 
 		//add connector
-		tagConnctorConfigTraits traits;
+		ConnectConfig traits;
 		traits._remoteIP = g_remoteIP;
 		traits._remotePort = g_remotePort;
 		traits._protoType = PT_HTTP;
 		traits._reconnectInterval = 5000;
 		traits._reconnectMaxCount = 0;
-		TcpSessionManager::getRef().addConnector(traits);
+		SessionManager::getRef().addConnector(traits);
 
 		//! step 2 running
-		TcpSessionManager::getRef().run();
+		SessionManager::getRef().run();
 	}
 	else
 	{
@@ -164,22 +165,22 @@ int main(int argc, char* argv[])
 			wh.addHead("DNT", "1");
 			wh.addHead("Connection", "Keep-Alive");
 			wh.response("200", "What's your name ?");
-			TcpSessionManager::getRef().sendOrgSessionData( sID, wh.getStream(), wh.getStreamLen());
-			TcpSessionManager::getRef().createTimer(2000, std::bind(&TcpSessionManager::kickSession, TcpSessionManager::getPtr(), sID));
+			SessionManager::getRef().sendOrgSessionData( sID, wh.getStream(), wh.getStreamLen());
+			SessionManager::getRef().createTimer(2000, std::bind(&SessionManager::kickSession, SessionManager::getPtr(), sID));
 			//step 3. stop server.
-		//	TcpSessionManager::getRef().createTimer(1000,std::bind(&TcpSessionManager::stop, TcpSessionManager::getPtr()));
+		//	SessionManager::getRef().createTimer(1000,std::bind(&SessionManager::stop, SessionManager::getPtr()));
 			return ;
 		};
 
 		//! register message
 		MessageDispatcher::getRef().registerOnSessionHTTPMessage(msg_ResultSequence_fun);
 
-		tagAcceptorConfigTraits traits;
+		ListenConfig traits;
 		traits._listenPort = g_remotePort;
 		traits._protoType = PT_HTTP;
-		TcpSessionManager::getRef().addAcceptor(traits);
+		SessionManager::getRef().addAcceptor(traits);
 		//! step 2 running
-		TcpSessionManager::getRef().run();
+		SessionManager::getRef().run();
 	}
 	
 

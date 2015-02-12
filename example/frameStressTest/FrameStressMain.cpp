@@ -38,10 +38,13 @@
 //! frame module stress test
 //! frame module used 'single sodule', if you need use multi-thread then you can create thread at user-code-layer, and you can look the example 'tcpStressTest'.
 
-#include <zsummerX/frameX.h>
+#include <zsummerX/zsummerX.h>
 #include <unordered_map>
 #include "TestProto.h"
 using namespace zsummer::log4z;
+using namespace zsummer::proto4z;
+using namespace zsummer::network;
+
 
 //! default value
 std::string g_remoteIP = "0.0.0.0"; 
@@ -67,7 +70,7 @@ void MonitorFunc()
 	LOGI("per seconds Echos Count=" << (g_totalEchoCount - g_lastEchoCount) / 5
 		<< ", g_totalSendCount[" << g_totalSendCount << "] g_totalRecvCount[" << g_totalRecvCount << "]");
 	g_lastEchoCount = g_totalEchoCount;
-	TcpSessionManager::getRef().createTimer(5000, MonitorFunc);
+	SessionManager::getRef().createTimer(5000, MonitorFunc);
 };
 
 
@@ -91,7 +94,7 @@ public:
 	}
 	
 
-	void OnMsgPulse(SessionID sID, ProtoID pID, ReadStreamPack & pack)
+	void OnMsgPulse(SessionID sID, ProtoID pID, ReadStream & pack)
 	{
 		auto iter = _sessionPulse.find(sID);
 		if (iter != _sessionPulse.end())
@@ -112,25 +115,25 @@ public:
 		if (iter == _sessionPulse.end())
 		{
 			LOGI("remote session lost. sID=" << sID );
-			TcpSessionManager::getRef().kickSession(sID);
+			SessionManager::getRef().kickSession(sID);
 			return;
 		}
 		if (time(NULL) - iter->second > pulseInterval / 1000 * 2)
 		{
 			LOGI("remote session timeout. sID=" << sID << ", timeout=" << time(NULL) - iter->second);
-			TcpSessionManager::getRef().kickSession(sID);
+			SessionManager::getRef().kickSession(sID);
 			return;
 		}
 
 		if (isConnectID(sID))
 		{
-			WriteStreamPack pack(ID_C2S_Pulse);
-			TcpSessionManager::getRef().sendOrgSessionData(sID, pack.getStream(), pack.getStreamLen());
+			WriteStream pack(ID_C2S_Pulse);
+			SessionManager::getRef().sendOrgSessionData(sID, pack.getStream(), pack.getStreamLen());
 		}
 		else
 		{
-			WriteStreamPack pack(ID_S2C_Pulse);
-			TcpSessionManager::getRef().sendOrgSessionData(sID, pack.getStream(), pack.getStreamLen());
+			WriteStream pack(ID_S2C_Pulse);
+			SessionManager::getRef().sendOrgSessionData(sID, pack.getStream(), pack.getStreamLen());
 		}
 	}
 	void OnSessionDisconnect(SessionID sID)
@@ -166,7 +169,7 @@ public:
 	void onConnected (SessionID cID)
 	{
 		LOGI("onConnected. ConnectorID=" << cID );
-		WriteStreamPack ws(ID_P2P_EchoPack);
+		WriteStream ws(ID_P2P_EchoPack);
 		P2P_EchoPack pack;
 		TestIntegerData idata;
 		idata._char = 'a';
@@ -200,11 +203,11 @@ public:
 		pack._smap.insert(std::make_pair("523", sdata));
 		pack._smap.insert(std::make_pair("623", sdata));
 		ws << pack;
-		TcpSessionManager::getRef().sendOrgSessionData(cID, ws.getStream(), ws.getStreamLen());
+		SessionManager::getRef().sendOrgSessionData(cID, ws.getStream(), ws.getStreamLen());
 		g_totalSendCount++;
 		if (g_sendType != 0 && g_intervalMs > 0)
 		{
-			TcpSessionManager::getRef().createTimer(g_intervalMs, std::bind(&CStressClientHandler::SendFunc, this, cID));
+			SessionManager::getRef().createTimer(g_intervalMs, std::bind(&CStressClientHandler::SendFunc, this, cID));
 			_sessionStatus[cID] = true;
 		}
 	};
@@ -213,7 +216,7 @@ public:
 		_sessionStatus[cID] = false;
 	}
 
-	void msg_ResultSequence_fun(SessionID cID, ProtoID pID, ReadStreamPack & rs)
+	void msg_ResultSequence_fun(SessionID cID, ProtoID pID, ReadStream & rs)
 	{
 		P2P_EchoPack pack;
 		rs >> pack;
@@ -223,13 +226,13 @@ public:
 
 		if (g_sendType == 0 || g_intervalMs == 0) //echo send
 		{
-			WriteStreamPack ws(ID_P2P_EchoPack);
+			WriteStream ws(ID_P2P_EchoPack);
 			ws << pack;
-			TcpSessionManager::getRef().sendOrgSessionData(cID, ws.getStream(), ws.getStreamLen());
+			SessionManager::getRef().sendOrgSessionData(cID, ws.getStream(), ws.getStreamLen());
 			g_totalSendCount++;
 		}
 	};
-	void looker_ResultSequence_fun(SessionID cID, ProtoID pID, ReadStreamPack & rs)
+	void looker_ResultSequence_fun(SessionID cID, ProtoID pID, ReadStream & rs)
 	{
 //		P2P_EchoPack pack;
 //		rs >> pack;
@@ -239,7 +242,7 @@ public:
 	{
 		if (g_totalSendCount - g_totalRecvCount < 10000)
 		{
-			WriteStreamPack ws(ID_P2P_EchoPack);
+			WriteStream ws(ID_P2P_EchoPack);
 			P2P_EchoPack pack;
 			TestIntegerData idata;
 			idata._char = 'a';
@@ -273,12 +276,12 @@ public:
 			pack._smap.insert(std::make_pair("523", sdata));
 			pack._smap.insert(std::make_pair("623", sdata));
 			ws << pack;
-			TcpSessionManager::getRef().sendOrgSessionData(cID, ws.getStream(), ws.getStreamLen());
+			SessionManager::getRef().sendOrgSessionData(cID, ws.getStream(), ws.getStreamLen());
 			g_totalSendCount++;
 		}
 		if (_sessionStatus[cID])
 		{
-			TcpSessionManager::getRef().createTimer(g_intervalMs, std::bind(&CStressClientHandler::SendFunc, this, cID));
+			SessionManager::getRef().createTimer(g_intervalMs, std::bind(&CStressClientHandler::SendFunc, this, cID));
 		}
 	};
 private:
@@ -299,13 +302,13 @@ public:
 			std::bind(&CStressServerHandler::msg_RequestSequence_fun, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	}
 
-	void msg_RequestSequence_fun (SessionID sID, ProtoID pID, ReadStreamPack & rs)
+	void msg_RequestSequence_fun (SessionID sID, ProtoID pID, ReadStream & rs)
 	{
 		P2P_EchoPack pack;
 		rs >> pack;
-		WriteStreamPack ws(ID_P2P_EchoPack);
+		WriteStream ws(ID_P2P_EchoPack);
 		ws << pack;
-		TcpSessionManager::getRef().sendOrgSessionData(sID, ws.getStream(), ws.getStreamLen());
+		SessionManager::getRef().sendOrgSessionData(sID, ws.getStream(), ws.getStreamLen());
 		g_totalEchoCount++;
 		g_totalSendCount++;
 		g_totalRecvCount++;
@@ -315,7 +318,7 @@ public:
 
 void sigFun(int sig)
 {
-	TcpSessionManager::getRef().stop();
+	SessionManager::getRef().stop();
 }
 
 int main(int argc, char* argv[])
@@ -338,13 +341,13 @@ int main(int argc, char* argv[])
 		(strcmp(argv[1], "--help") == 0 
 		|| strcmp(argv[1], "/?") == 0))
 	{
-		cout << "please input like example:" << endl;
-		cout << "tcpTest remoteIP remotePort startType maxClient sendType interval" << endl;
-		cout << "./tcpTest 0.0.0.0 8081 0" << endl;
-		cout << "startType: 0 server, 1 client" << endl;
-		cout << "maxClient: limit max" << endl;
-		cout << "sendType: 0 echo send, 1 direct send" << endl;
-		cout << "interval: send once interval" << endl;
+		std::cout << "please input like example:" << std::endl;
+		std::cout << "tcpTest remoteIP remotePort startType maxClient sendType interval" << std::endl;
+		std::cout << "./tcpTest 0.0.0.0 8081 0" << std::endl;
+		std::cout << "startType: 0 server, 1 client" << std::endl;
+		std::cout << "maxClient: limit max" << std::endl;
+		std::cout << "sendType: 0 echo send, 1 direct send" << std::endl;
+		std::cout << "interval: send once interval" << std::endl;
 		return 0;
 	}
 	if (argc > 1)
@@ -375,11 +378,11 @@ int main(int argc, char* argv[])
 
 
 
-	TcpSessionManager::getRef().start();
+	SessionManager::getRef().start();
 
 	g_testStr.resize(200, 's');
 
-	TcpSessionManager::getRef().createTimer(5000, MonitorFunc);
+	SessionManager::getRef().createTimer(5000, MonitorFunc);
 
 	//build heartbeat manager
 	CHeartbeatManager heartbeatManager;
@@ -391,32 +394,32 @@ int main(int argc, char* argv[])
 		//add connector.
 		for (int i = 0; i < g_maxClient; ++i)
 		{
-			tagConnctorConfigTraits traits;
+			ConnectConfig traits;
 			traits._remoteIP = g_remoteIP;
 			traits._remotePort = g_remotePort;
 			traits._reconnectInterval = 5000;
 			traits._reconnectMaxCount = 5;
 //			traits._rc4TcpEncryption = "yawei.zhang@foxmail.com";
 			traits._pulseInterval = 500000;
-			TcpSessionManager::getRef().addConnector(traits);
+			SessionManager::getRef().addConnector(traits);
 		}
 		//running
-		TcpSessionManager::getRef().run();
+		SessionManager::getRef().run();
 	}
 	else
 	{
 		CStressServerHandler server;
 		//add acceptor
-		tagAcceptorConfigTraits traits;
+		ListenConfig traits;
 		traits._listenPort = g_remotePort;
 		traits._maxSessions = g_maxClient;
 //		traits._rc4TcpEncryption = "yawei.zhang@foxmail.com";
 		//traits._openFlashPolicy = true;
 		traits._pulseInterval = 500000;
 		//traits._whitelistIP.push_back("127.0.");
-		TcpSessionManager::getRef().addAcceptor(traits);
+		SessionManager::getRef().addAcceptor(traits);
 		//running
-		TcpSessionManager::getRef().run();
+		SessionManager::getRef().run();
 	}
 
 

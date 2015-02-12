@@ -41,8 +41,10 @@
 
 
 
-#include <zsummerX/frameX.h>
+#include <zsummerX/zsummerX.h>
 using namespace zsummer::log4z;
+using namespace zsummer::proto4z;
+using namespace zsummer::network;
 
 //default param
 std::string g_remoteIP = "0.0.0.0";
@@ -92,10 +94,10 @@ bool initEnv(int argc, char* argv[])
 		(strcmp(argv[1], "--help") == 0
 		|| strcmp(argv[1], "/?") == 0))
 	{
-		cout << "please input like example:" << endl;
-		cout << "tcpTest remoteIP remotePort startType maxClient sendType interval" << endl;
-		cout << "./tcpTest 0.0.0.0 8081 0" << endl;
-		cout << "startType: 0 server, 1 client" << endl;
+		std::cout << "please input like example:" << std::endl;
+		std::cout << "tcpTest remoteIP remotePort startType maxClient sendType interval" << std::endl;
+		std::cout << "./tcpTest 0.0.0.0 8081 0" << std::endl;
+		std::cout << "startType: 0 server, 1 client" << std::endl;
 		return 0;
 	}
 	if (argc > 1)
@@ -132,50 +134,50 @@ bool initEnv(int argc, char* argv[])
 void startServer()
 {
 	//! step 1. start Manager.
-	TcpSessionManager::getRef().start();
+	SessionManager::getRef().start();
 	//process message _RequestSequence
-	OnMessageFunction msg_RequestSequence_fun = [](SessionID sID, ProtoID pID, ReadStreamPack & rs)
+	OnMessageFunction msg_RequestSequence_fun = [](SessionID sID, ProtoID pID, ReadStream & rs)
 	{
 		std::string content = rs.getStreamBody();
 		LOGI("recv SessionID = " << sID << ", content = " << content);
 		content += " ==> echo.";
-		TcpSessionManager::getRef().sendSessionData(sID, _ResultID, content.c_str(), (unsigned int)content.length() + 1);
+		SessionManager::getRef().sendSessionData(sID, _ResultID, content.c_str(), (unsigned int)content.length() + 1);
 
 		//! step 3 stop server after 1 second.
-		TcpSessionManager::getRef().createTimer(1000, [](){TcpSessionManager::getRef().stop(); });
+		SessionManager::getRef().createTimer(1000, [](){SessionManager::getRef().stop(); });
 	};
 
 	MessageDispatcher::getRef().registerSessionMessage(_RequestID, msg_RequestSequence_fun); //!register message for protoID: _RequestSequence
 
 	//add Acceptor
-	tagAcceptorConfigTraits traits;
+	ListenConfig traits;
 	traits._listenPort = g_remotePort;
-	TcpSessionManager::getRef().addAcceptor(traits);
+	SessionManager::getRef().addAcceptor(traits);
 
 	//! step 2 running
-	TcpSessionManager::getRef().run();
+	SessionManager::getRef().run();
 }
 
 void startClient()
 {
 	//! step 1. start Manager.
-	TcpSessionManager::getRef().start();
+	SessionManager::getRef().start();
 
 	//on connect success
 	auto connectedfun = [](SessionID cID)
 	{
 		LOGI("on connect. ID=" << cID);
 		std::string content = "hello";
-		TcpSessionManager::getRef().sendSessionData(cID, _RequestID, content.c_str(), (unsigned int)content.length() + 1);
+		SessionManager::getRef().sendSessionData(cID, _RequestID, content.c_str(), (unsigned int)content.length() + 1);
 	};
 
 	//process message _ResultID
-	auto msg_ResultSequence_fun = [](SessionID cID, ProtoID pID, ReadStreamPack & rs)
+	auto msg_ResultSequence_fun = [](SessionID cID, ProtoID pID, ReadStream & rs)
 	{
 		std::string content = rs.getStreamBody();
 		LOGI("recv ConnectorID = " << cID << ", content = " << content);
 		//! step 3 stop server
-		TcpSessionManager::getRef().stop();
+		SessionManager::getRef().stop();
 	};
 
 	//! register event and message
@@ -183,13 +185,13 @@ void startClient()
 	MessageDispatcher::getRef().registerSessionMessage(_ResultID, msg_ResultSequence_fun);//!register message for protoID: _ResultSequence
 
 	//add connector
-	tagConnctorConfigTraits traits;
+	ConnectConfig traits;
 	traits._remoteIP = g_remoteIP;
 	traits._remotePort = g_remotePort;
-	TcpSessionManager::getRef().addConnector(traits);
+	SessionManager::getRef().addConnector(traits);
 
 	//! step 2 running
-	TcpSessionManager::getRef().run();
+	SessionManager::getRef().run();
 }
 
 

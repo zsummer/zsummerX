@@ -37,9 +37,8 @@
 
 #include <zsummerX/iocp/iocp_impl.h>
 #include <zsummerX/iocp/tcpaccept_impl.h>
-
-
 using namespace zsummer::network;
+
 TcpAccept::TcpAccept()
 {
 	//listen

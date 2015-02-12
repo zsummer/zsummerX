@@ -36,9 +36,9 @@
 
 
 #include <zsummerX/iocp/tcpsocket_impl.h>
-
-
 using namespace zsummer::network;
+
+
 TcpSocket::TcpSocket()
 {
 	g_appEnvironment.addCreatedSocketCount();

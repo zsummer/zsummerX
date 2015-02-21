@@ -21,8 +21,12 @@ endif()
 set_target_properties(${PROJECT_NAME}_select${LIB_SUFFIX} PROPERTIES COMPILE_DEFINITIONS "ZSUMMERX_USE_SELECT=1")
 
  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
- 	add_definitions(-Wall -g -ggdb -O0 -std=c++11 -D_GLIBCXX_USE_NANOSLEEP)
+ 	add_definitions(-Wall -g -ggdb -O0  -D_GLIBCXX_USE_NANOSLEEP)
  else()
- 	add_definitions(-Wall  -O2 -DNDEBUG -std=c++11 -D_GLIBCXX_USE_NANOSLEEP)
+ 	add_definitions(-Wall  -O2 -DNDEBUG  -D_GLIBCXX_USE_NANOSLEEP)
  endif()
+set(CMAKE_CXX_FLAGS -std=c++11)
+message(STATUS ${CMAKE_CXX_FLAGS})
+message(STATUS ${CMAKE_C_FLAGS})
+
 

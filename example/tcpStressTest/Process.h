@@ -53,9 +53,9 @@ public:
 	//! 线程
 	void run();
 	//!
-	inline zsummer::network::ZSummerPtr GetZSummer(){return _summer;}
+	inline zsummer::network::EventLoopPtr GetZSummer(){return _summer;}
 private:
-	zsummer::network::ZSummerPtr _summer;
+	zsummer::network::EventLoopPtr _summer;
 	std::thread	 _thread;
 	bool  _running = true;
 

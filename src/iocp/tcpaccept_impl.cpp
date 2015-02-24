@@ -68,7 +68,7 @@ TcpAccept::~TcpAccept()
 	}
 }
 
-bool TcpAccept::initialize(ZSummerPtr& summer)
+bool TcpAccept::initialize(EventLoopPtr& summer)
 {
 	_summer = summer;
 	return true;

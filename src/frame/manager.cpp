@@ -50,7 +50,7 @@ SessionManager & SessionManager::getRef()
 }
 SessionManager::SessionManager()
 {
-	_summer = std::shared_ptr<zsummer::network::ZSummer>(new zsummer::network::ZSummer());
+	_summer = std::shared_ptr<zsummer::network::EventLoop>(new zsummer::network::EventLoop());
 }
 
 bool SessionManager::start()

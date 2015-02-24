@@ -89,7 +89,7 @@ std::string TcpSocket::getTcpSocketStatus()
 }
 
 //new socket to connect, or accept established socket
-bool TcpSocket::initialize(const ZSummerPtr& summer)
+bool TcpSocket::initialize(const EventLoopPtr& summer)
 {
 	_summer = summer;
 	if (_nLinkStatus != LS_UNINITIALIZE)

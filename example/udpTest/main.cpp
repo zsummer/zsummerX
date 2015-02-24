@@ -177,7 +177,7 @@ int main(int argc, char* argv[])
 	}
 	LOGI("ip=" << ip << ", port=" << port << ", type=" << g_type << ", maxClients=" << maxClient);
 	
-	zsummer::network::ZSummerPtr summer(new zsummer::network::ZSummer());
+	zsummer::network::EventLoopPtr summer(new zsummer::network::EventLoop());
 	summer->initialize();
 
 	g_fillString.resize(1000, 'z');

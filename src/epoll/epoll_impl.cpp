@@ -42,24 +42,24 @@
 
 using namespace zsummer::network;
 
-bool ZSummer::initialize()
+bool EventLoop::initialize()
 {
 	if (_epoll != InvalideFD)
 	{
-		LCF("ZSummer::initialize[this0x"<<this <<"] epoll is created ! " << zsummerSection());
+		LCF("EventLoop::initialize[this0x"<<this <<"] epoll is created ! " << logSection());
 		return false;
 	}
 	const int IGNORE_ENVENTS = 100;
 	_epoll = epoll_create(IGNORE_ENVENTS);
 	if (_epoll == InvalideFD)
 	{
-		LCF("ZSummer::initialize[this0x" << this << "] create epoll err errno=" << strerror(errno) << zsummerSection());
+		LCF("EventLoop::initialize[this0x" << this << "] create epoll err errno=" << strerror(errno) << logSection());
 		return false;
 	}
 
 	if (socketpair(AF_LOCAL, SOCK_STREAM, 0, _sockpair) != 0)
 	{
-		LCF("ZSummer::initialize[this0x" << this << "] create socketpair.  errno=" << strerror(errno) << zsummerSection());
+		LCF("EventLoop::initialize[this0x" << this << "] create socketpair.  errno=" << strerror(errno) << logSection());
 		return false;
 	}
 	setNonBlock(_sockpair[0]);
@@ -74,14 +74,14 @@ bool ZSummer::initialize()
 	_register._type = tagRegister::REG_ZSUMMER;
 	if (!registerEvent(EPOLL_CTL_ADD, _register))
 	{
-		LCF("ZSummer::initialize[this0x" << this << "] EPOLL_CTL_ADD _socketpair error. " << zsummerSection());
+		LCF("EventLoop::initialize[this0x" << this << "] EPOLL_CTL_ADD _socketpair error. " << logSection());
 		return false;
 	}
 	
 	return true;
 }
 
-bool ZSummer::registerEvent(int op, tagRegister & reg)
+bool EventLoop::registerEvent(int op, tagRegister & reg)
 {
 	if (epoll_ctl(_epoll, op, reg._fd, &reg._event) != 0)
 	{
@@ -90,7 +90,7 @@ bool ZSummer::registerEvent(int op, tagRegister & reg)
 	return true;
 }
 
-void ZSummer::PostMessage(_OnPostHandler &&handle)
+void EventLoop::PostMessage(_OnPostHandler &&handle)
 {
 	_OnPostHandler * pHandler = new _OnPostHandler(std::move(handle));
 	_stackMessagesLock.lock();
@@ -100,26 +100,26 @@ void ZSummer::PostMessage(_OnPostHandler &&handle)
 	send(_sockpair[0], &c, 1, 0);
 }
 
-std::string ZSummer::zsummerSection()
+std::string EventLoop::logSection()
 {
 	std::stringstream os;
 	_stackMessagesLock.lock();
 	MessageStack::size_type msgSize = _stackMessages.size();
 	_stackMessagesLock.unlock();
-	os << " ZSummer: _epoll=" << _epoll << ", _sockpair[2]={" << _sockpair[0] << "," << _sockpair[1] << "}"
+	os << " EventLoop: _epoll=" << _epoll << ", _sockpair[2]={" << _sockpair[0] << "," << _sockpair[1] << "}"
 		<< " _stackMessages.size()=" << msgSize << ", current total timer=" << _timer.GetTimersCount()
 		<< " _register=" << _register;
 	return os.str();
 }
 
-void ZSummer::runOnce(bool isImmediately)
+void EventLoop::runOnce(bool isImmediately)
 {
 	int retCount = epoll_wait(_epoll, _events, 1000,  isImmediately ? 0 : _timer.getNextExpireTime());
 	if (retCount == -1)
 	{
 		if (errno != EINTR)
 		{
-			LCW("ZSummer::runOnce[this0x" << this << "]  epoll_wait err!  errno=" << strerror(errno) << zsummerSection());
+			LCW("EventLoop::runOnce[this0x" << this << "]  epoll_wait err!  errno=" << strerror(errno) << logSection());
 			return; //! error
 		}
 		return;
@@ -227,7 +227,7 @@ void ZSummer::runOnce(bool isImmediately)
 		}
 		else
 		{
-			LCE("ZSummer::runOnce[this0x" << this << "] check register event type failed !!  type=" << pReg->_type << zsummerSection());
+			LCE("EventLoop::runOnce[this0x" << this << "] check register event type failed !!  type=" << pReg->_type << logSection());
 		}
 			
 	}

@@ -54,7 +54,7 @@ TcpSocket::~TcpSocket()
 	g_appEnvironment.addClosedSocketCount();
 	if (_onRecvHandler || _onSendHandler || _onConnectHandler)
 	{
-		LCT("TcpSocket::~TcpSocket[this0x" << this << "] Handler status error. " << socketSection());
+		LCT("TcpSocket::~TcpSocket[this0x" << this << "] Handler status error. " << logSection());
 	}
 	if (_register._fd != InvalideFD)
 	{
@@ -63,7 +63,7 @@ TcpSocket::~TcpSocket()
 	}
 }
 
-std::string TcpSocket::socketSection()
+std::string TcpSocket::logSection()
 {
 	std::stringstream os;
 	os << ";; Status: summer.user_count()=" << _summer.use_count() << ", remoteIP=" << _remoteIP << ", remotePort=" << _remotePort
@@ -74,14 +74,14 @@ std::string TcpSocket::socketSection()
 	return os.str();
 }
 
-bool TcpSocket::initialize(const ZSummerPtr & summer)
+bool TcpSocket::initialize(const EventLoopPtr & summer)
 {
 	 _summer = summer;
 	if (_register._linkstat != LS_UNINITIALIZE)
 	{
 		if (!_summer->registerEvent(0, _register))
 		{
-			LCE("TcpSocket::initialize[this0x" << this << "] socket already used or not initilize." << socketSection());
+			LCE("TcpSocket::initialize[this0x" << this << "] socket already used or not initilize." << logSection());
 			return false;
 		}
 		_register._linkstat = LS_ESTABLISHED;
@@ -90,13 +90,13 @@ bool TcpSocket::initialize(const ZSummerPtr & summer)
 	{
 		if (_register._fd != -1)
 		{
-			LCE("TcpSocket::doConnect[this0x" << this << "] fd aready used!" << socketSection());
+			LCE("TcpSocket::doConnect[this0x" << this << "] fd aready used!" << logSection());
 			return false;
 		}
 		_register._fd = socket(AF_INET, SOCK_STREAM, 0);
 		if (_register._fd == -1)
 		{
-			LCE("TcpSocket::doConnect[this0x" << this << "] fd create failed!" << socketSection());
+			LCE("TcpSocket::doConnect[this0x" << this << "] fd create failed!" << logSection());
 			return false;
 		}
 		setNonBlock(_register._fd);
@@ -124,12 +124,12 @@ bool TcpSocket::doConnect(const std::string & remoteIP, unsigned short remotePor
 {
 	if (!_summer)
 	{
-		LCE("TcpSocket::doConnect[this0x" << this << "] summer not bind!" << socketSection());
+		LCE("TcpSocket::doConnect[this0x" << this << "] summer not bind!" << logSection());
 		return false;
 	}
 	if (_register._linkstat != LS_WAITLINK)
 	{
-		LCE("TcpSocket::doConnect[this0x" << this << "] _linkstat not LS_WAITLINK!" << socketSection());
+		LCE("TcpSocket::doConnect[this0x" << this << "] _linkstat not LS_WAITLINK!" << logSection());
 		return false;
 	}
 
@@ -150,7 +150,7 @@ bool TcpSocket::doConnect(const std::string & remoteIP, unsigned short remotePor
 	if (ret != 0 && WSAGetLastError() != WSAEWOULDBLOCK)
 #endif
 	{
-		LCT("TcpSocket::doConnect[this0x" << this << "] ::connect error. " << OSTREAM_GET_LASTERROR << socketSection());
+		LCT("TcpSocket::doConnect[this0x" << this << "] ::connect error. " << OSTREAM_GET_LASTERROR << logSection());
 		closesocket(_register._fd);
 		_register._fd = InvalideFD;
 		return false;
@@ -159,7 +159,7 @@ bool TcpSocket::doConnect(const std::string & remoteIP, unsigned short remotePor
 	_register._tcpSocketConnectPtr = shared_from_this();
 	if (!_summer->registerEvent(0, _register))
 	{
-		LCE("TcpSocket::doConnect[this0x" << this << "] registerEvent Error" << socketSection());
+		LCE("TcpSocket::doConnect[this0x" << this << "] registerEvent Error" << logSection());
 		closesocket(_register._fd);
 		_register._fd = InvalideFD;
 		_register._tcpSocketConnectPtr.reset();
@@ -174,28 +174,28 @@ bool TcpSocket::doSend(char * buf, unsigned int len, _OnSendHandler && handler)
 {
 	if (_register._linkstat != LS_ESTABLISHED)
 	{
-		LCT("TcpSocket::doSend[this0x" << this << "] _linkstat not REG_ESTABLISHED_TCP!" << socketSection());
+		LCT("TcpSocket::doSend[this0x" << this << "] _linkstat not REG_ESTABLISHED_TCP!" << logSection());
 		return false;
 	}
 
 	if (!_summer)
 	{
-		LCE("TcpSocket::doSend[this0x" << this << "] _summer not bind!" << socketSection());
+		LCE("TcpSocket::doSend[this0x" << this << "] _summer not bind!" << logSection());
 		return false;
 	}
 	if (len == 0)
 	{
-		LCE("TcpSocket::doSend[this0x" << this << "] argument err! len ==0" << socketSection());
+		LCE("TcpSocket::doSend[this0x" << this << "] argument err! len ==0" << logSection());
 		return false;
 	}
 	if (_pSendBuf != NULL || _iSendLen != 0)
 	{
-		LCE("TcpSocket::doSend[this0x" << this << "] _pSendBuf =" << (void *) _pSendBuf << " _iSendLen =" << _iSendLen<< socketSection());
+		LCE("TcpSocket::doSend[this0x" << this << "] _pSendBuf =" << (void *) _pSendBuf << " _iSendLen =" << _iSendLen<< logSection());
 		return false;
 	}
 	if (_onSendHandler)
 	{
-		LCE("TcpSocket::doSend[this0x" << this << "] _onSendHandler == TRUE" << socketSection());
+		LCE("TcpSocket::doSend[this0x" << this << "] _onSendHandler == TRUE" << logSection());
 		return false;
 	}
 
@@ -209,7 +209,7 @@ bool TcpSocket::doSend(char * buf, unsigned int len, _OnSendHandler && handler)
 	_register._tcpSocketSendPtr = shared_from_this();
 	if (!_summer->registerEvent(1, _register))
 	{
-		LCT("TcpSocket::doSend[this0x" << this << "] registerEvent Error" << socketSection());
+		LCT("TcpSocket::doSend[this0x" << this << "] registerEvent Error" << logSection());
 		_pSendBuf = nullptr;
 		_iSendLen = 0;
 		_register._tcpSocketSendPtr.reset();
@@ -226,29 +226,29 @@ bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler)
 {
 	if (_register._linkstat != LS_ESTABLISHED)
 	{
-		LCT("TcpSocket::doRecv[this0x" << this << "] type not REG_ESTABLISHED_TCP!" << socketSection());
+		LCT("TcpSocket::doRecv[this0x" << this << "] type not REG_ESTABLISHED_TCP!" << logSection());
 		return false;
 	}
 
 	if (!_summer)
 	{
-		LCE("TcpSocket::doRecv[this0x" << this << "] _summer not bind!" << socketSection());
+		LCE("TcpSocket::doRecv[this0x" << this << "] _summer not bind!" << logSection());
 		return false;
 	}
 
 	if (len == 0 )
 	{
-		LCE("TcpSocket::doRecv[this0x" << this << "] argument err !!!  len==0" << socketSection());
+		LCE("TcpSocket::doRecv[this0x" << this << "] argument err !!!  len==0" << logSection());
 		return false;
 	}
 	if (_pRecvBuf != NULL || _iRecvLen != 0)
 	{
-		LCE("TcpSocket::doRecv[this0x" << this << "]  (_pRecvBuf != NULL || _iRecvLen != 0) == TRUE" << socketSection());
+		LCE("TcpSocket::doRecv[this0x" << this << "]  (_pRecvBuf != NULL || _iRecvLen != 0) == TRUE" << logSection());
 		return false;
 	}
 	if (_onRecvHandler)
 	{
-		LCE("TcpSocket::doRecv[this0x" << this << "] (_onRecvHandler) == TRUE" << socketSection());
+		LCE("TcpSocket::doRecv[this0x" << this << "] (_onRecvHandler) == TRUE" << logSection());
 		return false;
 	}
 	
@@ -260,7 +260,7 @@ bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler)
 	_register._tcpSocketRecvPtr = shared_from_this();
 	if (!_summer->registerEvent(1, _register))
 	{
-		LCT("TcpSocket::doRecv[this0x" << this << "] registerEvent Error" << socketSection());
+		LCT("TcpSocket::doRecv[this0x" << this << "] registerEvent Error" << logSection());
 		_pRecvBuf = nullptr;
 		_iRecvLen = 0;
 		_register._tcpSocketRecvPtr.reset();
@@ -279,7 +279,7 @@ void TcpSocket::onSelectMessage(bool rd, bool wt, bool err)
 
 	if (!_onRecvHandler && !_onSendHandler && !_onConnectHandler)
 	{
-		LCE("TcpSocket::onSelectMessage[this0x" << this << "] unknown error. " << OSTREAM_GET_LASTERROR << socketSection());
+		LCE("TcpSocket::onSelectMessage[this0x" << this << "] unknown error. " << OSTREAM_GET_LASTERROR << logSection());
 		return ;
 	}
 
@@ -317,7 +317,7 @@ void TcpSocket::onSelectMessage(bool rd, bool wt, bool err)
 		_register._rd = false;
 		if (!_summer->registerEvent(1, _register))
 		{
-			LCF("TcpSocket::onSelectMessage[this0x" << this << "] connect true & EPOLLMod error.  " << OSTREAM_GET_LASTERROR << socketSection());
+			LCF("TcpSocket::onSelectMessage[this0x" << this << "] connect true & EPOLLMod error.  " << OSTREAM_GET_LASTERROR << logSection());
 		}
 		if (ret == 0 || (ret == -1 && !IS_WOULDBLOCK))
 		{
@@ -332,7 +332,7 @@ void TcpSocket::onSelectMessage(bool rd, bool wt, bool err)
 			{
 				if (!_summer->registerEvent(2, _register))
 				{
-					LCW("TcpSocket::onSelectMessage[this0x" << this << "] connect true & EPOLL DEL error.  " << OSTREAM_GET_LASTERROR << socketSection());
+					LCW("TcpSocket::onSelectMessage[this0x" << this << "] connect true & EPOLL DEL error.  " << OSTREAM_GET_LASTERROR << logSection());
 				}
 			}
 			return ;
@@ -354,7 +354,7 @@ void TcpSocket::onSelectMessage(bool rd, bool wt, bool err)
 		_register._wt = false;
 		if (!_summer->registerEvent(1, _register))
 		{
-			LCF("TcpSocket::onSelectMessage[this0x" << this << "] connect true & EPOLLMod error. " << OSTREAM_GET_LASTERROR << socketSection());
+			LCF("TcpSocket::onSelectMessage[this0x" << this << "] connect true & EPOLLMod error. " << OSTREAM_GET_LASTERROR << logSection());
 		}
 		
 		if ((ret == -1 && !IS_WOULDBLOCK) || _register._linkstat == LS_CLOSED)
@@ -366,7 +366,7 @@ void TcpSocket::onSelectMessage(bool rd, bool wt, bool err)
 			{
 				if (!_summer->registerEvent(2, _register))
 				{
-					LCW("TcpSocket::onSelectMessage[this0x" << this << "] connect true & EPOLL DEL error.  " << OSTREAM_GET_LASTERROR << socketSection());
+					LCW("TcpSocket::onSelectMessage[this0x" << this << "] connect true & EPOLL DEL error.  " << OSTREAM_GET_LASTERROR << logSection());
 				}
 			}
 			return ;

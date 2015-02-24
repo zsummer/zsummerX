@@ -65,7 +65,7 @@ std::string TcpAccept::AcceptSection()
 		<< ", _client=" << _client.use_count() << "_register=" << _register;
 	return os.str();
 }
-bool TcpAccept::initialize(const ZSummerPtr &summer)
+bool TcpAccept::initialize(const EventLoopPtr &summer)
 {
 	_summer = summer;
 	_register._linkstat = LS_WAITLINK;

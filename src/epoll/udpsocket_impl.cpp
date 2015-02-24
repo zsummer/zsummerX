@@ -66,7 +66,7 @@ UdpSocket::~UdpSocket()
 		_register._fd = -1;
 	}
 }
-bool  UdpSocket::initialize(const ZSummerPtr &summer, const char *localIP, unsigned short localPort)
+bool  UdpSocket::initialize(const EventLoopPtr &summer, const char *localIP, unsigned short localPort)
 {
 	if (_summer)
 	{

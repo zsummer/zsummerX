@@ -58,7 +58,7 @@ unsigned short g_remotePort = 8081;
 unsigned short g_startType = 0;  //0 listen, 1 connect
 bool g_runing = true;
 
-ZSummerPtr summer; //ioserver
+EventLoopPtr summer; //ioserver
 TcpAcceptPtr accepter; //accept
 TcpSocketPtr ts;//socket need create before accept.
 
@@ -220,7 +220,7 @@ int main(int argc, char* argv[])
 
 	
 
-	summer = std::shared_ptr<ZSummer>(new ZSummer);
+	summer = std::shared_ptr<EventLoop>(new EventLoop);
 	summer->initialize();
 
 	if (g_startType == 0)

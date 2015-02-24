@@ -100,7 +100,7 @@ namespace zsummer
 			void onConnect(SessionID cID, bool bConnected, const TcpSessionPtr &session);
 			void onAcceptNewClient(zsummer::network::ErrorCode ec, const TcpSocketPtr & s, const TcpAcceptPtr & accepter, AccepterID aID);
 		private:
-			ZSummerPtr _summer;
+			EventLoopPtr _summer;
 			bool  _running = true;
 			unsigned int  _onlineConnectCounts = 0;//counts online connect when zsummerx will exit
 

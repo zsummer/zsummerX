@@ -39,7 +39,7 @@
 
 CProcess::CProcess()
 {
-	_summer = zsummer::network::ZSummerPtr(new zsummer::network::ZSummer());
+	_summer = zsummer::network::EventLoopPtr(new zsummer::network::EventLoop());
 }
 
 bool CProcess::start()

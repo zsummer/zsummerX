@@ -61,7 +61,7 @@ public:
 	int						_iCurProcess = 0;
 
 
-	zsummer::network::ZSummerPtr _summer;
+	zsummer::network::EventLoopPtr _summer;
 	std::thread	 _thread;
 	zsummer::network::TcpAcceptPtr _accept;
 	bool	_running = false;

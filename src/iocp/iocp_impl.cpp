@@ -41,11 +41,11 @@
 using namespace zsummer::network;
 
 
-void ZSummer::runOnce(bool isImmediately)
+void EventLoop::runOnce(bool isImmediately)
 {
 	if (_io == NULL)
 	{
-		LCF("ZSummer::runOnce[this0x" << this << "] server not initialize or initialize false." <<zsummerSection());
+		LCF("EventLoop::runOnce[this0x" << this << "] server not initialize or initialize false." <<logSection());
 		return;
 	}
 
@@ -114,7 +114,7 @@ void ZSummer::runOnce(bool isImmediately)
 		}
 		break;
 	default:
-		LCE("ZSummer::runOnce[this0x" << this << "]GetQueuedCompletionStatus undefined type=" << req._type << zsummerSection());
+		LCE("EventLoop::runOnce[this0x" << this << "]GetQueuedCompletionStatus undefined type=" << req._type << logSection());
 	}
 	
 }

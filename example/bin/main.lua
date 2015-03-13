@@ -31,7 +31,6 @@ function onMessage(sID, pID, content)
 	local name = Protoz.getName(pID)
 	local echo = Protoz.decode(content, name)
 	--Protoz.dump(echo)
-
 	local data = Protoz.encode(echo, "P2P_EchoPack")
 	summer.sendContent(sID, Protoz.P2P_EchoPack.__getID, data)
 end
@@ -52,7 +51,7 @@ local id = summer.addConnect({ip="127.0.0.1", port=8081, reconnect=2})
 if id == nil then
 	summer.logw("id == nil when addConnect")
 end
-summer.logi("new connect id=" .. id)
+print("new connect id=" .. id)
 
 --进入循环
 --如果嵌入其他程序 例如cocos2dx, 可以吧runOnce设置true然后放入update中.

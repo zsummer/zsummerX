@@ -175,8 +175,7 @@ void CClient::onRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 void CClient::MessageEntry(zsummer::proto4z::ReadStream & rs)
 {
 	//协议流异常会被上层捕获并关闭连接
-	unsigned short protoID = 0;
-	rs >> protoID;
+	unsigned short protoID = rs.getProtoID();
 	switch (protoID)
 	{
 	case 1:

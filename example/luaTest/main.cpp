@@ -66,7 +66,16 @@ int main(int argc, char* argv[])
 	luaopen_pack(L);
 
 	lua_gc(L, LUA_GCRESTART, 0);
-	status = luaL_dofile(L, "./main.lua");
+	if (argc > 1)
+	{
+		status = luaL_dofile(L, "./server.lua");
+	}
+	else
+	{
+		status = luaL_dofile(L, "./client.lua");
+	}
+	
+	
 
 	if (status && !lua_isnil(L, -1)) 
 	{

@@ -333,7 +333,7 @@ static int addListen(lua_State *L)
 
 
 
-void _onConnecterCallback(lua_State * L, SessionID sID)
+static void _onConnecterCallback(lua_State * L, SessionID sID)
 {
 	auto founder = std::find_if(_vmCheck.begin(), _vmCheck.end(), [L](lua_State* l){return l == L; });
 	if (founder == _vmCheck.end())

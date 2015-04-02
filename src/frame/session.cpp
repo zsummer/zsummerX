@@ -271,15 +271,17 @@ void TcpSession::onRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
 			}
 			try
 			{
-				bool bOrgReturn  = MessageDispatcher::getRef().dispatchOrgSessionMessage(_sessionID, _recving.buff + usedIndex, ret.second);
-				if (!bOrgReturn)
+				bool preCheck = MessageDispatcher::getRef().dispatchPreSessionMessage(_sessionID, _recving.buff + usedIndex, ret.second);
+				if (!preCheck)
 				{
 					LCW("Dispatch Message failed. ");
-					continue;
 				}
-				ReadStream rs(_recving.buff + usedIndex, ret.second);
-				ProtoID protoID = rs.getProtoID();
-				MessageDispatcher::getRef().dispatchSessionMessage(_sessionID, protoID, rs);
+				else
+				{
+					ReadStream rs(_recving.buff + usedIndex, ret.second);
+					ProtoID protoID = rs.getProtoID();
+					MessageDispatcher::getRef().dispatchSessionMessage(_sessionID, protoID, rs);
+				}
 			}
 			catch (std::runtime_error e)
 			{

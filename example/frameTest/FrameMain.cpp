@@ -144,7 +144,11 @@ void startServer()
 		SessionManager::getRef().sendSessionData(sID, _ResultID, content.c_str(), (unsigned int)content.length() + 1);
 
 		//! step 3 stop server after 1 second.
-		SessionManager::getRef().createTimer(1000, [](){SessionManager::getRef().stop(); });
+		SessionManager::getRef().createTimer(1000, [](){
+			SessionManager::getRef().stopAccept();
+			SessionManager::getRef().kickAllClients();
+			SessionManager::getRef().kickAllConnect();
+			SessionManager::getRef().stop(); });
 	};
 
 	MessageDispatcher::getRef().registerSessionMessage(_RequestID, msg_RequestSequence_fun); //!register message for protoID: _RequestSequence
@@ -177,6 +181,9 @@ void startClient()
 		std::string content = rs.getStreamBody();
 		LOGI("recv ConnectorID = " << cID << ", content = " << content);
 		//! step 3 stop server
+		SessionManager::getRef().stopAccept();
+		SessionManager::getRef().kickAllClients();
+		SessionManager::getRef().kickAllConnect();
 		SessionManager::getRef().stop();
 	};
 

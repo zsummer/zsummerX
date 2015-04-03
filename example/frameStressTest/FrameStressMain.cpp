@@ -319,6 +319,9 @@ public:
 void sigFun(int sig)
 {
 	SessionManager::getRef().stop();
+	SessionManager::getRef().post(std::bind(&SessionManager::stopAccept, SessionManager::getPtr()));
+	SessionManager::getRef().post(std::bind(&SessionManager::kickAllClients, SessionManager::getPtr()));
+	SessionManager::getRef().post(std::bind(&SessionManager::kickAllConnect, SessionManager::getPtr()));
 }
 
 int main(int argc, char* argv[])

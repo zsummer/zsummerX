@@ -153,7 +153,16 @@ void TcpSession::onConnected(zsummer::network::ErrorCode ec, const std::pair<Con
 		return;
 	}
 	LCI("onConnected success.  config=" << config.first);
-	
+	SessionManager::getRef().onConnect(_sessionID, true, shared_from_this());
+	if (_sending.bufflen == 0 && !_sendque.empty())
+	{
+		MessagePack *tmp = _sendque.front();
+		_sendque.pop();
+		doSend(tmp->buff, tmp->bufflen);
+		tmp->bufflen = 0;
+		_freeCache.push(tmp);
+	}
+
 	if (!doRecv())
 	{
 		onClose();
@@ -165,16 +174,7 @@ void TcpSession::onConnected(zsummer::network::ErrorCode ec, const std::pair<Con
 	}
 	
 	
-	//用户在该回调中发送的第一包会跑到发送堆栈的栈顶.
-	SessionManager::getRef().onConnect(_sessionID, true, shared_from_this());
-	if (_sending.bufflen == 0 && !_sendque.empty())
-	{
-		MessagePack *tmp = _sendque.front();
-		_sendque.pop();
-		doSend(tmp->buff, tmp->bufflen);
-		tmp->bufflen = 0;
-		_freeCache.push(tmp);
-	}
+
 }
 
 bool TcpSession::doRecv()

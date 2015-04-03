@@ -60,40 +60,41 @@ bool SessionManager::start()
 	{
 		return false;
 	}
-	_running = true;
 	return true;
 }
 
 void SessionManager::stop()
 {
-	post(std::bind(&SessionManager::safeStop, this));
-}
-
-void SessionManager::safeStop()
-{
 	_running = false;
+}
 
-	//at first close the session from accept.
-	_onlineConnectCounts = 0;
-	for (auto m : _mapTcpSessionPtr)
+void SessionManager::stopAccept()
+{
+	_openAccept = false;
+}
+
+void SessionManager::kickAllClients()
+{
+	for (auto kv : _mapTcpSessionPtr)
 	{
-		if (isConnectID(m.first))
+		if (isSessionID(kv.first))
 		{
-			_mapConnectorConfig[m.first].second._curReconnectCount = -1;
-			_onlineConnectCounts++;
-			continue;
-		}
-		m.second->close();
-	}
-	//if only have the connect session then close all.
-	if (_mapTcpSessionPtr.size() == _onlineConnectCounts)
-	{
-		for (auto m : _mapTcpSessionPtr)
-		{
-			m.second->close();
+			kickSession(kv.first);
 		}
 	}
 }
+
+void SessionManager::kickAllConnect()
+{
+	for (auto kv : _mapTcpSessionPtr)
+	{
+		if (isConnectID(kv.first))
+		{
+			kickSession(kv.first);
+		}
+	}
+}
+
 
 void SessionManager::run()
 {
@@ -149,7 +150,7 @@ AccepterID SessionManager::getAccepterID(SessionID sID)
 
 void SessionManager::onAcceptNewClient(zsummer::network::ErrorCode ec, const TcpSocketPtr& s, const TcpAcceptPtr &accepter, AccepterID aID)
 {
-	if (!_running)
+	if (!_running || ! _openAccept)
 	{
 		LCI("shutdown accepter. aID=" << aID);
 		return;
@@ -233,7 +234,7 @@ void SessionManager::onAcceptNewClient(zsummer::network::ErrorCode ec, const Tcp
 		if (session->bindTcpSocketPrt(s, aID, _lastSessionID, iter->second.first))
 		{
 			_mapTcpSessionPtr[_lastSessionID] = session;
-			post(std::bind(&MessageDispatcher::dispatchOnSessionEstablished, &MessageDispatcher::getRef(), _lastSessionID));
+			MessageDispatcher::getRef().dispatchOnSessionEstablished(_lastSessionID);
 		}
 	}
 	
@@ -263,10 +264,6 @@ void SessionManager::onSessionClose(AccepterID aID, SessionID sID)
 	_mapAccepterConfig[aID].second._currentLinked--;
 	_mapTcpSessionPtr.erase(sID);
 	MessageDispatcher::getRef().dispatchOnSessionDisconnect(sID);
-	if (!_running && _mapTcpSessionPtr.size() <= _onlineConnectCounts)
-	{
-		createTimer(1000, std::bind(&SessionManager::safeStop, SessionManager::getPtr()));
-	}
 }
 
 
@@ -296,7 +293,7 @@ void SessionManager::onConnect(SessionID cID, bool bConnected, const TcpSessionP
 	{
 		_mapTcpSessionPtr[cID] = session;
 		config->second.second._curReconnectCount = 0;
-		post(std::bind(&MessageDispatcher::dispatchOnSessionEstablished, &MessageDispatcher::getRef(), cID));
+		MessageDispatcher::getRef().dispatchOnSessionEstablished(cID);
 		return;
 	}
 

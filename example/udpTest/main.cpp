@@ -76,7 +76,7 @@ void doSend(const char *remoteIP, unsigned short remotePort, unsigned short prot
 	g_totalSend++;
 };
 
-void onRecv(ErrorCode ec, const char *remoteIP, unsigned short remotePort, int translate, PicnicPtr pic)
+void onRecv(NetErrorCode ec, const char *remoteIP, unsigned short remotePort, int translate, PicnicPtr pic)
 {
 	if (ec)
 	{

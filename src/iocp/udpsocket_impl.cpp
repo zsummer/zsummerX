@@ -204,11 +204,11 @@ bool UdpSocket::onIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned char 
 		
 		if (bSuccess && dwTranceCount > 0)
 		{
-			onRecv(EC_SUCCESS, inet_ntoa(_recvFrom.sin_addr), ntohs(_recvFrom.sin_port), dwTranceCount);
+			onRecv(NEC_SUCCESS, inet_ntoa(_recvFrom.sin_addr), ntohs(_recvFrom.sin_port), dwTranceCount);
 		}
 		else
 		{
-			onRecv(EC_ERROR, "0.0.0.0", 0,0);
+			onRecv(NEC_ERROR, "0.0.0.0", 0,0);
 		}
 	}
 	return true;

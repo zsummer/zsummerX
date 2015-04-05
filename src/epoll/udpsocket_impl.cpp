@@ -193,7 +193,7 @@ bool UdpSocket::onEPOLLMessage(int type, int flag)
 			_OnRecvFromHandler onRecv(std::move(_onRecvFromHandler));
 			_pRecvBuf = nullptr;
 			_iRecvLen = 0;
-			onRecv(EC_ERROR, "", 0, 0);
+			onRecv(NEC_ERROR, "", 0, 0);
 		}
 		return false;
 	}
@@ -219,17 +219,17 @@ bool UdpSocket::onEPOLLMessage(int type, int flag)
 		if (ret == 0 || (ret ==-1 && (errno !=EAGAIN && errno != EWOULDBLOCK)) )
 		{
 			LCE("UdpSocket::onEPOLLMessage[this0x" << this << "] recv error.  _register=" << _register << ", ret=" << ret << ", errno=" << strerror(errno));
-			onRecv(EC_ERROR, "", 0, 0);
+			onRecv(NEC_ERROR, "", 0, 0);
 			return false;
 		}
 		if (ret == -1)
 		{
 			LCE("UdpSocket::onEPOLLMessage[this0x" << this << "] recv error.  _register=" << _register << ", ret=" << ret << ", errno=" << strerror(errno));
-			onRecv(EC_ERROR, "", 0, 0);
+			onRecv(NEC_ERROR, "", 0, 0);
 			return false;
 		}
 
-		onRecv(EC_SUCCESS, inet_ntoa(raddr.sin_addr), ntohs(raddr.sin_port), ret);
+		onRecv(NEC_SUCCESS, inet_ntoa(raddr.sin_addr), ntohs(raddr.sin_port), ret);
 	}
 	
 	

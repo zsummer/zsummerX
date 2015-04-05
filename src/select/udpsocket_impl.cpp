@@ -200,17 +200,17 @@ bool UdpSocket::onSelectMessage(int type, bool rd, bool wt)
 		if (ret == 0 || (ret ==-1 && !IS_WOULDBLOCK) )
 		{
 			LCE("UdpSocket::onSelectMessage[this0x" << this << "] recv error.  _register=" << _register << ", ret=" << ret << ", " << OSTREAM_GET_LASTERROR);
-			onRecv(EC_ERROR, "", 0, 0);
+			onRecv(NEC_ERROR, "", 0, 0);
 			return false;
 		}
 		if (ret == -1)
 		{
 			LCE("UdpSocket::onSelectMessage[this0x" << this << "] recv error.  _register=" << _register << ", ret=" << ret << ", " << OSTREAM_GET_LASTERROR);
-			onRecv(EC_ERROR, "", 0, 0);
+			onRecv(NEC_ERROR, "", 0, 0);
 			return false;
 		}
 
-		onRecv(EC_SUCCESS, inet_ntoa(raddr.sin_addr), ntohs(raddr.sin_port), ret);
+		onRecv(NEC_SUCCESS, inet_ntoa(raddr.sin_addr), ntohs(raddr.sin_port), ret);
 	}
 	
 	

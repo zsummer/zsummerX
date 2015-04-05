@@ -89,7 +89,7 @@ void signalFun(int sig)
 	}
 }
 
-void OnSocketSend(ErrorCode ec, int recvLength)
+void OnSocketSend(NetErrorCode ec, int recvLength)
 {
 	if (ec)
 	{
@@ -103,9 +103,9 @@ void OnSocketSend(ErrorCode ec, int recvLength)
 	return;
 };
 
-void OnServerSocketRecv(ErrorCode ec, int recvLength)
+void OnServerSocketRecv(NetErrorCode ec, int recvLength)
 {
-	if (ec != EC_SUCCESS)
+	if (ec != NEC_SUCCESS)
 	{
 		return;
 	}
@@ -125,9 +125,9 @@ void OnServerSocketRecv(ErrorCode ec, int recvLength)
 };
 
 
-void OnAcceptSocket(ErrorCode ec, TcpSocketPtr s)
+void OnAcceptSocket(NetErrorCode ec, TcpSocketPtr s)
 {
-	if (ec != EC_SUCCESS)
+	if (ec != NEC_SUCCESS)
 	{
 		g_runing = false;
 		return;
@@ -149,9 +149,9 @@ void SendOneMsg()
 		usedSocket->doSend(sendBuffer, sendBufferLen, std::bind(OnSocketSend, std::placeholders::_1, std::placeholders::_2));// safe-warning: one socket can't concurrent call this method without wait callback. 
 	}
 }
-void OnClientSocektRecv(ErrorCode ec, int recvLength)
+void OnClientSocektRecv(NetErrorCode ec, int recvLength)
 {
-	if (ec != EC_SUCCESS)
+	if (ec != NEC_SUCCESS)
 	{
 		g_runing = false;
 		return;
@@ -163,9 +163,9 @@ void OnClientSocektRecv(ErrorCode ec, int recvLength)
 };
 
 
-void onConnect(ErrorCode ec)
+void onConnect(NetErrorCode ec)
 {
-	if (ec != EC_SUCCESS)
+	if (ec != NEC_SUCCESS)
 	{
 		LOGE("connect error");
 		g_runing = false;

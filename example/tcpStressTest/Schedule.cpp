@@ -113,7 +113,7 @@ void CSchedule::doConnect(unsigned int maxClient)
 		}
 	}
 }
-void CSchedule::OnAccept(zsummer::network::ErrorCode ec, TcpSocketPtr sockptr)
+void CSchedule::OnAccept(zsummer::network::NetErrorCode ec, TcpSocketPtr sockptr)
 {
 	if (ec)
 	{

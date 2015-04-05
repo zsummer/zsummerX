@@ -263,7 +263,7 @@ bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler)
 void TcpSocket::onEPOLLMessage(int flag, bool err)
 {
 	unsigned char linkstat = _register._linkstat;
-	ErrorCode ec = EC_ERROR;
+	NetErrorCode ec = NEC_ERROR;
 
 	if (!_onRecvHandler && !_onSendHandler && linkstat != LS_WAITLINK)
 	{
@@ -281,14 +281,14 @@ void TcpSocket::onEPOLLMessage(int flag, bool err)
 			_register._event.events = /*EPOLLONESHOT*/ 0;
 			_summer->registerEvent(EPOLL_CTL_MOD, _register);
 			_register._linkstat = LS_ESTABLISHED;
-			onConnect(EC_SUCCESS);
+			onConnect(NEC_SUCCESS);
 			return;
 		}
 		else 
 		{
 			_register._linkstat = LS_WAITLINK;
 			_summer->registerEvent(EPOLL_CTL_DEL, _register);
-			onConnect(EC_ERROR);
+			onConnect(NEC_ERROR);
 			return;
 		}
 		return ;
@@ -307,7 +307,7 @@ void TcpSocket::onEPOLLMessage(int flag, bool err)
 		if (ret == 0 || 
 			(ret == -1 && (errno != EAGAIN && errno != EWOULDBLOCK)) || err)
 		{
-			ec = EC_REMOTE_CLOSED;
+			ec = NEC_REMOTE_CLOSED;
 			_register._linkstat = LS_CLOSED;
 			if (_onRecvHandler)
 			{
@@ -328,7 +328,7 @@ void TcpSocket::onEPOLLMessage(int flag, bool err)
 			_OnRecvHandler onRecv(std::move(_onRecvHandler));
 			_pRecvBuf = NULL;
 			_iRecvLen = 0;
-			onRecv(EC_SUCCESS,ret);
+			onRecv(NEC_SUCCESS,ret);
 		}
 	}
 	else if (flag & EPOLLOUT && _onSendHandler)
@@ -344,7 +344,7 @@ void TcpSocket::onEPOLLMessage(int flag, bool err)
 		
 		if ((ret == -1 && (errno != EAGAIN && errno != EWOULDBLOCK)) || _register._linkstat == LS_CLOSED || err)
 		{
-			ec = EC_ERROR;
+			ec = NEC_ERROR;
 			_register._linkstat = LS_CLOSED;
 			_onSendHandler = nullptr;
 			if (!_onSendHandler && !_onRecvHandler)
@@ -361,7 +361,7 @@ void TcpSocket::onEPOLLMessage(int flag, bool err)
 			_OnSendHandler onSend(std::move(_onSendHandler));
 			_pSendBuf = NULL;
 			_iSendLen = 0;
-			onSend(EC_SUCCESS, ret);
+			onSend(NEC_SUCCESS, ret);
 		}
 	}
 	return ;

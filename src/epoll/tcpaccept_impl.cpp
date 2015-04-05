@@ -183,7 +183,7 @@ void TcpAccept::onEPOLLMessage(bool bSuccess)
 	if (!bSuccess)
 	{
 		LCF("TcpAccept::doAccept[this0x" << this << "]  EPOLLERR, errno=" << strerror(errno) << logSection());
-		onAccept(EC_ERROR, ps);
+		onAccept(NEC_ERROR, ps);
 		return ;
 	}
 	else
@@ -198,12 +198,12 @@ void TcpAccept::onEPOLLMessage(bool bSuccess)
 			{
 				LCE("TcpAccept::doAccept[this0x" << this << "] ERR: accept return -1, errno=" << strerror(errno) << logSection());
 			}
-			onAccept(EC_ERROR, ps);
+			onAccept(NEC_ERROR, ps);
 			return ;
 		}
 
 		ps->attachSocket(s,inet_ntoa(cltaddr.sin_addr), ntohs(cltaddr.sin_port));
-		onAccept(EC_SUCCESS, ps);
+		onAccept(NEC_SUCCESS, ps);
 	}
 	return ;
 }

@@ -148,7 +148,7 @@ AccepterID SessionManager::getAccepterID(SessionID sID)
 }
 
 
-void SessionManager::onAcceptNewClient(zsummer::network::ErrorCode ec, const TcpSocketPtr& s, const TcpAcceptPtr &accepter, AccepterID aID)
+void SessionManager::onAcceptNewClient(zsummer::network::NetErrorCode ec, const TcpSocketPtr& s, const TcpAcceptPtr &accepter, AccepterID aID)
 {
 	if (!_running || ! _openAccept)
 	{

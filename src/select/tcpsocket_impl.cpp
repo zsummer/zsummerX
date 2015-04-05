@@ -275,7 +275,7 @@ bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler)
 void TcpSocket::onSelectMessage(bool rd, bool wt, bool err)
 {
 	unsigned char linkstat = _register._linkstat;
-	ErrorCode ec = EC_ERROR;
+	NetErrorCode ec = NEC_ERROR;
 
 	if (!_onRecvHandler && !_onSendHandler && !_onConnectHandler)
 	{
@@ -294,7 +294,7 @@ void TcpSocket::onSelectMessage(bool rd, bool wt, bool err)
 			LOGT("onConnect False. " << OSTREAM_GET_LASTERROR);
 			_register._linkstat = LS_WAITLINK;
 			_summer->registerEvent(2, _register);
-			onConnect(EC_ERROR);
+			onConnect(NEC_ERROR);
 			return;
 		}
 		else
@@ -302,7 +302,7 @@ void TcpSocket::onSelectMessage(bool rd, bool wt, bool err)
 			_register._wt =  0;
 			_summer->registerEvent(1, _register);
 			_register._linkstat = LS_ESTABLISHED;
-			onConnect(EC_SUCCESS);
+			onConnect(NEC_SUCCESS);
 			return;
 		}
 		return ;
@@ -321,7 +321,7 @@ void TcpSocket::onSelectMessage(bool rd, bool wt, bool err)
 		}
 		if (ret == 0 || (ret == -1 && !IS_WOULDBLOCK))
 		{
-			ec = EC_ERROR;
+			ec = NEC_ERROR;
 			_register._linkstat = LS_CLOSED;
 			if (rd && _onRecvHandler)
 			{
@@ -342,7 +342,7 @@ void TcpSocket::onSelectMessage(bool rd, bool wt, bool err)
 			_OnRecvHandler onRecv(std::move(_onRecvHandler));
 			_pRecvBuf = NULL;
 			_iRecvLen = 0;
-			onRecv(EC_SUCCESS,ret);
+			onRecv(NEC_SUCCESS,ret);
 		}
 		return;
 	}
@@ -359,7 +359,7 @@ void TcpSocket::onSelectMessage(bool rd, bool wt, bool err)
 		
 		if ((ret == -1 && !IS_WOULDBLOCK) || _register._linkstat == LS_CLOSED)
 		{
-			ec = EC_ERROR;
+			ec = NEC_ERROR;
 			_register._linkstat = LS_CLOSED;
 			_onSendHandler = nullptr;
 			if (!_onSendHandler && !_onRecvHandler)
@@ -376,7 +376,7 @@ void TcpSocket::onSelectMessage(bool rd, bool wt, bool err)
 			_OnSendHandler onSend(std::move(_onSendHandler));
 			_pSendBuf = NULL;
 			_iSendLen = 0;
-			onSend(EC_SUCCESS, ret);
+			onSend(NEC_SUCCESS, ret);
 		}
 	}
 	return ;

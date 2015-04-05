@@ -307,13 +307,13 @@ void TcpSocket::onIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned char 
 					LCW("TcpSocket::onIOCPMessage[" << this << "] setsockopt TCP_NODELAY fail!  last err=" << WSAGetLastError() << getTcpSocketStatus());
 				}
 			}
-			onConnect(ErrorCode::EC_SUCCESS);
+			onConnect(NetErrorCode::NEC_SUCCESS);
 		}
 		else
 		{
 			closesocket(_socket);
 			_socket = INVALID_SOCKET;
-			onConnect(ErrorCode::EC_ERROR);
+			onConnect(NetErrorCode::NEC_ERROR);
 		}
 		return ;
 	}
@@ -331,7 +331,7 @@ void TcpSocket::onIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned char 
 		{
 			return;
 		}
-		onSend(ErrorCode::EC_SUCCESS, dwTranceCount);
+		onSend(NetErrorCode::NEC_SUCCESS, dwTranceCount);
 		return;
 	}
 	else if (cType == tagReqHandle::HANDLE_RECV)
@@ -346,16 +346,16 @@ void TcpSocket::onIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned char 
 		if (!bSuccess)
 		{
 			_nLinkStatus = LS_CLOSED;
-			onRecv(ErrorCode::EC_REMOTE_HANGUP, dwTranceCount);
+			onRecv(NetErrorCode::NEC_REMOTE_HANGUP, dwTranceCount);
 			return;
 		}
 		else if (dwTranceCount == 0)
 		{
 			_nLinkStatus = LS_CLOSED;
-			onRecv(ErrorCode::EC_REMOTE_CLOSED, dwTranceCount);
+			onRecv(NetErrorCode::NEC_REMOTE_CLOSED, dwTranceCount);
 			return;
 		}
-		onRecv(ErrorCode::EC_SUCCESS, dwTranceCount);
+		onRecv(NetErrorCode::NEC_SUCCESS, dwTranceCount);
 		return;
 	}
 

@@ -196,12 +196,12 @@ bool TcpAccept::onIOCPMessage(BOOL bSuccess)
 		int tmp2 = 0;
 		GetAcceptExSockaddrs(_recvBuf, _recvLen, sizeof(SOCKADDR_IN)+16, sizeof(SOCKADDR_IN)+16, &paddr1, &tmp1, &paddr2, &tmp2);
 		_client->attachSocket(_socket, inet_ntoa(((sockaddr_in*)paddr2)->sin_addr), ntohs(((sockaddr_in*)paddr2)->sin_port));
-		onAccept(EC_SUCCESS, _client);
+		onAccept(NEC_SUCCESS, _client);
 	}
 	else
 	{
 		LCW("Accept Fail,  retry doAccept ... ip=" << _ip << ", port=" << _port << ", lastError=" << GetLastError());
-		onAccept(EC_ERROR, _client);
+		onAccept(NEC_ERROR, _client);
 	}
 	return true;
 }

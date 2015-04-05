@@ -191,7 +191,7 @@ void TcpAccept::onSelectMessage()
 		{
 			LCE("TcpAccept::onSelectMessage[this0x" << this << "] ERR: accept return -1, " OSTREAM_GET_LASTERROR << AcceptSection());
 		}
-		onAccept(EC_ERROR, ps);
+		onAccept(NEC_ERROR, ps);
 		return ;
 	}
 
@@ -199,7 +199,7 @@ void TcpAccept::onSelectMessage()
 	setNoDelay(s);
 
 	ps->attachSocket(s,inet_ntoa(cltaddr.sin_addr), ntohs(cltaddr.sin_port));
-	onAccept(EC_SUCCESS, ps);
+	onAccept(NEC_SUCCESS, ps);
 	
 	return ;
 }

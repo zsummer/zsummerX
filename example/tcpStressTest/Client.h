@@ -51,10 +51,10 @@ public:
 	~CClient();
 	void initialize();
 private:
-	void onConnected(zsummer::network::ErrorCode ec);
+	void onConnected(zsummer::network::NetErrorCode ec);
 
 	void doRecv();
-	void onRecv(zsummer::network::ErrorCode ec, int nRecvedLen);
+	void onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen);
 	void MessageEntry(zsummer::proto4z::ReadStream & rs);
 
 
@@ -62,7 +62,7 @@ private:
 	void SendOnce();
 	void doSend(unsigned short protoID, unsigned long long clientTick, const std::string & text);
 	void doSend(char *buf, unsigned short len);
-	void onSend(zsummer::network::ErrorCode ec,  int nSentLen);
+	void onSend(zsummer::network::NetErrorCode ec,  int nSentLen);
 
 	
 	void onClose();

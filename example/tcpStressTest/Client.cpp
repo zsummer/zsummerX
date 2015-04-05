@@ -97,7 +97,7 @@ void CClient::SendOnce()
 	}
 }
 
-void CClient::onConnected(zsummer::network::ErrorCode ec)
+void CClient::onConnected(zsummer::network::NetErrorCode ec)
 {
 	if (ec)
 	{
@@ -128,7 +128,7 @@ void CClient::doRecv()
 	}
 }
 
-void CClient::onRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
+void CClient::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
 {
 	if (ec)
 	{
@@ -242,7 +242,7 @@ void CClient::doSend(char *buf, unsigned short len)
 }
 
 
-void CClient::onSend(zsummer::network::ErrorCode ec,  int nSentLen)
+void CClient::onSend(zsummer::network::NetErrorCode ec,  int nSentLen)
 {
 	if (ec)
 	{

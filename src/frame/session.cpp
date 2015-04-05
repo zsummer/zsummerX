@@ -142,7 +142,7 @@ void TcpSession::bindTcpConnectorPtr(const TcpSocketPtr &sockptr, const std::pai
 
 
 
-void TcpSession::onConnected(zsummer::network::ErrorCode ec, const std::pair<ConnectConfig, ConnectInfo> & config)
+void TcpSession::onConnected(zsummer::network::NetErrorCode ec, const std::pair<ConnectConfig, ConnectInfo> & config)
 {
 	if (ec)
 	{
@@ -193,7 +193,7 @@ void TcpSession::close()
 	}
 }
 
-void TcpSession::onRecv(zsummer::network::ErrorCode ec, int nRecvedLen)
+void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
 {
 	if (ec)
 	{
@@ -376,7 +376,7 @@ void TcpSession::doSend(const char *buf, unsigned int len)
 }
 
 
-void TcpSession::onSend(zsummer::network::ErrorCode ec, int nSentLen)
+void TcpSession::onSend(zsummer::network::NetErrorCode ec, int nSentLen)
 {
 	if (ec)
 	{

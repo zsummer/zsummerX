@@ -52,7 +52,7 @@ public:
 	//! 线程
 	void run();
 
-	void OnAccept(zsummer::network::ErrorCode ec, TcpSocketPtr sockptr);
+	void OnAccept(zsummer::network::NetErrorCode ec, TcpSocketPtr sockptr);
 
 	void doConnect(unsigned int maxClient);
 

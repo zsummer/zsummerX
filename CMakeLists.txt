@@ -56,4 +56,16 @@ add_subdirectory(depends)
 add_subdirectory(g++)
 add_subdirectory(example)
 
+install_files(lib ${DEP_LOG4Z_LIB_DIR}/*.a)
+install_files(lib ${ZSUMMERX_LIB_DIR}/*.a)
+install(FILES ${DEP_LOG4Z_INC_DIR}/log4z/log4z.h ${DEP_LOG4Z_INC_DIR}/log4z/COPYRIGHT DESTINATION include/log4z)
+install(FILES ${DEP_PROTO4Z_INC_DIR}/proto4z/proto4z.h ${DEP_PROTO4Z_INC_DIR}/proto4z/COPYRIGHT ${DEP_PROTO4Z_INC_DIR}/proto4z/proto4z.lua DESTINATION include/proto4z)
+install(FILES ${DEP_PROTO4Z_INC_DIR}/rc4/rc4_encryption.h DESTINATION include/rc4)
+install(DIRECTORY ${ZSUMMERX_INC_DIR}/zsummerX DESTINATION include)
+install(FILES ${zsummerX_SOURCE_DIR}/COPYRIGHT DESTINATION include/zsummerX)
+
+
+#cmake . -DCMAKE_INSTALL_PREFIX=/Users/zhangyawei/Documents/github/breeze
+#make
+#make install
 

@@ -9,7 +9,7 @@
  * 
  * ===============================================================================
  * 
- * Copyright (C) 2010-2014 YaweiZhang <yawei_zhang@foxmail.com>.
+ * Copyright (C) 2010-2015 YaweiZhang <yawei_zhang@foxmail.com>.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -60,16 +60,21 @@ unsigned int   g_intervalMs = 0; // if start client with flood test, it's floodi
 std::string g_testStr;
 
 //!statistic 
-unsigned long long g_totalEchoCount = 0;
-unsigned long long g_lastEchoCount = 0;
-unsigned long long g_totalSendCount = 0;
-unsigned long long g_totalRecvCount = 0;
+unsigned long long g_lastSendMessages = 0;
+unsigned long long g_lastSendBytes = 0;
+unsigned long long g_lastRecvCount = 0;
+unsigned long long g_lastRecvMessages = 0;
 //!statistic monitor
 void MonitorFunc()
 {
-	LOGI("per seconds Echos Count=" << (g_totalEchoCount - g_lastEchoCount) / 5
-		<< ", g_totalSendCount[" << g_totalSendCount << "] g_totalRecvCount[" << g_totalRecvCount << "]");
-	g_lastEchoCount = g_totalEchoCount;
+	LOGI("echos message=" << (SessionManager::getRef()._totalSendMessages - g_lastSendMessages) / 5
+		<< "n/s, send data " << (SessionManager::getRef()._totalSendBytes - g_lastSendBytes)/ 5 
+		<< "byte/s, recv count " << (SessionManager::getRef()._totalRecvCount - g_lastRecvCount) / 5 
+		<< "n/s, recv messages " << (SessionManager::getRef()._totalRecvMessages - g_lastRecvMessages) / 5);
+	g_lastSendMessages = SessionManager::getRef()._totalSendMessages;
+	g_lastSendBytes = SessionManager::getRef()._totalSendBytes;
+	g_lastRecvCount = SessionManager::getRef()._totalRecvCount;
+	g_lastRecvMessages = SessionManager::getRef()._totalRecvMessages;
 	SessionManager::getRef().createTimer(5000, MonitorFunc);
 };
 
@@ -87,10 +92,9 @@ public:
 			std::placeholders::_1));
 		MessageDispatcher::getRef().registerOnSessionPulse(std::bind(&CHeartbeatManager::OnSessionPulse, this,
 			std::placeholders::_1, std::placeholders::_2));
-		MessageDispatcher::getRef().registerSessionMessage(ID_C2S_Pulse, std::bind(&CHeartbeatManager::OnMsgPulse, this,
+		MessageDispatcher::getRef().registerSessionMessage(ID_Pulse, std::bind(&CHeartbeatManager::OnMsgPulse, this,
 			std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-		MessageDispatcher::getRef().registerSessionMessage(ID_S2C_Pulse, std::bind(&CHeartbeatManager::OnMsgPulse, this,
-			std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+
 	}
 	
 
@@ -106,7 +110,7 @@ public:
 	void OnSessionEstablished(SessionID sID)
 	{
 		_sessionPulse[sID] = time(NULL);
-		LOGI("OnSessionEstablished. sID=" << sID);
+		LOGI("OnSessionEstablished. sID=" << sID << ", remoteIP=" << SessionManager::getRef().getRemoteIP(sID) << ", remotePort=" << SessionManager::getRef().getRemotePort(sID));
 	}
 
 	void OnSessionPulse(SessionID sID, unsigned int pulseInterval)
@@ -127,12 +131,12 @@ public:
 
 		if (isConnectID(sID))
 		{
-			WriteStream pack(ID_C2S_Pulse);
+			WriteStream pack(ID_Pulse);
 			SessionManager::getRef().sendOrgSessionData(sID, pack.getStream(), pack.getStreamLen());
 		}
 		else
 		{
-			WriteStream pack(ID_S2C_Pulse);
+			WriteStream pack(ID_Pulse);
 			SessionManager::getRef().sendOrgSessionData(sID, pack.getStream(), pack.getStreamLen());
 		}
 	}
@@ -159,9 +163,9 @@ public:
 	CStressClientHandler()
 	{
 		MessageDispatcher::getRef().registerOnSessionEstablished(std::bind(&CStressClientHandler::onConnected, this, std::placeholders::_1));
-		MessageDispatcher::getRef().registerSessionMessage(ID_P2P_EchoPack,
+		MessageDispatcher::getRef().registerSessionMessage(ID_EchoPack,
 			std::bind(&CStressClientHandler::msg_ResultSequence_fun, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-		MessageDispatcher::getRef().registerSessionMessage(ID_P2P_EchoPack,
+		MessageDispatcher::getRef().registerSessionMessage(ID_EchoPack,
 			std::bind(&CStressClientHandler::looker_ResultSequence_fun, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 		MessageDispatcher::getRef().registerOnSessionDisconnect(std::bind(&CStressClientHandler::OnConnectDisconnect, this, std::placeholders::_1));
 	}
@@ -169,8 +173,8 @@ public:
 	void onConnected (SessionID cID)
 	{
 		LOGI("onConnected. ConnectorID=" << cID );
-		WriteStream ws(ID_P2P_EchoPack);
-		P2P_EchoPack pack;
+		WriteStream ws(ID_EchoPack);
+		EchoPack pack;
 		TestIntegerData idata;
 		idata._char = 'a';
 		idata._uchar = 100;
@@ -204,7 +208,6 @@ public:
 		pack._smap.insert(std::make_pair("623", sdata));
 		ws << pack;
 		SessionManager::getRef().sendOrgSessionData(cID, ws.getStream(), ws.getStreamLen());
-		g_totalSendCount++;
 		if (g_sendType != 0 && g_intervalMs > 0)
 		{
 			SessionManager::getRef().createTimer(g_intervalMs, std::bind(&CStressClientHandler::SendFunc, this, cID));
@@ -218,18 +221,14 @@ public:
 
 	void msg_ResultSequence_fun(SessionID cID, ProtoID pID, ReadStream & rs)
 	{
-		P2P_EchoPack pack;
+		EchoPack pack;
 		rs >> pack;
-
-		g_totalRecvCount++;
-		g_totalEchoCount++;
 
 		if (g_sendType == 0 || g_intervalMs == 0) //echo send
 		{
-			WriteStream ws(ID_P2P_EchoPack);
+			WriteStream ws(ID_EchoPack);
 			ws << pack;
 			SessionManager::getRef().sendOrgSessionData(cID, ws.getStream(), ws.getStreamLen());
-			g_totalSendCount++;
 		}
 	};
 	void looker_ResultSequence_fun(SessionID cID, ProtoID pID, ReadStream & rs)
@@ -240,10 +239,10 @@ public:
 	};
 	void SendFunc(SessionID cID)
 	{
-		if (g_totalSendCount - g_totalRecvCount < 10000)
+		if (SessionManager::getRef()._totalSendMessages - SessionManager::getRef()._totalRecvMessages < 10000)
 		{
-			WriteStream ws(ID_P2P_EchoPack);
-			P2P_EchoPack pack;
+			WriteStream ws(ID_EchoPack);
+			EchoPack pack;
 			TestIntegerData idata;
 			idata._char = 'a';
 			idata._uchar = 100;
@@ -277,7 +276,6 @@ public:
 			pack._smap.insert(std::make_pair("623", sdata));
 			ws << pack;
 			SessionManager::getRef().sendOrgSessionData(cID, ws.getStream(), ws.getStreamLen());
-			g_totalSendCount++;
 		}
 		if (_sessionStatus[cID])
 		{
@@ -298,20 +296,17 @@ class CStressServerHandler
 public:
 	CStressServerHandler()
 	{
-		MessageDispatcher::getRef().registerSessionMessage(ID_P2P_EchoPack,
+		MessageDispatcher::getRef().registerSessionMessage(ID_EchoPack,
 			std::bind(&CStressServerHandler::msg_RequestSequence_fun, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	}
 
 	void msg_RequestSequence_fun (SessionID sID, ProtoID pID, ReadStream & rs)
 	{
-		P2P_EchoPack pack;
+		EchoPack pack;
 		rs >> pack;
-		WriteStream ws(ID_P2P_EchoPack);
+		WriteStream ws(ID_EchoPack);
 		ws << pack;
 		SessionManager::getRef().sendOrgSessionData(sID, ws.getStream(), ws.getStreamLen());
-		g_totalEchoCount++;
-		g_totalSendCount++;
-		g_totalRecvCount++;
 	};
 };
 

@@ -72,6 +72,7 @@ namespace zsummer
 			void doSend(const char *buf, unsigned int len);
 			void close();
 			SessionID GetAcceptID(){ return _acceptID; }
+			bool getPeerInfo(std::string& remoteIP, unsigned short &remotePort);
 		private:
 			void cleanSession(bool isCleanAllData, const std::string &rc4TcpEncryption);
 

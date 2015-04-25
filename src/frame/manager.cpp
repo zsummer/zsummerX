@@ -55,11 +55,11 @@ SessionManager::SessionManager()
 
 bool SessionManager::start()
 {
-	
 	if (!_summer->initialize())
 	{
 		return false;
 	}
+	_openTime = time(NULL);
 	return true;
 }
 
@@ -234,6 +234,7 @@ void SessionManager::onAcceptNewClient(zsummer::network::NetErrorCode ec, const 
 		if (session->bindTcpSocketPrt(s, aID, _lastSessionID, iter->second.first))
 		{
 			_mapTcpSessionPtr[_lastSessionID] = session;
+			_totalAcceptCount++;
 			MessageDispatcher::getRef().dispatchOnSessionEstablished(_lastSessionID);
 		}
 	}
@@ -246,7 +247,38 @@ void SessionManager::onAcceptNewClient(zsummer::network::NetErrorCode ec, const 
 
 
 
-
+std::string SessionManager::getRemoteIP(SessionID sID)
+{
+	auto founder = _mapTcpSessionPtr.find(sID);
+	if (founder == _mapTcpSessionPtr.end())
+	{
+		return "closed session";
+	}
+	else
+	{
+		std::string ip;
+		unsigned short port;
+		founder->second->getPeerInfo(ip, port);
+		return ip;
+	}
+	return "";
+}
+unsigned short SessionManager::getRemotePort(SessionID sID)
+{
+	auto founder = _mapTcpSessionPtr.find(sID);
+	if (founder == _mapTcpSessionPtr.end())
+	{
+		return -1;
+	}
+	else
+	{
+		std::string ip;
+		unsigned short port;
+		founder->second->getPeerInfo(ip, port);
+		return port;
+	}
+	return 0;
+}
 
 void SessionManager::kickSession(SessionID sID)
 {
@@ -263,6 +295,7 @@ void SessionManager::onSessionClose(AccepterID aID, SessionID sID)
 {
 	_mapAccepterConfig[aID].second._currentLinked--;
 	_mapTcpSessionPtr.erase(sID);
+	_totalAcceptClosedCount++;
 	MessageDispatcher::getRef().dispatchOnSessionDisconnect(sID);
 }
 
@@ -293,6 +326,7 @@ void SessionManager::onConnect(SessionID cID, bool bConnected, const TcpSessionP
 	{
 		_mapTcpSessionPtr[cID] = session;
 		config->second.second._curReconnectCount = 0;
+		_totalConnectCount++;
 		MessageDispatcher::getRef().dispatchOnSessionEstablished(cID);
 		return;
 	}
@@ -302,6 +336,7 @@ void SessionManager::onConnect(SessionID cID, bool bConnected, const TcpSessionP
 	if (!bConnected && iter != _mapTcpSessionPtr.end())
 	{
 		_mapTcpSessionPtr.erase(cID);
+		_totalConnectClosedCount++;
 		post(std::bind(&MessageDispatcher::dispatchOnSessionDisconnect, &MessageDispatcher::getRef(), cID));
 	}
 
@@ -336,6 +371,8 @@ void SessionManager::sendOrgSessionData(SessionID sID, const char * orgData, uns
 		LCW("sendOrgSessionData NOT FOUND SessionID.  SessionID=" << sID);
 		return;
 	}
+	_totalSendMessages++;
+	_totalSendBytes += orgDataLen;
 	iter->second->doSend(orgData, orgDataLen);
 	//trace log
 	{

@@ -69,6 +69,16 @@ TcpSession::~TcpSession()
 		<< zsummer::network::g_appEnvironment.getCreatedSessionCount() << ", close:" << zsummer::network::g_appEnvironment.getClosedSessionCount()
 		<< "]");
 }
+
+bool TcpSession::getPeerInfo(std::string& remoteIP, unsigned short &remotePort)
+{
+	if (_sockptr)
+	{
+		return _sockptr->getPeerInfo(remoteIP, remotePort);
+	}
+	return true;
+}
+
 void TcpSession::cleanSession(bool isCleanAllData, const std::string &rc4TcpEncryption)
 {
 	_sockptr.reset();
@@ -202,7 +212,8 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
 		return;
 	}
 	_recving.bufflen += nRecvedLen;
-
+	SessionManager::getRef()._totalRecvCount++;
+	SessionManager::getRef()._totalRecvBytes += nRecvedLen;
 	// skip encrypt the flash policy data if that open flash policy.
 	// skip encrypt when the rc4 encrypt sbox is empty.
 	{
@@ -269,6 +280,7 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
 			{
 				break;
 			}
+			SessionManager::getRef()._totalRecvMessages++;
 			try
 			{
 				bool preCheck = MessageDispatcher::getRef().dispatchPreSessionMessage(_sessionID, _recving.buff + usedIndex, ret.second);
@@ -316,7 +328,7 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
 			{
 				_httpHadHeader = true;
 			}
-			
+			SessionManager::getRef()._totalRecvHTTPCount++;
 			MessageDispatcher::getRef().dispatchSessionHTTPMessage(_sessionID, _httpCommonLine, _httpHeader, body);
 			usedIndex += usedLen;
 		}

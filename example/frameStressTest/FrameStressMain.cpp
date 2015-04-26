@@ -165,8 +165,6 @@ public:
 		MessageDispatcher::getRef().registerOnSessionEstablished(std::bind(&CStressClientHandler::onConnected, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 		MessageDispatcher::getRef().registerSessionMessage(ID_EchoPack,
 			std::bind(&CStressClientHandler::msg_ResultSequence_fun, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-		MessageDispatcher::getRef().registerSessionMessage(ID_EchoPack,
-			std::bind(&CStressClientHandler::looker_ResultSequence_fun, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 		MessageDispatcher::getRef().registerOnSessionDisconnect(std::bind(&CStressClientHandler::OnConnectDisconnect, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	}
 

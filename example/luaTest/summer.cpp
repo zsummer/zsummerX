@@ -336,7 +336,7 @@ static int addListen(lua_State *L)
 
 
 
-static void _onConnecterCallback(lua_State * L, SessionID sID)
+static void _onConnecterCallback(lua_State * L, SessionID sID, std::string remoteIP, unsigned short remotePort)
 {
 	auto founder = std::find_if(_vmCheck.begin(), _vmCheck.end(), [L](lua_State* l){return l == L; });
 	if (founder == _vmCheck.end())
@@ -395,7 +395,7 @@ static int registerConnect(lua_State * L)
 	}
 	_connectCB = ret;
 	
-	MessageDispatcher::getRef().registerOnSessionEstablished(std::bind(_onConnecterCallback, L, std::placeholders::_1));
+	MessageDispatcher::getRef().registerOnSessionEstablished(std::bind(_onConnecterCallback, L, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	return 0;
 }
 
@@ -467,7 +467,7 @@ static int registerMessage(lua_State * L)
 
 
 
-static void _onDisconnectCallback(lua_State * L, SessionID sID)
+static void _onDisconnectCallback(lua_State * L, SessionID sID, std::string remoteIP, unsigned short remotePort)
 {
 	auto founder = std::find_if(_vmCheck.begin(), _vmCheck.end(), [L](lua_State* l){return l == L; });
 	if (founder == _vmCheck.end())
@@ -526,7 +526,7 @@ static int registerDisconnect(lua_State * L)
 	}
 	_disconnectCB = ret;
 
-	MessageDispatcher::getRef().registerOnSessionDisconnect(std::bind(_onDisconnectCallback, L, std::placeholders::_1));
+	MessageDispatcher::getRef().registerOnSessionDisconnect(std::bind(_onDisconnectCallback, L, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	return 0;
 }
 

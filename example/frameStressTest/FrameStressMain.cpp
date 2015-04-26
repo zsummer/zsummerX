@@ -87,9 +87,9 @@ public:
 	CHeartbeatManager()
 	{
 		MessageDispatcher::getRef().registerOnSessionEstablished(std::bind(&CHeartbeatManager::OnSessionEstablished, this,
-			std::placeholders::_1));
+			std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 		MessageDispatcher::getRef().registerOnSessionDisconnect(std::bind(&CHeartbeatManager::OnSessionDisconnect, this,
-			std::placeholders::_1));
+			std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 		MessageDispatcher::getRef().registerOnSessionPulse(std::bind(&CHeartbeatManager::OnSessionPulse, this,
 			std::placeholders::_1, std::placeholders::_2));
 		MessageDispatcher::getRef().registerSessionMessage(ID_Pulse, std::bind(&CHeartbeatManager::OnMsgPulse, this,
@@ -107,10 +107,10 @@ public:
 		}
 	}
 
-	void OnSessionEstablished(SessionID sID)
+	void OnSessionEstablished(SessionID sID, std::string remoteIP, unsigned short remotePort)
 	{
 		_sessionPulse[sID] = time(NULL);
-		LOGI("OnSessionEstablished. sID=" << sID << ", remoteIP=" << SessionManager::getRef().getRemoteIP(sID) << ", remotePort=" << SessionManager::getRef().getRemotePort(sID));
+		LOGI("OnSessionEstablished. sID=" << sID << ", remoteIP=" << remoteIP << ", remotePort=" << remotePort);
 	}
 
 	void OnSessionPulse(SessionID sID, unsigned int pulseInterval)
@@ -140,9 +140,9 @@ public:
 			SessionManager::getRef().sendOrgSessionData(sID, pack.getStream(), pack.getStreamLen());
 		}
 	}
-	void OnSessionDisconnect(SessionID sID)
+	void OnSessionDisconnect(SessionID sID, std::string remoteIP, unsigned short remotePort)
 	{
-		LOGI("OnSessionDisconnect. sID=" << sID );
+		LOGI("OnSessionDisconnect. sID=" << sID << ", remoteIP=" << remoteIP << ", remotePort=" << remotePort);
 		_sessionPulse.erase(sID);
 	}
 private:
@@ -162,17 +162,17 @@ class CStressClientHandler
 public:
 	CStressClientHandler()
 	{
-		MessageDispatcher::getRef().registerOnSessionEstablished(std::bind(&CStressClientHandler::onConnected, this, std::placeholders::_1));
+		MessageDispatcher::getRef().registerOnSessionEstablished(std::bind(&CStressClientHandler::onConnected, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 		MessageDispatcher::getRef().registerSessionMessage(ID_EchoPack,
 			std::bind(&CStressClientHandler::msg_ResultSequence_fun, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 		MessageDispatcher::getRef().registerSessionMessage(ID_EchoPack,
 			std::bind(&CStressClientHandler::looker_ResultSequence_fun, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-		MessageDispatcher::getRef().registerOnSessionDisconnect(std::bind(&CStressClientHandler::OnConnectDisconnect, this, std::placeholders::_1));
+		MessageDispatcher::getRef().registerOnSessionDisconnect(std::bind(&CStressClientHandler::OnConnectDisconnect, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	}
 
-	void onConnected (SessionID cID)
+	void onConnected(SessionID cID, std::string remoteIP, unsigned short remotePort)
 	{
-		LOGI("onConnected. ConnectorID=" << cID );
+		LOGI("onConnected. ConnectorID=" << cID << ", remoteIP=" << remoteIP << ", remotePort=" << remotePort );
 		WriteStream ws(ID_EchoPack);
 		EchoPack pack;
 		TestIntegerData idata;
@@ -214,7 +214,7 @@ public:
 			_sessionStatus[cID] = true;
 		}
 	};
-	void OnConnectDisconnect(SessionID cID)
+	void OnConnectDisconnect(SessionID cID, std::string remoteIP, unsigned short remotePort)
 	{
 		_sessionStatus[cID] = false;
 	}

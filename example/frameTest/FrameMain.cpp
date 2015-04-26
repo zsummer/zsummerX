@@ -168,7 +168,7 @@ void startClient()
 	SessionManager::getRef().start();
 
 	//on connect success
-	auto connectedfun = [](SessionID cID)
+	auto connectedfun = [](SessionID cID, std::string remoteIP, unsigned short remotePort)
 	{
 		LOGI("on connect. ID=" << cID);
 		std::string content = "hello";

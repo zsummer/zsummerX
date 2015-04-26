@@ -96,7 +96,7 @@ int main(int argc, char* argv[])
 	if (g_startIsConnector) //client
 	{
 		//callback when connect success.
-		auto connectedfun = [](SessionID cID)
+		auto connectedfun = [](SessionID cID, std::string remoteIP, unsigned short remotePort)
 		{
 //			std::string jsonString = R"---(data={%22uid%22:10001,%22session%22:%220192023a7bbd73250516f069df18b500%22})---";
 			std::string jsonString = R"---(data=)---";

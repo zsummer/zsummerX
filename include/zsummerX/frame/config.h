@@ -154,8 +154,8 @@ namespace zsummer
 		typedef std::function < void(SessionID, ProtoID, zsummer::proto4z::ReadStream &) > OnMessageFunction;
 
 		//!register event 
-		typedef std::function < void(SessionID) > OnSessionEstablished;
-		typedef std::function < void(SessionID) > OnSessionDisconnect;
+		typedef std::function < void(SessionID, const std::string & /*remoteIP*/, unsigned short /*remotePort*/) > OnSessionEstablished;
+		typedef std::function < void(SessionID, const std::string & /*remoteIP*/, unsigned short /*remotePort*/) > OnSessionDisconnect;
 
 		//register http proto message 
 		typedef std::function < void(SessionID, const zsummer::proto4z::PairString &, const zsummer::proto4z::HTTPHeadMap& /*head*/, const std::string & /*body*/) > OnHTTPMessageFunction;

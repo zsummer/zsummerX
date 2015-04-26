@@ -90,7 +90,7 @@ namespace zsummer
 			//close session socket.
 			void kickSession(SessionID sID);
 
-		public:
+		public://statistical information
 			std::string getRemoteIP(SessionID sID);
 			unsigned short getRemotePort(SessionID sID);
 			unsigned long long _totalConnectCount = 0;

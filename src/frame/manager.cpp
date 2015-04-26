@@ -235,7 +235,7 @@ void SessionManager::onAcceptNewClient(zsummer::network::NetErrorCode ec, const 
 		{
 			_mapTcpSessionPtr[_lastSessionID] = session;
 			_totalAcceptCount++;
-			MessageDispatcher::getRef().dispatchOnSessionEstablished(_lastSessionID);
+			MessageDispatcher::getRef().dispatchOnSessionEstablished(_lastSessionID, remoteIP, remotePort);
 		}
 	}
 	
@@ -293,10 +293,17 @@ void SessionManager::kickSession(SessionID sID)
 
 void SessionManager::onSessionClose(AccepterID aID, SessionID sID)
 {
+	std::string remoteIP;
+	unsigned short remotePort = 0;
+	auto founder = _mapTcpSessionPtr.find(sID);
+	if (founder != _mapTcpSessionPtr.end())
+	{
+		founder->second->getPeerInfo(remoteIP, remotePort);
+		_mapTcpSessionPtr.erase(founder);
+	}
 	_mapAccepterConfig[aID].second._currentLinked--;
-	_mapTcpSessionPtr.erase(sID);
 	_totalAcceptClosedCount++;
-	MessageDispatcher::getRef().dispatchOnSessionDisconnect(sID);
+	MessageDispatcher::getRef().dispatchOnSessionDisconnect(sID, remoteIP, remotePort);
 }
 
 
@@ -327,7 +334,10 @@ void SessionManager::onConnect(SessionID cID, bool bConnected, const TcpSessionP
 		_mapTcpSessionPtr[cID] = session;
 		config->second.second._curReconnectCount = 0;
 		_totalConnectCount++;
-		MessageDispatcher::getRef().dispatchOnSessionEstablished(cID);
+		std::string remoteIP;
+		unsigned short remotePort = 0;
+		session->getPeerInfo(remoteIP, remotePort);
+		MessageDispatcher::getRef().dispatchOnSessionEstablished(cID, remoteIP, remotePort);
 		return;
 	}
 
@@ -335,9 +345,13 @@ void SessionManager::onConnect(SessionID cID, bool bConnected, const TcpSessionP
 	auto iter = _mapTcpSessionPtr.find(cID);
 	if (!bConnected && iter != _mapTcpSessionPtr.end())
 	{
+		std::string remoteIP;
+		unsigned short remotePort = 0;
+		session->getPeerInfo(remoteIP, remotePort);
+
 		_mapTcpSessionPtr.erase(cID);
 		_totalConnectClosedCount++;
-		post(std::bind(&MessageDispatcher::dispatchOnSessionDisconnect, &MessageDispatcher::getRef(), cID));
+		post(std::bind(&MessageDispatcher::dispatchOnSessionDisconnect, &MessageDispatcher::getRef(), cID, remoteIP, remotePort));
 	}
 
 	if (!bConnected

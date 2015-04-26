@@ -84,7 +84,7 @@ void onRecv(NetErrorCode ec, const char *remoteIP, unsigned short remotePort, in
 		return;
 	}
 
-	auto ret = zsummer::proto4z::checkBuffIntegrity(pic->recvData, translate, _MSG_BUF_LEN);
+	auto ret = zsummer::proto4z::checkBuffIntegrity(pic->recvData, translate, _MSG_BUF_LEN, _MSG_BUF_LEN);
 	if (ret.first == IRT_SUCCESS)
 	{
 		//! 解包

@@ -267,9 +267,8 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
 	{
 		if (_protoType == PT_TCP)
 		{
-			auto ret = zsummer::proto4z::checkBuffIntegrity(_recving.buff + usedIndex, _recving.bufflen - usedIndex, SEND_RECV_CHUNK_SIZE - usedIndex);
-			if (ret.first == zsummer::proto4z::IRT_CORRUPTION
-				|| (ret.first == zsummer::proto4z::IRT_SHORTAGE && ret.second + _recving.bufflen > SEND_RECV_CHUNK_SIZE))
+			auto ret = zsummer::proto4z::checkBuffIntegrity(_recving.buff + usedIndex, _recving.bufflen - usedIndex, SEND_RECV_CHUNK_SIZE - usedIndex, SEND_RECV_CHUNK_SIZE);
+			if (ret.first == zsummer::proto4z::IRT_CORRUPTION)
 			{
 				LCW("killed socket: checkBuffIntegrity error ");
 				_sockptr->doClose();

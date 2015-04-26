@@ -139,7 +139,7 @@ void CClient::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
 
 	_recving._len += nRecvedLen;
 
-	auto ret = zsummer::proto4z::checkBuffIntegrity(_recving._orgdata, _recving._len, _MSG_BUF_LEN);
+	auto ret = zsummer::proto4z::checkBuffIntegrity(_recving._orgdata, _recving._len, _MSG_BUF_LEN, _MSG_BUF_LEN);
 	if (ret.first == zsummer::proto4z::IRT_CORRUPTION)
 	{
 		LOGD("killed socket: checkBuffIntegrity error ");

@@ -166,7 +166,7 @@ void TcpSession::onConnected(zsummer::network::NetErrorCode ec, const std::pair<
 	SessionManager::getRef().onConnect(_sessionID, true, shared_from_this());
 	if (_sending.bufflen == 0 && !_sendque.empty())
 	{
-		MessagePack *tmp = _sendque.front();
+		MessageSendPack *tmp = _sendque.front();
 		_sendque.pop();
 		doSend(tmp->buff, tmp->bufflen);
 		tmp->bufflen = 0;
@@ -189,7 +189,7 @@ void TcpSession::onConnected(zsummer::network::NetErrorCode ec, const std::pair<
 
 bool TcpSession::doRecv()
 {
-	return _sockptr->doRecv(_recving.buff + _recving.bufflen, SEND_RECV_CHUNK_SIZE - _recving.bufflen, std::bind(&TcpSession::onRecv, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
+	return _sockptr->doRecv(_recving.buff + _recving.bufflen, MAX_BUFF_SIZE - _recving.bufflen, std::bind(&TcpSession::onRecv, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
 }
 
 void TcpSession::close()
@@ -267,7 +267,7 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
 	{
 		if (_protoType == PT_TCP)
 		{
-			auto ret = zsummer::proto4z::checkBuffIntegrity(_recving.buff + usedIndex, _recving.bufflen - usedIndex, SEND_RECV_CHUNK_SIZE - usedIndex, SEND_RECV_CHUNK_SIZE);
+			auto ret = zsummer::proto4z::checkBuffIntegrity(_recving.buff + usedIndex, _recving.bufflen - usedIndex, MAX_BUFF_SIZE - usedIndex, MAX_BUFF_SIZE);
 			if (ret.first == zsummer::proto4z::IRT_CORRUPTION)
 			{
 				LCW("killed socket: checkBuffIntegrity error ");
@@ -309,7 +309,7 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
 			unsigned int usedLen = 0;
 			auto ret = zsummer::proto4z::checkHTTPBuffIntegrity(_recving.buff + usedIndex, 
 				_recving.bufflen - usedIndex, 
-				SEND_RECV_CHUNK_SIZE - usedIndex,
+				MAX_BUFF_SIZE - usedIndex,
 				_httpHadHeader, _httpIsChunked, _httpCommonLine, _httpHeader,
 				body, usedLen);
 			if (ret == zsummer::proto4z::IRT_CORRUPTION)
@@ -352,6 +352,12 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
 
 void TcpSession::doSend(const char *buf, unsigned int len)
 {
+	if (len > MAX_SEND_PACK_SIZE)
+	{
+		LCE("Send Message failed!  send len = " << len << ", max send pack len=" << MAX_SEND_PACK_SIZE);
+		return;
+	}
+	
 	if (!_rc4Encrypt.empty())
 	{
 		_rc4StateWrite.encryption((unsigned char*)buf, len);
@@ -359,10 +365,10 @@ void TcpSession::doSend(const char *buf, unsigned int len)
 	
 	if (_sending.bufflen != 0)
 	{
-		MessagePack *pack = NULL;
+		MessageSendPack *pack = NULL;
 		if (_freeCache.empty())
 		{
-			pack = new MessagePack();
+			pack = new MessageSendPack();
 		}
 		else
 		{
@@ -413,7 +419,7 @@ void TcpSession::onSend(zsummer::network::NetErrorCode ec, int nSentLen)
 		{
 			do
 			{
-				MessagePack *pack = _sendque.front();
+				MessageSendPack *pack = _sendque.front();
 				_sendque.pop();
 				memcpy(_sending.buff + _sending.bufflen, pack->buff, pack->bufflen);
 				_sending.bufflen += pack->bufflen;
@@ -424,7 +430,7 @@ void TcpSession::onSend(zsummer::network::NetErrorCode ec, int nSentLen)
 				{
 					break;
 				}
-				if (SEND_RECV_CHUNK_SIZE - _sending.bufflen < _sendque.front()->bufflen)
+				if (MAX_BUFF_SIZE - _sending.bufflen < _sendque.front()->bufflen)
 				{
 					break;
 				}

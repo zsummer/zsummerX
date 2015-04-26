@@ -50,7 +50,7 @@ using namespace zsummer::network;
 std::string g_remoteIP = "0.0.0.0"; 
 unsigned short g_remotePort = 8081; 
 unsigned short g_startType = 0;  //0 start with server module, 1 start with client module. 
-unsigned short g_maxClient = 100; //if start with server it is client limite count. else other it is the start client count.
+unsigned short g_maxClient = 1; //if start with server it is client limite count. else other it is the start client count.
 unsigned short g_sendType = 0; //0 ping-pong test, 1 flooding test
 unsigned int   g_intervalMs = 0; // if start client with flood test, it's flooding interval by millionsecond.
 
@@ -410,7 +410,7 @@ int main(int argc, char* argv[])
 		//add acceptor
 		ListenConfig traits;
 		traits._listenPort = g_remotePort;
-		traits._maxSessions = g_maxClient;
+//		traits._maxSessions = g_maxClient;
 //		traits._rc4TcpEncryption = "yawei.zhang@foxmail.com";
 		//traits._openFlashPolicy = true;
 		traits._pulseInterval = 500000;

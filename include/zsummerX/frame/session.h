@@ -48,15 +48,15 @@ namespace zsummer
 	{
 
 
-		struct MessagePack
+		struct MessageSendPack
 		{
-			char buff[zsummer::proto4z::MaxPackLen];
+			char buff[MAX_SEND_PACK_SIZE];
 			unsigned int bufflen = 0;
 		};
 
-		struct MessageChunk
+		struct MessageBuffChunk
 		{
-			char buff[SEND_RECV_CHUNK_SIZE];
+			char buff[MAX_BUFF_SIZE];
 			unsigned int bufflen = 0;
 		};
 
@@ -104,13 +104,13 @@ namespace zsummer
 			};
 
 			//! 
-			MessageChunk _recving;
-			MessageChunk _sending;
+			MessageBuffChunk _recving;
+			MessageBuffChunk _sending;
 			unsigned int _sendingCurIndex = 0;
 
 			//! send data queue
-			std::queue<MessagePack *> _sendque;
-			std::queue<MessagePack *> _freeCache;
+			std::queue<MessageSendPack *> _sendque;
+			std::queue<MessageSendPack *> _freeCache;
 
 			//! rc encrypt
 			std::string _rc4Encrypt;

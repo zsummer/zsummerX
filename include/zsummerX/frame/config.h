@@ -145,7 +145,8 @@ namespace zsummer
 		//----------------------------------------
 
 		//receive buffer length  and send buffer length 
-		const unsigned int SEND_RECV_CHUNK_SIZE = 100 * 1024;
+		const unsigned int MAX_BUFF_SIZE = 100 * 1024;
+		const unsigned int MAX_SEND_PACK_SIZE = 10 * 1024;
 
 		//!register message with original net pack, if return false other register will not receive this message.
 		typedef std::function < bool(SessionID, const char * /*blockBegin*/, typename zsummer::proto4z::Integer /*blockSize*/) > OnPreMessageFunction;

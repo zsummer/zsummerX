@@ -128,7 +128,7 @@ void CSchedule::OnAccept(zsummer::network::NetErrorCode ec, TcpSocketPtr sockptr
 		allClosed += (*iter)->GetTotalClosed();
 		allOpen += (*iter)->GetTotalOpen();
 	}
-	if (allOpen - allClosed > g_maxClient )
+	if (/*allOpen - allClosed > g_maxClient */ false /*no limited*/)
 	{
 		LOGW("OnAccept success but current links is too many.");
 	}

@@ -58,7 +58,7 @@ TimerID Timer::createTimer(unsigned int delayms, _OnTimerHandler &&handle)
 
 bool Timer::cancelTimer(TimerID timerID)
 {
-	LCT("cancelTimer");
+	LCT("cancelTimer " << timerID);
 	std::map<unsigned long long, _OnTimerHandler* >::iterator iter = _queTimer.find(timerID);
 	if (iter != _queTimer.end())
 	{
@@ -71,13 +71,13 @@ bool Timer::cancelTimer(TimerID timerID)
 
 void Timer::checkTimer()
 {
-	LCT("checkTimer. ques=" << _queTimer.size() << ", next=" << _nextExpire);
+	//LCT("checkTimer. ques=" << _queTimer.size() << ", next=" << _nextExpire);
 	if (!_queTimer.empty())
 	{
 		unsigned int now = getNowMilliTick();
 		if (_nextExpire > now)
 		{
-			LCT("_nextExpire > now. next=" << _nextExpire)
+			//LCT("_nextExpire > now. next=" << _nextExpire)
 				return;
 		}
 

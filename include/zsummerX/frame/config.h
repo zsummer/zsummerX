@@ -54,7 +54,7 @@
 #include "../iocp/tcpsocket_impl.h"
 #include "../iocp/udpsocket_impl.h"
 #include "../iocp/tcpaccept_impl.h"
-#elif defined(__APPLE__)
+#elif defined(__APPLE__) || defined(__SELECT__)
 #include "../select/select_impl.h"
 #include "../select/udpsocket_impl.h"
 #include "../select/tcpsocket_impl.h"

@@ -16,9 +16,9 @@ else()
 	add_executable(${PROJECT_NAME}${LIB_SUFFIX} ${source})
 	target_link_libraries(${PROJECT_NAME}${LIB_SUFFIX} zsummerX${LIB_SUFFIX} log4z${LIB_SUFFIX}  pthread  rt)
 endif()
+	set_target_properties(${PROJECT_NAME}_select${LIB_SUFFIX} PROPERTIES COMPILE_DEFINITIONS "__SELECT__=1")
 
 
-set_target_properties(${PROJECT_NAME}_select${LIB_SUFFIX} PROPERTIES COMPILE_DEFINITIONS "ZSUMMERX_USE_SELECT=1")
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 	add_definitions(-Wall -g -ggdb -O0  -D_GLIBCXX_USE_NANOSLEEP)

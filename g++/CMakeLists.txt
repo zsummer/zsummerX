@@ -18,7 +18,7 @@ add_library(zsummerX${LIB_SUFFIX} STATIC ${COMMON_SRC} ${EPOLL_SRC} ${TIMER_SRC}
 endif()
 
 add_library(zsummerX_select${LIB_SUFFIX} STATIC ${COMMON_SRC} ${SELECT_SRC} ${TIMER_SRC} ${FRAME_SRC})
-set_target_properties(zsummerX_select${LIB_SUFFIX} PROPERTIES COMPILE_DEFINITIONS "ZSUMMERX_USE_SELECT=1")
+set_target_properties(zsummerX_select${LIB_SUFFIX} PROPERTIES COMPILE_DEFINITIONS "__SELECT__=1")
 
  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
  	add_definitions(-Wall -g -ggdb -O0 -std=c++11 -D_GLIBCXX_USE_NANOSLEEP)

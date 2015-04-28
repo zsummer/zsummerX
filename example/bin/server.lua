@@ -27,6 +27,16 @@ end
 summer.registerMessage(onMessage)
 
 
+-- 连接成功事件
+function onConnect(sID, remoteIP, remotePort)
+	print("session is on connected. sID=" .. sID .. ", remoteIP=" .. remoteIP .. ", remotePort=" .. remotePort)
+end
+summer.registerConnect(onConnect)
+-- 连接断开事件
+function onDisconnect(sID, remoteIP, remotePort)
+	print("session is on disconnect. sID=" .. sID .. ", remoteIP=" .. remoteIP .. ", remotePort=" .. remotePort)
+end
+summer.registerDisconnect(onDisconnect)
 
 
 --启动网络

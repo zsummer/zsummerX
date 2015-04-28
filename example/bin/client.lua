@@ -15,8 +15,8 @@ local echo = {  _iarray = {{_char=1,_uchar=2,_short=3,_ushort=4,_int=5,_uint=6,_
 				}
 
 -- 连接成功事件
-function onConnect(sID)
-	print("session is on connected. sID=" .. sID)
+function onConnect(sID, remoteIP, remotePort)
+	print("session is on connected. sID=" .. sID .. ", remoteIP=" .. remoteIP .. ", remotePort=" .. remotePort)
 	local data = Protoz.encode(echo, "P2P_EchoPack")
 	Protoz.dump(echo)
 	Protoz.putbin(data)
@@ -37,8 +37,8 @@ end
 summer.registerMessage(onMessage)
 
 -- 连接断开事件
-function onDisconnect(sID)
-	print("session is on disconnect. sID=" .. sID)
+function onDisconnect(sID, remoteIP, remotePort)
+	print("session is on disconnect. sID=" .. sID .. ", remoteIP=" .. remoteIP .. ", remotePort=" .. remotePort)
 end
 summer.registerDisconnect(onDisconnect)
 

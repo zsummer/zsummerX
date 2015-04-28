@@ -256,10 +256,7 @@ std::string SessionManager::getRemoteIP(SessionID sID)
 	}
 	else
 	{
-		std::string ip;
-		unsigned short port;
-		founder->second->getPeerInfo(ip, port);
-		return ip;
+		return founder->second->getRemoteIP();
 	}
 	return "";
 }
@@ -272,10 +269,7 @@ unsigned short SessionManager::getRemotePort(SessionID sID)
 	}
 	else
 	{
-		std::string ip;
-		unsigned short port;
-		founder->second->getPeerInfo(ip, port);
-		return port;
+		return founder->second->getRemotePort();
 	}
 	return 0;
 }
@@ -291,19 +285,12 @@ void SessionManager::kickSession(SessionID sID)
 	iter->second->close();
 }
 
-void SessionManager::onSessionClose(AccepterID aID, SessionID sID)
+void SessionManager::onSessionClose(AccepterID aID, SessionID sID, const TcpSessionPtr &session)
 {
-	std::string remoteIP;
-	unsigned short remotePort = 0;
-	auto founder = _mapTcpSessionPtr.find(sID);
-	if (founder != _mapTcpSessionPtr.end())
-	{
-		founder->second->getPeerInfo(remoteIP, remotePort);
-		_mapTcpSessionPtr.erase(founder);
-	}
+	_mapTcpSessionPtr.erase(sID);
 	_mapAccepterConfig[aID].second._currentLinked--;
 	_totalAcceptClosedCount++;
-	MessageDispatcher::getRef().dispatchOnSessionDisconnect(sID, remoteIP, remotePort);
+	MessageDispatcher::getRef().dispatchOnSessionDisconnect(sID, session->getRemoteIP(), session->getRemotePort());
 }
 
 
@@ -334,10 +321,7 @@ void SessionManager::onConnect(SessionID cID, bool bConnected, const TcpSessionP
 		_mapTcpSessionPtr[cID] = session;
 		config->second.second._curReconnectCount = 0;
 		_totalConnectCount++;
-		std::string remoteIP;
-		unsigned short remotePort = 0;
-		session->getPeerInfo(remoteIP, remotePort);
-		MessageDispatcher::getRef().dispatchOnSessionEstablished(cID, remoteIP, remotePort);
+		MessageDispatcher::getRef().dispatchOnSessionEstablished(cID, session->getRemoteIP(), session->getRemotePort());
 		return;
 	}
 
@@ -345,13 +329,9 @@ void SessionManager::onConnect(SessionID cID, bool bConnected, const TcpSessionP
 	auto iter = _mapTcpSessionPtr.find(cID);
 	if (!bConnected && iter != _mapTcpSessionPtr.end())
 	{
-		std::string remoteIP;
-		unsigned short remotePort = 0;
-		session->getPeerInfo(remoteIP, remotePort);
-
 		_mapTcpSessionPtr.erase(cID);
 		_totalConnectClosedCount++;
-		post(std::bind(&MessageDispatcher::dispatchOnSessionDisconnect, &MessageDispatcher::getRef(), cID, remoteIP, remotePort));
+		post(std::bind(&MessageDispatcher::dispatchOnSessionDisconnect, &MessageDispatcher::getRef(), cID, session->getRemoteIP(), session->getRemotePort()));
 	}
 
 	if (!bConnected

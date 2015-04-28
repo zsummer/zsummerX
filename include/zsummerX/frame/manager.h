@@ -109,7 +109,7 @@ namespace zsummer
 		private:
 			friend class TcpSession;
 			// socket(from accept) on close 
-			void onSessionClose(AccepterID aID, SessionID sID);
+			void onSessionClose(AccepterID aID, SessionID sID, const TcpSessionPtr &session);
 			// socket(from connect) on close 
 			void onConnect(SessionID cID, bool bConnected, const TcpSessionPtr &session);
 			void onAcceptNewClient(zsummer::network::NetErrorCode ec, const TcpSocketPtr & s, const TcpAcceptPtr & accepter, AccepterID aID);

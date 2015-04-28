@@ -360,7 +360,9 @@ static void _onConnecterCallback(lua_State * L, SessionID sID, std::string remot
 	}
 
 	lua_pushnumber(L, sID);
-	int status = lua_pcall(L, 1, 0, index+1);
+	lua_pushstring(L, remoteIP.c_str());
+	lua_pushnumber(L, remotePort);
+	int status = lua_pcall(L, 3, 0, index+1);
 	if (status && !lua_isnil(L, -1))
 	{
 		const char *msg = lua_tostring(L, -1);
@@ -491,7 +493,9 @@ static void _onDisconnectCallback(lua_State * L, SessionID sID, std::string remo
 	}
 
 	lua_pushnumber(L, sID);
-	int status = lua_pcall(L, 1, 0, index + 1);
+	lua_pushstring(L, remoteIP.c_str());
+	lua_pushnumber(L, remotePort);
+	int status = lua_pcall(L, 3, 0, index + 1);
 	if (status && !lua_isnil(L, -1))
 	{
 		const char *msg = lua_tostring(L, -1);

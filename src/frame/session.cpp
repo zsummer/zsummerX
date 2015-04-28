@@ -70,14 +70,7 @@ TcpSession::~TcpSession()
 		<< "]");
 }
 
-bool TcpSession::getPeerInfo(std::string& remoteIP, unsigned short &remotePort)
-{
-	if (_sockptr)
-	{
-		return _sockptr->getPeerInfo(remoteIP, remotePort);
-	}
-	return true;
-}
+
 
 void TcpSession::cleanSession(bool isCleanAllData, const std::string &rc4TcpEncryption)
 {
@@ -117,7 +110,7 @@ bool TcpSession::bindTcpSocketPrt(const TcpSocketPtr &sockptr, AccepterID aID, S
 	_protoType = traits._protoType;
 	_pulseInterval = traits._pulseInterval;
 	_bOpenFlashPolicy = traits._openFlashPolicy;
-
+	_sockptr->getPeerInfo(_remoteIP, _remotePort);
 	if (!doRecv())
 	{
 		LCW("bindTcpSocketPrt Failed.");
@@ -137,7 +130,8 @@ void TcpSession::bindTcpConnectorPtr(const TcpSocketPtr &sockptr, const std::pai
 	_sessionID = config.second._cID;
 	_protoType = config.first._protoType;
 	_pulseInterval = config.first._pulseInterval;
-
+	_remoteIP = config.first._remoteIP;
+	_remotePort = config.first._remotePort;
 	bool connectRet = _sockptr->doConnect(config.first._remoteIP, config.first._remotePort,
 		std::bind(&TcpSession::onConnected, shared_from_this(), std::placeholders::_1, config));
 	if (!connectRet)
@@ -472,7 +466,7 @@ void TcpSession::onClose()
 	}
 	else
 	{
-		SessionManager::getRef().onSessionClose(_acceptID, _sessionID);
+		SessionManager::getRef().onSessionClose(_acceptID, _sessionID, shared_from_this());
 	}
 }
 

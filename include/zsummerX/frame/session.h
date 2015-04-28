@@ -72,7 +72,9 @@ namespace zsummer
 			void doSend(const char *buf, unsigned int len);
 			void close();
 			SessionID GetAcceptID(){ return _acceptID; }
-			bool getPeerInfo(std::string& remoteIP, unsigned short &remotePort);
+			inline const std::string & getRemoteIP(){ return _remoteIP; }
+			inline unsigned short getRemotePort(){ return _remotePort; }
+
 		private:
 			void cleanSession(bool isCleanAllData, const std::string &rc4TcpEncryption);
 
@@ -88,8 +90,13 @@ namespace zsummer
 
 			void onClose();
 
+
 		private:
 			TcpSocketPtr  _sockptr;
+			//cache remoteIP, remotePort
+			std::string _remoteIP;
+			unsigned short _remotePort = 0;
+			//
 			SessionID _sessionID = InvalidSeesionID;
 			AccepterID _acceptID = InvalidAccepterID;
 			ProtoType _protoType = PT_TCP;

@@ -44,9 +44,6 @@ namespace zsummer
 	namespace network
 	{
 
-		class TcpSession;
-		typedef  std::shared_ptr<TcpSession> TcpSessionPtr;
-
 		class SessionManager
 		{
 		private:
@@ -82,9 +79,9 @@ namespace zsummer
 			SessionID addConnector(const ConnectConfig & traits);
 
 
-			//send original data. can repeat call because it's used send queue in internal implementation.
-			void sendOrgSessionData(SessionID sID, const char * orgData, unsigned int orgDataLen);
-			//send LCIc data with protocol id 
+			//send data.
+			void sendSessionData(SessionID sID, const char * orgData, unsigned int orgDataLen);
+			//send data.
 			void sendSessionData(SessionID sID, ProtoID pID, const char * userData, unsigned int userDataLen);
 
 			//close session socket.

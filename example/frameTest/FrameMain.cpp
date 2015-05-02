@@ -136,12 +136,12 @@ void startServer()
 	//! step 1. start Manager.
 	SessionManager::getRef().start();
 	//process message _RequestSequence
-	OnMessageFunction msg_RequestSequence_fun = [](SessionID sID, ProtoID pID, ReadStream & rs)
+	OnMessageFunction msg_RequestSequence_fun = [](TcpSessionPtr session, ProtoID pID, ReadStream & rs)
 	{
 		std::string content = rs.getStreamBody();
-		LOGI("recv SessionID = " << sID << ", content = " << content);
+		LOGI("recv SessionID = " << session->getSessionID() << ", content = " << content);
 		content += " ==> echo.";
-		SessionManager::getRef().sendSessionData(sID, _ResultID, content.c_str(), (unsigned int)content.length() + 1);
+		SessionManager::getRef().sendSessionData(session->getSessionID(), _ResultID, content.c_str(), (unsigned int)content.length() + 1);
 
 		//! step 3 stop server after 1 second.
 		SessionManager::getRef().createTimer(1000, [](){
@@ -168,18 +168,18 @@ void startClient()
 	SessionManager::getRef().start();
 
 	//on connect success
-	auto connectedfun = [](SessionID cID, std::string remoteIP, unsigned short remotePort)
+	auto connectedfun = [](TcpSessionPtr session)
 	{
-		LOGI("on connect. ID=" << cID);
+		LOGI("on connect. ID=" << session->getSessionID());
 		std::string content = "hello";
-		SessionManager::getRef().sendSessionData(cID, _RequestID, content.c_str(), (unsigned int)content.length() + 1);
+		SessionManager::getRef().sendSessionData(session->getSessionID(), _RequestID, content.c_str(), (unsigned int)content.length() + 1);
 	};
 
 	//process message _ResultID
-	auto msg_ResultSequence_fun = [](SessionID cID, ProtoID pID, ReadStream & rs)
+	auto msg_ResultSequence_fun = [](TcpSessionPtr session, ProtoID pID, ReadStream & rs)
 	{
 		std::string content = rs.getStreamBody();
-		LOGI("recv ConnectorID = " << cID << ", content = " << content);
+		LOGI("recv ConnectorID = " << session->getSessionID() << ", content = " << content);
 		//! step 3 stop server
 		SessionManager::getRef().stopAccept();
 		SessionManager::getRef().kickAllClients();

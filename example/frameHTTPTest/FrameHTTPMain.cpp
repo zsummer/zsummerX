@@ -96,13 +96,13 @@ int main(int argc, char* argv[])
 	if (g_startIsConnector) //client
 	{
 		//callback when connect success.
-		auto connectedfun = [](SessionID cID, std::string remoteIP, unsigned short remotePort)
+		auto connectedfun = [](TcpSessionPtr session)
 		{
 //			std::string jsonString = R"---(data={%22uid%22:10001,%22session%22:%220192023a7bbd73250516f069df18b500%22})---";
 			std::string jsonString = R"---(data=)---";
 			jsonString += zsummer::proto4z::urlEncode(std::string(R"---({"uid":10001,"session":"0192023a7bbd73250516f069df18b500"})---"));
 
-			LOGI("send to ConnectorID=" << cID);
+			LOGI("send to ConnectorID=" << session->getSessionID());
 			zsummer::proto4z::WriteHTTP wh;
 // 			wh.addHead("Accept", " text/html, application/xhtml+xml, */*");
 // 			wh.addHead("Accept-Language", "zh-CN");
@@ -113,21 +113,20 @@ int main(int argc, char* argv[])
 //			wh.addHead("DNT", "1");
 //			wh.addHead("Connection", "Keep-Alive");
 			wh.post("/user/oauth", jsonString);
-			SessionManager::getRef().sendOrgSessionData(cID, wh.getStream(), wh.getStreamLen());
+            session->doSend(wh.getStream(), wh.getStreamLen());
 		};
 
 		//callback when receive http data
-		auto msg_ResultSequence_fun = [](SessionID cID, const zsummer::proto4z::PairString &commondLine, const zsummer::proto4z::HTTPHeadMap &head, const std::string & body)
+		auto msg_ResultSequence_fun = [](TcpSessionPtr session,  const zsummer::proto4z::PairString &commondLine, const zsummer::proto4z::HTTPHeadMap &head, const std::string & body)
 		{
 			if (commondLine.second != "200")
 			{
 				LOGI("response false. commond=" << commondLine.first << ", commondvalue=" << commondLine.second);
-				SessionManager::getRef().kickSession(cID);
+				session->close();
 				return ;
 			}
 			LOGI("response success. commond=" << commondLine.first << ", commondvalue=" << commondLine.second << ", content=" << body);
-			SessionManager::getRef().kickSession(cID);
-			//step 3. stop
+            session->close();			//step 3. stop
 			//SessionManager::getRef().stop();
 			return ;
 		};
@@ -153,7 +152,7 @@ int main(int argc, char* argv[])
 	{
 
 		//result when receive http data
-		auto msg_ResultSequence_fun = [](SessionID sID, const zsummer::proto4z::PairString &commondLine, const zsummer::proto4z::HTTPHeadMap &head, const std::string & body)
+		auto msg_ResultSequence_fun = [](TcpSessionPtr session, const zsummer::proto4z::PairString &commondLine, const zsummer::proto4z::HTTPHeadMap &head, const std::string & body)
 		{
 			LOGI("recv request. commond=" << commondLine.first << ", commondvalue=" << commondLine.second);
 			zsummer::proto4z::WriteHTTP wh;
@@ -165,8 +164,8 @@ int main(int argc, char* argv[])
 			wh.addHead("DNT", "1");
 			wh.addHead("Connection", "Keep-Alive");
 			wh.response("200", "What's your name ?");
-			SessionManager::getRef().sendOrgSessionData( sID, wh.getStream(), wh.getStreamLen());
-			SessionManager::getRef().createTimer(2000, std::bind(&SessionManager::kickSession, SessionManager::getPtr(), sID));
+            session->doSend(wh.getStream(), wh.getStreamLen());
+			SessionManager::getRef().createTimer(2000, std::bind(&SessionManager::kickSession, SessionManager::getPtr(), session->getSessionID()));
 			//step 3. stop server.
 		//	SessionManager::getRef().createTimer(1000,std::bind(&SessionManager::stop, SessionManager::getPtr()));
 			return ;

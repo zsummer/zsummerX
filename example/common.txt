@@ -26,7 +26,7 @@ else()
 	add_definitions(-Wall  -O2 -DNDEBUG  -D_GLIBCXX_USE_NANOSLEEP)
 endif()
 set(CMAKE_CXX_FLAGS -std=c++11)
-message(STATUS ${CMAKE_CXX_FLAGS})
-message(STATUS ${CMAKE_C_FLAGS})
+#message(STATUS ${CMAKE_CXX_FLAGS})
+#message(STATUS ${CMAKE_C_FLAGS})
 
 

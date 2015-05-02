@@ -9,7 +9,7 @@
  * 
  * ===============================================================================
  * 
- * Copyright (C) 2010-2014 YaweiZhang <yawei_zhang@foxmail.com>.
+ * Copyright (C) 2010-2015 YaweiZhang <yawei_zhang@foxmail.com>.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -144,7 +144,7 @@ AccepterID SessionManager::getAccepterID(SessionID sID)
 	{
 		return InvalidAccepterID;
 	}
-	return founder->second->GetAcceptID();
+	return founder->second->getAcceptID();
 }
 
 
@@ -235,7 +235,7 @@ void SessionManager::onAcceptNewClient(zsummer::network::NetErrorCode ec, const 
 		{
 			_mapTcpSessionPtr[_lastSessionID] = session;
 			_totalAcceptCount++;
-			MessageDispatcher::getRef().dispatchOnSessionEstablished(_lastSessionID, remoteIP, remotePort);
+			MessageDispatcher::getRef().dispatchOnSessionEstablished(session);
 		}
 	}
 	
@@ -290,7 +290,7 @@ void SessionManager::onSessionClose(AccepterID aID, SessionID sID, const TcpSess
 	_mapTcpSessionPtr.erase(sID);
 	_mapAccepterConfig[aID].second._currentLinked--;
 	_totalAcceptClosedCount++;
-	MessageDispatcher::getRef().dispatchOnSessionDisconnect(sID, session->getRemoteIP(), session->getRemotePort());
+	MessageDispatcher::getRef().dispatchOnSessionDisconnect(session);
 }
 
 
@@ -321,7 +321,7 @@ void SessionManager::onConnect(SessionID cID, bool bConnected, const TcpSessionP
 		_mapTcpSessionPtr[cID] = session;
 		config->second.second._curReconnectCount = 0;
 		_totalConnectCount++;
-		MessageDispatcher::getRef().dispatchOnSessionEstablished(cID, session->getRemoteIP(), session->getRemotePort());
+		MessageDispatcher::getRef().dispatchOnSessionEstablished(session);
 		return;
 	}
 
@@ -331,7 +331,7 @@ void SessionManager::onConnect(SessionID cID, bool bConnected, const TcpSessionP
 	{
 		_mapTcpSessionPtr.erase(cID);
 		_totalConnectClosedCount++;
-		post(std::bind(&MessageDispatcher::dispatchOnSessionDisconnect, &MessageDispatcher::getRef(), cID, session->getRemoteIP(), session->getRemotePort()));
+		post(std::bind(&MessageDispatcher::dispatchOnSessionDisconnect, &MessageDispatcher::getRef(),  session));
 	}
 
 	if (!bConnected
@@ -357,27 +357,26 @@ void SessionManager::onConnect(SessionID cID, bool bConnected, const TcpSessionP
 }
 
 
-void SessionManager::sendOrgSessionData(SessionID sID, const char * orgData, unsigned int orgDataLen)
+void SessionManager::sendSessionData(SessionID sID, const char * orgData, unsigned int orgDataLen)
 {
 	auto iter = _mapTcpSessionPtr.find(sID);
 	if (iter == _mapTcpSessionPtr.end())
 	{
-		LCW("sendOrgSessionData NOT FOUND SessionID.  SessionID=" << sID);
+		LCW("sendSessionData NOT FOUND SessionID.  SessionID=" << sID);
 		return;
 	}
-	_totalSendMessages++;
-	_totalSendBytes += orgDataLen;
+
 	iter->second->doSend(orgData, orgDataLen);
 	//trace log
 	{
-		LCT("sendOrgSessionData Len=" << orgDataLen << ",binarydata=" << zsummer::log4z::Log4zBinary(orgData, orgDataLen >= 10 ? 10 : orgDataLen));
+		LCT("sendSessionData Len=" << orgDataLen << ",binarydata=" << zsummer::log4z::Log4zBinary(orgData, orgDataLen >= 10 ? 10 : orgDataLen));
 	}
 }
 void SessionManager::sendSessionData(SessionID sID, ProtoID pID, const char * userData, unsigned int userDataLen)
 {
 	WriteStream ws(pID);
 	ws.appendOriginalData(userData, userDataLen);
-	sendOrgSessionData(sID, ws.getStream(), ws.getStreamLen());
+	sendSessionData(sID, ws.getStream(), ws.getStreamLen());
 	//trace log
 	{
 		LCT("sendSessionData ProtoID=" << pID << ",  userDataLen=" << userDataLen);

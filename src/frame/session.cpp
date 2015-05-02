@@ -9,7 +9,7 @@
  * 
  * ===============================================================================
  * 
- * Copyright (C) 2010-2014 YaweiZhang <yawei_zhang@foxmail.com>.
+ * Copyright (C) 2010-2015 YaweiZhang <yawei_zhang@foxmail.com>.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -276,7 +276,7 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
 			SessionManager::getRef()._totalRecvMessages++;
 			try
 			{
-				bool preCheck = MessageDispatcher::getRef().dispatchPreSessionMessage(_sessionID, _recving.buff + usedIndex, ret.second);
+				bool preCheck = MessageDispatcher::getRef().dispatchPreSessionMessage(shared_from_this(), _recving.buff + usedIndex, ret.second);
 				if (!preCheck)
 				{
 					LCW("Dispatch Message failed. ");
@@ -285,7 +285,7 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
 				{
 					ReadStream rs(_recving.buff + usedIndex, ret.second);
 					ProtoID protoID = rs.getProtoID();
-					MessageDispatcher::getRef().dispatchSessionMessage(_sessionID, protoID, rs);
+					MessageDispatcher::getRef().dispatchSessionMessage(shared_from_this(), protoID, rs);
 				}
 			}
 			catch (std::runtime_error e)
@@ -322,7 +322,7 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
 				_httpHadHeader = true;
 			}
 			SessionManager::getRef()._totalRecvHTTPCount++;
-			MessageDispatcher::getRef().dispatchSessionHTTPMessage(_sessionID, _httpCommonLine, _httpHeader, body);
+			MessageDispatcher::getRef().dispatchSessionHTTPMessage(shared_from_this(), _httpCommonLine, _httpHeader, body);
 			usedIndex += usedLen;
 		}
 		
@@ -356,7 +356,8 @@ void TcpSession::doSend(const char *buf, unsigned int len)
 	{
 		_rc4StateWrite.encryption((unsigned char*)buf, len);
 	}
-	
+    SessionManager::getRef()._totalSendMessages++;
+    SessionManager::getRef()._totalSendBytes += len;
 	if (_sending.bufflen != 0)
 	{
 		MessageSendPack *pack = NULL;
@@ -442,7 +443,7 @@ void TcpSession::onSend(zsummer::network::NetErrorCode ec, int nSentLen)
 
 void TcpSession::onPulseTimer()
 {
-	MessageDispatcher::getRef().dispatchOnSessionPulse(_sessionID, _pulseInterval);
+	MessageDispatcher::getRef().dispatchOnSessionPulse(shared_from_this(), _pulseInterval);
 	if (_pulseTimerID == zsummer::network::InvalidTimerID || _pulseInterval == 0)
 	{
 		return;

@@ -78,6 +78,8 @@ namespace zsummer
             inline unsigned long long getUserParam(){ return _param;}
             inline unsigned long long getUserLParam(){ return _lparam;}
             inline unsigned long long getUserRParam(){ return _rparam;}
+            inline void setUserParamString(const std::string param){ _paramstring = param;}
+            inline const std::string getUserParamString(){ return _paramstring;}
         public:
             TcpSession();
             ~TcpSession();
@@ -146,6 +148,7 @@ namespace zsummer
             unsigned long long _param = 0;
             unsigned long long _lparam = 0;
             unsigned long long _rparam = 0;
+            std::string _paramstring;
 		};
 
 

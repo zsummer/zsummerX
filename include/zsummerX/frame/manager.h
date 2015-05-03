@@ -94,9 +94,10 @@ namespace zsummer
 			unsigned long long _totalAcceptCount = 0;
 			unsigned long long _totalConnectClosedCount = 0;
 			unsigned long long _totalAcceptClosedCount = 0;
-			unsigned long long _totalSendMessages = 0;
+            
+			unsigned long long _totalSendCount = 0;
 			unsigned long long _totalSendBytes = 0;
-
+            unsigned long long _totalSendMessages = 0;
 			unsigned long long _totalRecvCount = 0;
 			unsigned long long _totalRecvBytes = 0;
 			unsigned long long _totalRecvMessages = 0;

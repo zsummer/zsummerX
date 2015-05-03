@@ -395,6 +395,7 @@ void TcpSession::onSend(zsummer::network::NetErrorCode ec, int nSentLen)
 		LCD("remote socket closed");
 		return ;
 	}
+    SessionManager::getRef()._totalSendCount++;
 	_sendingCurIndex += nSentLen;
 	if (_sendingCurIndex < _sending.bufflen)
 	{

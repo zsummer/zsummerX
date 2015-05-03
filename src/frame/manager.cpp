@@ -307,6 +307,15 @@ SessionID SessionManager::addConnector(const ConnectConfig & traits)
 	return _lastConnectID;
 }
 
+TcpSessionPtr SessionManager::getTcpSession(SessionID sID)
+{
+	auto founder = _mapTcpSessionPtr.find(sID);
+	if (founder != _mapTcpSessionPtr.end())
+	{
+		return founder->second;
+	}
+	return nullptr;
+}
 
 void SessionManager::onConnect(SessionID cID, bool bConnected, const TcpSessionPtr &session)
 {

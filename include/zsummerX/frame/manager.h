@@ -78,6 +78,7 @@ namespace zsummer
 			//! add connector under the configure.
 			SessionID addConnector(const ConnectConfig & traits);
 
+			TcpSessionPtr getTcpSession(SessionID sID);
 
 			//send data.
 			void sendSessionData(SessionID sID, const char * orgData, unsigned int orgDataLen);

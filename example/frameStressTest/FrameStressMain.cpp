@@ -62,17 +62,20 @@ std::string g_testStr;
 //!statistic 
 unsigned long long g_lastSendMessages = 0;
 unsigned long long g_lastSendBytes = 0;
+unsigned long long g_lastSendCount = 0;
 unsigned long long g_lastRecvCount = 0;
 unsigned long long g_lastRecvMessages = 0;
 //!statistic monitor
 void MonitorFunc()
 {
 	LOGI("echos message=" << (SessionManager::getRef()._totalSendMessages - g_lastSendMessages) / 5
-		<< "n/s, send data " << (SessionManager::getRef()._totalSendBytes - g_lastSendBytes)/ 5 
+		<< "n/s, send data " << (SessionManager::getRef()._totalSendBytes - g_lastSendBytes)/ 5
+        << "byte/s, send count " << (SessionManager::getRef()._totalSendCount - g_lastSendCount)/5
 		<< "byte/s, recv count " << (SessionManager::getRef()._totalRecvCount - g_lastRecvCount) / 5 
 		<< "n/s, recv messages " << (SessionManager::getRef()._totalRecvMessages - g_lastRecvMessages) / 5);
 	g_lastSendMessages = SessionManager::getRef()._totalSendMessages;
 	g_lastSendBytes = SessionManager::getRef()._totalSendBytes;
+    g_lastSendCount = SessionManager::getRef()._totalSendCount;
 	g_lastRecvCount = SessionManager::getRef()._totalRecvCount;
 	g_lastRecvMessages = SessionManager::getRef()._totalRecvMessages;
 	SessionManager::getRef().createTimer(5000, MonitorFunc);
@@ -144,11 +147,7 @@ public:
 	void onConnected(TcpSessionPtr session)
 	{
 		LOGI("onConnected. ConnectorID=" << session->getSessionID() << ", remoteIP=" << session->getRemoteIP() << ", remotePort=" << session->getRemotePort() );
-        SendFunc(session);
-		if (g_sendType != 0 && g_intervalMs > 0)
-		{
-			SessionManager::getRef().createTimer(g_intervalMs, std::bind(&CStressClientHandler::SendFunc, this, session));
-		}
+        SendFunc(session, g_sendType != 0);
 	};
 	void OnConnectDisconnect(TcpSessionPtr session)
 	{
@@ -167,7 +166,7 @@ public:
 		}
 	};
 
-	void SendFunc(TcpSessionPtr session)
+	void SendFunc(TcpSessionPtr session, bool openTimer)
 	{
 		if (SessionManager::getRef()._totalSendMessages - SessionManager::getRef()._totalRecvMessages < 10000)
 		{
@@ -207,7 +206,10 @@ public:
 			ws << pack;
             session->doSend(ws.getStream(), ws.getStreamLen());
 		}
-        SessionManager::getRef().createTimer(g_intervalMs, std::bind(&CStressClientHandler::SendFunc, this, session));
+        if (openTimer)
+        {
+            SessionManager::getRef().createTimer(g_intervalMs, std::bind(&CStressClientHandler::SendFunc, this, session, true));
+        }
 	};
 
 };

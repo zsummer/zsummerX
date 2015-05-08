@@ -55,8 +55,11 @@ namespace zsummer
 		public:
 			bool start();
 			void stopAccept();
-			void kickAllClients();
-			void kickAllConnect();
+			void stopClients();
+			void setStopClientsHandler(std::function<void()> handler);
+			void stopServers();
+			void setStopServersHandler(std::function<void()> handler);
+
 			void stop();
 			void run();
 			void runOnce(bool isImmediately = false);
@@ -73,11 +76,12 @@ namespace zsummer
 
 			//! add acceptor under the configure.
 			AccepterID addAcceptor(const ListenConfig &traits);
+			bool getAcceptorConfig(AccepterID aID, std::pair<ListenConfig, ListenInfo> & config);
 			AccepterID getAccepterID(SessionID sID);
 
 			//! add connector under the configure.
 			SessionID addConnector(const ConnectConfig & traits);
-
+			bool getConnectorConfig(SessionID sID, std::pair<ConnectConfig, ConnectInfo> & config);
 			TcpSessionPtr getTcpSession(SessionID sID);
 
 			//send data.
@@ -115,7 +119,11 @@ namespace zsummer
 		private:
 			EventLoopPtr _summer;
 			bool  _running = true;
-			bool _openAccept = true;
+			bool _stopAccept = false;
+			char _stopClients = 0;
+			std::function<void()> _funClientsStop;
+			char _stopServers = 0;
+			std::function<void()> _funServerStop;
 
 			SessionID _lastAcceptID = 0; //accept ID sequence. range  [0 - -1)
 			SessionID _lastSessionID = 0;//session ID sequence. range  [0 - __MIDDLE_SEGMENT_VALUE)

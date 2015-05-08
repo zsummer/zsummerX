@@ -133,7 +133,7 @@ void TcpSession::bindTcpConnectorPtr(const TcpSocketPtr &sockptr, const std::pai
 	_remoteIP = config.first._remoteIP;
 	_remotePort = config.first._remotePort;
 	bool connectRet = _sockptr->doConnect(config.first._remoteIP, config.first._remotePort,
-		std::bind(&TcpSession::onConnected, shared_from_this(), std::placeholders::_1, config));
+		std::bind(&TcpSession::onConnected, shared_from_this(), std::placeholders::_1));
 	if (!connectRet)
 	{
 		LCE("DoConnected Failed: traits=" << config.first);
@@ -146,16 +146,21 @@ void TcpSession::bindTcpConnectorPtr(const TcpSocketPtr &sockptr, const std::pai
 
 
 
-void TcpSession::onConnected(zsummer::network::NetErrorCode ec, const std::pair<ConnectConfig, ConnectInfo> & config)
+void TcpSession::onConnected(zsummer::network::NetErrorCode ec)
 {
+	std::pair<ConnectConfig, ConnectInfo> config;
+	if (!SessionManager::getRef().getConnectorConfig(getSessionID(), config))
+	{
+		LCE("onConnected can not found the connect configure. ec=" << ec << ",  connectID=" << getSessionID());
+	}
 	if (ec)
 	{
-		LCW("onConnected failed. ec=" << ec 
-			<< ",  config=" << config.first);
+		LCW("onConnected failed. ec=" << ec << ",  config=" << config.first);
 		_sockptr.reset();
-		SessionManager::getRef().onConnect(config.second._cID, false, shared_from_this());
+		SessionManager::getRef().onConnect(getSessionID(), false, shared_from_this());
 		return;
 	}
+
 	LCI("onConnected success.  config=" << config.first);
 	SessionManager::getRef().onConnect(_sessionID, true, shared_from_this());
 	if (_sending.bufflen == 0 && !_sendque.empty())
@@ -176,9 +181,6 @@ void TcpSession::onConnected(zsummer::network::NetErrorCode ec, const std::pair<
 	{
 		_pulseTimerID = SessionManager::getRef().createTimer(config.first._pulseInterval, std::bind(&TcpSession::onPulseTimer, shared_from_this()));
 	}
-	
-	
-
 }
 
 bool TcpSession::doRecv()
@@ -189,7 +191,10 @@ bool TcpSession::doRecv()
 void TcpSession::close()
 {
 	LCW("TcpSession to close socket. sID= " << _sessionID );
-	_sockptr->doClose();
+	if (_sockptr)
+	{
+		_sockptr->doClose();
+	}
 	if (_pulseTimerID != zsummer::network::InvalidTimerID)
 	{
 		SessionManager::getRef().cancelTimer(_pulseTimerID);
@@ -351,6 +356,12 @@ void TcpSession::doSend(const char *buf, unsigned int len)
 		LCE("Send Message failed!  send len = " << len << ", max send pack len=" << MAX_SEND_PACK_SIZE);
 		return;
 	}
+	if (!_sockptr)
+	{
+		LCW("Send Message failed!  socket is invalid.! ");
+		return;
+	}
+	
 	
 	if (!_rc4Encrypt.empty())
 	{

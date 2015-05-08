@@ -70,43 +70,83 @@ void SessionManager::stop()
 
 void SessionManager::stopAccept()
 {
-	_openAccept = false;
+	_stopAccept = false;
 }
 
-void SessionManager::kickAllClients()
+
+
+void SessionManager::stopClients()
 {
-	for (auto kv : _mapTcpSessionPtr)
-	{
-		if (isSessionID(kv.first))
-		{
-			kickSession(kv.first);
-		}
-	}
+	_stopClients = 1;
 }
 
-void SessionManager::kickAllConnect()
+void SessionManager::stopServers()
 {
-	for (auto kv : _mapTcpSessionPtr)
-	{
-		if (isConnectID(kv.first))
-		{
-			kickSession(kv.first);
-		}
-	}
+	_stopServers = 1;
 }
 
+void SessionManager::setStopClientsHandler(std::function<void()> handler)
+{
+	_funClientsStop = handler;
+}
+void SessionManager::setStopServersHandler(std::function<void()> handler)
+{
+	_funServerStop = handler;
+}
 
 void SessionManager::run()
 {
 	while (_running || !_mapTcpSessionPtr.empty())
 	{
-		_summer->runOnce();
+		runOnce(false);
 	}
 }
 void SessionManager::runOnce(bool isImmediately)
 {
 	if (_running || !_mapTcpSessionPtr.empty())
 	{
+		if (_stopClients == 1)
+		{
+			_stopClients = 2;
+			int count = 0;
+			for (auto kv : _mapTcpSessionPtr)
+			{
+				if (isSessionID(kv.first))
+				{
+					kickSession(kv.first);
+					count++;
+				}
+			}
+			LCW("SessionManager::kickAllClients() [" << count << "], session[" << _mapTcpSessionPtr.size() << "] success.");
+			if (count == 0 && _funClientsStop)
+			{
+				_funClientsStop();
+				_funClientsStop = nullptr;
+			}
+		}
+		if (_stopServers == 1)
+		{
+			_stopServers = 2;
+			for (auto &kv : _mapConnectorConfig)
+			{
+				kv.second.first._reconnectMaxCount = 0;
+			}
+			int count = 0;
+			for (auto kv : _mapTcpSessionPtr)
+			{
+				if (isConnectID(kv.first))
+				{
+					kickSession(kv.first);
+					count++;
+				}
+			}
+			LCW("SessionManager::kickAllConnect() [" << count << "], session[" << _mapTcpSessionPtr.size() << "] success.");
+			if (count == 0 && _funServerStop)
+			{
+				_funServerStop();
+				_funServerStop = nullptr;
+			}
+		}
 		_summer->runOnce(isImmediately);
 	}
 }
@@ -133,6 +173,19 @@ AccepterID SessionManager::addAcceptor(const ListenConfig &traits)
 	return _lastAcceptID;
 }
 
+bool SessionManager::getAcceptorConfig(AccepterID aID, std::pair<ListenConfig, ListenInfo> & config)
+{
+	auto founder = _mapAccepterConfig.find(aID);
+	if (founder != _mapAccepterConfig.end())
+	{
+		config = founder->second;
+		return true;
+	}
+	return false;
+}
+
+
+
 AccepterID SessionManager::getAccepterID(SessionID sID)
 {
 	if (!isSessionID(sID))
@@ -150,7 +203,7 @@ AccepterID SessionManager::getAccepterID(SessionID sID)
 
 void SessionManager::onAcceptNewClient(zsummer::network::NetErrorCode ec, const TcpSocketPtr& s, const TcpAcceptPtr &accepter, AccepterID aID)
 {
-	if (!_running || ! _openAccept)
+	if (!_running ||  _stopAccept)
 	{
 		LCI("shutdown accepter. aID=" << aID);
 		return;
@@ -291,6 +344,38 @@ void SessionManager::onSessionClose(AccepterID aID, SessionID sID, const TcpSess
 	_mapAccepterConfig[aID].second._currentLinked--;
 	_totalAcceptClosedCount++;
 	MessageDispatcher::getRef().dispatchOnSessionDisconnect(session);
+	if (isSessionID(sID) && _stopClients == 2 && _funClientsStop)
+	{
+		int count = 0;
+		for (auto & kv: _mapTcpSessionPtr)
+		{
+			if (isSessionID(kv.second->getSessionID()))
+			{
+				count++;
+			}
+		}
+		if (count == 0)
+		{
+			_funClientsStop();
+			_funClientsStop = nullptr;
+		}
+	}
+	else if (isConnectID(sID) && _stopServers == 2 && _funServerStop)
+	{
+		int count = 0;
+		for (auto & kv : _mapTcpSessionPtr)
+		{
+			if (isConnectID(kv.second->getSessionID()))
+			{
+				count++;
+			}
+		}
+		if (count == 0)
+		{
+			_funServerStop();
+			_funServerStop = nullptr;
+		}
+	}
 }
 
 
@@ -305,6 +390,17 @@ SessionID SessionManager::addConnector(const ConnectConfig & traits)
 	TcpSessionPtr sessionPtr(new TcpSession());
 	sessionPtr->bindTcpConnectorPtr(sockPtr, pairConfig);
 	return _lastConnectID;
+}
+
+bool SessionManager::getConnectorConfig(SessionID sID, std::pair<ConnectConfig, ConnectInfo> & config)
+{
+	auto founder = _mapConnectorConfig.find(sID);
+	if (founder != _mapConnectorConfig.end())
+	{
+		config = founder->second;
+		return true;
+	}
+	return false;
 }
 
 TcpSessionPtr SessionManager::getTcpSession(SessionID sID)

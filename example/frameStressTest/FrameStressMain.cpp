@@ -208,7 +208,7 @@ public:
 		}
         if (openTimer)
         {
-            SessionManager::getRef().createTimer(g_intervalMs, std::bind(&CStressClientHandler::SendFunc, this, session, true));
+			SessionManager::getRef().createTimer(g_intervalMs, std::bind(&CStressClientHandler::SendFunc, this, session, !session->isInvalidSession()));
         }
 	};
 
@@ -241,12 +241,15 @@ public:
 
 void sigFun(int sig)
 {
-	SessionManager::getRef().stop();
 	SessionManager::getRef().stopAccept();
-	SessionManager::getRef().post(std::bind(&SessionManager::kickAllClients, SessionManager::getPtr()));
-	SessionManager::getRef().post(std::bind(&SessionManager::kickAllConnect, SessionManager::getPtr()));
+	SessionManager::getRef().stopClients();
 }
 
+void onAllClientsStoped()
+{
+	SessionManager::getRef().stopServers();
+	SessionManager::getRef().stop();
+}
 int main(int argc, char* argv[])
 {
 
@@ -303,7 +306,7 @@ int main(int argc, char* argv[])
 	ILog4zManager::getPtr()->setLoggerLevel(LOG4Z_MAIN_LOGGER_ID, LOG_LEVEL_INFO);
 
 
-
+	SessionManager::getRef().setStopClientsHandler(onAllClientsStoped);
 	SessionManager::getRef().start();
 
 	g_testStr.resize(200, 's');

@@ -43,7 +43,13 @@ namespace zsummer
 {
 	namespace network
 	{
-
+		/*
+			SessionManager是一个单例singleton, 是一个对zsummerX底层接口的高级封装, 如果需要自己封装 则可以参考frame的做法或者example中的例子进行封装或使用.
+			这个单例提供了所有网络的高级的可操作接口, 比如启动网络模块单例, 开启网络循环, 依次关闭部分网络功能 最后退出网络循环,  添加多个监听接口, 添加多个连出, 发送数据,
+				跨线程的通知机制post, 创建取消定时器, 获取连接信息, 设置定时检测, 设置断线重莲次数和间隔, 设置是否支持flash Policy, 设置最大可连入的连接数, 设置协议是二进制的TCP协议(proto4z协议流), 
+				设置协议是HTTP(可做WEB服务器和客户端使用, 很方便的做一些SDK认证和平台接入),  可获取运行时的网络状态数据.
+			消息处理的handler注册 参看文件dispatch.h
+		*/
 		class SessionManager
 		{
 		private:

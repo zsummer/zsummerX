@@ -109,7 +109,7 @@ int main(int argc, char* argv[])
 // 			wh.addHead("User-Agent", "Mozilla/5.0 ");
 			wh.addHead("Content-Type", "application/x-www-form-urlencoded");
 //			wh.addHead("Accept-Encoding", "utf8");
-			wh.addHead("Host", "10.0.0.197");
+			wh.addHead("Host", g_remoteIP);
 //			wh.addHead("DNT", "1");
 //			wh.addHead("Connection", "Keep-Alive");
 			wh.post("/user/oauth", jsonString);

@@ -77,11 +77,14 @@ namespace zsummer
 
 			//handle: std::function<void()>
 			//switch initiative, in the multi-thread it's switch call thread simultaneously.
+			//投递一个handler到SessionManager的线程中去处理, 线程安全.
 			template<class H>
 			void post(H &&h){ _summer->post(std::move(h)); }
 
+			//创建定时器 单位是毫秒 非线程安全, 如有多线程下的需求请配合POST来实现.
 			template <class H>
 			zsummer::network::TimerID createTimer(unsigned int delayms, H &&h){ return _summer->createTimer(delayms, std::move(h)); }
+			//取消定时器.  注意, 如果在定时器的回调handler中取消当前定时器 会失败的.
 			bool cancelTimer(unsigned long long timerID){ return _summer->cancelTimer(timerID); }
 
 

@@ -219,7 +219,6 @@ void SessionManager::onAcceptNewClient(zsummer::network::NetErrorCode ec, const 
 		LCE("doAccept Result Error. ec=" << ec << ", traits=" << iter->second.first);
 		
 		TcpSocketPtr newclient(new zsummer::network::TcpSocket);
-		newclient->initialize(_summer);
 		auto &&handler = std::bind(&SessionManager::onAcceptNewClient, this, std::placeholders::_1, std::placeholders::_2, accepter, aID);
 		auto timer = [accepter, newclient, handler]()
 		{
@@ -256,7 +255,6 @@ void SessionManager::onAcceptNewClient(zsummer::network::NetErrorCode ec, const 
 				<< ", trais=" << iter->second.first);
 
 			TcpSocketPtr newclient(new zsummer::network::TcpSocket);
-			newclient->initialize(_summer);
 			accepter->doAccept(newclient, std::bind(&SessionManager::onAcceptNewClient, this, std::placeholders::_1, std::placeholders::_2, accepter, aID));
 			return;
 		}
@@ -272,7 +270,9 @@ void SessionManager::onAcceptNewClient(zsummer::network::NetErrorCode ec, const 
 	if (iter->second.second._currentLinked >= iter->second.first._maxSessions)
 	{
 		LCW("Accept New Client. Too Many Sessions And The new socket will closed. remoteAddress=" << remoteIP << ":" << remotePort 
-			<< ", Aready linked sessions = " << iter->second.second._currentLinked << ", trais=" << iter->second.first);
+			<< ", Aready linked sessions = " << iter->second.second._currentLinked << ", trais=[" << iter->second.first << "] total TcpSocket object count =[create:" << zsummer::network::g_appEnvironment.getCreatedSocketCount() << ", close:" << zsummer::network::g_appEnvironment.getClosedSocketCount() << "], total TcpSession object count =[create:"
+			<< zsummer::network::g_appEnvironment.getCreatedSessionCount() << ", close:" << zsummer::network::g_appEnvironment.getClosedSessionCount()
+			<< "]");
 	}
 	else
 	{
@@ -282,8 +282,9 @@ void SessionManager::onAcceptNewClient(zsummer::network::NetErrorCode ec, const 
 		iter->second.second._totalAcceptCount++;
 
 		_lastSessionID = nextSessionID(_lastSessionID);
-		TcpSessionPtr session(new TcpSession());
 		s->initialize(_summer);
+
+		TcpSessionPtr session(new TcpSession());
 		if (session->bindTcpSocketPrt(s, aID, _lastSessionID, iter->second.first))
 		{
 			_mapTcpSessionPtr[_lastSessionID] = session;
@@ -294,7 +295,6 @@ void SessionManager::onAcceptNewClient(zsummer::network::NetErrorCode ec, const 
 	
 	//! accept next socket.
 	TcpSocketPtr newclient(new zsummer::network::TcpSocket);
-	newclient->initialize(_summer);
 	accepter->doAccept(newclient, std::bind(&SessionManager::onAcceptNewClient, this, std::placeholders::_1, std::placeholders::_2, accepter,aID));
 }
 

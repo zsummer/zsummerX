@@ -206,7 +206,7 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
 {
 	if (ec)
 	{
-		LCD("socket closed");
+		LCD("socket closed. ec=" << ec);
 		onClose();
 		return;
 	}

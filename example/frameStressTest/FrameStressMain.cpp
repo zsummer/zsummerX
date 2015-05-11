@@ -109,7 +109,7 @@ public:
 
 	void OnSessionPulse(TcpSessionPtr session, unsigned int pulseInterval)
 	{
-        if (time(NULL) - session->getUserLParam() / 1000 * 2)
+        if (time(NULL) - session->getUserLParam() > pulseInterval/1000 * 3)
         {
             LOGI("remote session timeout. sID=" << session->getSessionID() << ", timeout=" << time(NULL) - session->getUserLParam());
             SessionManager::getRef().kickSession(session->getSessionID());
@@ -327,9 +327,9 @@ int main(int argc, char* argv[])
 			traits._remoteIP = g_remoteIP;
 			traits._remotePort = g_remotePort;
 			traits._reconnectInterval = 5000;
-			traits._reconnectMaxCount = 5;
-//			traits._rc4TcpEncryption = "yawei.zhang@foxmail.com";
-			traits._pulseInterval = 500000;
+			traits._reconnectMaxCount = 15;
+			traits._rc4TcpEncryption = "yawei.zhang@foxmail.com";
+			traits._pulseInterval = 10000;
 			SessionManager::getRef().addConnector(traits);
 		}
 		//running
@@ -342,9 +342,9 @@ int main(int argc, char* argv[])
 		ListenConfig traits;
 		traits._listenPort = g_remotePort;
 //		traits._maxSessions = g_maxClient;
-//		traits._rc4TcpEncryption = "yawei.zhang@foxmail.com";
+		traits._rc4TcpEncryption = "yawei.zhang@foxmail.com";
 		//traits._openFlashPolicy = true;
-		traits._pulseInterval = 500000;
+		traits._pulseInterval = 10000;
 		//traits._whitelistIP.push_back("127.0.");
 		SessionManager::getRef().addAcceptor(traits);
 		//running

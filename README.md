@@ -74,7 +74,7 @@ cd zsummerX/example/bin/
 cd zsummerX/example/bin/   
 ./frameStressTest_select_d 127.0.0.1 81 1  
   
-# auther: YaweiZhang  
+# author: YaweiZhang  
 Web Site: www.zsummer.net  
 mail: yawei_zhang@foxmail.com  
 github: https://github.com/zsummer  

@@ -47,9 +47,31 @@ int luaopen_protoz_bit(lua_State *L);
 
 #include <zsummerX/zsummerX.h>
 using namespace zsummer::log4z;
+using namespace zsummer::network;
+
+void sigFun(int sig)
+{
+	SessionManager::getRef().stopAccept();
+	SessionManager::getRef().stopClients();
+}
 
 int main(int argc, char* argv[])
 {
+#ifndef _WIN32
+	//! ignore some signal
+	signal(SIGHUP, SIG_IGN);
+	signal(SIGALRM, SIG_IGN);
+	signal(SIGPIPE, SIG_IGN);
+	signal(SIGXCPU, SIG_IGN);
+	signal(SIGXFSZ, SIG_IGN);
+	signal(SIGPROF, SIG_IGN);
+	signal(SIGVTALRM, SIG_IGN);
+	signal(SIGQUIT, SIG_IGN);
+	signal(SIGCHLD, SIG_IGN);
+#endif
+	signal(SIGINT, sigFun);
+
+
 	ILog4zManager::getRef().start();
 	ILog4zManager::getRef().setLoggerFileLine(LOG4Z_MAIN_LOGGER_ID, false);
 	int status;

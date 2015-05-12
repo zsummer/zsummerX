@@ -94,14 +94,16 @@ void SessionManager::setStopServersHandler(std::function<void()> handler)
 	_funServerStop = handler;
 }
 
-void SessionManager::run()
+bool SessionManager::run()
 {
 	while (_running || !_mapTcpSessionPtr.empty())
 	{
 		runOnce(false);
 	}
+	return false;
 }
-void SessionManager::runOnce(bool isImmediately)
+
+bool SessionManager::runOnce(bool isImmediately)
 {
 	if (_running || !_mapTcpSessionPtr.empty())
 	{
@@ -122,6 +124,7 @@ void SessionManager::runOnce(bool isImmediately)
 			{
 				_funClientsStop();
 				_funClientsStop = nullptr;
+				_stopClients = 3;
 			}
 		}
 		if (_stopServers == 1)
@@ -145,10 +148,13 @@ void SessionManager::runOnce(bool isImmediately)
 			{
 				_funServerStop();
 				_funServerStop = nullptr;
+				_stopServers = 3;
 			}
 		}
 		_summer->runOnce(isImmediately);
+		return true;
 	}
+	return false;
 }
 
 
@@ -353,22 +359,7 @@ void SessionManager::onSessionClose(AccepterID aID, SessionID sID, const TcpSess
 		{
 			_funClientsStop();
 			_funClientsStop = nullptr;
-		}
-	}
-	else if (isConnectID(sID) && _stopServers == 2 && _funServerStop)
-	{
-		int count = 0;
-		for (auto & kv : _mapTcpSessionPtr)
-		{
-			if (isConnectID(kv.second->getSessionID()))
-			{
-				count++;
-			}
-		}
-		if (count == 0)
-		{
-			_funServerStop();
-			_funServerStop = nullptr;
+			_stopClients = 3;
 		}
 	}
 }
@@ -432,7 +423,24 @@ void SessionManager::onConnect(SessionID cID, bool bConnected, const TcpSessionP
 	{
 		_mapTcpSessionPtr.erase(cID);
 		_totalConnectClosedCount++;
-		post(std::bind(&MessageDispatcher::dispatchOnSessionDisconnect, &MessageDispatcher::getRef(),  session));
+		MessageDispatcher::getRef().dispatchOnSessionDisconnect(session);
+		if (_stopServers == 2 && _funServerStop)
+		{
+			int count = 0;
+			for (auto & kv : _mapTcpSessionPtr)
+			{
+				if (isConnectID(kv.second->getSessionID()))
+				{
+					count++;
+				}
+			}
+			if (count == 0)
+			{
+				_funServerStop();
+				_funServerStop = nullptr;
+				_stopServers = 3;
+			}
+		}
 	}
 
 	if (!bConnected

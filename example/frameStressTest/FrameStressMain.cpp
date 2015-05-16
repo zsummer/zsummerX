@@ -328,7 +328,7 @@ int main(int argc, char* argv[])
 			traits._remotePort = g_remotePort;
 			traits._reconnectInterval = 5000;
 			traits._reconnectMaxCount = 15;
-			traits._rc4TcpEncryption = "yawei.zhang@foxmail.com";
+			//traits._rc4TcpEncryption = "yawei.zhang@foxmail.com";
 			traits._pulseInterval = 10000;
 			SessionManager::getRef().addConnector(traits);
 		}
@@ -342,7 +342,7 @@ int main(int argc, char* argv[])
 		ListenConfig traits;
 		traits._listenPort = g_remotePort;
 //		traits._maxSessions = g_maxClient;
-		traits._rc4TcpEncryption = "yawei.zhang@foxmail.com";
+		//traits._rc4TcpEncryption = "yawei.zhang@foxmail.com";
 		//traits._openFlashPolicy = true;
 		traits._pulseInterval = 10000;
 		//traits._whitelistIP.push_back("127.0.");

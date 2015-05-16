@@ -39,7 +39,7 @@
 
 
 -- proto4z core file
--- Auther: zhangyawei
+-- Author: zhangyawei
 -- mail:yawei.zhang@foxmail.com
 -- date: 2015-01-12
 

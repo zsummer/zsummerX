@@ -12,7 +12,16 @@
     <ClCompile Include="lua\lbaselib.c">
       <Filter>lua</Filter>
     </ClCompile>
+    <ClCompile Include="lua\lbitlib.c">
+      <Filter>lua</Filter>
+    </ClCompile>
     <ClCompile Include="lua\lcode.c">
+      <Filter>lua</Filter>
+    </ClCompile>
+    <ClCompile Include="lua\lcorolib.c">
+      <Filter>lua</Filter>
+    </ClCompile>
+    <ClCompile Include="lua\lctype.c">
       <Filter>lua</Filter>
     </ClCompile>
     <ClCompile Include="lua\ldblib.c">
@@ -60,6 +69,9 @@
     <ClCompile Include="lua\loslib.c">
       <Filter>lua</Filter>
     </ClCompile>
+    <ClCompile Include="lua\lpack.c">
+      <Filter>lua</Filter>
+    </ClCompile>
     <ClCompile Include="lua\lparser.c">
       <Filter>lua</Filter>
     </ClCompile>
@@ -84,16 +96,13 @@
     <ClCompile Include="lua\lundump.c">
       <Filter>lua</Filter>
     </ClCompile>
+    <ClCompile Include="lua\lutf8lib.c">
+      <Filter>lua</Filter>
+    </ClCompile>
     <ClCompile Include="lua\lvm.c">
       <Filter>lua</Filter>
     </ClCompile>
     <ClCompile Include="lua\lzio.c">
-      <Filter>lua</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\print.c">
-      <Filter>lua</Filter>
-    </ClCompile>
-    <ClCompile Include="lua\lpack.c">
       <Filter>lua</Filter>
     </ClCompile>
     <ClCompile Include="lua\protoz_bit.c">
@@ -109,6 +118,9 @@
       <Filter>lua</Filter>
     </ClInclude>
     <ClInclude Include="lua\lcode.h">
+      <Filter>lua</Filter>
+    </ClInclude>
+    <ClInclude Include="lua\lctype.h">
       <Filter>lua</Filter>
     </ClInclude>
     <ClInclude Include="lua\ldebug.h">
@@ -138,7 +150,13 @@
     <ClInclude Include="lua\lopcodes.h">
       <Filter>lua</Filter>
     </ClInclude>
+    <ClInclude Include="lua\lpack.h">
+      <Filter>lua</Filter>
+    </ClInclude>
     <ClInclude Include="lua\lparser.h">
+      <Filter>lua</Filter>
+    </ClInclude>
+    <ClInclude Include="lua\lprefix.h">
       <Filter>lua</Filter>
     </ClInclude>
     <ClInclude Include="lua\lstate.h">
@@ -156,6 +174,9 @@
     <ClInclude Include="lua\lua.h">
       <Filter>lua</Filter>
     </ClInclude>
+    <ClInclude Include="lua\lua.hpp">
+      <Filter>lua</Filter>
+    </ClInclude>
     <ClInclude Include="lua\luaconf.h">
       <Filter>lua</Filter>
     </ClInclude>
@@ -169,9 +190,6 @@
       <Filter>lua</Filter>
     </ClInclude>
     <ClInclude Include="lua\lzio.h">
-      <Filter>lua</Filter>
-    </ClInclude>
-    <ClInclude Include="lua\lpack.h">
       <Filter>lua</Filter>
     </ClInclude>
   </ItemGroup>

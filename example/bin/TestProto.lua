@@ -65,26 +65,20 @@ Protoz.TestStringDataMap.__getDesc = "map"
 Protoz.TestStringDataMap.__getTypeK = "string" 
 Protoz.TestStringDataMap.__getTypeV = "TestStringData" 
  
-Protoz.register(30000,"P2P_EchoPack") 
-Protoz.P2P_EchoPack = {}  
-Protoz.P2P_EchoPack.__getID = 30000 
-Protoz.P2P_EchoPack.__getName = "P2P_EchoPack" 
-Protoz.P2P_EchoPack.__getTag = "111111" 
-Protoz.P2P_EchoPack[1] = {name="_iarray", type="TestIntegerDataArray" }  
-Protoz.P2P_EchoPack[2] = {name="_farray", type="TestFloatDataArray" }  
-Protoz.P2P_EchoPack[3] = {name="_sarray", type="TestStringDataArray" }  
-Protoz.P2P_EchoPack[4] = {name="_imap", type="TestIntegerDataMap" }  
-Protoz.P2P_EchoPack[5] = {name="_fmap", type="TestFloatDataMap" }  
-Protoz.P2P_EchoPack[6] = {name="_smap", type="TestStringDataMap" }  
+Protoz.register(30000,"EchoPack") 
+Protoz.EchoPack = {}  
+Protoz.EchoPack.__getID = 30000 
+Protoz.EchoPack.__getName = "EchoPack" 
+Protoz.EchoPack.__getTag = "111111" 
+Protoz.EchoPack[1] = {name="_iarray", type="TestIntegerDataArray" }  
+Protoz.EchoPack[2] = {name="_farray", type="TestFloatDataArray" }  
+Protoz.EchoPack[3] = {name="_sarray", type="TestStringDataArray" }  
+Protoz.EchoPack[4] = {name="_imap", type="TestIntegerDataMap" }  
+Protoz.EchoPack[5] = {name="_fmap", type="TestFloatDataMap" }  
+Protoz.EchoPack[6] = {name="_smap", type="TestStringDataMap" }  
  
-Protoz.register(30001,"C2S_Pulse") 
-Protoz.C2S_Pulse = {}  
-Protoz.C2S_Pulse.__getID = 30001 
-Protoz.C2S_Pulse.__getName = "C2S_Pulse" 
-Protoz.C2S_Pulse.__getTag = "" 
- 
-Protoz.register(30002,"S2C_Pulse") 
-Protoz.S2C_Pulse = {}  
-Protoz.S2C_Pulse.__getID = 30002 
-Protoz.S2C_Pulse.__getName = "S2C_Pulse" 
-Protoz.S2C_Pulse.__getTag = "" 
+Protoz.register(30001,"Pulse") 
+Protoz.Pulse = {}  
+Protoz.Pulse.__getID = 30001 
+Protoz.Pulse.__getName = "Pulse" 
+Protoz.Pulse.__getTag = "" 

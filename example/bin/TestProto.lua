@@ -77,8 +77,3 @@ Proto4z.EchoPack[4] = {name="_imap", type="TestIntegerDataMap" }
 Proto4z.EchoPack[5] = {name="_fmap", type="TestFloatDataMap" }  
 Proto4z.EchoPack[6] = {name="_smap", type="TestStringDataMap" }  
  
-Proto4z.register(30001,"Pulse") 
-Proto4z.Pulse = {}  
-Proto4z.Pulse.__getID = 30001 
-Proto4z.Pulse.__getName = "Pulse" 
-Proto4z.Pulse.__getTag = "" 

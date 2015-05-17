@@ -2,7 +2,9 @@ package.path =  "../../depends/proto4z/?.lua;" .. package.path
 --require
 require("proto4z")
 require("TestProto")
-
+logw = summer.logw
+logi = summer.logi
+loge = summer.loge
 
 --echo pack
 

@@ -168,7 +168,7 @@ bool TcpSocket::doConnect(const std::string& remoteIP, unsigned short remotePort
 	DWORD dwSize = 0;
 	if (WSAIoctl(_socket, SIO_GET_EXTENSION_FUNCTION_POINTER, &gid, sizeof(gid), &lpConnectEx, sizeof(lpConnectEx), &dwSize, NULL, NULL) != 0)
 	{
-		LCT("TcpSocket::doConnect[" << this << "] Get ConnectEx pointer err!  ERRCODE= " << WSAGetLastError() << getTcpSocketStatus());
+		LCF("TcpSocket::doConnect[" << this << "] Get ConnectEx pointer err!  ERRCODE= " << WSAGetLastError() << getTcpSocketStatus());
 		return false;
 	}
 
@@ -186,7 +186,7 @@ bool TcpSocket::doConnect(const std::string& remoteIP, unsigned short remotePort
 	{
 		if (WSAGetLastError() != ERROR_IO_PENDING)
 		{
-			LCT("TcpSocket::doConnect[" << this << "] doConnect failed and ERRCODE!=ERROR_IO_PENDING, ERRCODE=" << WSAGetLastError() << getTcpSocketStatus());
+			LCF("TcpSocket::doConnect[" << this << "] doConnect failed and ERRCODE!=ERROR_IO_PENDING, ERRCODE=" << WSAGetLastError() << getTcpSocketStatus());
 			return false;
 		}
 

@@ -17,25 +17,25 @@ local echo = {  _iarray = {{_char=1,_uchar=2,_short=3,_ushort=4,_int=5,_uint=6,_
 -- 连接成功事件
 function onConnect(sID, remoteIP, remotePort)
 	print("session is on connected. sID=" .. sID .. ", remoteIP=" .. remoteIP .. ", remotePort=" .. remotePort)
-	local data = Protoz.encode(echo, "EchoPack")
-	Protoz.dump(echo)
-	Protoz.putbin(data)
-	summer.sendContent(sID, Protoz.EchoPack.__getID, data)
+	local data = Proto4z.encode(echo, "EchoPack")
+	Proto4z.dump(echo)
+	Proto4z.putbin(data)
+	summer.sendContent(sID, Proto4z.EchoPack.__getID, data)
 end
 summer.registerConnect(onConnect)
 
 -- 收到消息
 function onMessage(sID, pID, content)
 	--print("onMessage. sID=" .. sID .. ", pID=" .. pID )
-	--Protoz.putbin(content)
-	local name = Protoz.getName(pID)
+	--Proto4z.putbin(content)
+	local name = Proto4z.getName(pID)
 	if name == nil then
 		logw("unknown message id recv. pID=" .. pID)
 	else
-			local echo = Protoz.decode(content, name)
-			--Protoz.dump(echo)
-			local data = Protoz.encode(echo, "EchoPack")
-			summer.sendContent(sID, Protoz.EchoPack.__getID, data)
+			local echo = Proto4z.decode(content, name)
+			--Proto4z.dump(echo)
+			local data = Proto4z.encode(echo, "EchoPack")
+			summer.sendContent(sID, Proto4z.EchoPack.__getID, data)
 	end
 
 end

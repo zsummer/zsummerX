@@ -105,7 +105,7 @@
     <ClCompile Include="lua\lzio.c">
       <Filter>lua</Filter>
     </ClCompile>
-    <ClCompile Include="lua\protoz_bit.c">
+    <ClCompile Include="lua\lproto4z.c">
       <Filter>lua</Filter>
     </ClCompile>
   </ItemGroup>

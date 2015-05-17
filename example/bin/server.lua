@@ -11,16 +11,16 @@ local echoCount = 0
 -- 收到消息
 function onMessage(sID, pID, content)
 	--print("onMessage. sID=" .. sID .. ", pID=" .. pID )
-	--Protoz.putbin(content)
-	local name = Protoz.getName(pID)
+	--Proto4z.putbin(content)
+	local name = Proto4z.getName(pID)
 	if name == nil then
 		logw("unknown message id recv. pID=" .. pID)
 	else
 		--echo
 		summer.sendContent(sID, pID, content)
 
-		--Protoz.dump(echo)
-		local echo = Protoz.decode(content, name)
+		--Proto4z.dump(echo)
+		local echo = Proto4z.decode(content, name)
 		echoCount = echoCount + 1
 		if os.time() - lastTime >=5 then
 			print("per second = " .. echoCount/5)

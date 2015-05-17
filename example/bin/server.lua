@@ -13,16 +13,22 @@ function onMessage(sID, pID, content)
 	--print("onMessage. sID=" .. sID .. ", pID=" .. pID )
 	--Protoz.putbin(content)
 	local name = Protoz.getName(pID)
-	local echo = Protoz.decode(content, name)
-	--Protoz.dump(echo)
-	summer.sendContent(sID, pID, content)
+	if name == nil then
+		logw("unknown message id recv. pID=" .. pID)
+	else
+		--echo
+		summer.sendContent(sID, pID, content)
 
-	echoCount = echoCount + 1
-	if os.time() - lastTime >=5 then
-		print("per second = " .. echoCount/5)
-		echoCount = 0
-		lastTime = os.time()
+		--Protoz.dump(echo)
+		local echo = Protoz.decode(content, name)
+		echoCount = echoCount + 1
+		if os.time() - lastTime >=5 then
+			print("per second = " .. echoCount/5)
+			echoCount = 0
+			lastTime = os.time()
+		end
 	end
+
 end
 summer.registerMessage(onMessage)
 

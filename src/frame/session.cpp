@@ -137,6 +137,7 @@ void TcpSession::bindTcpConnectorPtr(const TcpSocketPtr &sockptr, const std::pai
 	if (!connectRet)
 	{
 		LCE("DoConnected Failed: traits=" << config.first);
+		SessionManager::getRef().post(std::bind(&TcpSession::onConnected, shared_from_this(), NEC_ERROR));
 		return ;
 	}
 	LCI("DoConnected : traits=" << config.first);

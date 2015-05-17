@@ -29,10 +29,15 @@ function onMessage(sID, pID, content)
 	--print("onMessage. sID=" .. sID .. ", pID=" .. pID )
 	--Protoz.putbin(content)
 	local name = Protoz.getName(pID)
-	local echo = Protoz.decode(content, name)
-	--Protoz.dump(echo)
-	local data = Protoz.encode(echo, "EchoPack")
-	summer.sendContent(sID, Protoz.EchoPack.__getID, data)
+	if name == nil then
+		logw("unknown message id recv. pID=" .. pID)
+	else
+			local echo = Protoz.decode(content, name)
+			--Protoz.dump(echo)
+			local data = Protoz.encode(echo, "EchoPack")
+			summer.sendContent(sID, Protoz.EchoPack.__getID, data)
+	end
+
 end
 summer.registerMessage(onMessage)
 
@@ -47,7 +52,7 @@ summer.registerDisconnect(onDisconnect)
 summer.start()
 
 --连接服务器
-local id = summer.addConnect({ip="127.0.0.1", port=8081, reconnect=2})
+local id = summer.addConnect({ip="127.0.0.1", port=8081, reconnect=10})
 if id == nil then
 	summer.logw("id == nil when addConnect")
 end

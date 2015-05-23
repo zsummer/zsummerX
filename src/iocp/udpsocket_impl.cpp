@@ -95,7 +95,7 @@ bool UdpSocket::initialize(const EventLoopPtr &summer, const char *localIP, unsi
 	memset(&addr, 0, sizeof(SOCKADDR_IN));
 	addr.sin_family = AF_INET;
 	addr.sin_addr.s_addr = inet_addr(localIP);
-	addr.sin_port = ntohs(localPort);
+	addr.sin_port = htons(localPort);
 	if (bind(_socket, (sockaddr *) &addr, sizeof(sockaddr_in)) != 0)
 	{
 		LCE("UdpSocket: bind local addr error!  socket=" << (unsigned int)_socket << ", ERRCODE=" << WSAGetLastError());

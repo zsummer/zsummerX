@@ -178,16 +178,10 @@ bool TcpAccept::onIOCPMessage(BOOL bSuccess)
 	_OnAcceptHandler onAccept(std::move(_onAcceptHandler));
 	if (bSuccess)
 	{
+
+		if (setsockopt(_socket, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT, (char*)&_server, sizeof(_server)) != 0)
 		{
-			if (setsockopt(_socket,SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT, (char*)&_server, sizeof(_server)) != 0)
-			{
-				LCW("SO_UPDATE_ACCEPT_CONTEXT fail!  last err=" << WSAGetLastError()  << " ip=" << _ip << ", port=" << _port);
-			}
-			BOOL bTrue = TRUE;
-			if (setsockopt(_socket,IPPROTO_TCP, TCP_NODELAY, (char*)&bTrue, sizeof(bTrue)) != 0)
-			{
-				LCW("setsockopt TCP_NODELAY fail!  last err=" << WSAGetLastError()  << " ip=" << _ip << ", port=" << _port);
-			}
+			LCW("SO_UPDATE_ACCEPT_CONTEXT fail!  last err=" << WSAGetLastError() << " ip=" << _ip << ", port=" << _port);
 		}
 
 		sockaddr * paddr1 = NULL;

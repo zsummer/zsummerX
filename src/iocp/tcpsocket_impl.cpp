@@ -300,13 +300,6 @@ void TcpSocket::onIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned char 
 		if (bSuccess)
 		{
 			_nLinkStatus = LS_ESTABLISHED;
-			{
-				BOOL bTrue = TRUE;
-				if (setsockopt(_socket,IPPROTO_TCP, TCP_NODELAY, (char*)&bTrue, sizeof(bTrue)) != 0)
-				{
-					LCW("TcpSocket::onIOCPMessage[" << this << "] setsockopt TCP_NODELAY fail!  last err=" << WSAGetLastError() << getTcpSocketStatus());
-				}
-			}
 			onConnect(NetErrorCode::NEC_SUCCESS);
 		}
 		else

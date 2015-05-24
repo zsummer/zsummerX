@@ -94,10 +94,10 @@ void EventLoop::PostMessage(_OnPostHandler &&handle)
 {
 	_OnPostHandler * pHandler = new _OnPostHandler(std::move(handle));
 	_stackMessagesLock.lock();
+	if (_stackMessages.empty()){char c = '0'; send(_sockpair[0], &c, 1, 0);}
 	_stackMessages.push_back(pHandler);
 	_stackMessagesLock.unlock();
-	char c='0';
-	send(_sockpair[0], &c, 1, 0);
+
 }
 
 std::string EventLoop::logSection()

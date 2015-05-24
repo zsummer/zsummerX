@@ -91,6 +91,11 @@ std::string TcpSocket::getTcpSocketStatus()
 //new socket to connect, or accept established socket
 bool TcpSocket::initialize(const EventLoopPtr& summer)
 {
+	if (_summer)
+	{
+		LCE("TcpSocket::initialize[" << this << "] duplicate initialize! " << getTcpSocketStatus());
+		return false;
+	}
 	_summer = summer;
 	if (_nLinkStatus != LS_UNINITIALIZE)
 	{
@@ -102,7 +107,7 @@ bool TcpSocket::initialize(const EventLoopPtr& summer)
 		_socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
 		if (_socket == INVALID_SOCKET)
 		{
-			LCE("TcpSocket::doConnect[" << this << "] socket create error! ERRCODE=" << WSAGetLastError() << getTcpSocketStatus());
+			LCE("TcpSocket::initialize[" << this << "] socket create error! ERRCODE=" << WSAGetLastError() << getTcpSocketStatus());
 			return false;
 		}
 		setNoDelay(_socket);
@@ -111,7 +116,7 @@ bool TcpSocket::initialize(const EventLoopPtr& summer)
 		localAddr.sin_family = AF_INET;
 		if (bind(_socket, (sockaddr *)&localAddr, sizeof(SOCKADDR_IN)) != 0)
 		{
-			LCE("TcpSocket::doConnect[" << this << "] bind local addr error! ERRCODE=" << WSAGetLastError() << getTcpSocketStatus());
+			LCE("TcpSocket::initialize[" << this << "] bind local addr error! ERRCODE=" << WSAGetLastError() << getTcpSocketStatus());
 			closesocket(_socket);
 			_socket = INVALID_SOCKET;
 			return false;

@@ -181,8 +181,8 @@ bool TcpSocket::doConnect(const std::string& remoteIP, unsigned short remotePort
 	
 
 	char buf[1];
-	DWORD dwLenth = 0;
-	if (!lpConnectEx(_socket, (sockaddr *)&remoteAddr, sizeof(remoteAddr), buf, 0, &dwLenth, &_connectHandle._overlapped))
+	DWORD dwBytes = 0;
+	if (!lpConnectEx(_socket, (sockaddr *)&remoteAddr, sizeof(remoteAddr), buf, 0, &dwBytes, &_connectHandle._overlapped))
 	{
 		if (WSAGetLastError() != ERROR_IO_PENDING)
 		{

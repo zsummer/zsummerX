@@ -193,7 +193,7 @@ bool UdpSocket::doRecvFrom(char * buf, unsigned int len, _OnRecvFromHandler&& ha
 	return true;
 }
 
-bool UdpSocket::onIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned char cType)
+bool UdpSocket::onIOCPMessage(BOOL bSuccess, DWORD dwTranceBytes, unsigned char cType)
 {
 	if (cType == tagReqHandle::HANDLE_RECVFROM)
 	{
@@ -202,9 +202,9 @@ bool UdpSocket::onIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned char 
 		_recvWSABuf.buf = nullptr;
 		_recvWSABuf.len = 0;
 		
-		if (bSuccess && dwTranceCount > 0)
+		if (bSuccess && dwTranceBytes > 0)
 		{
-			onRecv(NEC_SUCCESS, inet_ntoa(_recvFrom.sin_addr), ntohs(_recvFrom.sin_port), dwTranceCount);
+			onRecv(NEC_SUCCESS, inet_ntoa(_recvFrom.sin_addr), ntohs(_recvFrom.sin_port), dwTranceBytes);
 		}
 		else
 		{

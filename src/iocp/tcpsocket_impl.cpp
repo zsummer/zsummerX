@@ -287,7 +287,7 @@ bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler)
 	return true;
 }
 
-void TcpSocket::onIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned char cType)
+void TcpSocket::onIOCPMessage(BOOL bSuccess, DWORD dwTranceBytes, unsigned char cType)
 {
 	if (cType == tagReqHandle::HANDLE_CONNECT)
 	{
@@ -324,7 +324,7 @@ void TcpSocket::onIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned char 
 		{
 			return;
 		}
-		onSend(NetErrorCode::NEC_SUCCESS, dwTranceCount);
+		onSend(NetErrorCode::NEC_SUCCESS, dwTranceBytes);
 		return;
 	}
 	else if (cType == tagReqHandle::HANDLE_RECV)
@@ -339,16 +339,16 @@ void TcpSocket::onIOCPMessage(BOOL bSuccess, DWORD dwTranceCount, unsigned char 
 		if (!bSuccess)
 		{
 			_nLinkStatus = LS_CLOSED;
-			onRecv(NetErrorCode::NEC_REMOTE_HANGUP, dwTranceCount);
+			onRecv(NetErrorCode::NEC_REMOTE_HANGUP, dwTranceBytes);
 			return;
 		}
-		else if (dwTranceCount == 0)
+		else if (dwTranceBytes == 0)
 		{
 			_nLinkStatus = LS_CLOSED;
-			onRecv(NetErrorCode::NEC_REMOTE_CLOSED, dwTranceCount);
+			onRecv(NetErrorCode::NEC_REMOTE_CLOSED, dwTranceBytes);
 			return;
 		}
-		onRecv(NetErrorCode::NEC_SUCCESS, dwTranceCount);
+		onRecv(NetErrorCode::NEC_SUCCESS, dwTranceBytes);
 		return;
 	}
 

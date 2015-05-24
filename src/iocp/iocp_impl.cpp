@@ -49,11 +49,11 @@ void EventLoop::runOnce(bool isImmediately)
 		return;
 	}
 
-	DWORD dwTranceCount = 0;
+	DWORD dwTranceBytes = 0;
 	ULONG_PTR uComKey = NULL;
 	LPOVERLAPPED pOverlapped = NULL;
 
-	BOOL bRet = GetQueuedCompletionStatus(_io, &dwTranceCount, &uComKey, &pOverlapped, isImmediately ? 0 : _timer.getNextExpireTime()/*INFINITE*/);
+	BOOL bRet = GetQueuedCompletionStatus(_io, &dwTranceBytes, &uComKey, &pOverlapped, isImmediately ? 0 : _timer.getNextExpireTime()/*INFINITE*/);
 
 	_timer.checkTimer();
 	if (!bRet && !pOverlapped)
@@ -100,7 +100,7 @@ void EventLoop::runOnce(bool isImmediately)
 		{
 			if (req._tcpSocket)
 			{
-				req._tcpSocket->onIOCPMessage(bRet, dwTranceCount, req._type);
+				req._tcpSocket->onIOCPMessage(bRet, dwTranceBytes, req._type);
 			}
 		}
 		break;
@@ -109,7 +109,7 @@ void EventLoop::runOnce(bool isImmediately)
 		{
 			if (req._udpSocket)
 			{
-				req._udpSocket->onIOCPMessage(bRet, dwTranceCount, req._type);
+				req._udpSocket->onIOCPMessage(bRet, dwTranceBytes, req._type);
 			}
 		}
 		break;

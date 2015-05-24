@@ -176,9 +176,9 @@ bool UdpSocket::doRecvFrom(char * buf, unsigned int len, _OnRecvFromHandler&& ha
 
 	sizeof(&_recvFrom, 0, sizeof(_recvFrom));
 	_recvFromLen = sizeof(_recvFrom);
-	DWORD dwRecv = 0;
+	DWORD dwBytes = 0;
 	DWORD dwFlag = 0;
-	if (WSARecvFrom(_socket, &_recvWSABuf, 1, &dwRecv, &dwFlag,(sockaddr*)&_recvFrom, &_recvFromLen, &_recvHandle._overlapped, NULL) != 0)
+	if (WSARecvFrom(_socket, &_recvWSABuf, 1, &dwBytes, &dwFlag,(sockaddr*)&_recvFrom, &_recvFromLen, &_recvHandle._overlapped, NULL) != 0)
 	{
 		if (WSAGetLastError() != WSA_IO_PENDING)
 		{

@@ -269,9 +269,9 @@ bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler)
 	_recvWSABuf.buf = buf;
 	_recvWSABuf.len = len;
 	
-	DWORD dwRecv = 0;
+	DWORD dwBytes = 0;
 	DWORD dwFlag = 0;
-	if (WSARecv(_socket, &_recvWSABuf, 1, &dwRecv, &dwFlag, &_recvHandle._overlapped, NULL) != 0)
+	if (WSARecv(_socket, &_recvWSABuf, 1, &dwBytes, &dwFlag, &_recvHandle._overlapped, NULL) != 0)
 	{
 		if (WSAGetLastError() != WSA_IO_PENDING)
 		{

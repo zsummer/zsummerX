@@ -224,8 +224,8 @@ bool TcpSocket::doSend(char * buf, unsigned int len, _OnSendHandler &&handler)
 
 	_sendWsaBuf.buf = buf;
 	_sendWsaBuf.len = len;
-	DWORD dwTemp1=0;
-	if (WSASend(_socket, &_sendWsaBuf, 1, &dwTemp1, 0, &_sendHandle._overlapped, NULL) != 0)
+	DWORD dwBytes=0;
+	if (WSASend(_socket, &_sendWsaBuf, 1, &dwBytes, 0, &_sendHandle._overlapped, NULL) != 0)
 	{
 		if (WSAGetLastError() != WSA_IO_PENDING)
 		{

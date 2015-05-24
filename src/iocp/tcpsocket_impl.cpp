@@ -105,7 +105,7 @@ bool TcpSocket::initialize(const EventLoopPtr& summer)
 			LCE("TcpSocket::doConnect[" << this << "] socket create error! ERRCODE=" << WSAGetLastError() << getTcpSocketStatus());
 			return false;
 		}
-
+		setNoDelay(_socket);
 		SOCKADDR_IN localAddr;
 		memset(&localAddr, 0, sizeof(SOCKADDR_IN));
 		localAddr.sin_family = AF_INET;

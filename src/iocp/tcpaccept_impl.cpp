@@ -157,7 +157,7 @@ bool TcpAccept::doAccept(const TcpSocketPtr & s, _OnAcceptHandler&& handler)
 		LCF("create client socket err! ERRCODE=" << WSAGetLastError() << " ip=" << _ip << ", port=" << _port);
 		return false;
 	}
-
+	setNoDelay(_socket);
 	if (!AcceptEx(_server, _socket, _recvBuf, 0, sizeof(SOCKADDR_IN)+16, sizeof(SOCKADDR_IN)+16, &_recvLen, &_handle._overlapped))
 	{
 		if (WSAGetLastError() != ERROR_IO_PENDING)

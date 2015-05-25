@@ -71,7 +71,7 @@ void MonitorFunc()
 	LOGI("echos message=" << (SessionManager::getRef()._totalSendMessages - g_lastSendMessages) / 5
 		<< "n/s, send data " << (SessionManager::getRef()._totalSendBytes - g_lastSendBytes)/ 5
         << "byte/s, send count " << (SessionManager::getRef()._totalSendCount - g_lastSendCount)/5
-		<< "byte/s, recv count " << (SessionManager::getRef()._totalRecvCount - g_lastRecvCount) / 5 
+		<< "n/s, recv count " << (SessionManager::getRef()._totalRecvCount - g_lastRecvCount) / 5 
 		<< "n/s, recv messages " << (SessionManager::getRef()._totalRecvMessages - g_lastRecvMessages) / 5);
 	g_lastSendMessages = SessionManager::getRef()._totalSendMessages;
 	g_lastSendBytes = SessionManager::getRef()._totalSendBytes;
@@ -92,12 +92,12 @@ public:
 		MessageDispatcher::getRef().registerOnSessionEstablished(std::bind(&CHeartbeatManager::OnSessionEstablished, this, _1));
 		MessageDispatcher::getRef().registerOnSessionDisconnect(std::bind(&CHeartbeatManager::OnSessionDisconnect, this, _1));
 		MessageDispatcher::getRef().registerOnSessionPulse(std::bind(&CHeartbeatManager::OnSessionPulse, this,_1, _2));
-		MessageDispatcher::getRef().registerSessionMessage(ID_Pulse, std::bind(&CHeartbeatManager::OnMsgPulse, this, _1, _2, _3));
+		MessageDispatcher::getRef().registerSessionMessage(ID_Pulse, std::bind(&CHeartbeatManager::OnMsgPulse, this, _1, _2));
 
 	}
 	
 
-	void OnMsgPulse(TcpSessionPtr session, ProtoID pID, ReadStream & pack)
+	void OnMsgPulse(TcpSessionPtr session, ReadStream & pack)
 	{
         session->setUserLParam(time(NULL));
 	}
@@ -140,7 +140,7 @@ public:
 	{
         MessageDispatcher::getRef().registerOnSessionEstablished(std::bind(&CStressClientHandler::onConnected, this, _1));
 		MessageDispatcher::getRef().registerSessionMessage(ID_EchoPack,
-			std::bind(&CStressClientHandler::msg_ResultSequence_fun, this, _1, _2, _3));
+			std::bind(&CStressClientHandler::msg_ResultSequence_fun, this, _1, _2));
 		MessageDispatcher::getRef().registerOnSessionDisconnect(std::bind(&CStressClientHandler::OnConnectDisconnect, this, _1));
 	}
 
@@ -153,7 +153,7 @@ public:
 	{
 	}
 
-	void msg_ResultSequence_fun(TcpSessionPtr session, ProtoID pID, ReadStream & rs)
+	void msg_ResultSequence_fun(TcpSessionPtr session, ReadStream & rs)
 	{
 		EchoPack pack;
 		rs >> pack;
@@ -225,10 +225,10 @@ public:
 	CStressServerHandler()
 	{
 		MessageDispatcher::getRef().registerSessionMessage(ID_EchoPack,
-			std::bind(&CStressServerHandler::msg_RequestSequence_fun, this, _1, _2, _3));
+			std::bind(&CStressServerHandler::msg_RequestSequence_fun, this, _1, _2));
 	}
 
-	void msg_RequestSequence_fun (TcpSessionPtr session, ProtoID pID, ReadStream & rs)
+	void msg_RequestSequence_fun (TcpSessionPtr session, ReadStream & rs)
 	{
 		EchoPack pack;
 		rs >> pack;

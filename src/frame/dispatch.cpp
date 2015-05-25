@@ -97,7 +97,7 @@ void MessageDispatcher::dispatchSessionMessage(TcpSessionPtr  session, ProtoID p
             {
                 LCT("Entry dispatchSessionMessage[" << pID << "]  SessionID=" << session->getSessionID());
                 msg.resetMoveCursor();
-                fun(session,  pID, msg);
+                fun(session,  msg);
             }
         }
         else

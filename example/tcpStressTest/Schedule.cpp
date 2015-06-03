@@ -41,108 +41,108 @@
 
 CSchedule::CSchedule()
 {
-	_summer = zsummer::network::EventLoopPtr(new zsummer::network::EventLoop());
-	_accept = zsummer::network::TcpAcceptPtr(new zsummer::network::TcpAccept());
-	_accept->initialize(_summer);
+    _summer = zsummer::network::EventLoopPtr(new zsummer::network::EventLoop());
+    _accept = zsummer::network::TcpAcceptPtr(new zsummer::network::TcpAccept());
+    _accept->initialize(_summer);
 }
 
 
 void CSchedule::start()
 {
 
-	if (!_summer->initialize())
-	{
-		return ;
-	}
+    if (!_summer->initialize())
+    {
+        return ;
+    }
 
-	for (int i=0; i< 1; i++)
-	{
-		CProcess * p = new CProcess();
-		if (p->start())
-		{
-			_process.push_back(p);
-		}
-	}
-	
-	if (g_startType == 0)
-	{
-		if (_accept->openAccept(g_remoteIP.c_str(), g_remotePort))
-		{
-			LOGI("open server port [" << g_remotePort << "] success");
-		}
-		TcpSocketPtr s(new zsummer::network::TcpSocket());
-		
-		_accept->doAccept(s, std::bind(&CSchedule::OnAccept, this, std::placeholders::_1, std::placeholders::_2));
-	}
-	else
-	{
-		doConnect(g_maxClient);
-	}
+    for (int i=0; i< 1; i++)
+    {
+        CProcess * p = new CProcess();
+        if (p->start())
+        {
+            _process.push_back(p);
+        }
+    }
+    
+    if (g_startType == 0)
+    {
+        if (_accept->openAccept(g_remoteIP.c_str(), g_remotePort))
+        {
+            LOGI("open server port [" << g_remotePort << "] success");
+        }
+        TcpSocketPtr s(new zsummer::network::TcpSocket());
+        
+        _accept->doAccept(s, std::bind(&CSchedule::OnAccept, this, std::placeholders::_1, std::placeholders::_2));
+    }
+    else
+    {
+        doConnect(g_maxClient);
+    }
 
 
-	_thread = std::thread(std::bind(&CSchedule::run, this));
+    _thread = std::thread(std::bind(&CSchedule::run, this));
 }
 void CSchedule::stop()
 {
-	_running = false;
+    _running = false;
 }
 void CSchedule::run()
 {
-	_running = true;
+    _running = true;
 
-	while (_running)
-	{
-		_summer->runOnce();
-	}
+    while (_running)
+    {
+        _summer->runOnce();
+    }
 }
 
 void CSchedule::doConnect(unsigned int maxClient)
 {
-	for (unsigned int i = 1; i <= maxClient; i++)
-	{
-		TcpSocketPtr s(new zsummer::network::TcpSocket());
-		CProcess * proc = _process[_iCurProcess];
-		s->initialize(proc->GetZSummer());
-		proc->post(std::bind(&CProcess::RecvSocketPtr, proc, s));
-		_iCurProcess++;
-		_iCurProcess = _iCurProcess%(int)_process.size();
-		if (i >= 100 && maxClient > 100)
-		{
-			_summer->createTimer(1000, std::bind(&CSchedule::doConnect, this, maxClient - i));
-			break;
-		}
-	}
+    for (unsigned int i = 1; i <= maxClient; i++)
+    {
+        TcpSocketPtr s(new zsummer::network::TcpSocket());
+        CProcess * proc = _process[_iCurProcess];
+        s->initialize(proc->GetZSummer());
+        proc->post(std::bind(&CProcess::RecvSocketPtr, proc, s));
+        _iCurProcess++;
+        _iCurProcess = _iCurProcess%(int)_process.size();
+        if (i >= 100 && maxClient > 100)
+        {
+            _summer->createTimer(1000, std::bind(&CSchedule::doConnect, this, maxClient - i));
+            break;
+        }
+    }
 }
 void CSchedule::OnAccept(zsummer::network::NetErrorCode ec, TcpSocketPtr sockptr)
 {
-	if (ec)
-	{
-		LOGE("OnAccept error. ec=" <<ec );
-		return;
-	}
-	
-	unsigned long long allClosed = 0;
-	unsigned long long allOpen = 0;
-	for (std::vector<CProcess *>::const_iterator iter = _process.begin(); iter != _process.end(); ++iter)
-	{
-		allClosed += (*iter)->GetTotalClosed();
-		allOpen += (*iter)->GetTotalOpen();
-	}
-	if (/*allOpen - allClosed > g_maxClient */ false /*no limited*/)
-	{
-		LOGW("OnAccept success but current links is too many.");
-	}
-	else
-	{
-		LOGD("OnAccept one socket");
-		_iCurProcess++;
-		_iCurProcess = _iCurProcess % (int)_process.size();
-		CProcess * process = _process[_iCurProcess];
-		sockptr->initialize(process->GetZSummer());
-		process->post(std::bind(&CProcess::RecvSocketPtr, process, sockptr));
-	}
+    if (ec)
+    {
+        LOGE("OnAccept error. ec=" <<ec );
+        return;
+    }
+    
+    unsigned long long allClosed = 0;
+    unsigned long long allOpen = 0;
+    for (std::vector<CProcess *>::const_iterator iter = _process.begin(); iter != _process.end(); ++iter)
+    {
+        allClosed += (*iter)->GetTotalClosed();
+        allOpen += (*iter)->GetTotalOpen();
+    }
+    if (/*allOpen - allClosed > g_maxClient */ false /*no limited*/)
+    {
+        LOGW("OnAccept success but current links is too many.");
+    }
+    else
+    {
+        LOGD("OnAccept one socket");
+        _iCurProcess++;
+        _iCurProcess = _iCurProcess % (int)_process.size();
+        CProcess * process = _process[_iCurProcess];
+        sockptr->initialize(process->GetZSummer());
+        process->post(std::bind(&CProcess::RecvSocketPtr, process, sockptr));
+    }
 
-	TcpSocketPtr s(new zsummer::network::TcpSocket());
-	_accept->doAccept(s, std::bind(&CSchedule::OnAccept, this, std::placeholders::_1, std::placeholders::_2));
+    TcpSocketPtr s(new zsummer::network::TcpSocket());
+    _accept->doAccept(s, std::bind(&CSchedule::OnAccept, this, std::placeholders::_1, std::placeholders::_2));
 }
 

@@ -47,44 +47,44 @@
 class CClient : public std::enable_shared_from_this<CClient>
 {
 public:
-	CClient(CProcess &proc, TcpSocketPtr sockptr);
-	~CClient();
-	void initialize();
+    CClient(CProcess &proc, TcpSocketPtr sockptr);
+    ~CClient();
+    void initialize();
 private:
-	void onConnected(zsummer::network::NetErrorCode ec);
+    void onConnected(zsummer::network::NetErrorCode ec);
 
-	void doRecv();
-	void onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen);
-	void MessageEntry(zsummer::proto4z::ReadStream & rs);
+    void doRecv();
+    void onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen);
+    void MessageEntry(zsummer::proto4z::ReadStream & rs);
 
 
 
-	void SendOnce();
-	void doSend(unsigned short protoID, unsigned long long clientTick, const std::string & text);
-	void doSend(char *buf, unsigned short len);
-	void onSend(zsummer::network::NetErrorCode ec,  int nSentLen);
+    void SendOnce();
+    void doSend(unsigned short protoID, unsigned long long clientTick, const std::string & text);
+    void doSend(char *buf, unsigned short len);
+    void onSend(zsummer::network::NetErrorCode ec,  int nSentLen);
 
-	
-	void onClose();
+    
+    void onClose();
 
-	CProcess  & _process;
-	TcpSocketPtr  _sockptr;
-	bool _bEstablished = false;
-	
-	//! 读包
-	Packet _recving;
-	std::string _recvTextCache;
+    CProcess  & _process;
+    TcpSocketPtr  _sockptr;
+    bool _bEstablished = false;
+    
+    //! 读包
+    Packet _recving;
+    std::string _recvTextCache;
 
-	//! 写包队列
-	std::queue<Packet *> _sendque;
+    //! 写包队列
+    std::queue<Packet *> _sendque;
 
-	//! 当前写包
+    //! 当前写包
 
-	char _sendBuff[_SEND_BUF_LEN];
-	unsigned short _sendLen = 0;
-	unsigned short _curSendLen = 0;
+    char _sendBuff[_SEND_BUF_LEN];
+    unsigned short _sendLen = 0;
+    unsigned short _curSendLen = 0;
 
-	unsigned long long _lastDelayTime = 0; //最后一次收到echo消息的延迟时间
+    unsigned long long _lastDelayTime = 0; //最后一次收到echo消息的延迟时间
 };
 
 #endif

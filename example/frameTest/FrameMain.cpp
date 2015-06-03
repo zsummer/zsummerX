@@ -64,20 +64,20 @@ void startClient();
 
 int main(int argc, char* argv[])
 {
-	if (!initEnv(argc, argv))
-	{
-		return 0;
-	}
-	
-	if (g_startIsConnector) //client mod
-	{
-		startClient();
-	}
-	else
-	{
-		startServer();
-	}
-	return 0;
+    if (!initEnv(argc, argv))
+    {
+        return 0;
+    }
+    
+    if (g_startIsConnector) //client mod
+    {
+        startClient();
+    }
+    else
+    {
+        startServer();
+    }
+    return 0;
 }
 
 
@@ -90,115 +90,115 @@ int main(int argc, char* argv[])
 
 bool initEnv(int argc, char* argv[])
 {
-	if (argc == 2 &&
-		(strcmp(argv[1], "--help") == 0
-		|| strcmp(argv[1], "/?") == 0))
-	{
-		std::cout << "please input like example:" << std::endl;
-		std::cout << "tcpTest remoteIP remotePort startType maxClient sendType interval" << std::endl;
-		std::cout << "./tcpTest 0.0.0.0 8081 0" << std::endl;
-		std::cout << "startType: 0 server, 1 client" << std::endl;
-		return 0;
-	}
-	if (argc > 1)
-	{
-		g_remoteIP = argv[1];
-	}
-	if (argc > 2)
-	{
-		g_remotePort = atoi(argv[2]);
-	}
-	if (argc > 3)
-	{
-		g_startIsConnector = atoi(argv[3]);
-	}
+    if (argc == 2 &&
+        (strcmp(argv[1], "--help") == 0
+        || strcmp(argv[1], "/?") == 0))
+    {
+        std::cout << "please input like example:" << std::endl;
+        std::cout << "tcpTest remoteIP remotePort startType maxClient sendType interval" << std::endl;
+        std::cout << "./tcpTest 0.0.0.0 8081 0" << std::endl;
+        std::cout << "startType: 0 server, 1 client" << std::endl;
+        return 0;
+    }
+    if (argc > 1)
+    {
+        g_remoteIP = argv[1];
+    }
+    if (argc > 2)
+    {
+        g_remotePort = atoi(argv[2]);
+    }
+    if (argc > 3)
+    {
+        g_startIsConnector = atoi(argv[3]);
+    }
 
 
-	if (!g_startIsConnector)
-	{
-		//! start log4z service
-		ILog4zManager::getPtr()->config("server.cfg");
-		ILog4zManager::getPtr()->start();
-	}
-	else
-	{
-		//! start log4z service
-		ILog4zManager::getPtr()->config("client.cfg");
-		ILog4zManager::getPtr()->start();
-	}
-	LOGI("g_remoteIP=" << g_remoteIP << ", g_remotePort=" << g_remotePort << ", g_startIsConnector=" << g_startIsConnector);
-	return true;
+    if (!g_startIsConnector)
+    {
+        //! start log4z service
+        ILog4zManager::getPtr()->config("server.cfg");
+        ILog4zManager::getPtr()->start();
+    }
+    else
+    {
+        //! start log4z service
+        ILog4zManager::getPtr()->config("client.cfg");
+        ILog4zManager::getPtr()->start();
+    }
+    LOGI("g_remoteIP=" << g_remoteIP << ", g_remotePort=" << g_remotePort << ", g_startIsConnector=" << g_startIsConnector);
+    return true;
 }
 
 
 void startServer()
 {
-	//! step 1. start Manager.
-	SessionManager::getRef().start();
-	//process message _RequestSequence
-	OnMessageFunction msg_RequestSequence_fun = [](TcpSessionPtr session, ReadStream & rs)
-	{
-		std::string content = rs.getStreamBody();
-		LOGI("recv SessionID = " << session->getSessionID() << ", content = " << content);
-		content += " ==> echo.";
-		SessionManager::getRef().sendSessionData(session->getSessionID(), _ResultID, content.c_str(), (unsigned int)content.length() + 1);
+    //! step 1. start Manager.
+    SessionManager::getRef().start();
+    //process message _RequestSequence
+    OnMessageFunction msg_RequestSequence_fun = [](TcpSessionPtr session, ReadStream & rs)
+    {
+        std::string content = rs.getStreamBody();
+        LOGI("recv SessionID = " << session->getSessionID() << ", content = " << content);
+        content += " ==> echo.";
+        SessionManager::getRef().sendSessionData(session->getSessionID(), _ResultID, content.c_str(), (unsigned int)content.length() + 1);
 
-		//! step 3 stop server after 1 second.
-		SessionManager::getRef().createTimer(1000, [](){
-			SessionManager::getRef().stopAccept();
-			SessionManager::getRef().stopClients();
-			SessionManager::getRef().stopServers();
-			SessionManager::getRef().stop(); });
-	};
+        //! step 3 stop server after 1 second.
+        SessionManager::getRef().createTimer(1000, [](){
+            SessionManager::getRef().stopAccept();
+            SessionManager::getRef().stopClients();
+            SessionManager::getRef().stopServers();
+            SessionManager::getRef().stop(); });
+    };
 
-	MessageDispatcher::getRef().registerSessionMessage(_RequestID, msg_RequestSequence_fun); //!register message for protoID: _RequestSequence
+    MessageDispatcher::getRef().registerSessionMessage(_RequestID, msg_RequestSequence_fun); //!register message for protoID: _RequestSequence
 
-	//add Acceptor
-	ListenConfig traits;
-	traits._listenPort = g_remotePort;
-	SessionManager::getRef().addAcceptor(traits);
+    //add Acceptor
+    ListenConfig traits;
+    traits._listenPort = g_remotePort;
+    SessionManager::getRef().addAcceptor(traits);
 
-	//! step 2 running
-	SessionManager::getRef().run();
+    //! step 2 running
+    SessionManager::getRef().run();
 }
 
 void startClient()
 {
-	//! step 1. start Manager.
-	SessionManager::getRef().start();
+    //! step 1. start Manager.
+    SessionManager::getRef().start();
 
-	//on connect success
-	auto connectedfun = [](TcpSessionPtr session)
-	{
-		LOGI("on connect. ID=" << session->getSessionID());
-		std::string content = "hello";
-		SessionManager::getRef().sendSessionData(session->getSessionID(), _RequestID, content.c_str(), (unsigned int)content.length() + 1);
-	};
+    //on connect success
+    auto connectedfun = [](TcpSessionPtr session)
+    {
+        LOGI("on connect. ID=" << session->getSessionID());
+        std::string content = "hello";
+        SessionManager::getRef().sendSessionData(session->getSessionID(), _RequestID, content.c_str(), (unsigned int)content.length() + 1);
+    };
 
-	//process message _ResultID
-	auto msg_ResultSequence_fun = [](TcpSessionPtr session, ReadStream & rs)
-	{
-		std::string content = rs.getStreamBody();
-		LOGI("recv ConnectorID = " << session->getSessionID() << ", content = " << content);
-		//! step 3 stop server
-		SessionManager::getRef().stopAccept();
-		SessionManager::getRef().stopClients();
-		SessionManager::getRef().stopServers();
-		SessionManager::getRef().stop();
-	};
+    //process message _ResultID
+    auto msg_ResultSequence_fun = [](TcpSessionPtr session, ReadStream & rs)
+    {
+        std::string content = rs.getStreamBody();
+        LOGI("recv ConnectorID = " << session->getSessionID() << ", content = " << content);
+        //! step 3 stop server
+        SessionManager::getRef().stopAccept();
+        SessionManager::getRef().stopClients();
+        SessionManager::getRef().stopServers();
+        SessionManager::getRef().stop();
+    };
 
-	//! register event and message
-	MessageDispatcher::getRef().registerOnSessionEstablished(connectedfun); //!register connect success
-	MessageDispatcher::getRef().registerSessionMessage(_ResultID, msg_ResultSequence_fun);//!register message for protoID: _ResultSequence
+    //! register event and message
+    MessageDispatcher::getRef().registerOnSessionEstablished(connectedfun); //!register connect success
+    MessageDispatcher::getRef().registerSessionMessage(_ResultID, msg_ResultSequence_fun);//!register message for protoID: _ResultSequence
 
-	//add connector
-	ConnectConfig traits;
-	traits._remoteIP = g_remoteIP;
-	traits._remotePort = g_remotePort;
-	SessionManager::getRef().addConnector(traits);
+    //add connector
+    ConnectConfig traits;
+    traits._remoteIP = g_remoteIP;
+    traits._remotePort = g_remotePort;
+    SessionManager::getRef().addConnector(traits);
 
-	//! step 2 running
-	SessionManager::getRef().run();
+    //! step 2 running
+    SessionManager::getRef().run();
 }
 
 

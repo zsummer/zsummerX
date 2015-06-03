@@ -42,8 +42,8 @@ using namespace zsummer::network;
 
 MessageDispatcher & MessageDispatcher::getRef()
 {
-	static MessageDispatcher _manager;
-	return _manager;
+    static MessageDispatcher _manager;
+    return _manager;
 }
 
 

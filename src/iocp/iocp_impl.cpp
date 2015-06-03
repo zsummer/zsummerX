@@ -43,80 +43,80 @@ using namespace zsummer::network;
 
 void EventLoop::runOnce(bool isImmediately)
 {
-	if (_io == NULL)
-	{
-		LCF("EventLoop::runOnce[this0x" << this << "] server not initialize or initialize false." <<logSection());
-		return;
-	}
+    if (_io == NULL)
+    {
+        LCF("EventLoop::runOnce[this0x" << this << "] server not initialize or initialize false." <<logSection());
+        return;
+    }
 
-	DWORD dwTranceBytes = 0;
-	ULONG_PTR uComKey = NULL;
-	LPOVERLAPPED pOverlapped = NULL;
+    DWORD dwTranceBytes = 0;
+    ULONG_PTR uComKey = NULL;
+    LPOVERLAPPED pOverlapped = NULL;
 
-	BOOL bRet = GetQueuedCompletionStatus(_io, &dwTranceBytes, &uComKey, &pOverlapped, isImmediately ? 0 : _timer.getNextExpireTime()/*INFINITE*/);
+    BOOL bRet = GetQueuedCompletionStatus(_io, &dwTranceBytes, &uComKey, &pOverlapped, isImmediately ? 0 : _timer.getNextExpireTime()/*INFINITE*/);
 
-	_timer.checkTimer();
-	if (!bRet && !pOverlapped)
-	{
-		//TIMEOUT
-		return;
-	}
-	
-	//! user post
-	if (uComKey == PCK_USER_DATA)
-	{
-		_OnPostHandler * func = (_OnPostHandler*) pOverlapped;
-		try
-		{
-			(*func)();
-		}
-		catch (std::runtime_error e)
-		{
-			LCW("OnPostHandler have runtime_error exception. err=" << e.what());
-		}
-		catch (...)
-		{
-			LCW("OnPostHandler have unknown exception.");
-		}
-		delete func;
-		return;
-	}
-	
-	//! network data
-	tagReqHandle & req = *(HandlerFromOverlaped(pOverlapped));
-	switch (req._type)
-	{
-	case tagReqHandle::HANDLE_ACCEPT:
-		{
-			if (req._tcpAccept)
-			{
-				req._tcpAccept->onIOCPMessage(bRet);
-			}
-		}
-		break;
-	case tagReqHandle::HANDLE_RECV:
-	case tagReqHandle::HANDLE_SEND:
-	case tagReqHandle::HANDLE_CONNECT:
-		{
-			if (req._tcpSocket)
-			{
-				req._tcpSocket->onIOCPMessage(bRet, dwTranceBytes, req._type);
-			}
-		}
-		break;
-	case tagReqHandle::HANDLE_SENDTO:
-	case tagReqHandle::HANDLE_RECVFROM:
-		{
-			if (req._udpSocket)
-			{
-				req._udpSocket->onIOCPMessage(bRet, dwTranceBytes, req._type);
-			}
-		}
-		break;
-	default:
-		LCE("EventLoop::runOnce[this0x" << this << "]GetQueuedCompletionStatus undefined type=" << req._type << logSection());
-	}
-	
+    _timer.checkTimer();
+    if (!bRet && !pOverlapped)
+    {
+        //TIMEOUT
+        return;
+    }
+    
+    //! user post
+    if (uComKey == PCK_USER_DATA)
+    {
+        _OnPostHandler * func = (_OnPostHandler*) pOverlapped;
+        try
+        {
+            (*func)();
+        }
+        catch (std::runtime_error e)
+        {
+            LCW("OnPostHandler have runtime_error exception. err=" << e.what());
+        }
+        catch (...)
+        {
+            LCW("OnPostHandler have unknown exception.");
+        }
+        delete func;
+        return;
+    }
+    
+    //! network data
+    tagReqHandle & req = *(HandlerFromOverlaped(pOverlapped));
+    switch (req._type)
+    {
+    case tagReqHandle::HANDLE_ACCEPT:
+        {
+            if (req._tcpAccept)
+            {
+                req._tcpAccept->onIOCPMessage(bRet);
+            }
+        }
+        break;
+    case tagReqHandle::HANDLE_RECV:
+    case tagReqHandle::HANDLE_SEND:
+    case tagReqHandle::HANDLE_CONNECT:
+        {
+            if (req._tcpSocket)
+            {
+                req._tcpSocket->onIOCPMessage(bRet, dwTranceBytes, req._type);
+            }
+        }
+        break;
+    case tagReqHandle::HANDLE_SENDTO:
+    case tagReqHandle::HANDLE_RECVFROM:
+        {
+            if (req._udpSocket)
+            {
+                req._udpSocket->onIOCPMessage(bRet, dwTranceBytes, req._type);
+            }
+        }
+        break;
+    default:
+        LCE("EventLoop::runOnce[this0x" << this << "]GetQueuedCompletionStatus undefined type=" << req._type << logSection());
+    }
+    
 }
 
 

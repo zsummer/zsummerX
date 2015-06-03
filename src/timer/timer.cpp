@@ -41,80 +41,80 @@ using namespace zsummer::network;
 TimerID Timer::createTimer(unsigned int delayms, _OnTimerHandler &&handle)
 {
 
-	_OnTimerHandler *pfunc = new _OnTimerHandler(std::move(handle));
-	unsigned int now = getNowMilliTick();
-	unsigned int expire = now + delayms;
-	unsigned long long timerID = expire;
-	timerID <<= 32;
-	timerID |= _queSeq++; //timerID is merge expire time and a sequence. sequence assure the ID is single.
-	_queTimer.insert(std::make_pair(timerID, pfunc));
-	if (_nextExpire > expire)
-	{
-		_nextExpire = expire;
-	}
-	LCT("createTimer. delayms=" << delayms << ", _ques=" << _queTimer.size());
-	return timerID;
+    _OnTimerHandler *pfunc = new _OnTimerHandler(std::move(handle));
+    unsigned int now = getNowMilliTick();
+    unsigned int expire = now + delayms;
+    unsigned long long timerID = expire;
+    timerID <<= 32;
+    timerID |= _queSeq++; //timerID is merge expire time and a sequence. sequence assure the ID is single.
+    _queTimer.insert(std::make_pair(timerID, pfunc));
+    if (_nextExpire > expire)
+    {
+        _nextExpire = expire;
+    }
+    LCT("createTimer. delayms=" << delayms << ", _ques=" << _queTimer.size());
+    return timerID;
 }
 
 bool Timer::cancelTimer(TimerID timerID)
 {
-	LCT("cancelTimer " << timerID);
-	std::map<unsigned long long, _OnTimerHandler* >::iterator iter = _queTimer.find(timerID);
-	if (iter != _queTimer.end())
-	{
-		delete iter->second;
-		_queTimer.erase(iter);
-		return true;
-	}
-	return false;
+    LCT("cancelTimer " << timerID);
+    std::map<unsigned long long, _OnTimerHandler* >::iterator iter = _queTimer.find(timerID);
+    if (iter != _queTimer.end())
+    {
+        delete iter->second;
+        _queTimer.erase(iter);
+        return true;
+    }
+    return false;
 }
 
 void Timer::checkTimer()
 {
-	//LCT("checkTimer. ques=" << _queTimer.size() << ", next=" << _nextExpire);
-	if (!_queTimer.empty())
-	{
-		unsigned int now = getNowMilliTick();
-		if (_nextExpire > now)
-		{
-			//LCT("_nextExpire > now. next=" << _nextExpire)
-				return;
-		}
+    //LCT("checkTimer. ques=" << _queTimer.size() << ", next=" << _nextExpire);
+    if (!_queTimer.empty())
+    {
+        unsigned int now = getNowMilliTick();
+        if (_nextExpire > now)
+        {
+            //LCT("_nextExpire > now. next=" << _nextExpire)
+                return;
+        }
 
-		while (1)
-		{
-			if (_queTimer.empty())
-			{
-				_nextExpire = (unsigned int)-1;
-				break;
-			}
-			auto iter = _queTimer.begin();
-			unsigned long long timerID = iter->first;
-			_OnTimerHandler * handler = iter->second;
-			unsigned int nextexpire = timerID >> 32;
-			if (nextexpire > now)
-			{
-				_nextExpire = nextexpire;
-				break;
-			}
-			//erase the pointer from timer queue before call handler.
-			_queTimer.erase(iter);
-			try
-			{
-				LCT("call timer()");
-				(*handler)();
-			}
-			catch (std::runtime_error e)
-			{
-				LCW("OnTimerHandler have runtime_error exception. err=" << e.what());
-			}
-			catch (...)
-			{
-				LCW("OnTimerHandler have unknown exception.");
-			}
-			delete handler;
-		}
+        while (1)
+        {
+            if (_queTimer.empty())
+            {
+                _nextExpire = (unsigned int)-1;
+                break;
+            }
+            auto iter = _queTimer.begin();
+            unsigned long long timerID = iter->first;
+            _OnTimerHandler * handler = iter->second;
+            unsigned int nextexpire = timerID >> 32;
+            if (nextexpire > now)
+            {
+                _nextExpire = nextexpire;
+                break;
+            }
+            //erase the pointer from timer queue before call handler.
+            _queTimer.erase(iter);
+            try
+            {
+                LCT("call timer()");
+                (*handler)();
+            }
+            catch (std::runtime_error e)
+            {
+                LCW("OnTimerHandler have runtime_error exception. err=" << e.what());
+            }
+            catch (...)
+            {
+                LCW("OnTimerHandler have unknown exception.");
+            }
+            delete handler;
+        }
 
-	}
+    }
 }
 

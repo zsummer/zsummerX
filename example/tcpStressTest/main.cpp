@@ -56,114 +56,114 @@ int main(int argc, char* argv[])
 {
 
 #ifndef _WIN32
-	//! linux下需要屏蔽的一些信号
-	signal( SIGHUP, SIG_IGN );
-	signal( SIGALRM, SIG_IGN ); 
-	signal( SIGPIPE, SIG_IGN );
-	signal( SIGXCPU, SIG_IGN );
-	signal( SIGXFSZ, SIG_IGN );
-	signal( SIGPROF, SIG_IGN ); 
-	signal( SIGVTALRM, SIG_IGN );
-	signal( SIGQUIT, SIG_IGN );
-	signal( SIGCHLD, SIG_IGN);
+    //! linux下需要屏蔽的一些信号
+    signal( SIGHUP, SIG_IGN );
+    signal( SIGALRM, SIG_IGN ); 
+    signal( SIGPIPE, SIG_IGN );
+    signal( SIGXCPU, SIG_IGN );
+    signal( SIGXFSZ, SIG_IGN );
+    signal( SIGPROF, SIG_IGN ); 
+    signal( SIGVTALRM, SIG_IGN );
+    signal( SIGQUIT, SIG_IGN );
+    signal( SIGCHLD, SIG_IGN);
 #endif
-	if (argc == 2 && 
-		(strcmp(argv[1], "--help") == 0 
-		|| strcmp(argv[1], "/?") == 0))
-	{
-		cout << "please input like example:" << endl;
-		cout << "tcpTest remoteIP remotePort startType maxClient sendType interval" << endl;
-		cout << "./tcpTest 0.0.0.0 8081 0" << endl;
-		cout << "startType: 0 server, 1 client" << endl;
-		cout << "maxClient: limit max" << endl;
-		cout << "sendType: 0 echo send, 1 direct send" << endl;
-		cout << "interval: send once interval" << endl;
-		return 0;
-	}
-	if (argc > 1)
-	{
-		g_remoteIP = argv[1];
-	}
-	if (argc > 2)
-	{
-		g_remotePort = atoi(argv[2]);
-	}
-	if (argc > 3)
-	{
-		g_startType = atoi(argv[3]);
-	}
-	if (argc > 4)
-	{
-		g_maxClient = atoi(argv[4]);
-	}
-	if (argc > 5)
-	{
-		g_sendType = atoi(argv[5]);
-	}
-	if (argc > 6)
-	{
-		g_intervalMs = atoi(argv[6]);
-	}
+    if (argc == 2 && 
+        (strcmp(argv[1], "--help") == 0 
+        || strcmp(argv[1], "/?") == 0))
+    {
+        cout << "please input like example:" << endl;
+        cout << "tcpTest remoteIP remotePort startType maxClient sendType interval" << endl;
+        cout << "./tcpTest 0.0.0.0 8081 0" << endl;
+        cout << "startType: 0 server, 1 client" << endl;
+        cout << "maxClient: limit max" << endl;
+        cout << "sendType: 0 echo send, 1 direct send" << endl;
+        cout << "interval: send once interval" << endl;
+        return 0;
+    }
+    if (argc > 1)
+    {
+        g_remoteIP = argv[1];
+    }
+    if (argc > 2)
+    {
+        g_remotePort = atoi(argv[2]);
+    }
+    if (argc > 3)
+    {
+        g_startType = atoi(argv[3]);
+    }
+    if (argc > 4)
+    {
+        g_maxClient = atoi(argv[4]);
+    }
+    if (argc > 5)
+    {
+        g_sendType = atoi(argv[5]);
+    }
+    if (argc > 6)
+    {
+        g_intervalMs = atoi(argv[6]);
+    }
 
-	
-	if (g_startType == 0)
-	{
-		//! 启动日志服务
-		ILog4zManager::getPtr()->config("server.cfg");
-		ILog4zManager::getPtr()->start();
-	}
-	else
-	{
-				//! 启动日志服务
-		ILog4zManager::getPtr()->config("client.cfg");
-		ILog4zManager::getPtr()->start();
-	}
-	LOGI("g_remoteIP=" << g_remoteIP << ", g_remotePort=" << g_remotePort << ", g_startType=" << g_startType 
-		<< ", g_maxClient=" << g_maxClient << ", g_sendType=" << g_sendType << ", g_intervalMs=" << g_intervalMs);
-
-
-
-	//! 启动调度器
-	CSchedule schedule;
-	schedule.start();
+    
+    if (g_startType == 0)
+    {
+        //! 启动日志服务
+        ILog4zManager::getPtr()->config("server.cfg");
+        ILog4zManager::getPtr()->start();
+    }
+    else
+    {
+                //! 启动日志服务
+        ILog4zManager::getPtr()->config("client.cfg");
+        ILog4zManager::getPtr()->start();
+    }
+    LOGI("g_remoteIP=" << g_remoteIP << ", g_remotePort=" << g_remotePort << ", g_startType=" << g_startType 
+        << ", g_maxClient=" << g_maxClient << ", g_sendType=" << g_sendType << ", g_intervalMs=" << g_intervalMs);
 
 
-	//main线程用于服务状态统计与输出
 
-	unsigned long long nLast[10] = {0};
-	unsigned long long temp[10] = {0};
-	for (;;)
-	{
-		std::this_thread::sleep_for(std::chrono::milliseconds(5000));
-		memset(&temp, 0, sizeof(temp));
-
-		for (std::vector<CProcess *>::const_iterator iter = schedule._process.begin(); iter != schedule._process.end(); ++iter)
-		{
-			temp[0] += (*iter)->GetTotalRecvLen();
-			temp[1] += (*iter)->GetTotalSendLen();
-			temp[2] += (*iter)->GetTotalRecvCount();
-			temp[3] += (*iter)->GetTotalSendCount();
-			temp[4] += (*iter)->GetTotalOpen();
-			temp[5] += (*iter)->GetTotalClosed();
-			temp[6] += (*iter)->GetTotalEcho();
-			temp[7] += (*iter)->GetTotalEchoTime();
-		}
-		LOGD("Linked[" << temp[4] 
-			<<"]  Closed[" << temp[5]
-			<<"]  Recv[" << (temp[0] - nLast[0])/1024.0/1024.0/5.0
-			<<"]M  Send[" << (temp[1] - nLast[1])/1024.0/1024.0/5.0
-			<<"]M  RecvSpeed[" << (temp[2] - nLast[2])/5.0
-			<<"]  SendSpeed[" << (temp[3] - nLast[3])/5.0
-			<<"]  EchoSpeed[" << (temp[6]- nLast[6])/5.0
-			<<"]  DelayTime[" << (temp[7]-nLast[7])/1.0/(temp[6]-nLast[6] == 0 ? 1 :temp[6]-nLast[6])
-			<<"].");
+    //! 启动调度器
+    CSchedule schedule;
+    schedule.start();
 
 
-		memcpy(&nLast, &temp, sizeof(temp));
-	}
+    //main线程用于服务状态统计与输出
 
-	schedule.stop();
+    unsigned long long nLast[10] = {0};
+    unsigned long long temp[10] = {0};
+    for (;;)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+        memset(&temp, 0, sizeof(temp));
 
-	return 0;
+        for (std::vector<CProcess *>::const_iterator iter = schedule._process.begin(); iter != schedule._process.end(); ++iter)
+        {
+            temp[0] += (*iter)->GetTotalRecvLen();
+            temp[1] += (*iter)->GetTotalSendLen();
+            temp[2] += (*iter)->GetTotalRecvCount();
+            temp[3] += (*iter)->GetTotalSendCount();
+            temp[4] += (*iter)->GetTotalOpen();
+            temp[5] += (*iter)->GetTotalClosed();
+            temp[6] += (*iter)->GetTotalEcho();
+            temp[7] += (*iter)->GetTotalEchoTime();
+        }
+        LOGD("Linked[" << temp[4] 
+            <<"]  Closed[" << temp[5]
+            <<"]  Recv[" << (temp[0] - nLast[0])/1024.0/1024.0/5.0
+            <<"]M  Send[" << (temp[1] - nLast[1])/1024.0/1024.0/5.0
+            <<"]M  RecvSpeed[" << (temp[2] - nLast[2])/5.0
+            <<"]  SendSpeed[" << (temp[3] - nLast[3])/5.0
+            <<"]  EchoSpeed[" << (temp[6]- nLast[6])/5.0
+            <<"]  DelayTime[" << (temp[7]-nLast[7])/1.0/(temp[6]-nLast[6] == 0 ? 1 :temp[6]-nLast[6])
+            <<"].");
+
+
+        memcpy(&nLast, &temp, sizeof(temp));
+    }
+
+    schedule.stop();
+
+    return 0;
 }
 

@@ -48,29 +48,29 @@ using namespace zsummer::network;
 ZSummerEnvironment::ZSummerEnvironment()
 {
 #ifdef WIN32
-	WORD version = MAKEWORD(2,2);
-	WSADATA d;
-	if (WSAStartup(version, &d) != 0)
-	{
-		assert(0);
-	}
+    WORD version = MAKEWORD(2,2);
+    WSADATA d;
+    if (WSAStartup(version, &d) != 0)
+    {
+        assert(0);
+    }
 #endif
-	_netLoggerID = zsummer::log4z::ILog4zManager::getRef().createLogger("NetWork");
-	zsummer::log4z::ILog4zManager::getRef().setLoggerLevel(_netLoggerID, LOG_LEVEL_WARN);
+    _netLoggerID = zsummer::log4z::ILog4zManager::getRef().createLogger("NetWork");
+    zsummer::log4z::ILog4zManager::getRef().setLoggerLevel(_netLoggerID, LOG_LEVEL_WARN);
 }
 ZSummerEnvironment::~ZSummerEnvironment()
 {
 #ifdef WIN32
-	WSACleanup();
+    WSACleanup();
 #endif
 }
 
 //server environment.
 namespace zsummer
 {
-	namespace network
-	{
-		ZSummerEnvironment g_appEnvironment;
-	}
+    namespace network
+    {
+        ZSummerEnvironment g_appEnvironment;
+    }
 }
 

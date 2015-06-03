@@ -51,62 +51,62 @@ using namespace zsummer::network;
 
 void sigFun(int sig)
 {
-	SessionManager::getRef().stopAccept();
-	SessionManager::getRef().stopClients();
+    SessionManager::getRef().stopAccept();
+    SessionManager::getRef().stopClients();
 }
 
 int main(int argc, char* argv[])
 {
 #ifndef _WIN32
-	//! ignore some signal
-	signal(SIGHUP, SIG_IGN);
-	signal(SIGALRM, SIG_IGN);
-	signal(SIGPIPE, SIG_IGN);
-	signal(SIGXCPU, SIG_IGN);
-	signal(SIGXFSZ, SIG_IGN);
-	signal(SIGPROF, SIG_IGN);
-	signal(SIGVTALRM, SIG_IGN);
-	signal(SIGQUIT, SIG_IGN);
-	signal(SIGCHLD, SIG_IGN);
+    //! ignore some signal
+    signal(SIGHUP, SIG_IGN);
+    signal(SIGALRM, SIG_IGN);
+    signal(SIGPIPE, SIG_IGN);
+    signal(SIGXCPU, SIG_IGN);
+    signal(SIGXFSZ, SIG_IGN);
+    signal(SIGPROF, SIG_IGN);
+    signal(SIGVTALRM, SIG_IGN);
+    signal(SIGQUIT, SIG_IGN);
+    signal(SIGCHLD, SIG_IGN);
 #endif
-	signal(SIGINT, sigFun);
+    signal(SIGINT, sigFun);
 
 
-	ILog4zManager::getRef().start();
-	ILog4zManager::getRef().setLoggerFileLine(LOG4Z_MAIN_LOGGER_ID, false);
-	int status;
-	lua_State *L = luaL_newstate();  /* create state */
-	if (L == NULL) 
-	{
-		return EXIT_FAILURE;
-	}
+    ILog4zManager::getRef().start();
+    ILog4zManager::getRef().setLoggerFileLine(LOG4Z_MAIN_LOGGER_ID, false);
+    int status;
+    lua_State *L = luaL_newstate();  /* create state */
+    if (L == NULL) 
+    {
+        return EXIT_FAILURE;
+    }
 
-	lua_gc(L, LUA_GCSTOP, 0);  /* stop collector during initialization */
-	luaL_openlibs(L);  /* open libraries */
-	luaopen_summer(L);
-	luaopen_protoz_bit(L);
-	luaopen_pack(L);
+    lua_gc(L, LUA_GCSTOP, 0);  /* stop collector during initialization */
+    luaL_openlibs(L);  /* open libraries */
+    luaopen_summer(L);
+    luaopen_protoz_bit(L);
+    luaopen_pack(L);
 
-	lua_gc(L, LUA_GCRESTART, 0);
-	if (argc > 1)
-	{
-		status = luaL_dofile(L, "./server.lua");
-	}
-	else
-	{
-		status = luaL_dofile(L, "./client.lua");
-	}
-	
-	
+    lua_gc(L, LUA_GCRESTART, 0);
+    if (argc > 1)
+    {
+        status = luaL_dofile(L, "./server.lua");
+    }
+    else
+    {
+        status = luaL_dofile(L, "./client.lua");
+    }
+    
+    
 
-	if (status && !lua_isnil(L, -1)) 
-	{
-		const char *msg = lua_tostring(L, -1);
-		if (msg == NULL) msg = "(error object is not a string)";
-		LOGE( msg);
-		lua_pop(L, 1);
-	}
-	lua_close(L);
-	return (status) ? EXIT_FAILURE : EXIT_SUCCESS;
+    if (status && !lua_isnil(L, -1)) 
+    {
+        const char *msg = lua_tostring(L, -1);
+        if (msg == NULL) msg = "(error object is not a string)";
+        LOGE( msg);
+        lua_pop(L, 1);
+    }
+    lua_close(L);
+    return (status) ? EXIT_FAILURE : EXIT_SUCCESS;
 }
 

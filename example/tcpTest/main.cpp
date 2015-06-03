@@ -72,184 +72,184 @@ int sendBufferLen = 1024;
 
 void doClose()
 {
-	if (usedSocket)
-	{
-		usedSocket->doClose();//safe method need wait callback, at this example ignore the safe method.
-	}
-	g_runing = false;
+    if (usedSocket)
+    {
+        usedSocket->doClose();//safe method need wait callback, at this example ignore the safe method.
+    }
+    g_runing = false;
 }
 
 
 
 void signalFun(int sig)
 {
-	if (summer)
-	{
-		summer->post(&doClose);
-	}
+    if (summer)
+    {
+        summer->post(&doClose);
+    }
 }
 
 void OnSocketSend(NetErrorCode ec, int recvLength)
 {
-	if (ec)
-	{
-		return;
-	}
-	if (recvLength != sendBufferLen)
-	{
-		LOGW("safe warning, need translate remaining data.");//safe method need translate remaining data at this.
-		return; 
-	}
-	return;
+    if (ec)
+    {
+        return;
+    }
+    if (recvLength != sendBufferLen)
+    {
+        LOGW("safe warning, need translate remaining data.");//safe method need translate remaining data at this.
+        return; 
+    }
+    return;
 };
 
 void OnServerSocketRecv(NetErrorCode ec, int recvLength)
 {
-	if (ec != NEC_SUCCESS)
-	{
-		return;
-	}
-	LOGI("recv client msg len = " << recvLength << ", msg :" << recvBuffer);
-	memcpy(sendBuffer, recvBuffer, recvLength);
-	sendBufferLen = recvLength;
-	bool ret = usedSocket->doSend(sendBuffer, sendBufferLen, std::bind(OnSocketSend, std::placeholders::_1, std::placeholders::_2));// safe-warning: can't call this method again when last doSend request not return. 
-	if (!ret)
-	{
-		return;
-	}
-	ret = usedSocket->doRecv(recvBuffer, recvBufferLen, std::bind(OnServerSocketRecv, std::placeholders::_1, std::placeholders::_2));
-	if (!ret)
-	{
-		return;
-	}
+    if (ec != NEC_SUCCESS)
+    {
+        return;
+    }
+    LOGI("recv client msg len = " << recvLength << ", msg :" << recvBuffer);
+    memcpy(sendBuffer, recvBuffer, recvLength);
+    sendBufferLen = recvLength;
+    bool ret = usedSocket->doSend(sendBuffer, sendBufferLen, std::bind(OnSocketSend, std::placeholders::_1, std::placeholders::_2));// safe-warning: can't call this method again when last doSend request not return. 
+    if (!ret)
+    {
+        return;
+    }
+    ret = usedSocket->doRecv(recvBuffer, recvBufferLen, std::bind(OnServerSocketRecv, std::placeholders::_1, std::placeholders::_2));
+    if (!ret)
+    {
+        return;
+    }
 };
 
 
 void OnAcceptSocket(NetErrorCode ec, TcpSocketPtr s)
 {
-	if (ec != NEC_SUCCESS)
-	{
-		g_runing = false;
-		return;
-	}
-	usedSocket = s;
-	usedSocket->initialize(summer);
-	usedSocket->doRecv(recvBuffer, recvBufferLen, std::bind(OnServerSocketRecv, std::placeholders::_1, std::placeholders::_2));
-	ts = std::shared_ptr<TcpSocket>(new TcpSocket);
-	accepter->doAccept(ts, std::bind(OnAcceptSocket, std::placeholders::_1, std::placeholders::_2));
+    if (ec != NEC_SUCCESS)
+    {
+        g_runing = false;
+        return;
+    }
+    usedSocket = s;
+    usedSocket->initialize(summer);
+    usedSocket->doRecv(recvBuffer, recvBufferLen, std::bind(OnServerSocketRecv, std::placeholders::_1, std::placeholders::_2));
+    ts = std::shared_ptr<TcpSocket>(new TcpSocket);
+    accepter->doAccept(ts, std::bind(OnAcceptSocket, std::placeholders::_1, std::placeholders::_2));
 };
 
 
 void SendOneMsg()
 {
-	if (usedSocket && summer && g_runing)
-	{
-		sprintf(sendBuffer, "%s", "hellow");
-		sendBufferLen = (int)strlen(sendBuffer) + 1;
-		usedSocket->doSend(sendBuffer, sendBufferLen, std::bind(OnSocketSend, std::placeholders::_1, std::placeholders::_2));// safe-warning: one socket can't concurrent call this method without wait callback. 
-	}
+    if (usedSocket && summer && g_runing)
+    {
+        sprintf(sendBuffer, "%s", "hellow");
+        sendBufferLen = (int)strlen(sendBuffer) + 1;
+        usedSocket->doSend(sendBuffer, sendBufferLen, std::bind(OnSocketSend, std::placeholders::_1, std::placeholders::_2));// safe-warning: one socket can't concurrent call this method without wait callback. 
+    }
 }
 void OnClientSocektRecv(NetErrorCode ec, int recvLength)
 {
-	if (ec != NEC_SUCCESS)
-	{
-		g_runing = false;
-		return;
-	}
-	LOGI("recv server msg len = " << recvLength << ", msg :" << recvBuffer);
-	summer->createTimer(1000, std::bind(SendOneMsg));
-	bool ret = usedSocket->doRecv(recvBuffer, recvBufferLen, std::bind( OnClientSocektRecv, std::placeholders::_1, std::placeholders::_2));
-	if (!ret) { g_runing = false; return; };
+    if (ec != NEC_SUCCESS)
+    {
+        g_runing = false;
+        return;
+    }
+    LOGI("recv server msg len = " << recvLength << ", msg :" << recvBuffer);
+    summer->createTimer(1000, std::bind(SendOneMsg));
+    bool ret = usedSocket->doRecv(recvBuffer, recvBufferLen, std::bind( OnClientSocektRecv, std::placeholders::_1, std::placeholders::_2));
+    if (!ret) { g_runing = false; return; };
 };
 
 
 void onConnect(NetErrorCode ec)
 {
-	if (ec != NEC_SUCCESS)
-	{
-		LOGE("connect error");
-		g_runing = false;
-		return;
-	}
-	usedSocket->doRecv(recvBuffer, recvBufferLen, std::bind(OnClientSocektRecv, std::placeholders::_1, std::placeholders::_2));
-	summer->createTimer(1000, std::bind(SendOneMsg));
+    if (ec != NEC_SUCCESS)
+    {
+        LOGE("connect error");
+        g_runing = false;
+        return;
+    }
+    usedSocket->doRecv(recvBuffer, recvBufferLen, std::bind(OnClientSocektRecv, std::placeholders::_1, std::placeholders::_2));
+    summer->createTimer(1000, std::bind(SendOneMsg));
 };
 
 
 int main(int argc, char* argv[])
 {
-	signal(SIGINT, signalFun);
-	if (argc == 2 && 
-		(strcmp(argv[1], "--help") == 0 
-		|| strcmp(argv[1], "/?") == 0))
-	{
-		cout << "please input like example:" << endl;
-		cout << "tcpTest remoteIP remotePort startType" << endl;
-		cout << "./tcpTest 0.0.0.0 8081 0" << endl;
-		cout << "startType: 0 server, 1 client" << endl;
-		return 0;
-	}
-	if (argc > 1)
-	{
-		g_remoteIP = argv[1];
-	}
-	if (argc > 2)
-	{
-		g_remotePort = atoi(argv[2]);
-	}
-	if (argc > 3)
-	{
-		g_startType = atoi(argv[3]);
-	}
+    signal(SIGINT, signalFun);
+    if (argc == 2 && 
+        (strcmp(argv[1], "--help") == 0 
+        || strcmp(argv[1], "/?") == 0))
+    {
+        cout << "please input like example:" << endl;
+        cout << "tcpTest remoteIP remotePort startType" << endl;
+        cout << "./tcpTest 0.0.0.0 8081 0" << endl;
+        cout << "startType: 0 server, 1 client" << endl;
+        return 0;
+    }
+    if (argc > 1)
+    {
+        g_remoteIP = argv[1];
+    }
+    if (argc > 2)
+    {
+        g_remotePort = atoi(argv[2]);
+    }
+    if (argc > 3)
+    {
+        g_startType = atoi(argv[3]);
+    }
 
 
-	
-	if (g_startType == 0)
-	{
-		ILog4zManager::getPtr()->config("server.cfg");
-		ILog4zManager::getPtr()->start();
-	}
-	else
-	{
-		ILog4zManager::getPtr()->config("client.cfg");
-		ILog4zManager::getPtr()->start();
-	}
+    
+    if (g_startType == 0)
+    {
+        ILog4zManager::getPtr()->config("server.cfg");
+        ILog4zManager::getPtr()->start();
+    }
+    else
+    {
+        ILog4zManager::getPtr()->config("client.cfg");
+        ILog4zManager::getPtr()->start();
+    }
 
-	LOGI("g_remoteIP=" << g_remoteIP << ", g_remotePort=" << g_remotePort << ", g_startType=" << g_startType );
+    LOGI("g_remoteIP=" << g_remoteIP << ", g_remotePort=" << g_remotePort << ", g_startType=" << g_startType );
 
 
-	
+    
 
-	summer = std::shared_ptr<EventLoop>(new EventLoop);
-	summer->initialize();
+    summer = std::shared_ptr<EventLoop>(new EventLoop);
+    summer->initialize();
 
-	if (g_startType == 0)
-	{
-		accepter = std::shared_ptr<TcpAccept>(new TcpAccept());
-		accepter->initialize(summer);
-		ts = std::shared_ptr<TcpSocket>(new TcpSocket);
-		if (!accepter->openAccept(g_remoteIP.c_str(), g_remotePort))
-		{
-			return 0;
-		}
-		
-		accepter->doAccept(ts, std::bind(OnAcceptSocket, std::placeholders::_1, std::placeholders::_2));
-	}
-	else
-	{
-		usedSocket = std::shared_ptr<TcpSocket>(new TcpSocket);
-		usedSocket->initialize(summer);
-		usedSocket->doConnect(g_remoteIP.c_str(), g_remotePort, std::bind(onConnect, std::placeholders::_1));
-	}
-	
-	while (g_runing)
-	{
-		summer->runOnce();
-	}
-	ts.reset();
-	accepter.reset();
-	usedSocket.reset();
-	//warning: be safe close need:  1.close all established socket. 2. wait all socket recv callback. 3 stop runonce and safe exit.
-	return 0;
+    if (g_startType == 0)
+    {
+        accepter = std::shared_ptr<TcpAccept>(new TcpAccept());
+        accepter->initialize(summer);
+        ts = std::shared_ptr<TcpSocket>(new TcpSocket);
+        if (!accepter->openAccept(g_remoteIP.c_str(), g_remotePort))
+        {
+            return 0;
+        }
+        
+        accepter->doAccept(ts, std::bind(OnAcceptSocket, std::placeholders::_1, std::placeholders::_2));
+    }
+    else
+    {
+        usedSocket = std::shared_ptr<TcpSocket>(new TcpSocket);
+        usedSocket->initialize(summer);
+        usedSocket->doConnect(g_remoteIP.c_str(), g_remotePort, std::bind(onConnect, std::placeholders::_1));
+    }
+    
+    while (g_runing)
+    {
+        summer->runOnce();
+    }
+    ts.reset();
+    accepter.reset();
+    usedSocket.reset();
+    //warning: be safe close need:  1.close all established socket. 2. wait all socket recv callback. 3 stop runonce and safe exit.
+    return 0;
 }
 

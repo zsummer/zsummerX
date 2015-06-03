@@ -46,68 +46,68 @@
 class CProcess
 {
 public:
-	CProcess();
-	//! 启动与停止
-	bool start();
-	void stop();
-	//! 线程
-	void run();
-	//!
-	inline zsummer::network::EventLoopPtr GetZSummer(){return _summer;}
+    CProcess();
+    //! 启动与停止
+    bool start();
+    void stop();
+    //! 线程
+    void run();
+    //!
+    inline zsummer::network::EventLoopPtr GetZSummer(){return _summer;}
 private:
-	zsummer::network::EventLoopPtr _summer;
-	std::thread	 _thread;
-	bool  _running = true;
+    zsummer::network::EventLoopPtr _summer;
+    std::thread     _thread;
+    bool  _running = true;
 
 
 public:
-	template<class H>
-	void post(const H &h)
-	{
-		_summer->post(h);
-	}
-	//接收一个socket
-	void RecvSocketPtr(std::shared_ptr<zsummer::network::TcpSocket> sockptr);
+    template<class H>
+    void post(const H &h)
+    {
+        _summer->post(h);
+    }
+    //接收一个socket
+    void RecvSocketPtr(std::shared_ptr<zsummer::network::TcpSocket> sockptr);
 
-	//all use
+    //all use
 public:
-	inline unsigned long long GetTotalRecvLen() {return _nTotalRecvLen;}
-	inline void AddTotalRecvLen(unsigned long long len) { _nTotalRecvLen += len;}
+    inline unsigned long long GetTotalRecvLen() {return _nTotalRecvLen;}
+    inline void AddTotalRecvLen(unsigned long long len) { _nTotalRecvLen += len;}
 
-	inline unsigned long long GetTotalSendLen() {return _nTotalSendLen;}
-	inline void AddTotalSendLen(unsigned long long len) { _nTotalSendLen += len;}
+    inline unsigned long long GetTotalSendLen() {return _nTotalSendLen;}
+    inline void AddTotalSendLen(unsigned long long len) { _nTotalSendLen += len;}
 
-	inline unsigned long long GetTotalRecvCount() {return _nTotalRecvCount;}
-	inline void AddTotalRecvCount(unsigned long long len) { _nTotalRecvCount += len;}
+    inline unsigned long long GetTotalRecvCount() {return _nTotalRecvCount;}
+    inline void AddTotalRecvCount(unsigned long long len) { _nTotalRecvCount += len;}
 
-	inline unsigned long long GetTotalSendCount() {return _nTotalSendCount;}
-	inline void AddTotalSendCount(unsigned long long len) { _nTotalSendCount += len;}
-		
-	inline unsigned long long GetTotalOpen() {return _nTotalOpen;}
-	inline void AddTotalOpen(unsigned long long len) { _nTotalOpen += len;}
-	inline unsigned long long GetTotalClosed() {return _nTotalClosed;}
-	inline void AddTotalClosed(unsigned long long len) { _nTotalClosed += len;}
+    inline unsigned long long GetTotalSendCount() {return _nTotalSendCount;}
+    inline void AddTotalSendCount(unsigned long long len) { _nTotalSendCount += len;}
+        
+    inline unsigned long long GetTotalOpen() {return _nTotalOpen;}
+    inline void AddTotalOpen(unsigned long long len) { _nTotalOpen += len;}
+    inline unsigned long long GetTotalClosed() {return _nTotalClosed;}
+    inline void AddTotalClosed(unsigned long long len) { _nTotalClosed += len;}
 private:
-	unsigned long long  _nTotalRecvLen = 0;
-	unsigned long long  _nTotalSendLen = 0;
-	unsigned long long  _nTotalRecvCount = 0;
-	unsigned long long  _nTotalSendCount = 0;
-	unsigned long long  _nTotalOpen = 0;
-	unsigned long long  _nTotalClosed = 0;
-	
+    unsigned long long  _nTotalRecvLen = 0;
+    unsigned long long  _nTotalSendLen = 0;
+    unsigned long long  _nTotalRecvCount = 0;
+    unsigned long long  _nTotalSendCount = 0;
+    unsigned long long  _nTotalOpen = 0;
+    unsigned long long  _nTotalClosed = 0;
+    
 
 
-	//only connects use
+    //only connects use
 public:
-	inline unsigned long long GetTotalEcho() {return _nTotalEcho;}
-	inline void AddTotalEcho(unsigned long long len) { _nTotalEcho += len;}
+    inline unsigned long long GetTotalEcho() {return _nTotalEcho;}
+    inline void AddTotalEcho(unsigned long long len) { _nTotalEcho += len;}
 
-	inline unsigned long long GetTotalEchoTime() {return _nTotalEchoTime;}
-	inline void AddTotalEchoTime(unsigned long long len) { _nTotalEchoTime += len;}
+    inline unsigned long long GetTotalEchoTime() {return _nTotalEchoTime;}
+    inline void AddTotalEchoTime(unsigned long long len) { _nTotalEchoTime += len;}
 private:
-	unsigned long long _nTotalEcho = 0;
-	unsigned long long _nTotalEchoTime = 0;
-	
+    unsigned long long _nTotalEcho = 0;
+    unsigned long long _nTotalEchoTime = 0;
+    
 
 
 

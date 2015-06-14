@@ -80,7 +80,7 @@ namespace zsummer
             bool cancelTimer(TimerID timerID);
             // if have expired timer. the timer will trigger.
             void checkTimer();
-            inline std::map<TimerID, _OnTimerHandler* >::size_type GetTimersCount(){ return _queTimer.size(); }
+            inline std::map<TimerID, _OnTimerHandler* >::size_type getTimersCount(){ return _queTimer.size(); }
         private:
             //! timer queue
             std::map<TimerID, _OnTimerHandler* > _queTimer;

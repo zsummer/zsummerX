@@ -52,7 +52,9 @@ namespace zsummer
             bool openAccept(const char * ip, unsigned short port);
             bool doAccept(const TcpSocketPtr& s, _OnAcceptHandler &&handler);
             bool onIOCPMessage(BOOL bSuccess);
-
+        private:
+            std::string logSection();
+        private:
             //config
             EventLoopPtr _summer;
 
@@ -71,8 +73,6 @@ namespace zsummer
             _OnAcceptHandler _onAcceptHandler;
             TcpSocketPtr _client;
 
-            //status
-            int _nLinkStatus;
         };
         typedef std::shared_ptr<TcpAccept> TcpAcceptPtr;
 

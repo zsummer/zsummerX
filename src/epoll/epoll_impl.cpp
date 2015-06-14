@@ -107,7 +107,7 @@ std::string EventLoop::logSection()
     MessageStack::size_type msgSize = _stackMessages.size();
     _stackMessagesLock.unlock();
     os << " EventLoop: _epoll=" << _epoll << ", _sockpair[2]={" << _sockpair[0] << "," << _sockpair[1] << "}"
-        << " _stackMessages.size()=" << msgSize << ", current total timer=" << _timer.GetTimersCount()
+        << " _stackMessages.size()=" << msgSize << ", current total timer=" << _timer.getTimersCount()
         << " _register=" << _register;
     return os.str();
 }

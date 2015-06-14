@@ -40,12 +40,49 @@
 #include <zsummerX/iocp/udpsocket_impl.h>
 using namespace zsummer::network;
 
+bool EventLoop::initialize()
+{
+    if (_io != NULL)
+    {
+        LCF("iocp already craeted !  " << logSection());
+        return false;
+    }
+    _io = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, NULL, 1);
+    if (!_io)
+    {
+        LCF("CreateIoCompletionPort false!  " << logSection());
+        return false;
+    }
+    return true;
+}
+
+void EventLoop::post(_OnPostHandler &&h)
+{
+    _OnPostHandler *ptr = new _OnPostHandler(h);
+    PostQueuedCompletionStatus(_io, 0, PCK_USER_DATA, (LPOVERLAPPED)(ptr));
+}
+
+std::string EventLoop::logSection()
+{
+    std::stringstream os;
+    os << "logSection[0x" << this << "]: _iocp=" << (void*)_io << ", current total timer=" << _timer.getTimersCount() <<", next expire time=" << _timer.getNextExpireTime();
+    return os.str();
+}
+
+unsigned long long EventLoop::createTimer(unsigned int delayms, _OnTimerHandler &&handle)
+{
+    return _timer.createTimer(delayms, std::move(handle)); 
+}
+bool EventLoop::cancelTimer(unsigned long long timerID)
+{
+    return _timer.cancelTimer(timerID); 
+}
 
 void EventLoop::runOnce(bool isImmediately)
 {
     if (_io == NULL)
     {
-        LCF("EventLoop::runOnce[this0x" << this << "] server not initialize or initialize false." <<logSection());
+        LCF("iocp handle not initialize. " <<logSection());
         return;
     }
 
@@ -72,17 +109,17 @@ void EventLoop::runOnce(bool isImmediately)
         }
         catch (std::runtime_error e)
         {
-            LCW("OnPostHandler have runtime_error exception. err=" << e.what());
+            LCW("when call [post] callback throw one runtime_error. err=" << e.what());
         }
         catch (...)
         {
-            LCW("OnPostHandler have unknown exception.");
+            LCW("when call [post] callback throw one unknown exception.");
         }
         delete func;
         return;
     }
     
-    //! network data
+    //! net data
     tagReqHandle & req = *(HandlerFromOverlaped(pOverlapped));
     switch (req._type)
     {
@@ -114,7 +151,7 @@ void EventLoop::runOnce(bool isImmediately)
         }
         break;
     default:
-        LCE("EventLoop::runOnce[this0x" << this << "]GetQueuedCompletionStatus undefined type=" << req._type << logSection());
+        LCE("GetQueuedCompletionStatus undefined type=" << req._type << logSection());
     }
     
 }

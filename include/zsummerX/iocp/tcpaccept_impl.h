@@ -63,7 +63,7 @@ namespace zsummer
             unsigned short    _port = 0;
             //listen
             SOCKET            _server = INVALID_SOCKET;
-            SOCKADDR_IN        _addr;
+
 
             //client
             SOCKET _socket = INVALID_SOCKET;

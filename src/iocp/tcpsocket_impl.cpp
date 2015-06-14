@@ -65,7 +65,7 @@ TcpSocket::~TcpSocket()
     g_appEnvironment.addClosedSocketCount();
     if (_onConnectHandler || _onRecvHandler || _onSendHandler)
     {
-        LCT("TcpSocket::~TcpSocket[" << this << "] Destruct TcpSocket Error. socket handle not invalid and some request was not completed. " << getTcpSocketStatus());
+        LCT("Destruct TcpSocket Error. socket handle not invalid and some request was not completed. " << logSection());
     }    
     if (_socket != INVALID_SOCKET)
     {
@@ -74,10 +74,10 @@ TcpSocket::~TcpSocket()
     }
 }
 
-std::string TcpSocket::getTcpSocketStatus()
+std::string TcpSocket::logSection()
 {
     std::stringstream os;
-    os << " TcpSocket Status: _summer.use_count()=" << _summer.use_count() << ", _socket=" << _socket
+    os << "this[0x" << this <<"] _summer.use_count()=" << _summer.use_count() << ", _socket=" << _socket
         << ", _remoteIP=" << _remoteIP << ", _remotePort=" << _remotePort
         << ", _recvHandle=" << _recvHandle << ", _recvWSABuf[0x" << (void*)_recvWSABuf.buf << "," << _recvWSABuf.len
         << "], _onRecvHandler=" << (bool)_onRecvHandler << ", _sendHandle=" << _sendHandle
@@ -93,7 +93,7 @@ bool TcpSocket::initialize(const EventLoopPtr& summer)
 {
     if (_summer)
     {
-        LCE("TcpSocket::initialize[" << this << "] duplicate initialize! " << getTcpSocketStatus());
+        LCE("TcpSocket already initialize! " << logSection());
         return false;
     }
     _summer = summer;
@@ -107,7 +107,7 @@ bool TcpSocket::initialize(const EventLoopPtr& summer)
         _socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
         if (_socket == INVALID_SOCKET)
         {
-            LCE("TcpSocket::initialize[" << this << "] socket create error! ERRCODE=" << WSAGetLastError() << getTcpSocketStatus());
+            LCE("TcpSocket create error! ERRCODE=" << WSAGetLastError() << logSection());
             return false;
         }
         setNoDelay(_socket);
@@ -116,7 +116,7 @@ bool TcpSocket::initialize(const EventLoopPtr& summer)
         localAddr.sin_family = AF_INET;
         if (bind(_socket, (sockaddr *)&localAddr, sizeof(SOCKADDR_IN)) != 0)
         {
-            LCE("TcpSocket::initialize[" << this << "] bind local addr error! ERRCODE=" << WSAGetLastError() << getTcpSocketStatus());
+            LCE("TcpSocket bind local addr error! ERRCODE=" << WSAGetLastError() << logSection());
             closesocket(_socket);
             _socket = INVALID_SOCKET;
             return false;
@@ -125,7 +125,7 @@ bool TcpSocket::initialize(const EventLoopPtr& summer)
 
     if (CreateIoCompletionPort((HANDLE)_socket, _summer->_io, (ULONG_PTR)this, 1) == NULL)
     {
-        LCE("TcpSocket::initialize[" << this << "] bind socket to IOCP error.  ERRCODE=" << GetLastError() << getTcpSocketStatus());
+        LCE("TcpSocket bind socket to IOCP error.  ERRCODE=" << GetLastError() << logSection());
         closesocket(_socket);
         _socket = INVALID_SOCKET;
         return false;
@@ -153,17 +153,17 @@ bool TcpSocket::doConnect(const std::string& remoteIP, unsigned short remotePort
 {
     if (!_summer)
     {
-        LCF("TcpSocket::doConnect[" << this << "] _summer pointer uninitialize." << getTcpSocketStatus());
+        LCF("TcpSocket uninitialize." << logSection());
         return false;
     }
     if (_nLinkStatus != LS_WAITLINK)
     {
-        LCW("TcpSocket::doConnect[" << this << "] socket already used or not initilize. " << getTcpSocketStatus());
+        LCW("TcpSocket already used or not initilize. " << logSection());
         return false;
     }
     if (_onConnectHandler)
     {
-        LCF("TcpSocket::doConnect[" << this << "] socket is connecting." << getTcpSocketStatus());
+        LCF("TcpSocket already connect." << logSection());
         return false;
     }
     
@@ -173,7 +173,7 @@ bool TcpSocket::doConnect(const std::string& remoteIP, unsigned short remotePort
     DWORD dwSize = 0;
     if (WSAIoctl(_socket, SIO_GET_EXTENSION_FUNCTION_POINTER, &gid, sizeof(gid), &lpConnectEx, sizeof(lpConnectEx), &dwSize, NULL, NULL) != 0)
     {
-        LCF("TcpSocket::doConnect[" << this << "] Get ConnectEx pointer err!  ERRCODE= " << WSAGetLastError() << getTcpSocketStatus());
+        LCF("TcpSocket::doConnect[" << this << "] Get ConnectEx pointer err!  ERRCODE= " << WSAGetLastError() << logSection());
         return false;
     }
 
@@ -191,7 +191,7 @@ bool TcpSocket::doConnect(const std::string& remoteIP, unsigned short remotePort
     {
         if (WSAGetLastError() != ERROR_IO_PENDING)
         {
-            LCF("TcpSocket::doConnect[" << this << "] doConnect failed and ERRCODE!=ERROR_IO_PENDING, ERRCODE=" << WSAGetLastError() << getTcpSocketStatus());
+            LCF("TcpSocket doConnect failed and ERRCODE!=ERROR_IO_PENDING, ERRCODE=" << WSAGetLastError() << logSection());
             return false;
         }
 
@@ -208,22 +208,22 @@ bool TcpSocket::doSend(char * buf, unsigned int len, _OnSendHandler &&handler)
 {
     if (_nLinkStatus != LS_ESTABLISHED)
     {
-        LCT("TcpSocket::doSend[" << this << "] socket status != LS_ESTABLISHED." << getTcpSocketStatus());
+        LCT("TcpSocket status != LS_ESTABLISHED." << logSection());
         return false;
     }
     if (!_summer)
     {
-        LCF("TcpSocket::doSend[" << this << "] _summer pointer uninitialize." << getTcpSocketStatus());
+        LCF("TcpSocket uninitialize." << logSection());
         return false;
     }
     if (_onSendHandler)
     {
-        LCF("TcpSocket::doSend[" << this << "] socket is sending." << getTcpSocketStatus());
+        LCF("TcpSocket already send." << logSection());
         return false;
     }
     if (len == 0)
     {
-        LCF("TcpSocket::doSend[" << this << "] length is 0." << getTcpSocketStatus());
+        LCF("TcpSocket param error. length is 0." << logSection());
         return false;
     }
 
@@ -234,7 +234,7 @@ bool TcpSocket::doSend(char * buf, unsigned int len, _OnSendHandler &&handler)
     {
         if (WSAGetLastError() != WSA_IO_PENDING)
         {
-            LCT("TcpSocket::doSend[" << this << "] doSend failed and ERRCODE!=ERROR_IO_PENDING ERRCODE=" << WSAGetLastError() << getTcpSocketStatus());
+            LCT("TcpSocket doSend failed and ERRCODE!=ERROR_IO_PENDING ERRCODE=" << WSAGetLastError() << logSection());
             _sendWsaBuf.buf = nullptr;
             _sendWsaBuf.len = 0;
             doClose();
@@ -251,22 +251,22 @@ bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler)
 {
     if (_nLinkStatus != LS_ESTABLISHED)
     {
-        LCT("TcpSocket::doRecv[" << this << "] socket status != LS_ESTABLISHED. " << getTcpSocketStatus());
+        LCT("TcpSocket status != LS_ESTABLISHED. " << logSection());
         return false;
     }
     if (!_summer)
     {
-        LCF("TcpSocket::doRecv[" << this << "] _summer pointer uninitialize." << getTcpSocketStatus());
+        LCF("TcpSocket uninitialize." << logSection());
         return false;
     }
     if (_onRecvHandler)
     {
-        LCF("TcpSocket::doRecv[" << this << "] socket is recving. " << getTcpSocketStatus());
+        LCF("TcpSocket already recv. " << logSection());
         return false;
     }
     if (len == 0)
     {
-        LCF("TcpSocket::doRecv[" << this << "] length is 0." << getTcpSocketStatus());
+        LCF("TcpSocket param error. length is 0." << logSection());
         return false;
     }
 
@@ -280,7 +280,7 @@ bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler)
     {
         if (WSAGetLastError() != WSA_IO_PENDING)
         {
-            LCT("TcpSocket::doRecv[" << this << "] doRecv failed and ERRCODE!=ERROR_IO_PENDING, ERRCODE=" << WSAGetLastError() << getTcpSocketStatus());
+            LCT("TcpSocket doRecv failed and ERRCODE!=ERROR_IO_PENDING, ERRCODE=" << WSAGetLastError() << logSection());
             _recvWSABuf.buf = nullptr;
             _recvWSABuf.len = 0;
             doClose();

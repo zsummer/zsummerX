@@ -75,19 +75,19 @@ bool UdpSocket::initialize(const EventLoopPtr &summer, const char *localIP, unsi
 {
     if (_socket != INVALID_SOCKET)
     {
-        LCF("UdpSocket: socket is aread used , socket=" << (unsigned int)_socket);
+        LCF("socket is aread used , socket=" << (unsigned int)_socket);
         return false;
     }    
     if (_summer)
     {
-        LCF("UdpSocket: socket is aread used, _summer =" << _summer.get() << ", socket=" << (unsigned int)_socket);
+        LCF("socket is aread used, _summer =" << _summer.get() << ", socket=" << (unsigned int)_socket);
         return false;
     }
     _summer = summer;
     _socket = WSASocket(AF_INET, SOCK_DGRAM, IPPROTO_UDP, NULL, 0, WSA_FLAG_OVERLAPPED);
     if (_socket == INVALID_SOCKET)
     {
-        LCE("UdpSocket: create socket  error! ERRCODE=" << WSAGetLastError());
+        LCE("create socket  error! ERRCODE=" << WSAGetLastError());
         return false;
     }
 
@@ -98,13 +98,13 @@ bool UdpSocket::initialize(const EventLoopPtr &summer, const char *localIP, unsi
     addr.sin_port = htons(localPort);
     if (bind(_socket, (sockaddr *) &addr, sizeof(sockaddr_in)) != 0)
     {
-        LCE("UdpSocket: bind local addr error!  socket=" << (unsigned int)_socket << ", ERRCODE=" << WSAGetLastError());
+        LCE("bind local addr error!  socket=" << (unsigned int)_socket << ", ERRCODE=" << WSAGetLastError());
         return false;
     }
     
     if (CreateIoCompletionPort((HANDLE)_socket, _summer->_io, (ULONG_PTR)this, 1) == NULL)
     {
-        LCE("UdpSocket::bind socket to IOCP error. socket="<< (unsigned int) _socket << ", ERRCODE=" << GetLastError());
+        LCE("socket to IOCP error. socket="<< (unsigned int) _socket << ", ERRCODE=" << GetLastError());
         closesocket(_socket);
         _socket = INVALID_SOCKET;
         return false;
@@ -121,18 +121,18 @@ bool UdpSocket::doSendTo(char * buf, unsigned int len, const char *dstip, unsign
 {
     if (!_summer)
     {
-        LCF("UdpSocket::doSend IIOServer pointer uninitialize.socket=" << (unsigned int) _socket);
+        LCF("UdpSocket uninitialize.socket=" << (unsigned int) _socket);
         return false;
     }
     if (_nLinkStatus != LS_ESTABLISHED)
     {
-        LCF("UdpSocket::DoSendto socket status != LS_ESTABLISHED. socket="<<(unsigned int) _socket);
+        LCF("status != LS_ESTABLISHED. socket="<<(unsigned int) _socket);
         return false;
     }
 
     if (len == 0 || len >1200)
     {
-        LCF("UdpSocket::doSend length is error. socket="<<(unsigned int) _socket);
+        LCF("param length error. length=" << len << ", socket="<<(unsigned int) _socket);
         return false;
     }
 
@@ -149,24 +149,24 @@ bool UdpSocket::doRecvFrom(char * buf, unsigned int len, _OnRecvFromHandler&& ha
 {
     if (!_summer)
     {
-        LCF("UdpSocket::doRecv IIOServer pointer uninitialize.socket=" << (unsigned int) _socket);
+        LCF("uninitialize.socket=" << (unsigned int) _socket);
         return false;
     }
     if (_nLinkStatus != LS_ESTABLISHED)
     {
-        LCF("UdpSocket::doRecv socket status != LS_ESTABLISHED. socket="<<(unsigned int) _socket);
+        LCF("socket status != LS_ESTABLISHED. socket="<<(unsigned int) _socket);
         return false;
     }
 
     if (len == 0)
     {
-        LCF("UdpSocket::doRecv length is 0. socket="<<(unsigned int) _socket);
+        LCF("length is 0. socket="<<(unsigned int) _socket);
         return false;
     }
 
     if (_onRecvHander)
     {
-        LCF("UdpSocket::doRecv  is locking. socket="<<(unsigned int) _socket);
+        LCF("duplicate doRecvFrom. socket="<<(unsigned int) _socket);
         return false;
     }
 
@@ -182,7 +182,7 @@ bool UdpSocket::doRecvFrom(char * buf, unsigned int len, _OnRecvFromHandler&& ha
     {
         if (WSAGetLastError() != WSA_IO_PENDING)
         {
-            LCE("UdpSocket::doRecv doRecv failed and ERRCODE!=ERROR_IO_PENDING, socket="<< (unsigned int) _socket << ", ERRCODE=" << WSAGetLastError());
+            LCE("doRecv failed and ERRCODE!=ERROR_IO_PENDING, socket="<< (unsigned int) _socket << ", ERRCODE=" << WSAGetLastError());
             _recvWSABuf.buf = nullptr;
             _recvWSABuf.len = 0;
             return false;

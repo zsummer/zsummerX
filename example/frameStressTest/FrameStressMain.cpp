@@ -53,11 +53,10 @@ unsigned short g_startType = 0;  //0 start with server module, 1 start with clie
 unsigned short g_maxClient = 1; //if start with server it is client limite count. else other it is the start client count.
 unsigned short g_sendType = 0; //0 ping-pong test, 1 flooding test
 unsigned int   g_intervalMs = 0; // if start client with flood test, it's flooding interval by millionsecond.
+unsigned int   g_hightBenchmark = 0;
 
 
 
-//! send this data by test
-std::string g_testStr;
 
 //!statistic 
 unsigned long long g_lastSendMessages = 0;
@@ -155,14 +154,21 @@ public:
 
     void msg_ResultSequence_fun(TcpSessionPtr session, ReadStream & rs)
     {
-        EchoPack pack;
-        rs >> pack;
-
-        if (g_sendType == 0 || g_intervalMs == 0) //echo send
+        if (g_hightBenchmark)
         {
-            WriteStream ws(ID_EchoPack);
-            ws << pack;
-            session->doSend(ws.getStream(), ws.getStreamLen());
+            session->doSend(rs.getStream(), rs.getStreamLen());
+        }
+        else
+        {
+            EchoPack pack;
+            rs >> pack;
+
+            if (g_sendType == 0 || g_intervalMs == 0) //echo send
+            {
+                WriteStream ws(ID_EchoPack);
+                ws << pack;
+                session->doSend(ws.getStream(), ws.getStreamLen());
+            }
         }
     };
 
@@ -230,11 +236,18 @@ public:
 
     void msg_RequestSequence_fun (TcpSessionPtr session, ReadStream & rs)
     {
-        EchoPack pack;
-        rs >> pack;
-        WriteStream ws(ID_EchoPack);
-        ws << pack;
-        session->doSend(ws.getStream(), ws.getStreamLen());
+        if (g_hightBenchmark)
+        {
+            session->doSend(rs.getStream(), rs.getStreamLen());
+        }
+        else
+        {
+            EchoPack pack;
+            rs >> pack;
+            WriteStream ws(ID_EchoPack);
+            ws << pack;
+            session->doSend(ws.getStream(), ws.getStreamLen());
+        }
     };
 };
 
@@ -277,6 +290,7 @@ int main(int argc, char* argv[])
         std::cout << "maxClient: limit max" << std::endl;
         std::cout << "sendType: 0 echo send, 1 direct send" << std::endl;
         std::cout << "interval: send once interval" << std::endl;
+        std::cout << "high benchmark: 0 close, 1 open" << std::endl;
         return 0;
     }
     if (argc > 1)
@@ -292,6 +306,8 @@ int main(int argc, char* argv[])
         g_sendType = atoi(argv[5]);
     if (argc > 6)
         g_intervalMs = atoi(argv[6]);
+    if (argc > 7)
+        g_hightBenchmark = atoi(argv[7]);
 
     if (g_startType == 0)
         ILog4zManager::getPtr()->config("server.cfg");
@@ -309,7 +325,6 @@ int main(int argc, char* argv[])
     SessionManager::getRef().setStopClientsHandler(onAllClientsStoped);
     SessionManager::getRef().start();
 
-    g_testStr.resize(200, 's');
 
     SessionManager::getRef().createTimer(5000, MonitorFunc);
 

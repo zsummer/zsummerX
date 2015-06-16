@@ -53,9 +53,6 @@ unsigned short g_type;
 struct Picnic
 {
     char           recvData[_MSG_BUF_LEN];
-    char           sendData[_MSG_BUF_LEN];
-    std::string textCache;
-    unsigned long long _reqTime;
     UdpSocketPtr sock;
 };
 typedef std::shared_ptr<Picnic> PicnicPtr;
@@ -65,16 +62,6 @@ unsigned long long g_totalEchoTime;
 unsigned long long g_totalSend;
 unsigned long long g_totalRecv;
 
-//! 请求发送
-void doSend(const char *remoteIP, unsigned short remotePort, unsigned short protoID, unsigned long long clientTick, PicnicPtr pic)
-{
-    pic->_reqTime = clientTick;
-    zsummer::proto4z::WriteStream ws(protoID);
-    ws << pic->_reqTime; // local tick count
-    ws << g_fillString; // append text, fill the length protocol.
-    pic->sock->doSendTo(ws.getStream(), ws.getStreamLen(), remoteIP, remotePort);
-    g_totalSend++;
-};
 
 void onRecv(NetErrorCode ec, const char *remoteIP, unsigned short remotePort, int translate, PicnicPtr pic)
 {
@@ -84,59 +71,18 @@ void onRecv(NetErrorCode ec, const char *remoteIP, unsigned short remotePort, in
         return;
     }
 
-    auto ret = zsummer::proto4z::checkBuffIntegrity(pic->recvData, translate, _MSG_BUF_LEN, _MSG_BUF_LEN);
-    if (ret.first == IRT_SUCCESS)
-    {
-        //! 解包
-        zsummer::proto4z::ReadStream rs(pic->recvData, translate);
-        try
-        {
-            //协议流异常会被上层捕获并关闭连接
-            unsigned short protoID = 0;
-            rs >> protoID;
-            switch (protoID)
-            {
-            case 1:
-                {
-                    unsigned long long clientTick = 0;
-                    pic->textCache.clear();
-                    rs >> clientTick >> pic->textCache;
-                    g_totalRecv++;
-                    if (g_type == 1)
-                    {
-                        doSend(remoteIP, remotePort, protoID, clientTick, pic);
-                    }
-                    else
-                    {
-                        unsigned long long curTick = NOW_TIME;
-                        if (curTick < clientTick)
-                        {
-                            throw std::runtime_error("curTick < clientTick");
-                        }
-                        g_totalEcho ++;
-                        g_totalEchoTime +=(curTick - clientTick);
-                        doSend(remoteIP, remotePort, 1, NOW_TIME, pic);
-                    }
-                }
-                break;
-            default:
-                {
-                    LOGI("unknown protocol id = " << protoID);
-                }
-                break;
-            }
-        }
-        catch (std::runtime_error e)
-        {
-            LOGE("MessageEntry catch one exception: "<< e.what() );
-        }
-        pic->sock->doRecvFrom(pic->recvData, _MSG_BUF_LEN, std::bind(onRecv, 
-            std::placeholders::_1,
-            std::placeholders::_2,
-            std::placeholders::_3,
-            std::placeholders::_4,
-            pic));
-    }
+    pic->sock->doSendTo(pic->recvData, translate, remoteIP, remotePort);
+
+    pic->sock->doRecvFrom(pic->recvData, _MSG_BUF_LEN, std::bind(onRecv,
+        std::placeholders::_1,
+        std::placeholders::_2,
+        std::placeholders::_3,
+        std::placeholders::_4,
+        pic));
+    g_totalEcho++;
+    g_totalRecv++;
+    g_totalSend++;
+    
 }
 
 int main(int argc, char* argv[])
@@ -180,7 +126,7 @@ int main(int argc, char* argv[])
     zsummer::network::EventLoopPtr summer(new zsummer::network::EventLoop());
     summer->initialize();
 
-    g_fillString.resize(1000, 'z');
+    g_fillString.resize(200, 'z');
     g_totalEcho = 0;
     g_totalEchoTime = 0;
     g_totalSend = 0;
@@ -204,39 +150,37 @@ int main(int argc, char* argv[])
 
         for (unsigned int i = 0; i < maxClient; i++)
         {
-            PicnicPtr picc(new Picnic);
-            picc->sock = std::make_shared<UdpSocket>();
-            if (!picc->sock->initialize(summer, "0.0.0.0", 0))
+            PicnicPtr pic(new Picnic);
+            pic->sock = std::make_shared<UdpSocket>();
+            if (!pic->sock->initialize(summer, "0.0.0.0", 0))
             {
                 LOGI("init udp socket error.");
                 continue;
             }
-            picc->sock->doRecvFrom(picc->recvData, _MSG_BUF_LEN, std::bind(onRecv,
+            pic->sock->doRecvFrom(pic->recvData, _MSG_BUF_LEN, std::bind(onRecv,
                 std::placeholders::_1,
                 std::placeholders::_2,
                 std::placeholders::_3,
                 std::placeholders::_4,
-                picc));
-            summer->createTimer(rand()%1000+1000,std::bind(doSend,ip.c_str(), port, 1, NOW_TIME, picc));
+                pic));
+            pic->sock->doSendTo((char *)g_fillString.c_str(), g_fillString.length(), ip.c_str(), port);
         }
 
     }
     
     
     //定时检测
-    unsigned long long nLast[4] = {0};
+    unsigned long long nLast[3] = {0};
 
     std::function<void()> doTimer = [&nLast, &doTimer, &summer]()
     {
         LOGI("EchoSpeed[" << (g_totalEcho - nLast[0])/5.0
-            << "]  DelayTime[" << (g_totalEchoTime - nLast[1])/1.0/((g_totalEcho - nLast[0]) ==0?1:(g_totalEcho - nLast[0]))
-            << "]  SendSpeed[" << (g_totalSend - nLast[2])/5.0 
-            << "]  RecvSpeed[" << (g_totalRecv - nLast[3])/ 5.0
+            << "]  SendSpeed[" << (g_totalSend - nLast[1])/5.0
+            << "]  RecvSpeed[" << (g_totalRecv - nLast[2])/ 5.0
             << "].");
         nLast[0] = g_totalEcho;
-        nLast[1] = g_totalEchoTime;
-        nLast[2] = g_totalSend;
-        nLast[3] = g_totalRecv;
+        nLast[1] = g_totalSend;
+        nLast[2] = g_totalRecv;
 
         summer->createTimer(5 * 1000, std::bind(doTimer));
     };

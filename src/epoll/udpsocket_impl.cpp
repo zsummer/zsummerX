@@ -59,7 +59,7 @@ UdpSocket::~UdpSocket()
     {
         if (_onRecvFromHandler )
         {
-            LCE("UdpSocket::~UdpSocket[this0x" << this << "] Destruct UdpSocket Error. socket handle not invalid and some request was not completed. fd="
+            LCF("UdpSocket::~UdpSocket[this0x" << this << "] Destruct UdpSocket Error. socket handle not invalid and some request was not completed. fd="
                 << _register._fd );
         }
         ::close(_register._fd);
@@ -123,7 +123,12 @@ bool UdpSocket::doSendTo(char * buf, unsigned int len, const char *dstip, unsign
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = inet_addr(dstip);
     addr.sin_port = htons(dstport);
-    sendto(_register._fd, buf, len, 0, (sockaddr*)&addr, sizeof(addr));
+    int ret =sendto(_register._fd, buf, len, 0, (sockaddr*)&addr, sizeof(addr));
+    if (ret == -1 )
+    {
+        LOGW("sendto error. errno=" << errno);
+    }
+    
     return true;
 }
 

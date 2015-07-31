@@ -152,6 +152,11 @@ static int runOnce(lua_State * L)
     return 1;
 }
 
+static int run(lua_State * L)
+{
+    while (SessionManager::getRef().runOnce());
+    return 0;
+}
 
 static int addConnect(lua_State *L)
 {
@@ -202,6 +207,7 @@ static void _onConnecterCallback(lua_State * L, TcpSessionPtr session)
     lua_pushstring(L, session->getRemoteIP().c_str());
     lua_pushnumber(L, session->getRemotePort());
     int status = lua_pcall(L, 3, 0, 1);
+    lua_remove(L, 1);
     if (status)
     {
         const char *msg = lua_tostring(L, -1);
@@ -234,6 +240,7 @@ static void _onMessageCallback(lua_State * L,TcpSessionPtr session, ProtoID pID,
     lua_pushinteger(L, pID);
     lua_pushlstring(L, rs.getStreamBody(), rs.getStreamBodyLen());
     int status = lua_pcall(L, 3, 0, 1);
+    lua_remove(L, 1);
     if (status)
     {
         const char *msg = lua_tostring(L, -1);
@@ -272,6 +279,7 @@ static void _onDisconnectCallback(lua_State * L, TcpSessionPtr session)
     lua_pushstring(L, session->getRemoteIP().c_str());
     lua_pushnumber(L, session->getRemotePort());
     int status = lua_pcall(L, 3, 0, 1);
+    lua_remove(L, 1);
     if (status)
     {
         const char *msg = lua_tostring(L, -1);
@@ -330,6 +338,7 @@ static void onPost(lua_State * L, int delay, int refID)
     lua_pushcfunction(L, pcall_error);
     lua_rawgeti(L, LUA_REGISTRYINDEX, refID);
     int status = lua_pcall(L, 0, 0, 1);
+    lua_remove(L, 1);
     if (status)
     {
         const char *msg = lua_tostring(L, -1);
@@ -367,6 +376,7 @@ static luaL_Reg summer[] = {
 
     { "start", start }, //start network
     { "stop", stop }, //stop network
+    { "run", run }, //run
     { "runOnce", runOnce }, //message pump, run it once.
     { "addConnect", addConnect }, //add one connect.
     { "addListen", addListen }, //add listen.

@@ -55,6 +55,32 @@ void sigFun(int sig)
     SessionManager::getRef().stopClients();
 }
 
+static int pcall_error(lua_State *L)
+{
+    const char *msg = lua_tostring(L, 1);
+    if (msg)
+    {
+        luaL_traceback(L, L, msg, 1);
+    }
+    else if (!lua_isnoneornil(L, 1)) 
+    {  /* is there an error object? */
+        if (!luaL_callmeta(L, 1, "__tostring"))  /* try its 'tostring' metamethod */
+        {
+            lua_pushliteral(L, "(no error message)");
+        }
+    }
+    return 1;
+}
+
+int safedofile(lua_State * L, const char * file)
+{
+    int index = lua_gettop(L);
+    lua_pushcfunction(L, pcall_error);
+    int status = luaL_loadfile(L, file) || lua_pcall(L, 0, 0, index + 1);
+    lua_remove(L, index + 1);
+    return status;
+}
+
 int main(int argc, char* argv[])
 {
 #ifndef _WIN32
@@ -88,18 +114,19 @@ int main(int argc, char* argv[])
     luaopen_pack(L);
 
     lua_gc(L, LUA_GCRESTART, 0);
+
     if (argc > 1)
     {
-        status = luaL_dofile(L, "./server.lua");
+        status = safedofile(L, "./server.lua");
     }
     else
     {
-        status = luaL_dofile(L, "./client.lua");
+        status = safedofile(L, "./client.lua");
     }
     
     
 
-    if (status && !lua_isnil(L, -1)) 
+    if (status) 
     {
         const char *msg = lua_tostring(L, -1);
         if (msg == NULL) msg = "(error object is not a string)";

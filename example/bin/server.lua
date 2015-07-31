@@ -49,7 +49,7 @@ summer.registerDisconnect(onDisconnect)
 summer.start()
 
 --连接服务器
-local id = summer.addListen({ip="127.0.0.1", port=8081})
+local id = summer.addListen("127.0.0.1",8081)
 if id == nil then
 	summer.logw("id == nil when addListen")
 end

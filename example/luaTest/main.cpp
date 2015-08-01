@@ -39,7 +39,7 @@
 extern "C"
 {
 #include "lua/lpack.h"
-int luaopen_protoz_bit(lua_State *L);
+int luaopen_proto4z_tag(lua_State *L);
 }
 
 
@@ -110,7 +110,7 @@ int main(int argc, char* argv[])
     lua_gc(L, LUA_GCSTOP, 0);  /* stop collector during initialization */
     luaL_openlibs(L);  /* open libraries */
     luaopen_summer(L);
-    luaopen_protoz_bit(L);
+    luaopen_proto4z_tag(L);
     luaopen_pack(L);
 
     lua_gc(L, LUA_GCRESTART, 0);

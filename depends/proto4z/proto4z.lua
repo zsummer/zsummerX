@@ -295,7 +295,7 @@ function Proto4z.__decode(binData, pos, name, result)
         offset = p + offset
         tag, p = Proto4z.__unpack(binData, p, "ui64")
         for i = 1, #proto do
-            if Proto4z.checkIntegerBitTrue(tag, i-1) ~= nil then
+            if Proto4zTag.testTag(tag, i) then
                 local desc = proto[i]
                 v, p = Proto4z.__unpack(binData, p, desc.type)
                 if v ~= nil then
@@ -359,6 +359,7 @@ function Proto4z.__encode(obj, name, data)
     --------------------------------------
     else
         local curdata, offset
+        local tag = Proto4zTag.newTag()
         curdata = {data=""}
         for i=1, #proto do
             local desc = proto[i]
@@ -366,6 +367,7 @@ function Proto4z.__encode(obj, name, data)
                 error("parse Proto error. name[" .. name .. "] " .. debug.traceback())
             end
             if desc.del == nil or desc.del ~= true then
+                tag = Proto4zTag.setTag(tag, i)
                 local val = obj[desc.name]
                 if val == nil then
                     error("not found the dest object. name[" ..name .. "." .. desc.name .. "] " .. debug.traceback())
@@ -380,7 +382,6 @@ function Proto4z.__encode(obj, name, data)
                 end
             end
         end
-        local tag = Proto4z.sequenceToInteger(proto.__getTag)
         offset = #curdata.data + #tag
         offset = Proto4z.__pack(offset, "ui32")
         data.data = data.data .. offset .. tag .. curdata.data

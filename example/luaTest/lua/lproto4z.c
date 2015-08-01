@@ -43,155 +43,69 @@
 #include <stdbool.h>
 
 
-int luaopen_protoz_bit(lua_State *L);
+int luaopen_proto4z_tag(lua_State *L);
 
 
-
-static const unsigned short __gc_localEndianType = 1;
-static bool islocalLittleEndian()
+static int newTag(lua_State * L)
 {
-    if (*(const unsigned char *)&__gc_localEndianType == 1)
-    {
-        return true;
-    }
-    return false;
-}
-
-static unsigned long long reversalInteger(unsigned long long org)
-{
-    unsigned long long ret = 0;
-    size_t len = sizeof(unsigned long long);
-
-    unsigned char *dst = (unsigned char*)&ret;
-    unsigned char *src = (unsigned char*)org + sizeof(unsigned long long);
-    while (len > 0)
-    {
-        *dst++ = *--src;
-        len--;
-    }
-    return ret;
-}
-
-
-static int checkIntegerBitTrue(lua_State *L)
-{
-    size_t len = 0;
-    const char * stream;
-    size_t pos;
-    unsigned long long val;
-    stream = luaL_checklstring(L, 1, &len);
-    if (len != 8)
-    {
-        return 0;
-    }
-    val = *(unsigned long long *)stream;
-    if (!islocalLittleEndian())
-    {
-        val = reversalInteger(val);
-    }
-    pos = luaL_checkinteger(L, 2);
-
-    lua_settop(L, 0);
-    
-    if (val & (1ULL << pos))
-    {
-        lua_pushboolean(L, 1);
-    }
-    else
-    {
-        lua_pushnil(L);
-    }
+    unsigned long long tag = 0;
+    lua_pushlstring(L, (const char*)&tag, sizeof(tag));
     return 1;
 }
 
-static int  sequenceToInteger(lua_State *L)
+static int setTag(lua_State * L)
 {
-    size_t i, len = 0;
-    const char * sequence = luaL_checklstring(L, 1, &len);
-    unsigned long long num = 0;
-    if (len > 64)
-    {
-        return 0;
-    }
-    
-    for (i = 0; i < len; i++)
-    {
-        if (sequence[i] == '1')
-        {
-            num |= (1ULL << i);
-        }
-        else
-        {
-            num &= ~(unsigned long long)(1ULL << i);
-        }
-    }
-    if (!islocalLittleEndian())
-    {
-        num = reversalInteger(num);
-    }
-    
-    lua_pushlstring(L, (const char*)&num, 8);
+    unsigned long long tag = 0;
+    const char * luaTag = luaL_checkstring(L, 1);
+    int n = (int)luaL_checkinteger(L, 2);
+    memcpy(&tag, luaTag, sizeof(tag));
+    tag |= (unsigned long long)1 << (n - 1);
+    lua_pushlstring(L, (const char*)&tag, sizeof(tag));
+    return 1;
+}
+
+static int unsetTag(lua_State * L)
+{
+    unsigned long long tag = 0;
+    const char * luaTag = luaL_checkstring(L, 1);
+    int n = (int)luaL_checkinteger(L, 2);
+    memcpy(&tag, luaTag, sizeof(tag));
+    tag &= ~((unsigned long long)1 << (n - 1));
+    lua_pushlstring(L, (const char*)&tag, sizeof(tag));
+    return 1;
+}
+
+static int testTag(lua_State * L)
+{
+    unsigned long long tag = 0;
+    const char * luaTag = luaL_checkstring(L, 1);
+    int n = (int)luaL_checkinteger(L, 2);
+    memcpy(&tag, luaTag, sizeof(tag));
+    int ret = tag & ((unsigned long long)1 << (n - 1));
+    lua_pushboolean(L, ret);
     return 1;
 }
 
 
-static int streamToString(lua_State *L)
-{
-    const char * stream = luaL_checkstring(L, -1);
-    unsigned long long integer = *(unsigned long long*) stream;
-    char buf[50];
-    lua_settop(L, 0);
-#ifdef WIN32  
-    sprintf(buf, "%I64u", integer);
-#else
-    sprintf(buf, "%llu", integer);
-#endif
-    lua_pushstring(L, buf);
-    return 1;
-}
-
-static int stringToStream(lua_State *L)
-{
-    const char * stream = luaL_checkstring(L, -1);
-    unsigned long long integer = 0;
-#ifdef WIN32  
-    sscanf(stream, "%I64u", &integer);
-#else
-    sscanf(stream, "%llu", &integer);
-#endif
-    lua_settop(L, 0);
-    lua_pushlstring(L, (const char *)&integer, 8);
-    return 1;
-}
-
-
-static luaL_Reg checkBit[] = {
-    { "checkIntegerBitTrue", checkIntegerBitTrue },
-    { "sequenceToInteger", sequenceToInteger },
-    { "streamToString", streamToString },
-    { "stringToStream", stringToStream },
-
+static luaL_Reg tagReg[] = {
+    { "newTag", newTag },
+    { "setTag", setTag },
+    { "unsetTag", unsetTag },
+    { "testTag", testTag },
     { NULL, NULL }
 };
 
 
-int luaopen_protoz_bit(lua_State *L)
+int luaopen_proto4z_tag(lua_State *L)
 {
-    lua_getglobal(L, "Proto4z");
-    if (lua_isnil(L, -1))
-    {
-        lua_pop(L, 1);
-        lua_newtable(L);
-        lua_pushvalue(L, -1);
-        lua_setglobal(L, "Proto4z");
-    }
-    
+    lua_newtable(L);
     luaL_Reg *l;
-    for (l = checkBit; l->name != NULL; l++) {
-        lua_pushcclosure(L, l->func, 0);  /* closure with those upvalues */
+    for (l = tagReg; l->name != NULL; l++) 
+    {
+        lua_pushcclosure(L, l->func, 0);
         lua_setfield(L, -2, l->name);
     }
-    lua_pop(L, 1);
+    lua_setglobal(L, "Proto4zTag");
     return 0;
 }
 

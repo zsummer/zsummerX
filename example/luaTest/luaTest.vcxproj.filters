@@ -69,9 +69,6 @@
     <ClCompile Include="lua\loslib.c">
       <Filter>lua</Filter>
     </ClCompile>
-    <ClCompile Include="lua\lpack.c">
-      <Filter>lua</Filter>
-    </ClCompile>
     <ClCompile Include="lua\lparser.c">
       <Filter>lua</Filter>
     </ClCompile>
@@ -148,9 +145,6 @@
       <Filter>lua</Filter>
     </ClInclude>
     <ClInclude Include="lua\lopcodes.h">
-      <Filter>lua</Filter>
-    </ClInclude>
-    <ClInclude Include="lua\lpack.h">
       <Filter>lua</Filter>
     </ClInclude>
     <ClInclude Include="lua\lparser.h">

@@ -84,7 +84,7 @@ static std::string g_text = "zsummerX:test text.........  zsummerX:test text....
                       "zsummerX:test text.........  zsummerX:test text.........  "; // *16 =1024
 
 
-#define  NOW_TIME (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count())
+#define  NOW_TIME (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count())
 
 extern std::string g_remoteIP;
 extern unsigned short g_remotePort;

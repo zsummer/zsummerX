@@ -59,15 +59,15 @@ namespace zsummer
             {
             }
             //get current time tick. unit is millisecond.
-            inline unsigned  int getNowMilliTick()
+            inline unsigned  int getSteadyTime()
             {
-                return (unsigned int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+                return (unsigned int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
             }
 
             //get next expire time  be used to set timeout when calling select / epoll_wait / GetQueuedCompletionStatus.
             inline unsigned int getNextExpireTime()
             {
-                unsigned int now = getNowMilliTick();
+                unsigned int now = getSteadyTime();
                 unsigned int delay = _nextExpire - now;
                 if (delay > 100)
                 {

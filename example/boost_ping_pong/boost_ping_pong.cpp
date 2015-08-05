@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include "../../depends/proto4z/proto4z.h"
 #include <chrono>
-#define  NOW_TIME (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count())
+#define  NOW_TIME (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count())
 
 using namespace std;
 using namespace zsummer::proto4z;

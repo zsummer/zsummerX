@@ -40,18 +40,14 @@ using namespace zsummer::network;
 
 TimerID Timer::createTimer(unsigned int delayms, _OnTimerHandler &&handle)
 {
-
     _OnTimerHandler *pfunc = new _OnTimerHandler(std::move(handle));
-    unsigned int now = getNowMilliTick();
+    unsigned int now = getSteadyTime();
     unsigned int expire = now + delayms;
     unsigned long long timerID = expire;
     timerID <<= 32;
-    timerID |= _queSeq++; //timerID is merge expire time and a sequence. sequence assure the ID is single.
+    timerID |= _queSeq++;
     _queTimer.insert(std::make_pair(timerID, pfunc));
-    if (_nextExpire > expire)
-    {
-        _nextExpire = expire;
-    }
+    if (_nextExpire > expire) _nextExpire = expire;
     LCT("createTimer. delayms=" << delayms << ", _ques=" << _queTimer.size());
     return timerID;
 }
@@ -74,11 +70,11 @@ void Timer::checkTimer()
     //LCT("checkTimer. ques=" << _queTimer.size() << ", next=" << _nextExpire);
     if (!_queTimer.empty())
     {
-        unsigned int now = getNowMilliTick();
+        unsigned int now = getSteadyTime();
         if (_nextExpire > now)
         {
             //LCT("_nextExpire > now. next=" << _nextExpire)
-                return;
+            return;
         }
 
         while (1)

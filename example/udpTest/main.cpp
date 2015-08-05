@@ -47,7 +47,7 @@ using namespace zsummer::proto4z;
 //! 消息包缓冲区大小
 #define _MSG_BUF_LEN    (1200)
 std::string g_fillString;
-#define NOW_TIME (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count())
+#define NOW_TIME (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count())
 unsigned short g_type;
 //! 消息包 
 struct Picnic

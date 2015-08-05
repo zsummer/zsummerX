@@ -20,13 +20,12 @@ struct TestIntegerData //测试
     unsigned long long _ui64;  
     TestIntegerData() 
     { 
-        _char = '\0'; 
+        _char = 0; 
         _uchar = 0; 
         _short = 0; 
         _ushort = 0; 
         _int = 0; 
         _uint = 0; 
-        _i64 = 0; 
         _ui128 = 0; 
         _ui64 = 0; 
     } 
@@ -34,6 +33,7 @@ struct TestIntegerData //测试
 inline zsummer::proto4z::WriteStream & operator << (zsummer::proto4z::WriteStream & ws, const TestIntegerData & data) 
 { 
     unsigned long long tag = 383ULL; 
+    if (zsummer::proto4z::__localEndianType() != zsummer::proto4z::LittleEndian) tag = zsummer::proto4z::byteRevese(tag); 
     ws << (zsummer::proto4z::Integer)0; 
     zsummer::proto4z::Integer offset = ws.getStreamLen(); 
     ws << tag; 
@@ -56,6 +56,7 @@ inline zsummer::proto4z::ReadStream & operator >> (zsummer::proto4z::ReadStream 
     zsummer::proto4z::Integer cursor = rs.getStreamUnreadLen(); 
     unsigned long long tag = 0; 
     rs >> tag; 
+    if (zsummer::proto4z::__localEndianType() != zsummer::proto4z::LittleEndian) tag = zsummer::proto4z::byteRevese(tag); 
     if ( (1ULL << 0) & tag) 
     { 
         rs >> data._char;  
@@ -110,6 +111,7 @@ struct TestFloatData //测试
 inline zsummer::proto4z::WriteStream & operator << (zsummer::proto4z::WriteStream & ws, const TestFloatData & data) 
 { 
     unsigned long long tag = 3ULL; 
+    if (zsummer::proto4z::__localEndianType() != zsummer::proto4z::LittleEndian) tag = zsummer::proto4z::byteRevese(tag); 
     ws << (zsummer::proto4z::Integer)0; 
     zsummer::proto4z::Integer offset = ws.getStreamLen(); 
     ws << tag; 
@@ -125,6 +127,7 @@ inline zsummer::proto4z::ReadStream & operator >> (zsummer::proto4z::ReadStream 
     zsummer::proto4z::Integer cursor = rs.getStreamUnreadLen(); 
     unsigned long long tag = 0; 
     rs >> tag; 
+    if (zsummer::proto4z::__localEndianType() != zsummer::proto4z::LittleEndian) tag = zsummer::proto4z::byteRevese(tag); 
     if ( (1ULL << 0) & tag) 
     { 
         rs >> data._float;  
@@ -145,6 +148,7 @@ struct TestStringData //测试
 inline zsummer::proto4z::WriteStream & operator << (zsummer::proto4z::WriteStream & ws, const TestStringData & data) 
 { 
     unsigned long long tag = 1ULL; 
+    if (zsummer::proto4z::__localEndianType() != zsummer::proto4z::LittleEndian) tag = zsummer::proto4z::byteRevese(tag); 
     ws << (zsummer::proto4z::Integer)0; 
     zsummer::proto4z::Integer offset = ws.getStreamLen(); 
     ws << tag; 
@@ -159,6 +163,7 @@ inline zsummer::proto4z::ReadStream & operator >> (zsummer::proto4z::ReadStream 
     zsummer::proto4z::Integer cursor = rs.getStreamUnreadLen(); 
     unsigned long long tag = 0; 
     rs >> tag; 
+    if (zsummer::proto4z::__localEndianType() != zsummer::proto4z::LittleEndian) tag = zsummer::proto4z::byteRevese(tag); 
     if ( (1ULL << 0) & tag) 
     { 
         rs >> data._string;  
@@ -191,12 +196,13 @@ struct EchoPack
     TestIntegerDataMap _imap;  
     TestFloatDataMap _fmap;  
     TestStringDataMap _smap;  
-    inline unsigned short GetProtoID() { return 30000;} 
-    inline std::string GetProtoName() { return "ID_EchoPack";} 
+    static const unsigned short GetProtoID() { return 30000;} 
+    static const std::string GetProtoName() { return "ID_EchoPack";} 
 }; 
 inline zsummer::proto4z::WriteStream & operator << (zsummer::proto4z::WriteStream & ws, const EchoPack & data) 
 { 
     unsigned long long tag = 63ULL; 
+    if (zsummer::proto4z::__localEndianType() != zsummer::proto4z::LittleEndian) tag = zsummer::proto4z::byteRevese(tag); 
     ws << (zsummer::proto4z::Integer)0; 
     zsummer::proto4z::Integer offset = ws.getStreamLen(); 
     ws << tag; 
@@ -216,6 +222,7 @@ inline zsummer::proto4z::ReadStream & operator >> (zsummer::proto4z::ReadStream 
     zsummer::proto4z::Integer cursor = rs.getStreamUnreadLen(); 
     unsigned long long tag = 0; 
     rs >> tag; 
+    if (zsummer::proto4z::__localEndianType() != zsummer::proto4z::LittleEndian) tag = zsummer::proto4z::byteRevese(tag); 
     if ( (1ULL << 0) & tag) 
     { 
         rs >> data._iarray;  
@@ -248,12 +255,13 @@ inline zsummer::proto4z::ReadStream & operator >> (zsummer::proto4z::ReadStream 
 const unsigned short ID_Pulse = 30001;  
 struct Pulse 
 { 
-    inline unsigned short GetProtoID() { return 30001;} 
-    inline std::string GetProtoName() { return "ID_Pulse";} 
+    static const unsigned short GetProtoID() { return 30001;} 
+    static const std::string GetProtoName() { return "ID_Pulse";} 
 }; 
 inline zsummer::proto4z::WriteStream & operator << (zsummer::proto4z::WriteStream & ws, const Pulse & data) 
 { 
     unsigned long long tag = 0ULL; 
+    if (zsummer::proto4z::__localEndianType() != zsummer::proto4z::LittleEndian) tag = zsummer::proto4z::byteRevese(tag); 
     ws << (zsummer::proto4z::Integer)0; 
     zsummer::proto4z::Integer offset = ws.getStreamLen(); 
     ws << tag; 
@@ -267,6 +275,7 @@ inline zsummer::proto4z::ReadStream & operator >> (zsummer::proto4z::ReadStream 
     zsummer::proto4z::Integer cursor = rs.getStreamUnreadLen(); 
     unsigned long long tag = 0; 
     rs >> tag; 
+    if (zsummer::proto4z::__localEndianType() != zsummer::proto4z::LittleEndian) tag = zsummer::proto4z::byteRevese(tag); 
     cursor = cursor - rs.getStreamUnreadLen(); 
     rs.skipOriginalData(sttLen - cursor); 
     return rs; 

@@ -56,9 +56,9 @@ encode protocol table to binary stream
 @return binary stream
 ]]
 function Proto4z.encode(obj, name)
-    local data = {data=""}
+    local data = {}
     Proto4z.__encode(obj, name, data)
-    return data.data
+    return table.concat(data)
 end
 
 --[[--
@@ -196,13 +196,14 @@ function Proto4z.__encode(obj, name, data)
     --array
     --------------------------------------
     if proto.__getDesc == "array" then
-        data.data = data.data .. Proto4zUtil.pack(#obj, "ui32")
+        table.insert(data, Proto4zUtil.pack(#obj, "ui32"))
         for i =1, #obj do
             local v = obj[i]
             if type(v) ~= "table" and proto.__getTypeV ~= "string" then
-                data.data = data.data .. Proto4zUtil.pack(v, proto.__getTypeV)
+                table.insert(data, Proto4zUtil.pack(v, proto.__getTypeV))
             elseif proto.__getTypeV == "string" then
-                data.data = data.data .. Proto4zUtil.pack(#v, "ui32") .. v
+                table.insert(data, Proto4zUtil.pack(#v, "ui32"))
+                table.insert(data, v)
             else
                 Proto4z.__encode(v, proto.__getTypeV, data)
             end
@@ -210,19 +211,21 @@ function Proto4z.__encode(obj, name, data)
     --map
     --------------------------------------
     elseif proto.__getDesc == "map" then
-        data.data = data.data .. Proto4zUtil.pack(#obj, "ui32")
+        table.insert(data, Proto4zUtil.pack(#obj, "ui32"))
         for i =1, #obj do
             local k = obj[i].k
             local v = obj[i].v
             if proto.__getTypeK == "string" then
-                data.data = data.data .. Proto4zUtil.pack(#k, "ui32") .. k
+                table.insert(data, Proto4zUtil.pack(#k, "ui32"))
+                table.insert(data, k)
             else
-                data.data = data.data .. Proto4zUtil.pack(k, proto.__getTypeK)
+                table.insert(data, Proto4zUtil.pack(k, proto.__getTypeK))
             end
             if type(v) ~= "table" and proto.__getTypeV ~= "string" then
-                data.data = data.data .. Proto4zUtil.pack(v, proto.__getTypeV)
+                table.insert(data, Proto4zUtil.pack(v, proto.__getTypeV))
             elseif proto.__getTypeV == "string" then
-                data.data = data.data .. Proto4zUtil.pack(#v, "ui32") .. v
+                table.insert(data, Proto4zUtil.pack(#v, "ui32"))
+                table.insert(data, v)
             else
                 Proto4z.__encode(obj[i].v, proto.__getTypeV, data)
             end
@@ -232,24 +235,27 @@ function Proto4z.__encode(obj, name, data)
     else
         local curdata, offset
         local tag = Proto4zUtil.newTag()
-        curdata = {data=""}
+        curdata = {}
         for i=1, #proto do
             local desc = proto[i]
             if not desc.del then
                 tag = Proto4zUtil.setTag(tag, i)
                 local val = obj[desc.name]
                 if type(val) ~= "table" and desc.type ~= "string" then
-                    curdata.data = curdata.data .. Proto4zUtil.pack(val, desc.type)
+                    table.insert(curdata, Proto4zUtil.pack(val, desc.type))
                 elseif desc.type == "string" then
-                    curdata.data = curdata.data .. Proto4zUtil.pack(#val, "ui32") .. val
+                    table.insert(curdata, Proto4zUtil.pack(#val, "ui32"))
+                    table.insert(curdata, val)
                 else
                     Proto4z.__encode(val, desc.type, curdata)
                 end
             end
         end
-        offset = #curdata.data + #tag
-        offset = Proto4zUtil.pack(offset, "ui32")
-        data.data = data.data .. offset .. tag .. curdata.data
+        curdata = table.concat(curdata)
+        offset = #curdata + #tag
+        table.insert(data, Proto4zUtil.pack(offset, "ui32"))
+        table.insert(data, tag)
+        table.insert(data, curdata)
     end
 end
 

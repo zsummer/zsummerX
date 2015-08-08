@@ -6,9 +6,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\depends\proto4z\proto4z.h">
-      <Filter>protocol</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\zsummerX\zsummerX.h">
       <Filter>zsummerX\interface</Filter>
     </ClInclude>
@@ -21,9 +18,6 @@
   <ItemGroup>
     <Filter Include="log">
       <UniqueIdentifier>{02d03eaf-85db-4dd2-9262-51d4670d5d72}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="protocol">
-      <UniqueIdentifier>{5d657f81-5e77-43b2-9a7f-137851983841}</UniqueIdentifier>
     </Filter>
     <Filter Include="main">
       <UniqueIdentifier>{eae75d06-8690-4446-9b92-dd83bc433026}</UniqueIdentifier>

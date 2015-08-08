@@ -381,7 +381,41 @@ static int steadyTime(lua_State * L)
     return 1;
 }
 
-
+static int checkULL(lua_State * L)
+{
+    unsigned long long num = 0;
+    size_t strLen = 0;
+    const char * str = luaL_checklstring(L, 1, &strLen);
+    int isULL = false;
+    int i = 0;
+    if (strLen == 8)
+    {
+        for (i = 0; i < 8; i++)
+        {
+            if (str[i] >126 || str[i] < 32)
+            {
+                isULL = true;
+                break;
+            }
+        }
+    }
+    char buf[50];
+    if (isULL)
+    {
+        memcpy(&num, str, 8);
+#ifdef WIN32  
+        sprintf(buf, "%I64d", num);
+#else
+        sprintf(buf,"%lld", num);
+#endif
+    }
+    else
+    {
+        sprintf(buf, "\"%s\"", str);
+    }
+    lua_pushstring(L, buf);
+    return 1;
+}
 
 static luaL_Reg tagReg[] = {
     { "newTag", newTag },
@@ -391,6 +425,7 @@ static luaL_Reg tagReg[] = {
     { "pack", pack },
     { "unpack", unpack },
     { "now", steadyTime },
+    { "checkULL",checkULL },
     { NULL, NULL }
 };
 

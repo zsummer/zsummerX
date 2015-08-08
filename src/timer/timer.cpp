@@ -67,9 +67,14 @@ TimerID Timer::createTimer(unsigned int delayms, _OnTimerHandler &&handle)
     _OnTimerHandler *pfunc = new _OnTimerHandler(std::move(handle));
     unsigned long long now = getSteadyTime();
     unsigned long long expire = now + delayms;
+    
     unsigned long long timerID = (expire << ReserveBit) | _queSeq++ ;
     if (_queSeq >= MaxSequence) _queSeq = 0;
-    while (!_queTimer.insert(std::make_pair(timerID, pfunc)).second) timerID++;
+    while (!_queTimer.insert(std::make_pair(timerID, pfunc)).second)
+    {
+        timerID++;
+        if (++_queSeq >= MaxSequence) _queSeq = 0;
+    }
     if (_nextExpire > timerID) _nextExpire = timerID;
     LCT("createTimer. delayms=" << delayms << ", _ques=" << _queTimer.size());
     return timerID;

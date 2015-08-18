@@ -26,6 +26,7 @@ struct TestIntegerData //测试
         _ushort = 0; 
         _int = 0; 
         _uint = 0; 
+        _i64 = 0; 
         _ui128 = 0; 
         _ui64 = 0; 
     } 

@@ -158,25 +158,58 @@ bool SessionManager::runOnce(bool isImmediately)
 }
 
 
-
-AccepterID SessionManager::addAcceptor(const ListenConfig &traits)
+AccepterID SessionManager::addAccepter(std::string listenIP, unsigned short listenPort)
 {
     _lastAcceptID++;
-    auto & pairConfig = _mapAccepterConfig[_lastAcceptID];
-    pairConfig.first = traits;
-    pairConfig.second._aID = _lastAcceptID;
-
-    TcpAcceptPtr accepter = std::make_shared<TcpAccept>();
-    accepter->initialize(_summer);
-    if (!accepter->openAccept(traits._listenIP.c_str(), traits._listenPort))
-    {
-        LCE("addAcceptor openAccept Failed. traits=" << traits);
-        return InvalidAccepterID;
-    }
-    _mapAccepterPtr[_lastAcceptID] = accepter;
-    accepter->doAccept(std::make_shared<TcpSocket>(), std::bind(&SessionManager::onAcceptNewClient, this, std::placeholders::_1, std::placeholders::_2, accepter, pairConfig.second._aID));
+    auto & extend = _mapAccepterExtend[_lastAcceptID];
     return _lastAcceptID;
 }
+
+AccepterExtend & SessionManager::getAccepterExtend(AccepterID aID)
+{
+    if (aID == InvalidAccepterID)
+    {
+        throw std::runtime_error("AccepterID can not be InvalidAccepterID");
+    }
+    return _mapAccepterExtend[aID];
+}
+
+bool SessionManager::openAccepter(AccepterID aID)
+{
+    auto founder = _mapAccepterExtend.find(aID);
+    if (founder == _mapAccepterExtend.end())
+    {
+        LCE("openAccepter error. not found the Accepter ID extend info. aID=" << aID);
+        return false;
+    }
+
+    if (founder->second._accepter)
+    {
+        LCE("openAccepter error. already opened. extend info=" << founder->second);
+        return false;
+    }
+    TcpAcceptPtr accepter = std::make_shared<TcpAccept>();
+    if (!accepter->initialize(_summer))
+    {
+        LCE("openAccept error. extend info=" << founder->second);
+        return false;
+    }
+    if (!accepter->openAccept(founder->second._listenIP, founder->second._listenPort))
+    {
+        LCE("openAccept error. extend info=" << founder->second);
+        return false;
+    }
+    if (!accepter->doAccept(std::make_shared<TcpSocket>(), 
+        std::bind(&SessionManager::onAcceptNewClient, this, std::placeholders::_1, std::placeholders::_2, accepter, founder->second._aID)))
+    {
+        LCE("openAccept error. extend info=" << founder->second);
+        return false;
+    }
+    founder->second._accepter = accepter;
+    return true;
+}
+
+
 
 bool SessionManager::getAcceptorConfig(AccepterID aID, std::pair<ListenConfig, ListenInfo> & config)
 {

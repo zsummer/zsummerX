@@ -83,7 +83,7 @@ bool TcpAccept::initialize(EventLoopPtr& summer)
     return true;
 }
 
-bool TcpAccept::openAccept(const char * ip, unsigned short port)
+bool TcpAccept::openAccept(const std::string ip, unsigned short port)
 {
     if (!_summer)
     {

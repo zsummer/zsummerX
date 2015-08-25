@@ -52,6 +52,28 @@ namespace zsummer
             第二类为消息类型的处理通知,  消息处理通知分TCP和HTTP,  TCP有三种, 分别是预处理通知,具体协议处理和默认协议处理. HTTP只有一个消息处理回调. 
              具体使用参见代码,注释和示例.
         */
+
+        //!register message with original net pack, if return false other register will not receive this message.
+        class TcpSession;
+        typedef  std::shared_ptr<TcpSession> TcpSessionPtr;
+        typedef std::function < bool(TcpSessionPtr, const char * /*blockBegin*/, typename zsummer::proto4z::Integer /*blockSize*/) > OnPreMessageFunction;
+
+        //!register message 
+        typedef std::function < void(TcpSessionPtr, zsummer::proto4z::ReadStream &) > OnMessageFunction;
+        //!register message 
+        typedef std::function < void(TcpSessionPtr, ProtoID, zsummer::proto4z::ReadStream &) > OnDefaultMessageFunction;
+        //!register event 
+        typedef std::function < void(TcpSessionPtr) > OnSessionEstablished;
+        typedef std::function < void(TcpSessionPtr) > OnSessionDisconnect;
+
+        //register http proto message
+        typedef std::function < void(TcpSessionPtr, const zsummer::proto4z::PairString &, const zsummer::proto4z::HTTPHeadMap& /*head*/, const std::string & /*body*/) > OnHTTPMessageFunction;
+
+        //register pulse timer .  you can register this to implement heartbeat . 
+        typedef std::function < void(TcpSessionPtr, unsigned int/*pulse interval*/) > OnSessionPulseTimer;
+
+
+
         class MessageDispatcher
         {
         private:

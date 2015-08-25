@@ -49,7 +49,7 @@ namespace zsummer
             TcpAccept();
             ~TcpAccept();
             bool initialize(EventLoopPtr& summer);
-            bool openAccept(const char * ip, unsigned short port);
+            bool openAccept(const std::string ip, unsigned short port);
             bool doAccept(const TcpSocketPtr& s, _OnAcceptHandler &&handler);
             bool onIOCPMessage(BOOL bSuccess);
         private:

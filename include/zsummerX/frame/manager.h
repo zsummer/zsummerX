@@ -98,12 +98,12 @@ namespace zsummer
             AccepterID addAccepter(std::string listenIP, unsigned short listenPort);
             AccepterExtend & getAccepterExtend(AccepterID aID);
             bool openAccepter(AccepterID aID);
-
             AccepterID getAccepterID(SessionID sID);
 
             //! add connector under the configure.
-            SessionID addConnector(const ConnectConfig & traits);
-            bool getConnectorConfig(SessionID sID, std::pair<ConnectConfig, ConnectInfo> & config);
+            SessionID addConnecter(std::string remoteIP, unsigned short remotePort);
+            SessionTraits & getConnecterExtend(SessionID cID);
+            bool openConnecter(SessionID cID);
             TcpSessionPtr getTcpSession(SessionID sID);
 
             //send data.
@@ -135,11 +135,9 @@ namespace zsummer
 
         private:
             friend class TcpSession;
-            // 一个established状态的session已经关闭. 该session是连入的.
+            // 一个established状态的session已经关闭. 
             void onSessionClose(AccepterID aID, SessionID sID, const TcpSessionPtr &session);
 
-            // 一个established状态的session已经关闭或者连接失败, 因为是connect 需要判断是否需要重连.
-            void onConnect(SessionID cID, bool bConnected, const TcpSessionPtr &session);
 
             //accept到新连接.
             void onAcceptNewClient(zsummer::network::NetErrorCode ec, const TcpSocketPtr & s, const TcpAcceptPtr & accepter, AccepterID aID);

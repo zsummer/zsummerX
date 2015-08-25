@@ -162,6 +162,9 @@ AccepterID SessionManager::addAccepter(std::string listenIP, unsigned short list
 {
     _lastAcceptID++;
     auto & extend = _mapAccepterExtend[_lastAcceptID];
+    extend._aID = _lastAcceptID;
+    extend._listenIP = listenIP;
+    extend._listenPort;
     return _lastAcceptID;
 }
 
@@ -188,6 +191,12 @@ bool SessionManager::openAccepter(AccepterID aID)
         LCE("openAccepter error. already opened. extend info=" << founder->second);
         return false;
     }
+    if (founder->second._listenIP.empty())
+    {
+        LCE("openAccepter error. no listen IP. extend info=" << founder->second);
+        return false;
+    }
+    
     TcpAcceptPtr accepter = std::make_shared<TcpAccept>();
     if (!accepter->initialize(_summer))
     {
@@ -208,20 +217,6 @@ bool SessionManager::openAccepter(AccepterID aID)
     founder->second._accepter = accepter;
     return true;
 }
-
-
-
-bool SessionManager::getAcceptorConfig(AccepterID aID, std::pair<ListenConfig, ListenInfo> & config)
-{
-    auto founder = _mapAccepterConfig.find(aID);
-    if (founder != _mapAccepterConfig.end())
-    {
-        config = founder->second;
-        return true;
-    }
-    return false;
-}
-
 
 
 AccepterID SessionManager::getAccepterID(SessionID sID)
@@ -246,15 +241,15 @@ void SessionManager::onAcceptNewClient(zsummer::network::NetErrorCode ec, const 
         LCI("shutdown accepter. aID=" << aID);
         return;
     }
-    auto iter = _mapAccepterConfig.find(aID);
-    if (iter == _mapAccepterConfig.end())
+    auto founder = _mapAccepterExtend.find(aID);
+    if (founder == _mapAccepterExtend.end())
     {
         LCE("Unknown AccepterID aID=" << aID);
         return;
     }
     if (ec)
     {
-        LCE("doAccept Result Error. ec=" << ec << ", traits=" << iter->second.first);
+        LCE("doAccept Result Error. ec=" << ec << ", extend=" << founder->second);
         
         auto &&handler = std::bind(&SessionManager::onAcceptNewClient, this, std::placeholders::_1, std::placeholders::_2, accepter, aID);
         auto timer = [accepter, handler]()
@@ -271,10 +266,10 @@ void SessionManager::onAcceptNewClient(zsummer::network::NetErrorCode ec, const 
     
     //! check white list
     //! ---------------------
-    if (!iter->second.first._whitelistIP.empty())
+    if (!founder->second._whitelistIP.empty())
     {
         bool checkSucess = false;
-        for (auto white : iter->second.first._whitelistIP)
+        for (auto white : founder->second._whitelistIP)
         {
             if (remoteIP.size() >= white.size())
             {
@@ -289,38 +284,39 @@ void SessionManager::onAcceptNewClient(zsummer::network::NetErrorCode ec, const 
         if (!checkSucess)
         {
             LCW("Accept New Client Check Whitelist Failed remoteAdress=" << remoteIP << ":" << remotePort
-                << ", trais=" << iter->second.first);
+                << ", extend=" << founder->second);
             accepter->doAccept(std::make_shared<TcpSocket>(), std::bind(&SessionManager::onAcceptNewClient, this, std::placeholders::_1, std::placeholders::_2, accepter, aID));
             return;
         }
         else
         {
             LCI("Accept New Client Check Whitelist Success remoteAdress=" << remoteIP << ":" << remotePort
-                << ", trais=" << iter->second.first);
+                << ", extend=" << founder->second);
         }
     }
     
     //! check Max Sessions
 
-    if (iter->second.second._currentLinked >= iter->second.first._maxSessions)
+    if (founder->second._currentLinked >= founder->second._maxSessions)
     {
-        LCW("Accept New Client. Too Many Sessions And The new socket will closed. remoteAddress=" << remoteIP << ":" << remotePort 
-            << ", Aready linked sessions = " << iter->second.second._currentLinked << ", trais=[" << iter->second.first << "] total TcpSocket object count =[create:" << g_appEnvironment.getCreatedSocketCount() << ", close:" << g_appEnvironment.getClosedSocketCount() << "], total TcpSession object count =[create:"
+        LCW("Accept New Client. Too Many Sessions And The new socket will closed. extend=" << founder->second << "] total TcpSocket object count =[create:" << g_appEnvironment.getCreatedSocketCount() << ", close:" << g_appEnvironment.getClosedSocketCount() << "], total TcpSession object count =[create:"
             << g_appEnvironment.getCreatedSessionCount() << ", close:" << g_appEnvironment.getClosedSessionCount()
             << "]");
     }
     else
     {
         LCD("Accept New Client. Accept new Sessions. The new socket  remoteAddress=" << remoteIP << ":" << remotePort 
-            << ", Aready linked sessions = " << iter->second.second._currentLinked << ", trais=" << iter->second.first);
-        iter->second.second._currentLinked++;
-        iter->second.second._totalAcceptCount++;
+            << ", Aready linked sessions = " << founder->second._currentLinked << ", extend=" << founder->second);
+        founder->second._currentLinked++;
+        founder->second._totalAcceptCount++;
 
         _lastSessionID = nextSessionID(_lastSessionID);
         s->initialize(_summer);
 
         TcpSessionPtr session = std::make_shared<TcpSession>();
-        if (session->bindTcpSocketPrt(s, aID, _lastSessionID, iter->second.first))
+        session->getTraits() = founder->second._sessionTraits;
+        session->setEventLoopPtr(_summer);
+        if (session->bindTcpSocketPrt(s, aID, _lastSessionID))
         {
             _mapTcpSessionPtr[_lastSessionID] = session;
             _totalAcceptCount++;
@@ -375,9 +371,15 @@ void SessionManager::kickSession(SessionID sID)
 void SessionManager::onSessionClose(AccepterID aID, SessionID sID, const TcpSessionPtr &session)
 {
     _mapTcpSessionPtr.erase(sID);
-    _mapAccepterConfig[aID].second._currentLinked--;
+    if (aID != InvalidAccepterID)
+    {
+        _mapAccepterExtend[aID]._currentLinked--;
+        _mapAccepterExtend[aID]._totalAcceptCount++;
+    }
     _totalAcceptClosedCount++;
+
     MessageDispatcher::getRef().dispatchOnSessionDisconnect(session);
+
     if (isSessionID(sID) && _stopClients == 2 && _funClientsStop)
     {
         int count = 0;
@@ -397,30 +399,34 @@ void SessionManager::onSessionClose(AccepterID aID, SessionID sID, const TcpSess
     }
 }
 
-
-SessionID SessionManager::addConnector(const ConnectConfig & traits)
+SessionID SessionManager::addConnecter(std::string remoteIP, unsigned short remotePort)
 {
     _lastConnectID = nextConnectID(_lastConnectID);
-    auto & pairConfig = _mapConnectorConfig[_lastConnectID];
-    pairConfig.first = traits;
-    pairConfig.second._cID = _lastConnectID;
-    TcpSocketPtr sockPtr = std::make_shared<TcpSocket>();
-    sockPtr->initialize(_summer);
-
-    TcpSessionPtr sessionPtr = std::make_shared<TcpSession>();
-    sessionPtr->bindTcpConnectorPtr(sockPtr, pairConfig);
+    TcpSessionPtr & session = _mapTcpSessionPtr[_lastConnectID];
+    session = std::make_shared<TcpSession>();
+    session->setEventLoopPtr(_summer);
+    session->setSessionID(_lastConnectID);
+    session->setRemoteIP(remoteIP);
+    session->setRemotePort(remotePort);
     return _lastConnectID;
 }
-
-bool SessionManager::getConnectorConfig(SessionID sID, std::pair<ConnectConfig, ConnectInfo> & config)
+SessionTraits & SessionManager::getConnecterExtend(SessionID cID)
 {
-    auto founder = _mapConnectorConfig.find(sID);
-    if (founder != _mapConnectorConfig.end())
+    auto founder = _mapTcpSessionPtr.find(cID);
+    if (founder == _mapTcpSessionPtr.end())
     {
-        config = founder->second;
-        return true;
+        throw std::runtime_error("getConnecterExtend error.");
     }
-    return false;
+    return founder->second->getTraits();
+}
+bool SessionManager::openConnecter(SessionID cID)
+{
+    auto founder = _mapTcpSessionPtr.find(cID);
+    if (founder == _mapTcpSessionPtr.end())
+    {
+        return false;
+    }
+    founder->second->connect();
 }
 
 TcpSessionPtr SessionManager::getTcpSession(SessionID sID)
@@ -433,70 +439,6 @@ TcpSessionPtr SessionManager::getTcpSession(SessionID sID)
     return nullptr;
 }
 
-void SessionManager::onConnect(SessionID cID, bool bConnected, const TcpSessionPtr &session)
-{
-    auto config = _mapConnectorConfig.find(cID);
-    if (config == _mapConnectorConfig.end())
-    {
-        LCE("Unkwon Connector. Not Found ConnectorID=" << cID);
-        return;
-    }
-    if (bConnected)
-    {
-        _mapTcpSessionPtr[cID] = session;
-        config->second.second._curReconnectCount = 0;
-        _totalConnectCount++;
-        MessageDispatcher::getRef().dispatchOnSessionEstablished(session);
-        return;
-    }
-
-
-    auto iter = _mapTcpSessionPtr.find(cID);
-    if (!bConnected && iter != _mapTcpSessionPtr.end())
-    {
-        _mapTcpSessionPtr.erase(cID);
-        _totalConnectClosedCount++;
-        MessageDispatcher::getRef().dispatchOnSessionDisconnect(session);
-        if (_stopServers == 2 && _funServerStop)
-        {
-            int count = 0;
-            for (auto & kv : _mapTcpSessionPtr)
-            {
-                if (isConnectID(kv.second->getSessionID()))
-                {
-                    count++;
-                }
-            }
-            if (count == 0)
-            {
-                _funServerStop();
-                _funServerStop = nullptr;
-                _stopServers = 3;
-            }
-        }
-    }
-
-    if (!bConnected
-        && config->second.first._reconnectMaxCount > 0
-        && config->second.second._curReconnectCount < config->second.first._reconnectMaxCount)
-    {
-        config->second.second._curReconnectCount++;
-        config->second.second._totalConnectCount++;
-
-        TcpSocketPtr sockPtr = std::make_shared<TcpSocket>();
-        sockPtr->initialize(_summer);
-        createTimer(config->second.first._reconnectInterval, std::bind(&TcpSession::bindTcpConnectorPtr, session, sockPtr, config->second));
-        LCW("Try reconnect current count=" << config->second.second._curReconnectCount << ", total reconnect = " << config->second.second._totalConnectCount << ". Traits=" << config->second.first);
-        return;//try reconnect
-    }
-    
-    if (config->second.first._reconnectMaxCount > 0 && _running)
-    {
-        LCE("Try Reconnect Failed. End Try. Traits=" << config->second.first);
-    }
-    //connect faild . clean data
-    _mapConnectorConfig.erase(config);
-}
 
 
 void SessionManager::sendSessionData(SessionID sID, const char * orgData, unsigned int orgDataLen)
@@ -508,7 +450,7 @@ void SessionManager::sendSessionData(SessionID sID, const char * orgData, unsign
         return;
     }
 
-    iter->second->doSend(orgData, orgDataLen);
+    iter->second->send(orgData, orgDataLen);
     //trace log
     {
         LCT("sendSessionData Len=" << orgDataLen << ",binarydata=" << zsummer::log4z::Log4zBinary(orgData, orgDataLen >= 10 ? 10 : orgDataLen));

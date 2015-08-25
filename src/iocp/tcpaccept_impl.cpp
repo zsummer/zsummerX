@@ -115,7 +115,7 @@ bool TcpAccept::openAccept(const std::string ip, unsigned short port)
     SOCKADDR_IN addr;
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = inet_addr(ip);
+    addr.sin_addr.s_addr = inet_addr(ip.c_str());
     addr.sin_port = htons(port);
     if (bind(_server, (sockaddr *)&addr, sizeof(addr)) != 0)
     {

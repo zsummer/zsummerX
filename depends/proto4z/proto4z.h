@@ -168,10 +168,9 @@ enum INTEGRITY_RET_TYPE
 //! first: IRT_CORRUPTION data corruption. second: data lenght
 //! buff 缓冲区内容起始位置
 //! curBuffLen 当前缓冲区内容大小
-//! boundLen 当前缓冲区的边界大小, 如果对boundLen有疑惑 请填写和maxBuffLen一样的值
-//! maxBuffLen 当前缓冲区实际最大大小
+//! boundLen 当前缓冲区的边界大小
 inline std::pair<INTEGRITY_RET_TYPE, Integer>
-checkBuffIntegrity(const char * buff, Integer curBuffLen, Integer boundLen, Integer maxBuffLen);
+checkBuffIntegrity(const char * buff, Integer curBuffLen, Integer boundLen);
 
 
 
@@ -609,9 +608,9 @@ void baseTypeToStream(BaseType v, char *stream)
 
 
 
-inline std::pair<INTEGRITY_RET_TYPE, Integer> checkBuffIntegrity(const char * buff, Integer curBuffLen, Integer boundLen, Integer maxBuffLen)
+inline std::pair<INTEGRITY_RET_TYPE, Integer> checkBuffIntegrity(const char * buff, Integer curBuffLen, Integer boundLen)
 {
-    if (boundLen < curBuffLen || maxBuffLen < boundLen)
+    if (boundLen < curBuffLen)
     {
         return std::make_pair(IRT_CORRUPTION, curBuffLen);
     }
@@ -626,21 +625,9 @@ inline std::pair<INTEGRITY_RET_TYPE, Integer> checkBuffIntegrity(const char * bu
 
     if (packLen > boundLen)
     {
-        if (packLen > maxBuffLen)
-        {
-            return std::make_pair(IRT_CORRUPTION, curBuffLen);
-        }
-        else
-        {
-            return std::make_pair(IRT_SHORTAGE, packLen - curBuffLen);
-        }
-    }
-    
-    //! check
-    if (packLen > maxBuffLen)
-    {
         return std::make_pair(IRT_CORRUPTION, curBuffLen);
     }
+
     if (packLen == curBuffLen)
     {
         return std::make_pair(IRT_SUCCESS, packLen);

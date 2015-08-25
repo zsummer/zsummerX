@@ -60,33 +60,33 @@ namespace zsummer
             unsigned int bufflen = 0;
         };
 
-        struct rc4_state;
 
         class TcpSession : public std::enable_shared_from_this<TcpSession>
         {
         public:
-            void doSend(const char *buf, unsigned int len);
-            void close();
+            inline void setEventLoopPtr(EventLoopPtr el){ _eventLoop = el; }
             inline SessionID getAcceptID(){ return _acceptID; }
             inline SessionID getSessionID(){ return _sessionID; }
+            inline void setSessionID(SessionID sID){  _sessionID = sID; }
             inline bool isInvalidSession(){ return !_sockptr; }
             inline const std::string & getRemoteIP(){ return _remoteIP; }
+            inline void setRemoteIP(const std::string &remoteIP){ _remoteIP = remoteIP; }
             inline unsigned short getRemotePort(){ return _remotePort; }
-            
-            inline void setUserParam(unsigned long long param) { _param = param;}
-            inline void setUserLParam(unsigned long long param) { _lparam = param;}
-            inline void setUserRParam(unsigned long long param) { _rparam = param;}
-            inline unsigned long long getUserParam(){ return _param;}
-            inline unsigned long long getUserLParam(){ return _lparam;}
-            inline unsigned long long getUserRParam(){ return _rparam;}
-            inline void setUserParamString(const std::string param){ _paramstring = param;}
-            inline const std::string getUserParamString(){ return _paramstring;}
+            inline void setRemotePort(unsigned short remotePort){ _remotePort = remotePort; }
+
+
+
+            Any setUserParam(int index, const Any &any);
+            Any getUserParam(int index);
         public:
             TcpSession();
             ~TcpSession();
-            bool bindTcpSocketPrt(const TcpSocketPtr &sockptr, AccepterID aID, SessionID sID, const ListenConfig &traits);
-            void bindTcpConnectorPtr(const TcpSocketPtr &sockptr, const std::pair<ConnectConfig, ConnectInfo> & config);
-            
+            void send(const char *buf, unsigned int len);
+            void close();
+            void connect();
+            void reconnect();
+            bool bindTcpSocketPrt(const TcpSocketPtr &sockptr, AccepterID aID, SessionID sID);
+            inline SessionTraits & getTraits(){ return _traits; }
         private:
             void cleanSession(bool isCleanAllData, const std::string &rc4TcpEncryption);
 
@@ -102,24 +102,18 @@ namespace zsummer
 
             void onClose();
 
-
+            
         private:
+            EventLoopPtr _eventLoop;
             TcpSocketPtr  _sockptr;
             std::string _remoteIP;
             unsigned short _remotePort = 0;
+            int _status = 0; //0 uninit, 1 connecting, 2 session established, 3  died
+   
             //
             SessionID _sessionID = InvalidSeesionID;
             AccepterID _acceptID = InvalidAccepterID;
-            ProtoType _protoType = PT_TCP;
-            unsigned int _pulseInterval = 0;
             zsummer::network::TimerID _pulseTimerID = zsummer::network::InvalidTimerID;
-
-            enum SessionStatus
-            {
-                SS_UNINITILIZE,
-                SS_ESTABLISHED,
-                SS_CLOSED,
-            };
 
             //! 
             MessageBuffChunk _recving;
@@ -131,13 +125,12 @@ namespace zsummer
             std::queue<MessageSendPack *> _freeCache;
 
             //! rc encrypt
-            std::string _rc4Encrypt;
             RC4Encryption _rc4StateRead;
             RC4Encryption _rc4StateWrite;
 
-            //! flash policy 
+            //!
             bool _bFirstRecvData = true;
-            bool _bOpenFlashPolicy = false;
+
 
             //! http status data
             bool _httpHadHeader = false;
@@ -146,12 +139,13 @@ namespace zsummer
             zsummer::proto4z::HTTPHeadMap _httpHeader;
             
             //! user param
-            unsigned long long _param = 0;
-            unsigned long long _lparam = 0;
-            unsigned long long _rparam = 0;
-            std::string _paramstring;
+            std::vector<Any> _param;
+            SessionTraits _traits;
+            unsigned long long _totalConnectCount = 0;
+            unsigned long long _curReconnectCount = 0;
         };
-
+        using TcpSessionPtr = std::shared_ptr<TcpSession>;
+        
 
     }
 }

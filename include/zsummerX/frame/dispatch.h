@@ -39,7 +39,6 @@
 
 #ifndef ZSUMMER_MESSAGE_DISPATCHER_H_
 #define ZSUMMER_MESSAGE_DISPATCHER_H_
-#include "config.h"
 #include "session.h"
 namespace zsummer
 {
@@ -52,25 +51,25 @@ namespace zsummer
             第二类为消息类型的处理通知,  消息处理通知分TCP和HTTP,  TCP有三种, 分别是预处理通知,具体协议处理和默认协议处理. HTTP只有一个消息处理回调. 
              具体使用参见代码,注释和示例.
         */
-
+        using ProtoID = unsigned short;
         //!register message with original net pack, if return false other register will not receive this message.
         class TcpSession;
         typedef  std::shared_ptr<TcpSession> TcpSessionPtr;
-        typedef std::function < bool(TcpSessionPtr, const char * /*blockBegin*/, typename zsummer::proto4z::Integer /*blockSize*/) > OnPreMessageFunction;
+        typedef std::function < bool(TcpSessionPtr&, const char * /*blockBegin*/, typename zsummer::proto4z::Integer /*blockSize*/) > OnPreMessageFunction;
 
         //!register message 
-        typedef std::function < void(TcpSessionPtr, zsummer::proto4z::ReadStream &) > OnMessageFunction;
+        typedef std::function < void(TcpSessionPtr&, zsummer::proto4z::ReadStream &) > OnMessageFunction;
         //!register message 
-        typedef std::function < void(TcpSessionPtr, ProtoID, zsummer::proto4z::ReadStream &) > OnDefaultMessageFunction;
+        typedef std::function < void(TcpSessionPtr&, ProtoID, zsummer::proto4z::ReadStream &) > OnDefaultMessageFunction;
         //!register event 
-        typedef std::function < void(TcpSessionPtr) > OnSessionEstablished;
-        typedef std::function < void(TcpSessionPtr) > OnSessionDisconnect;
+        typedef std::function < void(TcpSessionPtr&) > OnSessionEstablished;
+        typedef std::function < void(TcpSessionPtr&) > OnSessionDisconnect;
 
         //register http proto message
-        typedef std::function < void(TcpSessionPtr, const zsummer::proto4z::PairString &, const zsummer::proto4z::HTTPHeadMap& /*head*/, const std::string & /*body*/) > OnHTTPMessageFunction;
+        typedef std::function < void(TcpSessionPtr&, const zsummer::proto4z::PairString &, const zsummer::proto4z::HTTPHeadMap& /*head*/, const std::string & /*body*/) > OnHTTPMessageFunction;
 
         //register pulse timer .  you can register this to implement heartbeat . 
-        typedef std::function < void(TcpSessionPtr, unsigned int/*pulse interval*/) > OnSessionPulseTimer;
+        typedef std::function < void(TcpSessionPtr&, unsigned int/*pulse interval*/) > OnSessionPulseTimer;
 
 
 
@@ -130,6 +129,26 @@ namespace zsummer
             std::vector<OnSessionPulseTimer> _vctOnSessionPulse;
         };
 
+
+        inline void dispatchSessionMessage(TcpSessionPtr  & session, const char * blockBegin, int blockSize)
+        {
+            bool preCheck = MessageDispatcher::getRef().dispatchPreSessionMessage(session, blockBegin, blockSize);
+            if (!preCheck)
+            {
+                LCW("Dispatch Message failed. ");
+            }
+            else
+            {
+                ReadStream rs(blockBegin, blockSize);
+                ProtoID protoID = rs.getProtoID();
+                MessageDispatcher::getRef().dispatchSessionMessage(session, protoID, rs);
+            }
+        }
+
+        inline bool  dispatchHTTPMessage(TcpSessionPtr session, const zsummer::proto4z::PairString & commonLine, const zsummer::proto4z::HTTPHeadMap &head, const std::string & body)
+        {
+            MessageDispatcher::getRef().dispatchSessionHTTPMessage(session, commonLine, head, body);
+        }
 
 
 

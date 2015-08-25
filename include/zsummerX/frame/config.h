@@ -65,7 +65,7 @@
 #include "../epoll/udpsocket_impl.h"
 #include "../epoll/tcpaccept_impl.h"
 #endif
-
+#include "dispatch.h"
 namespace zsummer
 {
     namespace network
@@ -112,7 +112,7 @@ namespace zsummer
                             (const char * /*begin*/, unsigned int /*len*/, unsigned int /*boundLen*/)>;
 
         //!dispatch函数, 默认使用zsummerX.frame.MessageDispatcher
-        using DispatchBlock = std::function<bool(TcpSessionPtr  /*session*/, const char * /*blockBegin*/, int /*blockSize*/)>;
+        using DispatchBlock = std::function<bool(TcpSessionPtr &  /*session*/, const char * /*blockBegin*/, int /*blockSize*/)>;
 
         //!HTTP协议解包函数, 默认使用proto4z的
         //!hadHeader 区别第一次收包还是chunked的后续小包. 支持chunked
@@ -121,37 +121,44 @@ namespace zsummer
         //!head HTTP头部键值对
         //!body 包体
         //!usedLen 使用了多少字节
+        using PairString = zsummer::proto4z::PairString; 
+        using HTTPHeadMap = zsummer::proto4z::HTTPHeadMap;
         using CheckHTTPIntegrity = std::function<INTEGRITY_RET_TYPE(const char * /*begin*/, unsigned int /*len*/, unsigned int /*boundLen*/,
             bool /*hadHeader*/, bool & /*isChunked*/, PairString& /*commonLine*/,
             HTTPHeadMap & /*head*/, std::string & /*body*/, unsigned int &/*usedCount*/)>;
+        using DispatchHTTPMessage = std::function<bool
+            (TcpSessionPtr /*session*/, const zsummer::proto4z::PairString & /*commonLine*/, const zsummer::proto4z::HTTPHeadMap &/*head*/, const std::string & /*body*/)>;
         
         
         struct SessionTraits 
         {
+#pragma region CUSTOM
             ProtoType       _protoType = PT_TCP;
             std::string     _rc4TcpEncryption = ""; //empty is not encryption
             bool            _openFlashPolicy = false;
             bool            _setNoDelay = true;
-            unsigned int    _pulseInterval = 30000;
+            unsigned int    _pulseInterval = 5000;
+
+            CheckTcpIntegrity _checkTcpIntegrity = zsummer::proto4z::checkBuffIntegrity;
+            DispatchBlock _dispatchBlock = dispatchSessionMessage;
+            CheckHTTPIntegrity _checkHTTPIntegrity = zsummer::proto4z::checkHTTPBuffIntegrity;
+            DispatchHTTPMessage _dispatchHTTP = dispatchHTTPMessage;
+#pragma endregion CUSTOM
+
+
+#pragma region CONNECT
             //! valid traits when session is connect
             unsigned int _reconnectMaxCount = 0; // try reconnect max count
             unsigned int _reconnectInterval = 5000; //million seconds;
             bool         _reconnectCleanAllData = true;//clean all data when reconnect;
-            unsigned long long _totalConnectCount = 0;
-            unsigned long long _curReconnectCount = 0;
-            std::string _remoteIP;
-            unsigned short _remotePort = 0;
-            //解包函数
-            CheckTcpIntegrity _checkTcpIntegrity;
-            //派发函数
-            DispatchBlock _dispatchBlock;
-            //HTTP协议解包函数
-            CheckHTTPIntegrity _checkHTTPIntegrity;
+#pragma endregion CONNECT
+
         };
 
         struct AccepterExtend
         {
             AccepterID _aID = InvalidAccepterID;
+            TcpAcceptPtr _accepter;
             std::string        _listenIP;
             unsigned short    _listenPort = 0;
             unsigned int    _maxSessions = 5000;
@@ -159,8 +166,37 @@ namespace zsummer
             unsigned long long _totalAcceptCount = 0;
             unsigned long long _currentLinked = 0;
             SessionTraits _sessionTraits;
-            TcpAcceptPtr _accepter;
         };
+
+
+        class Any
+        {
+        public:
+            Any(unsigned long long n)
+            {
+                _integer = n;
+            }
+            Any(const std::string & str)
+            {
+                _isInteger = false;
+                _string = str;
+            }
+            bool _isInteger = true;
+            unsigned long long _integer;
+            std::string _string;
+        };
+        
+
+
+
+
+
+
+
+
+
+
+
 
 
         inline zsummer::log4z::Log4zStream & operator << (zsummer::log4z::Log4zStream &os, const SessionTraits & traits)

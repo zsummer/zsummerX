@@ -107,6 +107,8 @@ namespace zsummer
             TOTAL_RECV_SIZE,
         };
 
+        class TcpSession;
+        typedef  std::shared_ptr<TcpSession> TcpSessionPtr;
 
         struct SessionBlock 
         {
@@ -114,7 +116,7 @@ namespace zsummer
             unsigned int bound = 0;
             char begin[0];
         };
-
+        const unsigned int SESSION_BLOCK_SIZE = 100 * 1024;
 
         using CreateBlock = std::function<SessionBlock * ()>;
 
@@ -142,10 +144,9 @@ namespace zsummer
         
         inline SessionBlock * DefaultCreateBlock()
         {
-            unsigned int boundLen = 100 * 1024;
-            SessionBlock * p = (SessionBlock*)malloc(sizeof(SessionBlock)+boundLen);
-            p->boundLen = boundLen;
-            p->curLen = 0;
+            SessionBlock * p = (SessionBlock*)malloc(sizeof(SessionBlock)+SESSION_BLOCK_SIZE);
+            p->bound = SESSION_BLOCK_SIZE;
+            p->len = 0;
             return p;
         }
 
@@ -154,15 +155,6 @@ namespace zsummer
             free(p);
         }
 
-        inline void dispatchSessionMessage(TcpSessionPtr  & session, const char * blockBegin, int blockSize)
-        {
-
-        }
-
-        inline bool  dispatchHTTPMessage(TcpSessionPtr session, const zsummer::proto4z::PairString & commonLine, const zsummer::proto4z::HTTPHeadMap &head, const std::string & body)
-        {
-            MessageDispatcher::getRef().dispatchSessionHTTPMessage(session, commonLine, head, body);
-        }
         struct SessionTraits 
         {
 #pragma region CUSTOM
@@ -172,12 +164,13 @@ namespace zsummer
             bool            _setNoDelay = true;
             unsigned int    _pulseInterval = 5000;
 
-            CheckBlock _checkTcpIntegrity = zsummer::proto4z::checkBuffIntegrity;
-            DispatchBlock _dispatchBlock = dispatchSessionMessage;
-            CheckHTTPBlock _checkHTTPIntegrity = zsummer::proto4z::checkHTTPBuffIntegrity;
-            DispatchHTTPMessage _dispatchHTTP = dispatchHTTPMessage;
+            CheckBlock _checkTcpBlock = zsummer::proto4z::checkBuffIntegrity;
+            DispatchBlock _dispatchBlock;
+            CheckHTTPBlock _checkHTTPBlock = zsummer::proto4z::checkHTTPBuffIntegrity;
+            DispatchHTTPMessage _dispatchHTTP;
             SessionEvent _eventSessionClose;
             SessionEvent _eventSessionBuild;
+            SessionEvent _eventPulse;
             CreateBlock _createBlock;
             FreeBlock _freeBlock;
 #pragma endregion CUSTOM

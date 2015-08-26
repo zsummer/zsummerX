@@ -427,6 +427,7 @@ bool SessionManager::openConnecter(SessionID cID)
         return false;
     }
     founder->second->connect();
+    return true;
 }
 
 TcpSessionPtr SessionManager::getTcpSession(SessionID sID)

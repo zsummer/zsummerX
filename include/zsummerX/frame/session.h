@@ -49,21 +49,6 @@ namespace zsummer
         class TcpSession : public std::enable_shared_from_this<TcpSession>
         {
         public:
-            inline void setEventLoopPtr(EventLoopPtr el){ _eventLoop = el; }
-            inline SessionID getAcceptID(){ return _acceptID; }
-            inline SessionID getSessionID(){ return _sessionID; }
-            inline void setSessionID(SessionID sID){  _sessionID = sID; }
-            inline bool isInvalidSession(){ return !_sockptr; }
-            inline const std::string & getRemoteIP(){ return _remoteIP; }
-            inline void setRemoteIP(const std::string &remoteIP){ _remoteIP = remoteIP; }
-            inline unsigned short getRemotePort(){ return _remotePort; }
-            inline void setRemotePort(unsigned short remotePort){ _remotePort = remotePort; }
-
-
-
-            Any setUserParam(int index, const Any &any);
-            Any getUserParam(int index);
-        public:
             TcpSession();
             ~TcpSession();
             void send(const char *buf, unsigned int len);
@@ -87,8 +72,20 @@ namespace zsummer
 
             void onClose();
 
-            
+        public:
+            inline void setEventLoopPtr(EventLoopPtr el){ _eventLoop = el; }
+            inline SessionID getAcceptID(){ return _acceptID; }
+            inline SessionID getSessionID(){ return _sessionID; }
+            inline void setSessionID(SessionID sID){ _sessionID = sID; }
+            inline bool isInvalidSession(){ return !_sockptr; }
+            inline const std::string & getRemoteIP(){ return _remoteIP; }
+            inline void setRemoteIP(const std::string &remoteIP){ _remoteIP = remoteIP; }
+            inline unsigned short getRemotePort(){ return _remotePort; }
+            inline void setRemotePort(unsigned short remotePort){ _remotePort = remotePort; }
+            Any setUserParam(int index, const Any &any);
+            Any getUserParam(int index);
         private:
+            SessionTraits _traits;
             EventLoopPtr _eventLoop;
             TcpSocketPtr  _sockptr;
             std::string _remoteIP;
@@ -107,7 +104,8 @@ namespace zsummer
 
             //! send data queue
             std::queue<SessionBlock *> _sendque;
-
+            unsigned long long _totalConnectCount = 0;
+            unsigned long long _curReconnectCount = 0;
 
             //! rc encrypt
             RC4Encryption _rc4StateRead;
@@ -120,18 +118,15 @@ namespace zsummer
             //! http status data
             bool _httpHadHeader = false;
             bool _httpIsChunked = false;
-            zsummer::proto4z::PairString  _httpCommonLine;
-            zsummer::proto4z::HTTPHeadMap _httpHeader;
+            PairString  _httpCommonLine;
+            MapString _httpHeader;
             
             //! user param
             std::vector<Any> _param;
-            SessionTraits _traits;
-            unsigned long long _totalConnectCount = 0;
-            unsigned long long _curReconnectCount = 0;
+            
+
         };
         using TcpSessionPtr = std::shared_ptr<TcpSession>;
-        
-
     }
 }
 

@@ -385,10 +385,25 @@ void TcpSocket::onSelectMessage(bool rd, bool wt, bool err)
 
 bool TcpSocket::doClose()
 {
-    if (_register._fd != InvalideFD)
+    if (_register._linkstat != LS_CLOSED)
     {
-        shutdown(_register._fd, SHUT_RDWR);
+        _register._linkstat = LS_CLOSED;
+        _summer->registerEvent(2, _register)
+        if (_register._fd != InvalideFD)
+        {
+            shutdown(_register._fd, SHUT_RDWR);
+            close(_register._fd);
+            _register._fd = InvalideFD;
+        }
+        _onConnectHandler = nullptr;
+        _onRecvHandler = nullptr;
+        _onSendHandler = nullptr;
+        _register._tcpSocketConnectPtr.reset();
+        _register._tcpSocketRecvPtr.reset();
+        _register._tcpSocketSendPtr.reset();
     }
+    
+
     return true;
 }
 

@@ -302,6 +302,11 @@ void TcpSocket::onIOCPMessage(BOOL bSuccess, DWORD dwTranceBytes, unsigned char 
         {
             return;
         }
+        if (_nLinkStatus == LS_CLOSED)
+        {
+            return;
+        }
+        
         if (bSuccess)
         {
             _nLinkStatus = LS_ESTABLISHED;
@@ -340,6 +345,11 @@ void TcpSocket::onIOCPMessage(BOOL bSuccess, DWORD dwTranceBytes, unsigned char 
         {
             return;
         }
+        if (_nLinkStatus == LS_CLOSED)
+        {
+            return;
+        }
+        
         
         if (!bSuccess)
         {

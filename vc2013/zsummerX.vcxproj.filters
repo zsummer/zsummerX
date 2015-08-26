@@ -54,9 +54,6 @@
     <ClCompile Include="..\src\timer\timer.cpp">
       <Filter>src\timmer</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\frame\dispatch.cpp">
-      <Filter>src\frame</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\frame\session.cpp">
       <Filter>src\frame</Filter>
     </ClCompile>
@@ -90,9 +87,6 @@
       <Filter>include\interface</Filter>
     </ClInclude>
     <ClInclude Include="..\include\zsummerX\frame\config.h">
-      <Filter>include\frame</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\zsummerX\frame\dispatch.h">
       <Filter>include\frame</Filter>
     </ClInclude>
     <ClInclude Include="..\include\zsummerX\frame\session.h">

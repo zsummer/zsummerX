@@ -49,6 +49,12 @@ TcpSession::TcpSession()
     LCI("TcpSession. total TcpSocket object count =[create:" << zsummer::network::g_appEnvironment.getCreatedSocketCount() << ", close:" << zsummer::network::g_appEnvironment.getClosedSocketCount() << "], total TcpSession object count =[create:"
         << zsummer::network::g_appEnvironment.getCreatedSessionCount() << ", close:" << zsummer::network::g_appEnvironment.getClosedSessionCount()
         << "]");
+    _recving = (SessionBlock*)malloc(sizeof(SessionBlock)+1024 * 100);
+    _recving->len = 0;
+    _recving->bound = 100 * 1024;
+    _sending = (SessionBlock*)malloc(sizeof(SessionBlock)+1024 * 100);
+    _sending->len = 0;
+    _sending->bound = 100 * 1024;
 }
 
 TcpSession::~TcpSession()
@@ -56,15 +62,14 @@ TcpSession::~TcpSession()
     zsummer::network::g_appEnvironment.addClosedSessionCount();
     while (!_sendque.empty())
     {
-        delete _sendque.front();
+        _traits._freeBlock(_sendque.front());
         _sendque.pop();
     }
-    while (!_freeCache.empty())
-    {
-        delete _freeCache.front();
-        _freeCache.pop();
-    }
     _sockptr.reset();
+    free (_recving);
+    _recving = nullptr;
+    free (_sending);
+    _sending = nullptr;
     LCI("~TcpSession. total TcpSocket object count =[create:" << zsummer::network::g_appEnvironment.getCreatedSocketCount() << ", close:" << zsummer::network::g_appEnvironment.getClosedSocketCount() << "], total TcpSession object count =[create:"
         << zsummer::network::g_appEnvironment.getCreatedSessionCount() << ", close:" << zsummer::network::g_appEnvironment.getClosedSessionCount()
         << "]");
@@ -381,9 +386,9 @@ void TcpSession::onSend(zsummer::network::NetErrorCode ec, int nSentLen)
         {
             do
             {
-                MessageSendPack *pack = _sendque.front();
+                SessionBlock *block = _sendque.front();
                 _sendque.pop();
-                memcpy(_sending.buff + _sending.bufflen, pack->buff, pack->bufflen);
+                memcpy(_sending.buff + _sending.bufflen, block->begin, block->len);
                 _sending.bufflen += pack->bufflen;
                 pack->bufflen = 0;
                 _freeCache.push(pack);

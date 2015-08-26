@@ -65,7 +65,7 @@
 #include "../epoll/udpsocket_impl.h"
 #include "../epoll/tcpaccept_impl.h"
 #endif
-#include "dispatch.h"
+
 namespace zsummer
 {
     namespace network
@@ -75,9 +75,6 @@ namespace zsummer
         const SessionID InvalidSeesionID = -1;
         typedef unsigned int AccepterID;
         const AccepterID InvalidAccepterID = -1;
-        typedef unsigned short ProtoID;
-        const ProtoID InvalidProtoID = -1;
-
 
         //! define session id range.
         const unsigned int __MIDDLE_SEGMENT_VALUE = 300 * 1000 * 1000;
@@ -88,9 +85,6 @@ namespace zsummer
 
         //----------------------------------------
 
-        //receive buffer length  and send buffer length 
-        const unsigned int MAX_BUFF_SIZE = 100 * 1024;
-        const unsigned int MAX_SEND_PACK_SIZE = 20 * 1024;
 
         enum ProtoType
         {
@@ -98,38 +92,77 @@ namespace zsummer
             PT_HTTP,
         };
 
-        enum INTEGRITY_RET_TYPE
+        enum BLOCK_CHECK_TYPE
         {
-            IRT_SUCCESS = 0, //成功, 返回当前block大小
-            IRT_SHORTAGE = 1, //不足, 返回当前block还需要的大小
-            IRT_CORRUPTION = 2, //错误, 需要关闭socket
+            BCT_SUCCESS = 0, //成功, 返回当前block大小
+            BCT_SHORTAGE = 1, //不足, 返回当前block还需要的大小
+            BCT_CORRUPTION = 2, //错误, 需要关闭socket
         };
 
-        //!TCP二进制协议的解包函数 可以自定义, 默认使用proto4z的
-        //!len 当前已收到的block大小
-        //!boundLen 当前缓冲区大小, block大小不能超过缓冲区大小
-        using CheckTcpIntegrity = std::function<std::pair<INTEGRITY_RET_TYPE, unsigned int>
-                            (const char * /*begin*/, unsigned int /*len*/, unsigned int /*boundLen*/)>;
+        enum StatType
+        {
+            TOTAL_SEND_COUNT,
+            TOTAL_SEND_SIZE,
+            TOTAL_RECV_COUNT,
+            TOTAL_RECV_SIZE,
+        };
 
-        //!dispatch函数, 默认使用zsummerX.frame.MessageDispatcher
+
+        struct SessionBlock 
+        {
+            unsigned int len = 0;
+            unsigned int bound = 0;
+            char begin[0];
+        };
+
+
+        using CreateBlock = std::function<SessionBlock * ()>;
+
+        using FreeBlock = std::function<void(SessionBlock *)>;
+        
+        using CheckBlockResult = std::pair<BLOCK_CHECK_TYPE, unsigned int>;
+
+        //检查当前缓冲块内是否能读出一个完整的block
+        using CheckBlock = std::function<CheckBlockResult(const char * /*begin*/, unsigned int /*len*/, unsigned int /*boundLen*/)>;
+
+        //!每读出一个block就调用这个方法dispatch出去
         using DispatchBlock = std::function<bool(TcpSessionPtr &  /*session*/, const char * /*blockBegin*/, int /*blockSize*/)>;
 
-        //!HTTP协议解包函数, 默认使用proto4z的
-        //!hadHeader 区别第一次收包还是chunked的后续小包. 支持chunked
-        //!isChunked 应当告诉这个HTTP请求是不是chunked
-        //!commonLine 指的是GET, POST . 如果是GET 则有 GET->PARAM数据
-        //!head HTTP头部键值对
-        //!body 包体
-        //!usedLen 使用了多少字节
-        using PairString = zsummer::proto4z::PairString; 
-        using HTTPHeadMap = zsummer::proto4z::HTTPHeadMap;
-        using CheckHTTPIntegrity = std::function<INTEGRITY_RET_TYPE(const char * /*begin*/, unsigned int /*len*/, unsigned int /*boundLen*/,
-            bool /*hadHeader*/, bool & /*isChunked*/, PairString& /*commonLine*/,
-            HTTPHeadMap & /*head*/, std::string & /*body*/, unsigned int &/*usedCount*/)>;
-        using DispatchHTTPMessage = std::function<bool
-            (TcpSessionPtr /*session*/, const zsummer::proto4z::PairString & /*commonLine*/, const zsummer::proto4z::HTTPHeadMap &/*head*/, const std::string & /*body*/)>;
+        //!连接建立, 关闭, 定时器
+        using SessionEvent = std::function<bool(TcpSessionPtr &  /*session*/)>;
+
+        using PairString = std::pair<std::string, std::string>;
+        using MapString = std::map<std::string, std::string>;
+        //!HTTP解包,hadHeader 区别chunked的后续小包, commonLine 指的是GET, POST RESPONSE. 
+        using CheckHTTPBlock = std::function<CheckBlockResult(const char * /*begin*/, unsigned int /*len*/, unsigned int /*boundLen*/,
+            bool /*hadHeader*/, bool & /*isChunked*/, PairString& /*commonLine*/, MapString & /*head*/, std::string & /*body*/)>;
+        //!HTTP派发
+        using DispatchHTTPMessage = std::function<
+            bool(TcpSessionPtr &/*session*/, const PairString & /*commonLine*/, const MapString &/*head*/, const std::string & /*body*/)>;
         
-        
+        inline SessionBlock * DefaultCreateBlock()
+        {
+            unsigned int boundLen = 100 * 1024;
+            SessionBlock * p = (SessionBlock*)malloc(sizeof(SessionBlock)+boundLen);
+            p->boundLen = boundLen;
+            p->curLen = 0;
+            return p;
+        }
+
+        inline void DefaultFreeBlock(SessionBlock *p)
+        {
+            free(p);
+        }
+
+        inline void dispatchSessionMessage(TcpSessionPtr  & session, const char * blockBegin, int blockSize)
+        {
+
+        }
+
+        inline bool  dispatchHTTPMessage(TcpSessionPtr session, const zsummer::proto4z::PairString & commonLine, const zsummer::proto4z::HTTPHeadMap &head, const std::string & body)
+        {
+            MessageDispatcher::getRef().dispatchSessionHTTPMessage(session, commonLine, head, body);
+        }
         struct SessionTraits 
         {
 #pragma region CUSTOM
@@ -139,10 +172,14 @@ namespace zsummer
             bool            _setNoDelay = true;
             unsigned int    _pulseInterval = 5000;
 
-            CheckTcpIntegrity _checkTcpIntegrity = zsummer::proto4z::checkBuffIntegrity;
+            CheckBlock _checkTcpIntegrity = zsummer::proto4z::checkBuffIntegrity;
             DispatchBlock _dispatchBlock = dispatchSessionMessage;
-            CheckHTTPIntegrity _checkHTTPIntegrity = zsummer::proto4z::checkHTTPBuffIntegrity;
+            CheckHTTPBlock _checkHTTPIntegrity = zsummer::proto4z::checkHTTPBuffIntegrity;
             DispatchHTTPMessage _dispatchHTTP = dispatchHTTPMessage;
+            SessionEvent _eventSessionClose;
+            SessionEvent _eventSessionBuild;
+            CreateBlock _createBlock;
+            FreeBlock _freeBlock;
 #pragma endregion CUSTOM
 
 
@@ -198,7 +235,6 @@ namespace zsummer
 
 
 
-
         inline zsummer::log4z::Log4zStream & operator << (zsummer::log4z::Log4zStream &os, const SessionTraits & traits)
         {
             os << "{ " << "_protoType=" << traits._protoType
@@ -209,8 +245,6 @@ namespace zsummer
                 << ", _reconnectMaxCount=" << traits._reconnectMaxCount
                 << ", _reconnectInterval=" << traits._reconnectInterval
                 << ", _reconnectCleanAllData=" << traits._reconnectCleanAllData
-                << ", _totalConnectCount=" << traits._totalConnectCount
-                << ", _curReconnectCount=" << traits._curReconnectCount
                 << "}";
             return os;
         }

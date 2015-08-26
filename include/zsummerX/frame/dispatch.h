@@ -128,31 +128,6 @@ namespace zsummer
 
             std::vector<OnSessionPulseTimer> _vctOnSessionPulse;
         };
-
-
-        inline void dispatchSessionMessage(TcpSessionPtr  & session, const char * blockBegin, int blockSize)
-        {
-            bool preCheck = MessageDispatcher::getRef().dispatchPreSessionMessage(session, blockBegin, blockSize);
-            if (!preCheck)
-            {
-                LCW("Dispatch Message failed. ");
-            }
-            else
-            {
-                ReadStream rs(blockBegin, blockSize);
-                ProtoID protoID = rs.getProtoID();
-                MessageDispatcher::getRef().dispatchSessionMessage(session, protoID, rs);
-            }
-        }
-
-        inline bool  dispatchHTTPMessage(TcpSessionPtr session, const zsummer::proto4z::PairString & commonLine, const zsummer::proto4z::HTTPHeadMap &head, const std::string & body)
-        {
-            MessageDispatcher::getRef().dispatchSessionHTTPMessage(session, commonLine, head, body);
-        }
-
-
-
-
     }
 }
 

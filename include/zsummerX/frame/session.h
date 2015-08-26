@@ -46,21 +46,6 @@ namespace zsummer
 {
     namespace network
     {
-
-
-        struct MessageSendPack
-        {
-            char buff[MAX_SEND_PACK_SIZE];
-            unsigned int bufflen = 0;
-        };
-
-        struct MessageBuffChunk
-        {
-            char buff[MAX_BUFF_SIZE];
-            unsigned int bufflen = 0;
-        };
-
-
         class TcpSession : public std::enable_shared_from_this<TcpSession>
         {
         public:
@@ -116,13 +101,13 @@ namespace zsummer
             zsummer::network::TimerID _pulseTimerID = zsummer::network::InvalidTimerID;
 
             //! 
-            MessageBuffChunk _recving;
-            MessageBuffChunk _sending;
+            SessionBlock* _recving = nullptr;
+            SessionBlock* _sending = nullptr;
             unsigned int _sendingCurIndex = 0;
 
             //! send data queue
-            std::queue<MessageSendPack *> _sendque;
-            std::queue<MessageSendPack *> _freeCache;
+            std::queue<SessionBlock *> _sendque;
+
 
             //! rc encrypt
             RC4Encryption _rc4StateRead;

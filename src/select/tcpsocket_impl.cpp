@@ -388,11 +388,11 @@ bool TcpSocket::doClose()
     if (_register._linkstat != LS_CLOSED)
     {
         _register._linkstat = LS_CLOSED;
-        _summer->registerEvent(2, _register)
+        _summer->registerEvent(2, _register);
         if (_register._fd != InvalideFD)
         {
             shutdown(_register._fd, SHUT_RDWR);
-            close(_register._fd);
+            closesocket(_register._fd);
             _register._fd = InvalideFD;
         }
         _onConnectHandler = nullptr;

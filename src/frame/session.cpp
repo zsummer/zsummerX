@@ -88,6 +88,10 @@ bool TcpSession::bindTcpSocketPrt(const TcpSocketPtr &sockptr, AccepterID aID, S
         LCW("bindTcpSocketPrt Failed.");
         return false;
     }
+    if (_traits._eventSessionBuild)
+    {
+        _traits._eventSessionBuild(shared_from_this());
+    }
     _pulseTimerID = SessionManager::getRef().createTimer(_traits._pulseInterval, std::bind(&TcpSession::onPulseTimer, shared_from_this()));
     return true;
 }
@@ -95,6 +99,7 @@ bool TcpSession::bindTcpSocketPrt(const TcpSocketPtr &sockptr, AccepterID aID, S
 void TcpSession::connect()
 {
     _pulseTimerID = SessionManager::getRef().createTimer(_traits._pulseInterval, std::bind(&TcpSession::onPulseTimer, shared_from_this()));
+    _status = 1;
     reconnect();
 }
 
@@ -125,17 +130,17 @@ void TcpSession::reconnect()
         }
     }
     _sockptr = std::make_shared<TcpSocket>();
-    if (_sockptr->initialize(_eventLoop))
+    if (!_sockptr->initialize(_eventLoop))
     {
-        throw std::runtime_error("connect init error");
+        LCE("connect init error");
+        return;
     }
     if (!_sockptr->doConnect(_remoteIP, _remotePort, std::bind(&TcpSession::onConnected, shared_from_this(), std::placeholders::_1)))
     {
-        throw std::runtime_error("connect error");
+        LCE("connect error");
+        return;
     }
 }
-
-
 
 
 
@@ -149,14 +154,19 @@ void TcpSession::onConnected(zsummer::network::NetErrorCode ec)
     LCI("onConnected success. cID=" << _sessionID);
     _status = 2;
 
-    if (!_sendque.empty())
-    {
-        send(nullptr, 0);
-    }
     if (!doRecv())
     {
         _status = 1;
         return;
+    }
+
+    if (!_sendque.empty())
+    {
+        send(nullptr, 0);
+    }
+    if (_traits._eventSessionBuild)
+    {
+        _traits._eventSessionBuild(shared_from_this());
     }
 }
 
@@ -171,11 +181,6 @@ void TcpSession::close()
     if (_sockptr)
     {
         _sockptr->doClose();
-    }
-    if (_pulseTimerID != zsummer::network::InvalidTimerID)
-    {
-        SessionManager::getRef().cancelTimer(_pulseTimerID);
-        _pulseTimerID = zsummer::network::InvalidTimerID;
     }
 }
 
@@ -423,6 +428,11 @@ void TcpSession::onSend(zsummer::network::NetErrorCode ec, int nSentLen)
 
 void TcpSession::onPulseTimer()
 {
+    if (_status == 3)
+    {
+        return;
+    }
+    
     if (_status == 1)
     {
         if (_traits._reconnectMaxCount == 0 || _curReconnectCount > _traits._reconnectMaxCount)
@@ -433,11 +443,19 @@ void TcpSession::onPulseTimer()
         {
             reconnect();
             _curReconnectCount++;
+            if (_traits._eventPulse)
+            {
+                _traits._eventPulse(shared_from_this());
+            }
             _pulseTimerID = SessionManager::getRef().createTimer(_traits._reconnectInterval, std::bind(&TcpSession::onPulseTimer, shared_from_this()));
         }
     }
     else if (_status == 2)
     {
+        if (_traits._eventPulse)
+        {
+            _traits._eventPulse(shared_from_this());
+        }
         _pulseTimerID = SessionManager::getRef().createTimer(_traits._pulseInterval, std::bind(&TcpSession::onPulseTimer, shared_from_this()));
     }
 }
@@ -447,7 +465,11 @@ void TcpSession::onClose()
     LCI("Client Closed!");
     _sockptr.reset();
     _status = 3;
-    SessionManager::getRef().onSessionClose(_acceptID, _sessionID, shared_from_this());
+    if (_traits._eventSessionClose)
+    {
+        _traits._eventSessionClose(shared_from_this());
+    }
+    SessionManager::getRef().onSessionClose(shared_from_this());
 }
 
 Any TcpSession::setUserParam(int index, const Any &any)

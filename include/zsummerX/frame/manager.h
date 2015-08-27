@@ -108,8 +108,7 @@ namespace zsummer
 
             //send data.
             void sendSessionData(SessionID sID, const char * orgData, unsigned int orgDataLen);
-            //send data.
-            void sendSessionData(SessionID sID, ProtoID pID, const char * userData, unsigned int userDataLen);
+
 
             //close session socket.
             void kickSession(SessionID sID);
@@ -119,25 +118,13 @@ namespace zsummer
             //统计信息.
             std::string getRemoteIP(SessionID sID);
             unsigned short getRemotePort(SessionID sID);
-            unsigned long long _totalConnectCount = 0;
-            unsigned long long _totalAcceptCount = 0;
-            unsigned long long _totalConnectClosedCount = 0;
-            unsigned long long _totalAcceptClosedCount = 0;
-            
-            unsigned long long _totalSendCount = 0;
-            unsigned long long _totalSendBytes = 0;
-            unsigned long long _totalSendMessages = 0;
-            unsigned long long _totalRecvCount = 0;
-            unsigned long long _totalRecvBytes = 0;
-            unsigned long long _totalRecvMessages = 0;
-            unsigned long long _totalRecvHTTPCount = 0;
+            unsigned long long _statInfo[STAT_SIZE];
             time_t _openTime = 0;
 
         private:
             friend class TcpSession;
             // 一个established状态的session已经关闭. 
-            void onSessionClose(AccepterID aID, SessionID sID, const TcpSessionPtr &session);
-
+            void onSessionClose(TcpSessionPtr &session);
 
             //accept到新连接.
             void onAcceptNewClient(zsummer::network::NetErrorCode ec, const TcpSocketPtr & s, const TcpAcceptPtr & accepter, AccepterID aID);

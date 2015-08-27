@@ -129,20 +129,19 @@ bool SessionManager::runOnce(bool isImmediately)
         }
         if (_stopServers == 1)
         {
-            _stopServers = 2;
-            for (auto &kv : _mapConnectorConfig)
-            {
-                kv.second.first._reconnectMaxCount = 0;
-            }
             int count = 0;
-            for (auto kv : _mapTcpSessionPtr)
+            _stopServers = 2;
+            for (auto &kv : _mapTcpSessionPtr)
             {
                 if (isConnectID(kv.first))
                 {
+                    kv.second->getTraits()._reconnectMaxCount = 0;
                     kickSession(kv.first);
                     count++;
                 }
+                
             }
+
             LCW("SessionManager::kickAllConnect() [" << count << "], session[" << _mapTcpSessionPtr.size() << "] success.");
             if (count == 0 && _funServerStop)
             {
@@ -164,7 +163,7 @@ AccepterID SessionManager::addAccepter(std::string listenIP, unsigned short list
     auto & extend = _mapAccepterExtend[_lastAcceptID];
     extend._aID = _lastAcceptID;
     extend._listenIP = listenIP;
-    extend._listenPort;
+    extend._listenPort = listenPort;
     return _lastAcceptID;
 }
 
@@ -319,8 +318,7 @@ void SessionManager::onAcceptNewClient(zsummer::network::NetErrorCode ec, const 
         if (session->bindTcpSocketPrt(s, aID, _lastSessionID))
         {
             _mapTcpSessionPtr[_lastSessionID] = session;
-            _totalAcceptCount++;
-            MessageDispatcher::getRef().dispatchOnSessionEstablished(session);
+            //MessageDispatcher::getRef().dispatchOnSessionEstablished(session);
         }
     }
     
@@ -368,19 +366,18 @@ void SessionManager::kickSession(SessionID sID)
     iter->second->close();
 }
 
-void SessionManager::onSessionClose(AccepterID aID, SessionID sID, const TcpSessionPtr &session)
+void SessionManager::onSessionClose(TcpSessionPtr &session)
 {
-    _mapTcpSessionPtr.erase(sID);
-    if (aID != InvalidAccepterID)
+    _mapTcpSessionPtr.erase(session->getSessionID());
+    if (session->getAcceptID() != InvalidAccepterID)
     {
-        _mapAccepterExtend[aID]._currentLinked--;
-        _mapAccepterExtend[aID]._totalAcceptCount++;
+        _mapAccepterExtend[session->getAcceptID()]._currentLinked--;
+        _mapAccepterExtend[session->getAcceptID()]._totalAcceptCount++;
     }
-    _totalAcceptClosedCount++;
 
-    MessageDispatcher::getRef().dispatchOnSessionDisconnect(session);
+    //MessageDispatcher::getRef().dispatchOnSessionDisconnect(session);
 
-    if (isSessionID(sID) && _stopClients == 2 && _funClientsStop)
+    if (isSessionID(session->getSessionID()) && _stopClients == 2 && _funClientsStop)
     {
         int count = 0;
         for (auto & kv: _mapTcpSessionPtr)
@@ -410,6 +407,7 @@ SessionID SessionManager::addConnecter(std::string remoteIP, unsigned short remo
     session->setRemotePort(remotePort);
     return _lastConnectID;
 }
+
 SessionTraits & SessionManager::getConnecterExtend(SessionID cID)
 {
     auto founder = _mapTcpSessionPtr.find(cID);
@@ -419,11 +417,13 @@ SessionTraits & SessionManager::getConnecterExtend(SessionID cID)
     }
     return founder->second->getTraits();
 }
+
 bool SessionManager::openConnecter(SessionID cID)
 {
     auto founder = _mapTcpSessionPtr.find(cID);
     if (founder == _mapTcpSessionPtr.end())
     {
+        LCE("openConnecter error");
         return false;
     }
     founder->second->connect();
@@ -455,16 +455,6 @@ void SessionManager::sendSessionData(SessionID sID, const char * orgData, unsign
     //trace log
     {
         LCT("sendSessionData Len=" << orgDataLen << ",binarydata=" << zsummer::log4z::Log4zBinary(orgData, orgDataLen >= 10 ? 10 : orgDataLen));
-    }
-}
-void SessionManager::sendSessionData(SessionID sID, ProtoID pID, const char * userData, unsigned int userDataLen)
-{
-    WriteStream ws(pID);
-    ws.appendOriginalData(userData, userDataLen);
-    sendSessionData(sID, ws.getStream(), ws.getStreamLen());
-    //trace log
-    {
-        LCT("sendSessionData ProtoID=" << pID << ",  userDataLen=" << userDataLen);
     }
 }
 

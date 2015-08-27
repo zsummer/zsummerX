@@ -101,10 +101,11 @@ namespace zsummer
 
         enum StatType
         {
-            TOTAL_SEND_COUNT,
-            TOTAL_SEND_SIZE,
-            TOTAL_RECV_COUNT,
-            TOTAL_RECV_SIZE,
+            STAT_SEND_COUNT = 1,
+            STAT_SEND_SIZE = 3,
+            STAT_RECV_COUNT = 5,
+            STAT_RECV_SIZE = 7,
+            STAT_SIZE,
         };
 
         class TcpSession;
@@ -125,7 +126,7 @@ namespace zsummer
         using CheckBlockResult = std::pair<BLOCK_CHECK_TYPE, unsigned int>;
 
         //检查当前缓冲块内是否能读出一个完整的block
-        using CheckBlock = std::function<CheckBlockResult(const char * /*begin*/, unsigned int /*len*/, unsigned int /*boundLen*/)>;
+        using CheckBlock = std::function<CheckBlockResult(const char * /*begin*/, unsigned int /*len*/, unsigned int /*bound*/)>;
 
         //!每读出一个block就调用这个方法dispatch出去
         using DispatchBlock = std::function<bool(TcpSessionPtr &  /*session*/, const char * /*blockBegin*/, int /*blockSize*/)>;
@@ -136,12 +137,13 @@ namespace zsummer
         using PairString = std::pair<std::string, std::string>;
         using MapString = std::map<std::string, std::string>;
         //!HTTP解包,hadHeader 区别chunked的后续小包, commonLine 指的是GET, POST RESPONSE. 
-        using CheckHTTPBlock = std::function<CheckBlockResult(const char * /*begin*/, unsigned int /*len*/, unsigned int /*boundLen*/,
+        using CheckHTTPBlock = std::function<CheckBlockResult(const char * /*begin*/, unsigned int /*len*/, unsigned int /*bound*/,
             bool /*hadHeader*/, bool & /*isChunked*/, PairString& /*commonLine*/, MapString & /*head*/, std::string & /*body*/)>;
         //!HTTP派发
         using DispatchHTTPMessage = std::function<
             bool(TcpSessionPtr &/*session*/, const PairString & /*commonLine*/, const MapString &/*head*/, const std::string & /*body*/)>;
         
+
         inline SessionBlock * DefaultCreateBlock()
         {
             SessionBlock * p = (SessionBlock*)malloc(sizeof(SessionBlock)+SESSION_BLOCK_SIZE);
@@ -154,6 +156,18 @@ namespace zsummer
         {
             free(p);
         }
+        inline CheckBlockResult DefaultCheckBlock(const char * begin, unsigned int len, unsigned int bound)
+        {
+           auto ret =  zsummer::proto4z::checkBuffIntegrity(begin, len, bound);
+           return std::make_pair((BLOCK_CHECK_TYPE)ret.first, (unsigned int)ret.second);
+        }
+        inline CheckBlockResult DefaultCheckHTTPBlock(const char * begin, unsigned int len, unsigned int bound,
+            bool hadHeader, bool & isChunked, PairString& commonLine, MapString & head, std::string & body)
+        {
+            unsigned int used = 0;
+            auto ret = zsummer::proto4z::checkHTTPBuffIntegrity(begin, len, bound, hadHeader, isChunked, commonLine, head, body, used);
+            return std::make_pair((BLOCK_CHECK_TYPE)ret, used);
+        }
 
         struct SessionTraits 
         {
@@ -164,15 +178,15 @@ namespace zsummer
             bool            _setNoDelay = true;
             unsigned int    _pulseInterval = 5000;
 
-            CheckBlock _checkTcpBlock = zsummer::proto4z::checkBuffIntegrity;
+            CheckBlock _checkTcpBlock = DefaultCheckBlock;
             DispatchBlock _dispatchBlock;
-            CheckHTTPBlock _checkHTTPBlock = zsummer::proto4z::checkHTTPBuffIntegrity;
+            CheckHTTPBlock _checkHTTPBlock = DefaultCheckHTTPBlock;
             DispatchHTTPMessage _dispatchHTTP;
             SessionEvent _eventSessionClose;
             SessionEvent _eventSessionBuild;
             SessionEvent _eventPulse;
-            CreateBlock _createBlock;
-            FreeBlock _freeBlock;
+            CreateBlock _createBlock = DefaultCreateBlock;
+            FreeBlock _freeBlock = DefaultFreeBlock;
 #pragma endregion CUSTOM
 
 

@@ -158,9 +158,9 @@ bool SessionManager::runOnce(bool isImmediately)
 }
 
 
-AccepterID SessionManager::addAccepter(std::string listenIP, unsigned short listenPort)
+AccepterID SessionManager::addAccepter(const std::string & listenIP, unsigned short listenPort)
 {
-    _lastAcceptID++;
+    _lastAcceptID = nextSessionID(_lastAcceptID);
     auto & extend = _mapAccepterExtend[_lastAcceptID];
     extend._aID = _lastAcceptID;
     extend._listenIP = listenIP;
@@ -374,7 +374,7 @@ void SessionManager::kickSession(SessionID sID)
     iter->second->close();
 }
 
-void SessionManager::onSessionClose(TcpSessionPtr &session)
+void SessionManager::onSessionClose(TcpSessionPtr session)
 {
     _mapTcpSessionPtr.erase(session->getSessionID());
     if (session->getAcceptID() != InvalidAccepterID)
@@ -426,7 +426,7 @@ void SessionManager::onSessionClose(TcpSessionPtr &session)
     
 }
 
-SessionID SessionManager::addConnecter(std::string remoteIP, unsigned short remotePort)
+SessionID SessionManager::addConnecter(const std::string & remoteIP, unsigned short remotePort)
 {
     _lastConnectID = nextConnectID(_lastConnectID);
     TcpSessionPtr & session = _mapTcpSessionPtr[_lastConnectID];

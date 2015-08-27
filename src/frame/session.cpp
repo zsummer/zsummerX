@@ -258,14 +258,14 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
         if (_traits._protoType == PT_TCP)
         {
             auto ret = _traits._checkTcpBlock(_recving->begin + usedIndex, _recving->len - usedIndex, _recving->bound - usedIndex);
-            if (ret.first == zsummer::proto4z::IRT_CORRUPTION)
+            if (ret.first == BCT_CORRUPTION)
             {
                 LCW("killed socket: checkBuffIntegrity error ");
                 _sockptr->doClose();
                 onClose();
                 return;
             }
-            if (ret.first == zsummer::proto4z::IRT_SHORTAGE)
+            if (ret.first == BCT_SHORTAGE)
             {
                 break;
             }
@@ -286,21 +286,20 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
         else
         {
             std::string body;
-            unsigned int usedLen = 0;
             auto ret = _traits._checkHTTPBlock(_recving->begin + usedIndex,
                 _recving->len - usedIndex,
                 _recving->bound - usedIndex,
                 _httpHadHeader, _httpIsChunked, _httpCommonLine, _httpHeader,
                 body);
 
-            if (ret.first == zsummer::proto4z::IRT_CORRUPTION)
+            if (ret.first == BCT_CORRUPTION)
             {
                 LCT("killed http socket: checkHTTPBuffIntegrity error sID=" << _sessionID);
                 _sockptr->doClose();
                 onClose();
                 return;
             }
-            if (ret.first == zsummer::proto4z::IRT_SHORTAGE)
+            if (ret.first == BCT_SHORTAGE)
             {
                 break;
             }
@@ -507,7 +506,7 @@ void TcpSession::onClose()
 
 Any TcpSession::setUserParam(int index, const Any &any)
 {
-    if (_param.size() <= index)
+    if (_param.size() <= (unsigned int)index)
     {
         _param.assign(index + 1 - _param.size(), Any(0));
     }
@@ -516,7 +515,7 @@ Any TcpSession::setUserParam(int index, const Any &any)
 }
 Any TcpSession::getUserParam(int index)
 {
-    if (index >= _param.size())
+    if ((unsigned int)index >= _param.size())
     {
         return Any(0);
     }

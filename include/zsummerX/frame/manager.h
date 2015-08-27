@@ -63,7 +63,7 @@ namespace zsummer
             auto ret = zsummer::proto4z::checkBuffIntegrity(begin, len, bound);
             return std::make_pair((BLOCK_CHECK_TYPE)ret.first, (unsigned int)ret.second);
         }
-        inline void DefaultDispatchBlock(TcpSessionPtr &  session, const char * begin, int len)
+        inline void DefaultDispatchBlock(TcpSessionPtr session, const char * begin, int len)
         {
             zsummer::proto4z::ReadStream rs(begin, len);
             MessageDispatcher::getRef().dispatchSessionMessage(session, rs.getProtoID(), rs);
@@ -77,7 +77,7 @@ namespace zsummer
             return std::make_pair((BLOCK_CHECK_TYPE)ret, used);
         }
 
-        inline void DefaultDispatchHTTPMessage(TcpSessionPtr &session, const PairString & commonLine, const MapString &head, const std::string & body)
+        inline void DefaultDispatchHTTPMessage(TcpSessionPtr session, const PairString & commonLine, const MapString &head, const std::string & body)
         {
 
         }
@@ -135,13 +135,13 @@ namespace zsummer
 
 
             //! add acceptor under the configure.
-            AccepterID addAccepter(std::string listenIP, unsigned short listenPort);
+            AccepterID addAccepter(const std::string& listenIP, unsigned short listenPort);
             AccepterExtend & getAccepterExtend(AccepterID aID);
             bool openAccepter(AccepterID aID);
             AccepterID getAccepterID(SessionID sID);
 
             //! add connector under the configure.
-            SessionID addConnecter(std::string remoteIP, unsigned short remotePort);
+            SessionID addConnecter(const std::string& remoteIP, unsigned short remotePort);
             SessionTraits & getConnecterExtend(SessionID cID);
             bool openConnecter(SessionID cID);
             TcpSessionPtr getTcpSession(SessionID sID);
@@ -165,7 +165,7 @@ namespace zsummer
         private:
             friend class TcpSession;
             // 一个established状态的session已经关闭. 
-            void onSessionClose(TcpSessionPtr &session);
+            void onSessionClose(TcpSessionPtr session);
 
             //accept到新连接.
             void onAcceptNewClient(zsummer::network::NetErrorCode ec, const TcpSocketPtr & s, const TcpAcceptPtr & accepter, AccepterID aID);

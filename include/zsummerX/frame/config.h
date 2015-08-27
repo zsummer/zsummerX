@@ -138,10 +138,10 @@ namespace zsummer
         using CheckBlock = std::function<CheckBlockResult(const char * /*begin*/, unsigned int /*len*/, unsigned int /*bound*/)>;
 
         //!每读出一个block就调用这个方法dispatch出去
-        using DispatchBlock = std::function<void (TcpSessionPtr &  /*session*/, const char * /*begin*/, int /*len*/)>;
+        using DispatchBlock = std::function<void (TcpSessionPtr   /*session*/, const char * /*begin*/, int /*len*/)>;
 
         //!连接建立, 关闭, 定时器
-        using SessionEvent = std::function<void(TcpSessionPtr &  /*session*/)>;
+        using SessionEvent = std::function<void(TcpSessionPtr   /*session*/)>;
 
         using PairString = std::pair<std::string, std::string>;
         using MapString = std::map<std::string, std::string>;
@@ -150,13 +150,13 @@ namespace zsummer
             bool /*hadHeader*/, bool & /*isChunked*/, PairString& /*commonLine*/, MapString & /*head*/, std::string & /*body*/)>;
         //!HTTP派发
         using DispatchHTTPMessage = std::function<
-            void(TcpSessionPtr &/*session*/, const PairString & /*commonLine*/, const MapString &/*head*/, const std::string & /*body*/)>;
+            void(TcpSessionPtr /*session*/, const PairString & /*commonLine*/, const MapString &/*head*/, const std::string & /*body*/)>;
         
 
 
         struct SessionTraits 
         {
-#pragma region CUSTOM
+
             ProtoType       _protoType = PT_TCP;
             std::string     _rc4TcpEncryption = ""; //empty is not encryption
             bool            _openFlashPolicy = false;
@@ -172,15 +172,12 @@ namespace zsummer
             SessionEvent _eventPulse;
             CreateBlock _createBlock ;
             FreeBlock _freeBlock;
-#pragma endregion CUSTOM
 
-
-#pragma region CONNECT
             //! valid traits when session is connect
             unsigned int _reconnectMaxCount = 0; // try reconnect max count
             unsigned int _reconnectInterval = 5000; //million seconds;
             bool         _reconnectCleanAllData = true;//clean all data when reconnect;
-#pragma endregion CONNECT
+
 
         };
 

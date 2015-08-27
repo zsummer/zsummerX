@@ -136,7 +136,7 @@ void startServer()
     //! step 1. start Manager.
     SessionManager::getRef().start();
     //process message _RequestSequence
-    auto msg_RequestSequence_fun = [](TcpSessionPtr &session, const char * begin, unsigned int len)
+    auto msg_RequestSequence_fun = [](TcpSessionPtr session, const char * begin, unsigned int len)
     {
         ReadStream rs(begin, len);
         std::string content; 
@@ -168,7 +168,7 @@ void startClient()
     SessionManager::getRef().start();
 
     //on connect success
-    auto connectedfun = [](TcpSessionPtr & session)
+    auto connectedfun = [](TcpSessionPtr session)
     {
         LOGI("on connect. ID=" << session->getSessionID());
         std::string content = "hello";
@@ -178,7 +178,7 @@ void startClient()
     };
 
     //process message _ResultID
-    auto msg_ResultSequence_fun = [](TcpSessionPtr &  session, const char * begin, int len)
+    auto msg_ResultSequence_fun = [](TcpSessionPtr session, const char * begin, int len)
     {
         ReadStream rs(begin, len);
         std::string content; 

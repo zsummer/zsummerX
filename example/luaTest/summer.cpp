@@ -111,6 +111,67 @@ static int _messageCB = LUA_NOREF;
 static int _disconnectCB = LUA_NOREF;
 static lua_State * _L = nullptr;
 
+
+static void _onConnecterCallback(lua_State * L, TcpSessionPtr session)
+{
+    lua_pushcfunction(L, pcall_error);
+    lua_rawgeti(L, LUA_REGISTRYINDEX, _connectCB);
+    lua_pushnumber(L, session->getSessionID());
+    lua_pushstring(L, session->getRemoteIP().c_str());
+    lua_pushnumber(L, session->getRemotePort());
+    int status = lua_pcall(L, 3, 0, 1);
+    lua_remove(L, 1);
+    if (status)
+    {
+        const char *msg = lua_tostring(L, -1);
+        if (msg == NULL) msg = "(error object is not a string)";
+        LOGE(msg);
+        lua_pop(L, 1);
+    }
+}
+
+static void _onMessageCallback(lua_State * L, TcpSessionPtr session, const char * begin, unsigned int len)
+{
+    ReadStream rs(begin, len);
+    lua_pushcfunction(L, pcall_error);
+    lua_rawgeti(L, LUA_REGISTRYINDEX, _messageCB);
+    lua_pushinteger(L, session->getSessionID());
+    lua_pushinteger(L, rs.getProtoID());
+    lua_pushlstring(L, rs.getStreamBody(), rs.getStreamBodyLen());
+    int status = lua_pcall(L, 3, 0, 1);
+    lua_remove(L, 1);
+    if (status)
+    {
+        const char *msg = lua_tostring(L, -1);
+        if (msg == NULL) msg = "(error object is not a string)";
+        LOGE(msg);
+        lua_pop(L, 1);
+    }
+}
+
+static void _onDisconnectCallback(lua_State * L, TcpSessionPtr session)
+{
+    if (_disconnectCB == LUA_NOREF)
+    {
+        LOGW("_onDisconnectCallback warning: cannot found ther callback.");
+        return;
+    }
+    lua_pushcfunction(L, pcall_error);
+    lua_rawgeti(L, LUA_REGISTRYINDEX, _disconnectCB);
+    lua_pushnumber(L, session->getSessionID());
+    lua_pushstring(L, session->getRemoteIP().c_str());
+    lua_pushnumber(L, session->getRemotePort());
+    int status = lua_pcall(L, 3, 0, 1);
+    lua_remove(L, 1);
+    if (status)
+    {
+        const char *msg = lua_tostring(L, -1);
+        if (msg == NULL) msg = "(error object is not a string)";
+        LOGE(msg);
+        lua_pop(L, 1);
+    }
+}
+
 static int lua53_rawgeti(lua_State * L, int index, lua_Integer n)
 {
     lua_rawgeti(L, index, n);
@@ -160,20 +221,20 @@ static int run(lua_State * L)
 
 static int addConnect(lua_State *L)
 {
-    ConnectConfig config;
-    config._remoteIP = luaL_optstring(L, 1,  config._remoteIP.c_str());
-    config._remotePort = (unsigned short)luaL_optinteger(L, 2, config._remotePort);
-    config._rc4TcpEncryption = luaL_optstring(L, 3, config._rc4TcpEncryption.c_str());
-    config._reconnectMaxCount = (unsigned int)luaL_optinteger(L, 4, config._reconnectMaxCount);
-    config._reconnectInterval = (unsigned int)luaL_optinteger(L, 5, config._reconnectInterval);
+    SessionID cID = SessionManager::getRef().addConnecter(luaL_checkstring(L, 1), (unsigned short)luaL_checkinteger(L, 2));
+    auto & traits = SessionManager::getRef().getConnecterExtend(cID);
+    traits._rc4TcpEncryption = luaL_optstring(L, 3, traits._rc4TcpEncryption.c_str());
+    traits._reconnectMaxCount = (unsigned int)luaL_optinteger(L, 4, traits._reconnectMaxCount);
+    traits._reconnectInterval = (unsigned int)luaL_optinteger(L, 5, traits._reconnectInterval);
+    traits._eventSessionBuild = std::bind(_onConnecterCallback, L, std::placeholders::_1);
+    traits._dispatchBlock = std::bind(_onMessageCallback, L, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    traits._eventSessionClose = std::bind(_onDisconnectCallback, L, std::placeholders::_1);
 
-    LOGD("lua: addConnect:" << config);
-    SessionID id = SessionManager::getRef().addConnector(config);
-    if (id == InvalidSeesionID)
+    if (!SessionManager::getRef().openConnecter(cID))
     {
         return 0;
     }
-    lua_pushnumber(L, id);
+    lua_pushnumber(L, cID);
     return 1;
 }
 
@@ -181,41 +242,25 @@ static int addConnect(lua_State *L)
 
 static int addListen(lua_State *L)
 {
-    ListenConfig config;
-    config._listenIP = luaL_optstring(L, 1, config._listenIP.c_str());
-    config._listenPort = (unsigned short)luaL_optinteger(L, 2, config._listenPort);
-    config._rc4TcpEncryption = luaL_optstring(L, 3, config._rc4TcpEncryption.c_str());
-    config._maxSessions = (unsigned int)luaL_optinteger(L, 4, config._maxSessions);
-    config._pulseInterval = (unsigned int)luaL_optinteger(L, 5, config._pulseInterval);
+    AccepterID aID = SessionManager::getRef().addAccepter(luaL_checkstring(L, 1), (unsigned short)luaL_checkinteger(L, 2));
+    auto &extend = SessionManager::getRef().getAccepterExtend(aID);
+    extend._sessionTraits._rc4TcpEncryption = luaL_optstring(L, 3, extend._sessionTraits._rc4TcpEncryption.c_str());
+    extend._maxSessions = (unsigned int)luaL_optinteger(L, 4, extend._maxSessions);
+    extend._sessionTraits._pulseInterval = (unsigned int)luaL_optinteger(L, 5, extend._sessionTraits._pulseInterval);
+    extend._sessionTraits._eventSessionBuild = std::bind(_onConnecterCallback, L, std::placeholders::_1);
+    extend._sessionTraits._dispatchBlock = std::bind(_onMessageCallback, L, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    LOGD("lua: addListen:" << extend);
 
-    LOGD("lua: addListen:" << config);
-    AccepterID id = SessionManager::getRef().addAcceptor(config);
-    if (id == InvalidAccepterID)
+    if (!SessionManager::getRef().openAccepter(aID))
     {
         return 0;
     }
-    lua_pushnumber(L, id);
+    lua_pushnumber(L, aID);
     return 1;
 }
 
 
-static void _onConnecterCallback(lua_State * L, TcpSessionPtr session)
-{
-    lua_pushcfunction(L, pcall_error);
-    lua_rawgeti(L, LUA_REGISTRYINDEX, _connectCB);
-    lua_pushnumber(L, session->getSessionID());
-    lua_pushstring(L, session->getRemoteIP().c_str());
-    lua_pushnumber(L, session->getRemotePort());
-    int status = lua_pcall(L, 3, 0, 1);
-    lua_remove(L, 1);
-    if (status)
-    {
-        const char *msg = lua_tostring(L, -1);
-        if (msg == NULL) msg = "(error object is not a string)";
-        LOGE(msg);
-        lua_pop(L, 1);
-    }
-}
+
 
 static int registerConnect(lua_State * L)
 {
@@ -227,28 +272,11 @@ static int registerConnect(lua_State * L)
         return 0;
     }
     _connectCB = luaL_ref(L, LUA_REGISTRYINDEX);
-    MessageDispatcher::getRef().registerOnSessionEstablished(std::bind(_onConnecterCallback, L, std::placeholders::_1));
     return 0;
 }
 
 
-static void _onMessageCallback(lua_State * L,TcpSessionPtr session, ProtoID pID, ReadStream & rs)
-{
-    lua_pushcfunction(L, pcall_error);
-    lua_rawgeti(L, LUA_REGISTRYINDEX, _messageCB);
-    lua_pushinteger(L, session->getSessionID());
-    lua_pushinteger(L, pID);
-    lua_pushlstring(L, rs.getStreamBody(), rs.getStreamBodyLen());
-    int status = lua_pcall(L, 3, 0, 1);
-    lua_remove(L, 1);
-    if (status)
-    {
-        const char *msg = lua_tostring(L, -1);
-        if (msg == NULL) msg = "(error object is not a string)";
-        LOGE(msg);
-        lua_pop(L, 1);
-    }
-}
+
 
 static int registerMessage(lua_State * L)
 {
@@ -260,34 +288,12 @@ static int registerMessage(lua_State * L)
         return 0;
     }
     _messageCB = luaL_ref(L, LUA_REGISTRYINDEX);
-    MessageDispatcher::getRef().registerSessionDefaultMessage(std::bind(_onMessageCallback, L, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     return 0;
 }
 
 
 
-static void _onDisconnectCallback(lua_State * L, TcpSessionPtr session)
-{
-    if (_disconnectCB == LUA_NOREF)
-    {
-        LOGW("_onDisconnectCallback warning: cannot found ther callback.");
-        return;
-    }
-    lua_pushcfunction(L, pcall_error);
-    lua_rawgeti(L, LUA_REGISTRYINDEX, _disconnectCB);
-    lua_pushnumber(L, session->getSessionID());
-    lua_pushstring(L, session->getRemoteIP().c_str());
-    lua_pushnumber(L, session->getRemotePort());
-    int status = lua_pcall(L, 3, 0, 1);
-    lua_remove(L, 1);
-    if (status)
-    {
-        const char *msg = lua_tostring(L, -1);
-        if (msg == NULL) msg = "(error object is not a string)";
-        LOGE(msg);
-        lua_pop(L, 1);
-    }
-}
+
 
 static int registerDisconnect(lua_State * L)
 {
@@ -300,7 +306,6 @@ static int registerDisconnect(lua_State * L)
     }
 
     _disconnectCB = luaL_ref(L, LUA_REGISTRYINDEX);
-    MessageDispatcher::getRef().registerOnSessionDisconnect(std::bind(_onDisconnectCallback, L, std::placeholders::_1));
     return 0;
 }
 

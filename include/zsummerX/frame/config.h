@@ -71,10 +71,12 @@ namespace zsummer
     namespace network
     {
         //! define network type
-        typedef unsigned int SessionID;
+        using SessionID = unsigned int;
         const SessionID InvalidSeesionID = -1;
-        typedef unsigned int AccepterID;
+        using AccepterID = unsigned int;
         const AccepterID InvalidAccepterID = -1;
+        using ProtoID = unsigned short;
+        const ProtoID InvalidProtoID = -1;
 
         //! define session id range.
         const unsigned int __MIDDLE_SEGMENT_VALUE = 300 * 1000 * 1000;
@@ -101,10 +103,17 @@ namespace zsummer
 
         enum StatType
         {
-            STAT_SEND_COUNT = 1,
-            STAT_SEND_SIZE = 3,
-            STAT_RECV_COUNT = 5,
-            STAT_RECV_SIZE = 7,
+            STAT_SEND_COUNT = 0,
+            STAT_SEND_PACKS = 2,
+            STAT_SEND_BYTES = 4,
+            STAT_SEND_QUES = 6,
+            STAT_RECV_COUNT = 8,
+            STAT_RECV_PACKS = 10,
+            STAT_RECV_BYTES = 12,
+            
+            STAT_LINKED = 14,
+            STAT_CLOSED = 16,
+
             STAT_SIZE,
         };
 
@@ -129,10 +138,10 @@ namespace zsummer
         using CheckBlock = std::function<CheckBlockResult(const char * /*begin*/, unsigned int /*len*/, unsigned int /*bound*/)>;
 
         //!每读出一个block就调用这个方法dispatch出去
-        using DispatchBlock = std::function<bool(TcpSessionPtr &  /*session*/, const char * /*blockBegin*/, int /*blockSize*/)>;
+        using DispatchBlock = std::function<void (TcpSessionPtr &  /*session*/, const char * /*begin*/, int /*len*/)>;
 
         //!连接建立, 关闭, 定时器
-        using SessionEvent = std::function<bool(TcpSessionPtr &  /*session*/)>;
+        using SessionEvent = std::function<void(TcpSessionPtr &  /*session*/)>;
 
         using PairString = std::pair<std::string, std::string>;
         using MapString = std::map<std::string, std::string>;
@@ -141,33 +150,9 @@ namespace zsummer
             bool /*hadHeader*/, bool & /*isChunked*/, PairString& /*commonLine*/, MapString & /*head*/, std::string & /*body*/)>;
         //!HTTP派发
         using DispatchHTTPMessage = std::function<
-            bool(TcpSessionPtr &/*session*/, const PairString & /*commonLine*/, const MapString &/*head*/, const std::string & /*body*/)>;
+            void(TcpSessionPtr &/*session*/, const PairString & /*commonLine*/, const MapString &/*head*/, const std::string & /*body*/)>;
         
 
-        inline SessionBlock * DefaultCreateBlock()
-        {
-            SessionBlock * p = (SessionBlock*)malloc(sizeof(SessionBlock)+SESSION_BLOCK_SIZE);
-            p->bound = SESSION_BLOCK_SIZE;
-            p->len = 0;
-            return p;
-        }
-
-        inline void DefaultFreeBlock(SessionBlock *p)
-        {
-            free(p);
-        }
-        inline CheckBlockResult DefaultCheckBlock(const char * begin, unsigned int len, unsigned int bound)
-        {
-           auto ret =  zsummer::proto4z::checkBuffIntegrity(begin, len, bound);
-           return std::make_pair((BLOCK_CHECK_TYPE)ret.first, (unsigned int)ret.second);
-        }
-        inline CheckBlockResult DefaultCheckHTTPBlock(const char * begin, unsigned int len, unsigned int bound,
-            bool hadHeader, bool & isChunked, PairString& commonLine, MapString & head, std::string & body)
-        {
-            unsigned int used = 0;
-            auto ret = zsummer::proto4z::checkHTTPBuffIntegrity(begin, len, bound, hadHeader, isChunked, commonLine, head, body, used);
-            return std::make_pair((BLOCK_CHECK_TYPE)ret, used);
-        }
 
         struct SessionTraits 
         {
@@ -178,15 +163,15 @@ namespace zsummer
             bool            _setNoDelay = true;
             unsigned int    _pulseInterval = 5000;
 
-            CheckBlock _checkTcpBlock = DefaultCheckBlock;
+            CheckBlock _checkTcpBlock;
             DispatchBlock _dispatchBlock;
-            CheckHTTPBlock _checkHTTPBlock = DefaultCheckHTTPBlock;
+            CheckHTTPBlock _checkHTTPBlock;
             DispatchHTTPMessage _dispatchHTTP;
             SessionEvent _eventSessionClose;
             SessionEvent _eventSessionBuild;
             SessionEvent _eventPulse;
-            CreateBlock _createBlock = DefaultCreateBlock;
-            FreeBlock _freeBlock = DefaultFreeBlock;
+            CreateBlock _createBlock ;
+            FreeBlock _freeBlock;
 #pragma endregion CUSTOM
 
 

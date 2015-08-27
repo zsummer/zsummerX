@@ -59,70 +59,29 @@ unsigned int   g_hightBenchmark = 0;
 
 
 //!statistic 
-unsigned long long g_lastSendMessages = 0;
-unsigned long long g_lastSendBytes = 0;
-unsigned long long g_lastSendCount = 0;
-unsigned long long g_lastRecvCount = 0;
-unsigned long long g_lastRecvMessages = 0;
+unsigned long long g_lastStatInfo[STAT_SIZE] = { 0 };
+unsigned long long getStatInfo(int stat)
+{
+    return SessionManager::getRef()._statInfo[stat] - g_lastStatInfo[stat];
+}
 //!statistic monitor
 void MonitorFunc()
 {
-    LOGI("echos message=" << (SessionManager::getRef()._totalSendMessages - g_lastSendMessages) / 5
-        << "n/s, send data " << (SessionManager::getRef()._totalSendBytes - g_lastSendBytes)/ 5
-        << "byte/s, send count " << (SessionManager::getRef()._totalSendCount - g_lastSendCount)/5
-        << "n/s, recv count " << (SessionManager::getRef()._totalRecvCount - g_lastRecvCount) / 5 
-        << "n/s, recv messages " << (SessionManager::getRef()._totalRecvMessages - g_lastRecvMessages) / 5);
-    g_lastSendMessages = SessionManager::getRef()._totalSendMessages;
-    g_lastSendBytes = SessionManager::getRef()._totalSendBytes;
-    g_lastSendCount = SessionManager::getRef()._totalSendCount;
-    g_lastRecvCount = SessionManager::getRef()._totalRecvCount;
-    g_lastRecvMessages = SessionManager::getRef()._totalRecvMessages;
+    LOGI("send count =" << getStatInfo(STAT_SEND_COUNT) / 5
+        << "n/s, send pack = " << getStatInfo(STAT_SEND_PACKS) / 5
+        << "n/s, send bytes = " << getStatInfo(STAT_SEND_BYTES) / 5
+        << "byte/s, recv count = " << getStatInfo(STAT_RECV_COUNT) / 5
+        << "n/s, recv pack = " << getStatInfo(STAT_RECV_PACKS) / 5
+        << "n/s, recv bytes = " << getStatInfo(STAT_RECV_BYTES) / 5
+        << "byte/s, linked = " << getStatInfo(STAT_LINKED) 
+        << ", closed = " << getStatInfo(STAT_CLOSED)
+        );
+
+    memcpy(g_lastStatInfo, SessionManager::getRef()._statInfo, sizeof(g_lastStatInfo));
     SessionManager::getRef().createTimer(5000, MonitorFunc);
 };
 
 
-//make heartbeat mechanisms.
-//mechanisms: register pulse timer, send pulse proto when timer trigger.  check last remote pulse time when trigger.
-class CHeartbeatManager
-{
-public:
-    CHeartbeatManager()
-    {
-        MessageDispatcher::getRef().registerOnSessionEstablished(std::bind(&CHeartbeatManager::OnSessionEstablished, this, _1));
-        MessageDispatcher::getRef().registerOnSessionDisconnect(std::bind(&CHeartbeatManager::OnSessionDisconnect, this, _1));
-        MessageDispatcher::getRef().registerOnSessionPulse(std::bind(&CHeartbeatManager::OnSessionPulse, this,_1, _2));
-        MessageDispatcher::getRef().registerSessionMessage(ID_Pulse, std::bind(&CHeartbeatManager::OnMsgPulse, this, _1, _2));
-
-    }
-    
-
-    void OnMsgPulse(TcpSessionPtr session, ReadStream & pack)
-    {
-        session->setUserLParam(time(NULL));
-    }
-
-    void OnSessionEstablished(TcpSessionPtr session)
-    {
-        session->setUserLParam(time(NULL));
-    }
-
-    void OnSessionPulse(TcpSessionPtr session, unsigned int pulseInterval)
-    {
-        if (time(NULL) - session->getUserLParam() > pulseInterval/1000 * 3)
-        {
-            LOGI("remote session timeout. sID=" << session->getSessionID() << ", timeout=" << time(NULL) - session->getUserLParam());
-            SessionManager::getRef().kickSession(session->getSessionID());
-            return;
-        }
-        WriteStream pack(ID_Pulse);
-        SessionManager::getRef().sendSessionData(session->getSessionID(), pack.getStream(), pack.getStreamLen());
-    
-    }
-    void OnSessionDisconnect(TcpSessionPtr session)
-    {
-        LOGI("OnSessionDisconnect. sID=" << session->getSessionID() << ", remoteIP=" << session->getRemoteIP() << ", remotePort=" << session->getRemotePort());
-    }
-};
 
 //client handler
 // ping-pong module test: 
@@ -137,10 +96,8 @@ class CStressClientHandler
 public:
     CStressClientHandler()
     {
-        MessageDispatcher::getRef().registerOnSessionEstablished(std::bind(&CStressClientHandler::onConnected, this, _1));
         MessageDispatcher::getRef().registerSessionMessage(ID_EchoPack,
             std::bind(&CStressClientHandler::msg_ResultSequence_fun, this, _1, _2));
-        MessageDispatcher::getRef().registerOnSessionDisconnect(std::bind(&CStressClientHandler::OnConnectDisconnect, this, _1));
     }
 
     void onConnected(TcpSessionPtr session)
@@ -156,7 +113,7 @@ public:
     {
         if (g_hightBenchmark)
         {
-            session->doSend(rs.getStream(), rs.getStreamLen());
+            session->send(rs.getStream(), rs.getStreamLen());
         }
         else
         {
@@ -167,14 +124,14 @@ public:
             {
                 WriteStream ws(ID_EchoPack);
                 ws << pack;
-                session->doSend(ws.getStream(), ws.getStreamLen());
+                session->send(ws.getStream(), ws.getStreamLen());
             }
         }
     };
 
     void SendFunc(TcpSessionPtr session, bool openTimer)
     {
-        if (SessionManager::getRef()._totalSendMessages - SessionManager::getRef()._totalRecvMessages < 10000)
+        if (SessionManager::getRef().getStatInfo(STAT_SEND_PACKS) - SessionManager::getRef().getStatInfo(STAT_RECV_PACKS) < 10000)
         {
             WriteStream ws(ID_EchoPack);
             EchoPack pack;
@@ -210,7 +167,7 @@ public:
             pack._smap.insert(std::make_pair("523", sdata));
             pack._smap.insert(std::make_pair("623", sdata));
             ws << pack;
-            session->doSend(ws.getStream(), ws.getStreamLen());
+            session->send(ws.getStream(), ws.getStreamLen());
         }
         if (openTimer)
         {
@@ -238,7 +195,7 @@ public:
     {
         if (g_hightBenchmark)
         {
-            session->doSend(rs.getStream(), rs.getStreamLen());
+            session->send(rs.getStream(), rs.getStreamLen());
         }
         else
         {
@@ -246,7 +203,7 @@ public:
             rs >> pack;
             WriteStream ws(ID_EchoPack);
             ws << pack;
-            session->doSend(ws.getStream(), ws.getStreamLen());
+            session->send(ws.getStream(), ws.getStreamLen());
         }
     };
 };
@@ -260,9 +217,16 @@ void sigFun(int sig)
 
 void onAllClientsStoped()
 {
+    LOGA("onAllClientsStoped");
     SessionManager::getRef().stopServers();
+}
+
+void onAllServersStoped()
+{
+    LOGA("onAllServersStoped");
     SessionManager::getRef().stop();
 }
+
 int main(int argc, char* argv[])
 {
 
@@ -323,13 +287,13 @@ int main(int argc, char* argv[])
 
 
     SessionManager::getRef().setStopClientsHandler(onAllClientsStoped);
+    SessionManager::getRef().setStopServersHandler(onAllServersStoped);
     SessionManager::getRef().start();
 
 
     SessionManager::getRef().createTimer(5000, MonitorFunc);
 
-    //build heartbeat manager
-    CHeartbeatManager heartbeatManager;
+
 
     //build client and server
     if (g_startType) //client
@@ -338,14 +302,10 @@ int main(int argc, char* argv[])
         //add connector.
         for (int i = 0; i < g_maxClient; ++i)
         {
-            ConnectConfig traits;
-            traits._remoteIP = g_remoteIP;
-            traits._remotePort = g_remotePort;
-            traits._reconnectInterval = 5000;
-            traits._reconnectMaxCount = 15;
-            //traits._rc4TcpEncryption = "yawei.zhang@foxmail.com";
-            traits._pulseInterval = 10000;
-            SessionManager::getRef().addConnector(traits);
+            SessionID cID = SessionManager::getRef().addConnecter(g_remoteIP, g_remotePort);
+            SessionManager::getRef().getConnecterExtend(cID)._reconnectMaxCount = 15;
+            SessionManager::getRef().getConnecterExtend(cID)._eventSessionBuild = std::bind(&CStressClientHandler::onConnected, &client, _1);
+            SessionManager::getRef().openConnecter(cID);
         }
         //running
         SessionManager::getRef().run();
@@ -353,15 +313,8 @@ int main(int argc, char* argv[])
     else
     {
         CStressServerHandler server;
-        //add acceptor
-        ListenConfig traits;
-        traits._listenPort = g_remotePort;
-//        traits._maxSessions = g_maxClient;
-        //traits._rc4TcpEncryption = "yawei.zhang@foxmail.com";
-        //traits._openFlashPolicy = true;
-        traits._pulseInterval = 10000;
-        //traits._whitelistIP.push_back("127.0.");
-        SessionManager::getRef().addAcceptor(traits);
+        AccepterID aID = SessionManager::getRef().addAccepter("0.0.0.0", g_remotePort);
+        SessionManager::getRef().openAccepter(aID);
         //running
         SessionManager::getRef().run();
     }

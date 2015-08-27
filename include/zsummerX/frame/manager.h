@@ -39,10 +39,50 @@
 #define ZSUMMER_TCPSESSION_MANAGER_H_
 
 #include "config.h"
+#include "dispatch.h"
 namespace zsummer
 {
     namespace network
     {
+
+
+        inline SessionBlock * DefaultCreateBlock()
+        {
+            SessionBlock * p = (SessionBlock*)malloc(sizeof(SessionBlock)+SESSION_BLOCK_SIZE);
+            p->bound = SESSION_BLOCK_SIZE;
+            p->len = 0;
+            return p;
+        }
+
+        inline void DefaultFreeBlock(SessionBlock *p)
+        {
+            free(p);
+        }
+        inline CheckBlockResult DefaultCheckBlock(const char * begin, unsigned int len, unsigned int bound)
+        {
+            auto ret = zsummer::proto4z::checkBuffIntegrity(begin, len, bound);
+            return std::make_pair((BLOCK_CHECK_TYPE)ret.first, (unsigned int)ret.second);
+        }
+        inline void DefaultDispatchBlock(TcpSessionPtr &  session, const char * begin, int len)
+        {
+            zsummer::proto4z::ReadStream rs(begin, len);
+            MessageDispatcher::getRef().dispatchSessionMessage(session, rs.getProtoID(), rs);
+        }
+
+        inline CheckBlockResult DefaultCheckHTTPBlock(const char * begin, unsigned int len, unsigned int bound,
+            bool hadHeader, bool & isChunked, PairString& commonLine, MapString & head, std::string & body)
+        {
+            unsigned int used = 0;
+            auto ret = zsummer::proto4z::checkHTTPBuffIntegrity(begin, len, bound, hadHeader, isChunked, commonLine, head, body, used);
+            return std::make_pair((BLOCK_CHECK_TYPE)ret, used);
+        }
+
+        inline void DefaultDispatchHTTPMessage(TcpSessionPtr &session, const PairString & commonLine, const MapString &head, const std::string & body)
+        {
+
+        }
+
+
         /*
             SessionManager是一个单例singleton, 是一个对zsummerX底层接口的高级封装, 如果需要自己封装 则可以参考frame的做法或者example中的例子进行封装或使用.
             这个单例提供了所有网络的高级的可操作接口, 比如启动网络模块单例, 开启网络循环, 依次关闭部分网络功能 最后退出网络循环,  添加多个监听接口, 添加多个连出, 发送数据,
@@ -118,6 +158,7 @@ namespace zsummer
             //统计信息.
             std::string getRemoteIP(SessionID sID);
             unsigned short getRemotePort(SessionID sID);
+            inline unsigned long long getStatInfo(int stat){ return _statInfo[stat]; }
             unsigned long long _statInfo[STAT_SIZE];
             time_t _openTime = 0;
 

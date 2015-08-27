@@ -124,7 +124,6 @@ namespace zsummer
             //! user param
             std::vector<Any> _param;
             
-
         };
         using TcpSessionPtr = std::shared_ptr<TcpSession>;
     }

@@ -50,6 +50,7 @@ SessionManager & SessionManager::getRef()
 }
 SessionManager::SessionManager()
 {
+    memset(_statInfo, 0, sizeof(_statInfo));
     _summer = std::make_shared<EventLoop>();
 }
 
@@ -122,8 +123,8 @@ bool SessionManager::runOnce(bool isImmediately)
             LCW("SessionManager::kickAllClients() [" << count << "], session[" << _mapTcpSessionPtr.size() << "] success.");
             if (count == 0 && _funClientsStop)
             {
-                _funClientsStop();
-                _funClientsStop = nullptr;
+                auto temp = std::move(_funClientsStop);
+                temp();
                 _stopClients = 3;
             }
         }
@@ -145,8 +146,8 @@ bool SessionManager::runOnce(bool isImmediately)
             LCW("SessionManager::kickAllConnect() [" << count << "], session[" << _mapTcpSessionPtr.size() << "] success.");
             if (count == 0 && _funServerStop)
             {
-                _funServerStop();
-                _funServerStop = nullptr;
+                auto temp = std::move(_funServerStop);
+                temp();
                 _stopServers = 3;
             }
         }
@@ -164,6 +165,13 @@ AccepterID SessionManager::addAccepter(std::string listenIP, unsigned short list
     extend._aID = _lastAcceptID;
     extend._listenIP = listenIP;
     extend._listenPort = listenPort;
+    extend._sessionTraits._pulseInterval = 5 * 1000;
+    extend._sessionTraits._checkHTTPBlock = DefaultCheckHTTPBlock;
+    extend._sessionTraits._dispatchHTTP = DefaultDispatchHTTPMessage;
+    extend._sessionTraits._checkTcpBlock = DefaultCheckBlock;
+    extend._sessionTraits._dispatchBlock = DefaultDispatchBlock;
+    extend._sessionTraits._createBlock = DefaultCreateBlock;
+    extend._sessionTraits._freeBlock = DefaultFreeBlock;
     return _lastAcceptID;
 }
 
@@ -377,23 +385,45 @@ void SessionManager::onSessionClose(TcpSessionPtr &session)
 
     //MessageDispatcher::getRef().dispatchOnSessionDisconnect(session);
 
-    if (isSessionID(session->getSessionID()) && _stopClients == 2 && _funClientsStop)
+    if (_stopClients == 2 || _stopServers == 2)
     {
-        int count = 0;
-        for (auto & kv: _mapTcpSessionPtr)
+        int clients = 0;
+        int servers = 0;
+        for (auto & kv : _mapTcpSessionPtr)
         {
-            if (isSessionID(kv.second->getSessionID()))
+            if (isSessionID(kv.first))
             {
-                count++;
+                clients++;
+            }
+            else if (isConnectID(kv.first))
+            {
+                servers++;
+            }
+            else
+            {
+                LCE("error. invalid session id in _mapTcpSessionPtr");
             }
         }
-        if (count == 0)
+        if (_stopClients == 2)
         {
-            _funClientsStop();
-            _funClientsStop = nullptr;
             _stopClients = 3;
+            if (_funClientsStop)
+            {
+                auto temp = std::move(_funClientsStop);
+                temp();
+            }
+        }
+        if (_stopServers == 2)
+        {
+            _stopServers = 3;
+            if (_funServerStop)
+            {
+                auto temp = std::move(_funServerStop);
+                temp();
+            }
         }
     }
+    
 }
 
 SessionID SessionManager::addConnecter(std::string remoteIP, unsigned short remotePort)
@@ -401,6 +431,15 @@ SessionID SessionManager::addConnecter(std::string remoteIP, unsigned short remo
     _lastConnectID = nextConnectID(_lastConnectID);
     TcpSessionPtr & session = _mapTcpSessionPtr[_lastConnectID];
     session = std::make_shared<TcpSession>();
+    
+   session->getTraits()._pulseInterval = 20 * 1000;
+   session->getTraits()._checkHTTPBlock = DefaultCheckHTTPBlock;
+   session->getTraits()._dispatchHTTP = DefaultDispatchHTTPMessage;
+   session->getTraits()._checkTcpBlock = DefaultCheckBlock;
+   session->getTraits()._dispatchBlock = DefaultDispatchBlock;
+   session->getTraits()._createBlock = DefaultCreateBlock;
+   session->getTraits()._freeBlock = DefaultFreeBlock;
+
     session->setEventLoopPtr(_summer);
     session->setSessionID(_lastConnectID);
     session->setRemoteIP(remoteIP);

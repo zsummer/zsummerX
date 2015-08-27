@@ -151,7 +151,6 @@ void startServer()
             SessionManager::getRef().stopClients();
             SessionManager::getRef().stopServers();
             SessionManager::getRef().stop(); });
-            return true;
     };
 
 
@@ -176,13 +175,12 @@ void startClient()
         WriteStream ws(100);
         ws << content;
         SessionManager::getRef().sendSessionData(session->getSessionID(), ws.getStream(), ws.getStreamLen());
-        return true;
     };
 
     //process message _ResultID
-    auto msg_ResultSequence_fun = [](TcpSessionPtr &  session, const char * blockBegin, int blockSize)
+    auto msg_ResultSequence_fun = [](TcpSessionPtr &  session, const char * begin, int len)
     {
-        ReadStream rs(blockBegin, blockSize);
+        ReadStream rs(begin, len);
         std::string content; 
         rs >> content;
         LOGI("recv ConnectorID = " << session->getSessionID() << ", content = " << content);
@@ -191,7 +189,6 @@ void startClient()
         SessionManager::getRef().stopClients();
         SessionManager::getRef().stopServers();
         SessionManager::getRef().stop();
-        return true;
     };
 
     //add connector

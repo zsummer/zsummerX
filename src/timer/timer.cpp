@@ -76,7 +76,7 @@ TimerID Timer::createTimer(unsigned int delayms, _OnTimerHandler &&handle)
         if (++_queSeq >= MaxSequence) _queSeq = 0;
     }
     if (_nextExpire > timerID) _nextExpire = timerID;
-    LCT("createTimer. delayms=" << delayms << ", _ques=" << _queTimer.size());
+    //LCT("createTimer. delayms=" << delayms << ", _ques=" << _queTimer.size());
     return timerID;
 }
 

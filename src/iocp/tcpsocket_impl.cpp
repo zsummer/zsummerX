@@ -65,7 +65,7 @@ TcpSocket::~TcpSocket()
     g_appEnvironment.addClosedSocketCount();
     if (_onConnectHandler || _onRecvHandler || _onSendHandler)
     {
-        LCT("Destruct TcpSocket Error. socket handle not invalid and some request was not completed. " << logSection());
+        LCW("Destruct TcpSocket Error. socket handle not invalid and some request was not completed. " << logSection());
     }    
     if (_socket != INVALID_SOCKET)
     {
@@ -211,7 +211,7 @@ bool TcpSocket::doSend(char * buf, unsigned int len, _OnSendHandler &&handler)
 {
     if (_nLinkStatus != LS_ESTABLISHED)
     {
-        LCT("TcpSocket status != LS_ESTABLISHED." << logSection());
+        LCW("TcpSocket status != LS_ESTABLISHED." << logSection());
         return false;
     }
     if (!_summer)
@@ -237,7 +237,7 @@ bool TcpSocket::doSend(char * buf, unsigned int len, _OnSendHandler &&handler)
     {
         if (WSAGetLastError() != WSA_IO_PENDING)
         {
-            LCT("TcpSocket doSend failed and ERRCODE!=ERROR_IO_PENDING ERRCODE=" << WSAGetLastError() << logSection());
+            LCW("TcpSocket doSend failed and ERRCODE!=ERROR_IO_PENDING ERRCODE=" << WSAGetLastError() << logSection());
             _sendWsaBuf.buf = nullptr;
             _sendWsaBuf.len = 0;
             doClose();
@@ -254,7 +254,7 @@ bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler)
 {
     if (_nLinkStatus != LS_ESTABLISHED)
     {
-        LCT("TcpSocket status != LS_ESTABLISHED. " << logSection());
+        LCW("TcpSocket status != LS_ESTABLISHED. " << logSection());
         return false;
     }
     if (!_summer)
@@ -283,7 +283,7 @@ bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler)
     {
         if (WSAGetLastError() != WSA_IO_PENDING)
         {
-            LCT("TcpSocket doRecv failed and ERRCODE!=ERROR_IO_PENDING, ERRCODE=" << WSAGetLastError() << logSection());
+            LCW("TcpSocket doRecv failed and ERRCODE!=ERROR_IO_PENDING, ERRCODE=" << WSAGetLastError() << logSection());
             _recvWSABuf.buf = nullptr;
             _recvWSABuf.len = 0;
             doClose();

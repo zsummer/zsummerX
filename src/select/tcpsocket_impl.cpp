@@ -54,7 +54,7 @@ TcpSocket::~TcpSocket()
     g_appEnvironment.addClosedSocketCount();
     if (_onRecvHandler || _onSendHandler || _onConnectHandler)
     {
-        LCT("TcpSocket::~TcpSocket[this0x" << this << "] Handler status error. " << logSection());
+        LCW("TcpSocket::~TcpSocket[this0x" << this << "] Handler status error. " << logSection());
     }
     if (_register._fd != InvalideFD)
     {
@@ -153,7 +153,7 @@ bool TcpSocket::doConnect(const std::string & remoteIP, unsigned short remotePor
     if (ret != 0 && WSAGetLastError() != WSAEWOULDBLOCK)
 #endif
     {
-        LCT("TcpSocket::doConnect[this0x" << this << "] ::connect error. " << OSTREAM_GET_LASTERROR << logSection());
+        LCW("TcpSocket::doConnect[this0x" << this << "] ::connect error. " << OSTREAM_GET_LASTERROR << logSection());
         closesocket(_register._fd);
         _register._fd = InvalideFD;
         return false;
@@ -177,7 +177,7 @@ bool TcpSocket::doSend(char * buf, unsigned int len, _OnSendHandler && handler)
 {
     if (_register._linkstat != LS_ESTABLISHED)
     {
-        LCT("TcpSocket::doSend[this0x" << this << "] _linkstat not REG_ESTABLISHED_TCP!" << logSection());
+        LCW("TcpSocket::doSend[this0x" << this << "] _linkstat not REG_ESTABLISHED_TCP!" << logSection());
         return false;
     }
 
@@ -212,7 +212,7 @@ bool TcpSocket::doSend(char * buf, unsigned int len, _OnSendHandler && handler)
     _register._tcpSocketSendPtr = shared_from_this();
     if (!_summer->registerEvent(1, _register))
     {
-        LCT("TcpSocket::doSend[this0x" << this << "] registerEvent Error" << logSection());
+        LCW("TcpSocket::doSend[this0x" << this << "] registerEvent Error" << logSection());
         _pSendBuf = nullptr;
         _iSendLen = 0;
         _register._tcpSocketSendPtr.reset();
@@ -229,7 +229,7 @@ bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler)
 {
     if (_register._linkstat != LS_ESTABLISHED)
     {
-        LCT("TcpSocket::doRecv[this0x" << this << "] type not REG_ESTABLISHED_TCP!" << logSection());
+        LCW("TcpSocket::doRecv[this0x" << this << "] type not REG_ESTABLISHED_TCP!" << logSection());
         return false;
     }
 
@@ -263,7 +263,7 @@ bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler)
     _register._tcpSocketRecvPtr = shared_from_this();
     if (!_summer->registerEvent(1, _register))
     {
-        LCT("TcpSocket::doRecv[this0x" << this << "] registerEvent Error" << logSection());
+        LCW("TcpSocket::doRecv[this0x" << this << "] registerEvent Error" << logSection());
         _pRecvBuf = nullptr;
         _iRecvLen = 0;
         _register._tcpSocketRecvPtr.reset();

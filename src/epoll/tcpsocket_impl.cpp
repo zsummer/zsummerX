@@ -55,7 +55,7 @@ TcpSocket::~TcpSocket()
     g_appEnvironment.addClosedSocketCount();
     if (_onRecvHandler || _onSendHandler || _onConnectHandler)
     {
-        LCT("TcpSocket::~TcpSocket[this0x" << this << "] Handler status error. " << logSection());
+        LCW("TcpSocket::~TcpSocket[this0x" << this << "] Handler status error. " << logSection());
     }
     if (_register._fd != InvalideFD)
     {
@@ -149,14 +149,14 @@ bool TcpSocket::doConnect(const std::string& remoteIP, unsigned short remotePort
     int ret = connect(_register._fd, (sockaddr *) &addr, sizeof(addr));
     if (ret!=0 && errno != EINPROGRESS)
     {
-        LCT("TcpSocket::doConnect[this0x" << this << "] ::connect error. errno=" << strerror(errno) << logSection());
+        LCW("TcpSocket::doConnect[this0x" << this << "] ::connect error. errno=" << strerror(errno) << logSection());
         ::close(_register._fd);
         _register._fd = InvalideFD;
         return false;
     }
     if (!_summer->registerEvent(EPOLL_CTL_ADD, _register))
     {
-        LCT("TcpSocket::initialize[this0x" << this << "] socket already used or not initilize." << logSection());
+        LCW("TcpSocket::initialize[this0x" << this << "] socket already used or not initilize." << logSection());
         return false;
     }
     _onConnectHandler = std::move(handler);
@@ -169,7 +169,7 @@ bool TcpSocket::doSend(char * buf, unsigned int len, _OnSendHandler && handler)
 {
     if (_register._linkstat != LS_ESTABLISHED)
     {
-        LCT("TcpSocket::doSend[this0x" << this << "] _linkstat not REG_ESTABLISHED_TCP!" << logSection());
+        LCW("TcpSocket::doSend[this0x" << this << "] _linkstat not REG_ESTABLISHED_TCP!" << logSection());
         return false;
     }
 
@@ -204,7 +204,7 @@ bool TcpSocket::doSend(char * buf, unsigned int len, _OnSendHandler && handler)
     _register._event.events = _register._event.events|EPOLLOUT;
     if (!_summer->registerEvent(EPOLL_CTL_MOD, _register))
     {
-        LCT("TcpSocket::doSend[this0x" << this << "] registerEvent Error" << logSection());
+        LCW("TcpSocket::doSend[this0x" << this << "] registerEvent Error" << logSection());
         _pSendBuf = nullptr;
         _iSendLen = 0;
         return false;
@@ -219,7 +219,7 @@ bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler)
 {
     if (_register._linkstat != LS_ESTABLISHED)
     {
-        LCT("TcpSocket::doRecv[this0x" << this << "] type not REG_ESTABLISHED_TCP!" << logSection());
+        LCW("TcpSocket::doRecv[this0x" << this << "] type not REG_ESTABLISHED_TCP!" << logSection());
         return false;
     }
 
@@ -252,7 +252,7 @@ bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler)
     _register._event.events = _register._event.events|EPOLLIN;
     if (!_summer->registerEvent(EPOLL_CTL_MOD, _register))
     {
-        LCT("TcpSocket::doRecv[this0x" << this << "] registerEvent Error" << logSection());
+        LCW("TcpSocket::doRecv[this0x" << this << "] registerEvent Error" << logSection());
         _pRecvBuf = nullptr;
         _iRecvLen = 0;
         doClose();

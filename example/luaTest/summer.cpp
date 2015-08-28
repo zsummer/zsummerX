@@ -109,7 +109,6 @@ static int pcall_error(lua_State *L)
 static int _connectCB = LUA_NOREF;
 static int _messageCB = LUA_NOREF;
 static int _disconnectCB = LUA_NOREF;
-static lua_State * _L = nullptr;
 
 
 static void _onConnecterCallback(lua_State * L, TcpSessionPtr session)
@@ -172,11 +171,6 @@ static void _onDisconnectCallback(lua_State * L, TcpSessionPtr session)
     }
 }
 
-static int lua53_rawgeti(lua_State * L, int index, lua_Integer n)
-{
-    lua_rawgeti(L, index, n);
-    return lua_type(L, -1);
-}
 
 static void onStopServersFinish()
 {

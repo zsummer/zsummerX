@@ -87,8 +87,8 @@ namespace zsummer
         inline unsigned int nextSessionID(unsigned int curSessionID){ return (curSessionID + 1) % __MIDDLE_SEGMENT_VALUE; }
         inline unsigned int nextConnectID(unsigned int curSessionID){ return (curSessionID + 1 < __MIDDLE_SEGMENT_VALUE || curSessionID + 1 == InvalidSeesionID) ? __MIDDLE_SEGMENT_VALUE : curSessionID + 1; }
 
-        //----------------------------------------
 
+        const unsigned int SESSION_BLOCK_SIZE = 10 * 1024;
 
         enum ProtoType
         {
@@ -130,7 +130,7 @@ namespace zsummer
             unsigned int bound = 0;
             char begin[0];
         };
-        const unsigned int SESSION_BLOCK_SIZE = 100 * 1024;
+        
 
         using CreateBlock = std::function<SessionBlock * ()>;
 
@@ -142,7 +142,7 @@ namespace zsummer
         using OnBlockCheck = std::function<OnBlockCheckResult(const char * /*begin*/, unsigned int /*len*/, unsigned int /*bound*/, unsigned int /*blockLimit*/)>;
 
         //!每读出一个block就调用这个方法dispatch出去
-        using OnBlockDispatch = std::function<void (TcpSessionPtr   /*session*/, const char * /*begin*/, int /*len*/)>;
+        using OnBlockDispatch = std::function<void(TcpSessionPtr   /*session*/, const char * /*begin*/, unsigned int /*len*/)>;
 
         //!连接建立, 关闭, 定时器
         using OnSessionEvent = std::function<void(TcpSessionPtr   /*session*/)>;

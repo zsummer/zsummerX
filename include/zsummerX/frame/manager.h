@@ -54,7 +54,7 @@ namespace zsummer
             auto ret = zsummer::proto4z::checkBuffIntegrity(begin, len, bound, blockLimit);
             return std::make_pair((BLOCK_CHECK_TYPE)ret.first, (unsigned int)ret.second);
         }
-        inline void DefaultBlockDispatch(TcpSessionPtr session, const char * begin, int len)
+        inline void DefaultBlockDispatch(TcpSessionPtr session, const char * begin, unsigned int len)
         {
             zsummer::proto4z::ReadStream rs(begin, len);
             MessageDispatcher::getRef().dispatchSessionMessage(session, rs.getProtoID(), rs);

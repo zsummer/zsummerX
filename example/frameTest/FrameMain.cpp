@@ -178,7 +178,7 @@ void startClient()
     };
 
     //process message _ResultID
-    auto OnSessionBlock = [](TcpSessionPtr session, const char * begin, int len)
+    auto OnSessionBlock = [](TcpSessionPtr session, const char * begin, unsigned int len)
     {
         ReadStream rs(begin, len);
         std::string content; 

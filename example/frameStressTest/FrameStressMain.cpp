@@ -115,7 +115,10 @@ public:
     {
         if (g_hightBenchmark)
         {
-            session->send(rs.getStream(), rs.getStreamLen());
+            if (g_sendType == 0 || g_intervalMs == 0) //echo send
+            {
+                session->send(rs.getStream(), rs.getStreamLen());
+            }
         }
         else
         {
@@ -133,7 +136,7 @@ public:
 
     void SendFunc(TcpSessionPtr session, bool openTimer)
     {
-        if (session->getSendQueSize() < 10000)
+        if (session->getSendQueSize() < 1000)
         {
             WriteStream ws(ID_EchoPack);
             EchoPack pack;
@@ -170,11 +173,18 @@ public:
             pack._smap.insert(std::make_pair("623", sdata));
             ws << pack;
             session->send(ws.getStream(), ws.getStreamLen());
+            if (openTimer)
+            {
+                SessionManager::getRef().createTimer(g_intervalMs, std::bind(&CStressClientHandler::SendFunc, this, session, !session->isInvalidSession()));
+            }
         }
-        if (openTimer)
+        else if (openTimer)
         {
-            SessionManager::getRef().createTimer(g_intervalMs, std::bind(&CStressClientHandler::SendFunc, this, session, !session->isInvalidSession()));
+            SessionManager::getRef().createTimer(20, std::bind(&CStressClientHandler::SendFunc, this, session, !session->isInvalidSession()));
         }
+        
+
+
     };
 
 };

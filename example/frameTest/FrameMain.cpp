@@ -156,7 +156,7 @@ void startServer()
 
     //add Acceptor
     AccepterID aID = SessionManager::getRef().addAccepter("127.0.0.1", g_remotePort);
-    SessionManager::getRef().getAccepterExtend(aID)._sessionTraits._dispatchBlock = msg_RequestSequence_fun;
+    SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._dispatchBlock = msg_RequestSequence_fun;
     SessionManager::getRef().openAccepter(aID);
     //! step 2 running
     SessionManager::getRef().run();
@@ -193,8 +193,8 @@ void startClient()
 
     //add connector
     SessionID cID = SessionManager::getRef().addConnecter(g_remoteIP, g_remotePort);
-    SessionManager::getRef().getConnecterExtend(cID)._eventSessionBuild = connectedfun;
-    SessionManager::getRef().getConnecterExtend(cID)._dispatchBlock = msg_ResultSequence_fun;
+    SessionManager::getRef().getConnecterOptions(cID)._eventSessionBuild = connectedfun;
+    SessionManager::getRef().getConnecterOptions(cID)._dispatchBlock = msg_ResultSequence_fun;
     SessionManager::getRef().openConnecter(cID);
 
 

@@ -65,6 +65,8 @@
 #include "../epoll/udpsocket_impl.h"
 #include "../epoll/tcpaccept_impl.h"
 #endif
+#pragma warning(disable:4503)
+#pragma warning(disable:4200)
 
 namespace zsummer
 {
@@ -75,8 +77,7 @@ namespace zsummer
         const SessionID InvalidSeesionID = -1;
         using AccepterID = unsigned int;
         const AccepterID InvalidAccepterID = -1;
-        using ProtoID = unsigned short;
-        const ProtoID InvalidProtoID = -1;
+
 
         //! define session id range.
         const unsigned int __MIDDLE_SEGMENT_VALUE = 300 * 1000 * 1000;
@@ -154,14 +155,16 @@ namespace zsummer
         
 
 
-        struct SessionTraits 
+        struct SessionOptions 
         {
 
             ProtoType       _protoType = PT_TCP;
             std::string     _rc4TcpEncryption = ""; //empty is not encryption
             bool            _openFlashPolicy = false;
             bool            _setNoDelay = true;
-            unsigned int    _pulseInterval = 5000;
+
+            unsigned int _sessionPulseInterval = 30000;
+            unsigned int    _connectPulseInterval = 5000;
 
             CheckBlock _checkTcpBlock;
             DispatchBlock _dispatchBlock;
@@ -181,7 +184,7 @@ namespace zsummer
 
         };
 
-        struct AccepterExtend
+        struct AccepterOptions
         {
             AccepterID _aID = InvalidAccepterID;
             TcpAcceptPtr _accepter;
@@ -191,7 +194,7 @@ namespace zsummer
             std::vector<std::string> _whitelistIP;
             unsigned long long _totalAcceptCount = 0;
             unsigned long long _currentLinked = 0;
-            SessionTraits _sessionTraits;
+            SessionOptions _sessionOptions;
         };
 
 
@@ -224,13 +227,14 @@ namespace zsummer
 
 
 
-        inline zsummer::log4z::Log4zStream & operator << (zsummer::log4z::Log4zStream &os, const SessionTraits & traits)
+        inline zsummer::log4z::Log4zStream & operator << (zsummer::log4z::Log4zStream &os, const SessionOptions & traits)
         {
             os << "{ " << "_protoType=" << traits._protoType
                 << ", _rc4TcpEncryption=" << traits._rc4TcpEncryption
                 << ", _openFlashPolicy=" << traits._openFlashPolicy
                 << ", _setNoDelay=" << traits._setNoDelay
-                << ", _pulseInterval=" << traits._pulseInterval
+                << ", _sessionPulseInterval=" << traits._sessionPulseInterval
+                << ", _connectPulseInterval=" << traits._connectPulseInterval
                 << ", _reconnectMaxCount=" << traits._reconnectMaxCount
                 << ", _reconnectInterval=" << traits._reconnectInterval
                 << ", _reconnectCleanAllData=" << traits._reconnectCleanAllData
@@ -239,7 +243,7 @@ namespace zsummer
         }
 
 
-        inline zsummer::log4z::Log4zStream & operator << (zsummer::log4z::Log4zStream &os, const AccepterExtend & extend)
+        inline zsummer::log4z::Log4zStream & operator << (zsummer::log4z::Log4zStream &os, const AccepterOptions & extend)
         {
             os << "{"
                 << "_aID=" << extend._aID
@@ -255,18 +259,10 @@ namespace zsummer
                 os << str << ",";
             }
             os << "}";
-            os << ", SessionTraits=" << extend._sessionTraits;
+            os << ", SessionOptions=" << extend._sessionOptions;
             os << "}";
             return os;
         }
-
-
-
-
-
-
-
-
     }
 }
 

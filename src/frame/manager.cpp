@@ -136,7 +136,7 @@ bool SessionManager::runOnce(bool isImmediately)
             {
                 if (isConnectID(kv.first))
                 {
-                    kv.second->getTraits()._reconnectMaxCount = 0;
+                    kv.second->getOptions()._reconnectMaxCount = 0;
                     kickSession(kv.first);
                     count++;
                 }
@@ -161,33 +161,32 @@ bool SessionManager::runOnce(bool isImmediately)
 AccepterID SessionManager::addAccepter(const std::string & listenIP, unsigned short listenPort)
 {
     _lastAcceptID = nextSessionID(_lastAcceptID);
-    auto & extend = _mapAccepterExtend[_lastAcceptID];
+    auto & extend = _mapAccepterOptions[_lastAcceptID];
     extend._aID = _lastAcceptID;
     extend._listenIP = listenIP;
     extend._listenPort = listenPort;
-    extend._sessionTraits._pulseInterval = 5 * 1000;
-    extend._sessionTraits._checkHTTPBlock = DefaultCheckHTTPBlock;
-    extend._sessionTraits._dispatchHTTP = DefaultDispatchHTTPMessage;
-    extend._sessionTraits._checkTcpBlock = DefaultCheckBlock;
-    extend._sessionTraits._dispatchBlock = DefaultDispatchBlock;
-    extend._sessionTraits._createBlock = DefaultCreateBlock;
-    extend._sessionTraits._freeBlock = DefaultFreeBlock;
+    extend._sessionOptions._checkHTTPBlock = DefaultCheckHTTPBlock;
+    extend._sessionOptions._dispatchHTTP = DefaultDispatchHTTPMessage;
+    extend._sessionOptions._checkTcpBlock = DefaultCheckBlock;
+    extend._sessionOptions._dispatchBlock = DefaultDispatchBlock;
+    extend._sessionOptions._createBlock = DefaultCreateBlock;
+    extend._sessionOptions._freeBlock = DefaultFreeBlock;
     return _lastAcceptID;
 }
 
-AccepterExtend & SessionManager::getAccepterExtend(AccepterID aID)
+AccepterOptions & SessionManager::getAccepterOptions(AccepterID aID)
 {
     if (aID == InvalidAccepterID)
     {
         throw std::runtime_error("AccepterID can not be InvalidAccepterID");
     }
-    return _mapAccepterExtend[aID];
+    return _mapAccepterOptions[aID];
 }
 
 bool SessionManager::openAccepter(AccepterID aID)
 {
-    auto founder = _mapAccepterExtend.find(aID);
-    if (founder == _mapAccepterExtend.end())
+    auto founder = _mapAccepterOptions.find(aID);
+    if (founder == _mapAccepterOptions.end())
     {
         LCE("openAccepter error. not found the Accepter ID extend info. aID=" << aID);
         return false;
@@ -248,8 +247,8 @@ void SessionManager::onAcceptNewClient(zsummer::network::NetErrorCode ec, const 
         LCI("shutdown accepter. aID=" << aID);
         return;
     }
-    auto founder = _mapAccepterExtend.find(aID);
-    if (founder == _mapAccepterExtend.end())
+    auto founder = _mapAccepterOptions.find(aID);
+    if (founder == _mapAccepterOptions.end())
     {
         LCE("Unknown AccepterID aID=" << aID);
         return;
@@ -321,7 +320,7 @@ void SessionManager::onAcceptNewClient(zsummer::network::NetErrorCode ec, const 
         s->initialize(_summer);
 
         TcpSessionPtr session = std::make_shared<TcpSession>();
-        session->getTraits() = founder->second._sessionTraits;
+        session->getOptions() = founder->second._sessionOptions;
         session->setEventLoopPtr(_summer);
         if (session->bindTcpSocketPrt(s, aID, _lastSessionID))
         {
@@ -379,8 +378,8 @@ void SessionManager::onSessionClose(TcpSessionPtr session)
     _mapTcpSessionPtr.erase(session->getSessionID());
     if (session->getAcceptID() != InvalidAccepterID)
     {
-        _mapAccepterExtend[session->getAcceptID()]._currentLinked--;
-        _mapAccepterExtend[session->getAcceptID()]._totalAcceptCount++;
+        _mapAccepterOptions[session->getAcceptID()]._currentLinked--;
+        _mapAccepterOptions[session->getAcceptID()]._totalAcceptCount++;
     }
 
     //MessageDispatcher::getRef().dispatchOnSessionDisconnect(session);
@@ -432,13 +431,12 @@ SessionID SessionManager::addConnecter(const std::string & remoteIP, unsigned sh
     TcpSessionPtr & session = _mapTcpSessionPtr[_lastConnectID];
     session = std::make_shared<TcpSession>();
     
-   session->getTraits()._pulseInterval = 20 * 1000;
-   session->getTraits()._checkHTTPBlock = DefaultCheckHTTPBlock;
-   session->getTraits()._dispatchHTTP = DefaultDispatchHTTPMessage;
-   session->getTraits()._checkTcpBlock = DefaultCheckBlock;
-   session->getTraits()._dispatchBlock = DefaultDispatchBlock;
-   session->getTraits()._createBlock = DefaultCreateBlock;
-   session->getTraits()._freeBlock = DefaultFreeBlock;
+   session->getOptions()._checkHTTPBlock = DefaultCheckHTTPBlock;
+   session->getOptions()._dispatchHTTP = DefaultDispatchHTTPMessage;
+   session->getOptions()._checkTcpBlock = DefaultCheckBlock;
+   session->getOptions()._dispatchBlock = DefaultDispatchBlock;
+   session->getOptions()._createBlock = DefaultCreateBlock;
+   session->getOptions()._freeBlock = DefaultFreeBlock;
 
     session->setEventLoopPtr(_summer);
     session->setSessionID(_lastConnectID);
@@ -447,14 +445,14 @@ SessionID SessionManager::addConnecter(const std::string & remoteIP, unsigned sh
     return _lastConnectID;
 }
 
-SessionTraits & SessionManager::getConnecterExtend(SessionID cID)
+SessionOptions & SessionManager::getConnecterOptions(SessionID cID)
 {
     auto founder = _mapTcpSessionPtr.find(cID);
     if (founder == _mapTcpSessionPtr.end())
     {
-        throw std::runtime_error("getConnecterExtend error.");
+        throw std::runtime_error("getConnecterOptions error.");
     }
-    return founder->second->getTraits();
+    return founder->second->getOptions();
 }
 
 bool SessionManager::openConnecter(SessionID cID)

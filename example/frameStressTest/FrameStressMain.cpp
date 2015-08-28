@@ -303,8 +303,8 @@ int main(int argc, char* argv[])
         for (int i = 0; i < g_maxClient; ++i)
         {
             SessionID cID = SessionManager::getRef().addConnecter(g_remoteIP, g_remotePort);
-            SessionManager::getRef().getConnecterExtend(cID)._reconnectMaxCount = 15;
-            SessionManager::getRef().getConnecterExtend(cID)._eventSessionBuild = std::bind(&CStressClientHandler::onConnected, &client, _1);
+            SessionManager::getRef().getConnecterOptions(cID)._reconnectMaxCount = 15;
+            SessionManager::getRef().getConnecterOptions(cID)._eventSessionBuild = std::bind(&CStressClientHandler::onConnected, &client, _1);
             SessionManager::getRef().openConnecter(cID);
         }
         //running

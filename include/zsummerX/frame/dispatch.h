@@ -56,7 +56,8 @@ namespace zsummer
         typedef std::function < void(TcpSessionPtr&, zsummer::proto4z::ReadStream &) > OnMessageFunction;
 
 
-
+        using ProtoID = zsummer::proto4z::ProtoInteger;
+        const ProtoID InvalidProtoID = -1;
 
         class MessageDispatcher
         {
@@ -68,8 +69,8 @@ namespace zsummer
             inline static MessageDispatcher * getPtr(){ return &getRef(); }
             ~MessageDispatcher(){};
             //注册消息处理handler, 这个是针对消息ID进行注册, 回调参数是包含已经处理得到的协议ID以及attach好的ReadStream. 可以直接使用ReadStream流出对应的协议数据.
-            inline void registerSessionMessage(unsigned short protoID, const OnMessageFunction & msgfun){ _mapSessionDispatch[protoID].push_back(msgfun); }
-            void dispatchSessionMessage(TcpSessionPtr  &session, unsigned short pID, zsummer::proto4z::ReadStream & msg);
+            inline void registerSessionMessage(ProtoID protoID, const OnMessageFunction & msgfun){ _mapSessionDispatch[protoID].push_back(msgfun); }
+            void dispatchSessionMessage(TcpSessionPtr  &session, ProtoID pID, zsummer::proto4z::ReadStream & msg);
         private:
             //!message
             MapProtoDispatch _mapSessionDispatch;

@@ -133,9 +133,9 @@ int main(int argc, char* argv[])
 
 
         SessionID cID = SessionManager::getRef().addConnecter(g_remoteIP, g_remotePort);
-        SessionManager::getRef().getConnecterExtend(cID)._protoType = PT_HTTP;
-        SessionManager::getRef().getConnecterExtend(cID)._dispatchHTTP = msg_ResultSequence_fun;
-        SessionManager::getRef().getConnecterExtend(cID)._eventSessionBuild = connectedfun;
+        SessionManager::getRef().getConnecterOptions(cID)._protoType = PT_HTTP;
+        SessionManager::getRef().getConnecterOptions(cID)._dispatchHTTP = msg_ResultSequence_fun;
+        SessionManager::getRef().getConnecterOptions(cID)._eventSessionBuild = connectedfun;
         SessionManager::getRef().openConnecter(cID);
 
 
@@ -167,8 +167,8 @@ int main(int argc, char* argv[])
 
 
         AccepterID aID = SessionManager::getRef().addAccepter("0.0.0.0", g_remotePort);
-        SessionManager::getRef().getAccepterExtend(aID)._sessionTraits._protoType = PT_HTTP;
-        SessionManager::getRef().getAccepterExtend(aID)._sessionTraits._dispatchHTTP = msg_ResultSequence_fun;
+        SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._protoType = PT_HTTP;
+        SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._dispatchHTTP = msg_ResultSequence_fun;
         SessionManager::getRef().openAccepter(aID);
         //! step 2 running
         SessionManager::getRef().run();

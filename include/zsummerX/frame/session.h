@@ -56,7 +56,7 @@ namespace zsummer
             void connect();
             void reconnect();
             bool bindTcpSocketPrt(const TcpSocketPtr &sockptr, AccepterID aID, SessionID sID);
-            inline SessionTraits & getTraits(){ return _traits; }
+            inline SessionOptions & getOptions(){ return _options; }
         private:
             void cleanSession(bool isCleanAllData, const std::string &rc4TcpEncryption);
 
@@ -85,7 +85,7 @@ namespace zsummer
             Any setUserParam(int index, const Any &any);
             Any getUserParam(int index);
         private:
-            SessionTraits _traits;
+            SessionOptions _options;
             EventLoopPtr _eventLoop;
             TcpSocketPtr  _sockptr;
             std::string _remoteIP;

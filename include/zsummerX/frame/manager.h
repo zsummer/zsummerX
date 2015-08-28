@@ -136,13 +136,13 @@ namespace zsummer
 
             //! add acceptor under the configure.
             AccepterID addAccepter(const std::string& listenIP, unsigned short listenPort);
-            AccepterExtend & getAccepterExtend(AccepterID aID);
+            AccepterOptions & getAccepterOptions(AccepterID aID);
             bool openAccepter(AccepterID aID);
             AccepterID getAccepterID(SessionID sID);
 
             //! add connector under the configure.
             SessionID addConnecter(const std::string& remoteIP, unsigned short remotePort);
-            SessionTraits & getConnecterExtend(SessionID cID);
+            SessionOptions & getConnecterOptions(SessionID cID);
             bool openConnecter(SessionID cID);
             TcpSessionPtr getTcpSession(SessionID sID);
 
@@ -190,7 +190,7 @@ namespace zsummer
 
             //!存储当前的连入连出的session信息和accept监听器信息.
             std::unordered_map<SessionID, TcpSessionPtr> _mapTcpSessionPtr;
-            std::unordered_map<AccepterID, AccepterExtend > _mapAccepterExtend;
+            std::unordered_map<AccepterID, AccepterOptions > _mapAccepterOptions;
         };
 
 

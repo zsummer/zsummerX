@@ -96,7 +96,7 @@ int main(int argc, char* argv[])
     if (g_startIsConnector) //client
     {
         //callback when connect success.
-        auto connectedfun = [](TcpSessionPtr session)
+        auto OnSessionLinked = [](TcpSessionPtr session)
         {
 //            std::string jsonString = R"---(data={%22uid%22:10001,%22session%22:%220192023a7bbd73250516f069df18b500%22})---";
             std::string jsonString = R"---(data=)---";
@@ -117,7 +117,7 @@ int main(int argc, char* argv[])
         };
 
         //callback when receive http data
-        auto msg_ResultSequence_fun = [](TcpSessionPtr session,  const zsummer::proto4z::PairString &commondLine, const zsummer::proto4z::HTTPHeadMap &head, const std::string & body)
+        auto OnHTTPBlock = [](TcpSessionPtr session, const zsummer::proto4z::PairString &commondLine, const zsummer::proto4z::HTTPHeadMap &head, const std::string & body)
         {
             if (commondLine.second != "200")
             {
@@ -134,8 +134,8 @@ int main(int argc, char* argv[])
 
         SessionID cID = SessionManager::getRef().addConnecter(g_remoteIP, g_remotePort);
         SessionManager::getRef().getConnecterOptions(cID)._protoType = PT_HTTP;
-        SessionManager::getRef().getConnecterOptions(cID)._dispatchHTTP = msg_ResultSequence_fun;
-        SessionManager::getRef().getConnecterOptions(cID)._eventSessionBuild = connectedfun;
+        SessionManager::getRef().getConnecterOptions(cID)._onHTTPBlockDispatch = OnHTTPBlock;
+        SessionManager::getRef().getConnecterOptions(cID)._onSessionLinked = OnSessionLinked;
         SessionManager::getRef().openConnecter(cID);
 
 
@@ -146,7 +146,7 @@ int main(int argc, char* argv[])
     {
 
         //result when receive http data
-        auto msg_ResultSequence_fun = [](TcpSessionPtr session, const zsummer::proto4z::PairString &commondLine, const zsummer::proto4z::HTTPHeadMap &head, const std::string & body)
+        auto OnHTTPBlock = [](TcpSessionPtr session, const zsummer::proto4z::PairString &commondLine, const zsummer::proto4z::HTTPHeadMap &head, const std::string & body)
         {
             LOGI("recv request. commond=" << commondLine.first << ", commondvalue=" << commondLine.second);
             zsummer::proto4z::WriteHTTP wh;
@@ -168,7 +168,7 @@ int main(int argc, char* argv[])
 
         AccepterID aID = SessionManager::getRef().addAccepter("0.0.0.0", g_remotePort);
         SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._protoType = PT_HTTP;
-        SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._dispatchHTTP = msg_ResultSequence_fun;
+        SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._onHTTPBlockDispatch = OnHTTPBlock;
         SessionManager::getRef().openAccepter(aID);
         //! step 2 running
         SessionManager::getRef().run();

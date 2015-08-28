@@ -46,30 +46,21 @@ namespace zsummer
     {
 
 
-        inline SessionBlock * DefaultCreateBlock()
-        {
-            SessionBlock * p = (SessionBlock*)malloc(sizeof(SessionBlock)+SESSION_BLOCK_SIZE);
-            p->bound = SESSION_BLOCK_SIZE;
-            p->len = 0;
-            return p;
-        }
+        inline SessionBlock * DefaultCreateBlock();
+        inline void DefaultFreeBlock(SessionBlock *sb);
 
-        inline void DefaultFreeBlock(SessionBlock *p)
+        inline OnBlockCheckResult DefaulBlockCheck(const char * begin, unsigned int len, unsigned int bound, unsigned int blockLimit)
         {
-            free(p);
-        }
-        inline CheckBlockResult DefaultCheckBlock(const char * begin, unsigned int len, unsigned int bound)
-        {
-            auto ret = zsummer::proto4z::checkBuffIntegrity(begin, len, bound);
+            auto ret = zsummer::proto4z::checkBuffIntegrity(begin, len, bound, blockLimit);
             return std::make_pair((BLOCK_CHECK_TYPE)ret.first, (unsigned int)ret.second);
         }
-        inline void DefaultDispatchBlock(TcpSessionPtr session, const char * begin, int len)
+        inline void DefaultBlockDispatch(TcpSessionPtr session, const char * begin, int len)
         {
             zsummer::proto4z::ReadStream rs(begin, len);
             MessageDispatcher::getRef().dispatchSessionMessage(session, rs.getProtoID(), rs);
         }
 
-        inline CheckBlockResult DefaultCheckHTTPBlock(const char * begin, unsigned int len, unsigned int bound,
+        inline OnBlockCheckResult DefaultHTTPBlockCheck(const char * begin, unsigned int len, unsigned int bound,
             bool hadHeader, bool & isChunked, PairString& commonLine, MapString & head, std::string & body)
         {
             unsigned int used = 0;
@@ -77,7 +68,7 @@ namespace zsummer
             return std::make_pair((BLOCK_CHECK_TYPE)ret, used);
         }
 
-        inline void DefaultDispatchHTTPMessage(TcpSessionPtr session, const PairString & commonLine, const MapString &head, const std::string & body)
+        inline void DefaultHTTPBlockDispatch(TcpSessionPtr session, const PairString & commonLine, const MapString &head, const std::string & body)
         {
 
         }
@@ -102,15 +93,6 @@ namespace zsummer
             //要使用SessionManager必须先调用start来启动服务.
             bool start();
 
-            //该组接口说明:
-            // stopXXXX系列接口可以在信号处理函数中调用, 也只有该系列函数可以在信号处理函数中使用.
-            // 一些stopXXX接口提供完成通知, 但需要调用setStopXXXX去注册回调函数.
-            void stopAccept();
-            void stopClients();
-            void setStopClientsHandler(std::function<void()> handler);
-            void stopServers();
-            void setStopServersHandler(std::function<void()> handler);
-
             //退出消息循环.
             void stop();
 
@@ -134,17 +116,20 @@ namespace zsummer
             bool cancelTimer(unsigned long long timerID){ return _summer->cancelTimer(timerID); }
 
 
-            //! add acceptor under the configure.
+
             AccepterID addAccepter(const std::string& listenIP, unsigned short listenPort);
             AccepterOptions & getAccepterOptions(AccepterID aID);
             bool openAccepter(AccepterID aID);
             AccepterID getAccepterID(SessionID sID);
 
-            //! add connector under the configure.
+
             SessionID addConnecter(const std::string& remoteIP, unsigned short remotePort);
             SessionOptions & getConnecterOptions(SessionID cID);
             bool openConnecter(SessionID cID);
             TcpSessionPtr getTcpSession(SessionID sID);
+
+            std::string getRemoteIP(SessionID sID);
+            unsigned short getRemotePort(SessionID sID);
 
             //send data.
             void sendSessionData(SessionID sID, const char * orgData, unsigned int orgDataLen);
@@ -155,17 +140,26 @@ namespace zsummer
 
         public:
             //statistical information
-            //统计信息.
-            std::string getRemoteIP(SessionID sID);
-            unsigned short getRemotePort(SessionID sID);
             inline unsigned long long getStatInfo(int stat){ return _statInfo[stat]; }
             unsigned long long _statInfo[STAT_SIZE];
-            time_t _openTime = 0;
-
+        public:
+            //该组接口说明:
+            // stopXXXX系列接口可以在信号处理函数中调用, 也只有该系列函数可以在信号处理函数中使用.
+            // 一些stopXXX接口提供完成通知, 但需要调用setStopXXXX去注册回调函数.
+            void stopAccept();
+            void stopClients();
+            void setStopClientsHandler(std::function<void()> handler);
+            void stopServers();
+            void setStopServersHandler(std::function<void()> handler);
+        public:
+            SessionBlock * CreateBlock();
+            void FreeBlock(SessionBlock * sb);
+        private:
+            std::queue<SessionBlock*> _freeBlock;
         private:
             friend class TcpSession;
             // 一个established状态的session已经关闭. 
-            void onSessionClose(TcpSessionPtr session);
+            void onSessionClose(TcpSessionPtr session, bool clean);
 
             //accept到新连接.
             void onAcceptNewClient(zsummer::network::NetErrorCode ec, const TcpSocketPtr & s, const TcpAcceptPtr & accepter, AccepterID aID);
@@ -193,6 +187,18 @@ namespace zsummer
             std::unordered_map<AccepterID, AccepterOptions > _mapAccepterOptions;
         };
 
+
+
+
+        inline SessionBlock * DefaultCreateBlock()
+        {
+            return SessionManager::getRef().CreateBlock();
+        }
+
+        inline void DefaultFreeBlock(SessionBlock *sb)
+        {
+            SessionManager::getRef().FreeBlock(sb);
+        }
 
 
     }

@@ -50,6 +50,8 @@
 #include <proto4z/proto4z.h>
 
 #ifdef WIN32
+#pragma warning(disable:4503)
+#pragma warning(disable:4200)
 #include "../iocp/iocp_impl.h"
 #include "../iocp/tcpsocket_impl.h"
 #include "../iocp/udpsocket_impl.h"
@@ -65,8 +67,7 @@
 #include "../epoll/udpsocket_impl.h"
 #include "../epoll/tcpaccept_impl.h"
 #endif
-#pragma warning(disable:4503)
-#pragma warning(disable:4200)
+
 
 namespace zsummer
 {
@@ -104,17 +105,19 @@ namespace zsummer
 
         enum StatType
         {
-            STAT_SEND_COUNT = 0,
-            STAT_SEND_PACKS = 2,
-            STAT_SEND_BYTES = 4,
-            STAT_SEND_QUES = 6,
-            STAT_RECV_COUNT = 8,
-            STAT_RECV_PACKS = 10,
-            STAT_RECV_BYTES = 12,
+            STAT_STARTTIME,
+            STAT_LINKED,
+            STAT_CLOSED,
+            STAT_FREE_BLOCKS,
+            STAT_EXIST_BLOCKS,
+            STAT_SEND_COUNT,
+            STAT_SEND_PACKS,
+            STAT_SEND_BYTES,
+            STAT_SEND_QUES,
+            STAT_RECV_COUNT,
+            STAT_RECV_PACKS,
+            STAT_RECV_BYTES,
             
-            STAT_LINKED = 14,
-            STAT_CLOSED = 16,
-
             STAT_SIZE,
         };
 
@@ -133,24 +136,24 @@ namespace zsummer
 
         using FreeBlock = std::function<void(SessionBlock *)>;
         
-        using CheckBlockResult = std::pair<BLOCK_CHECK_TYPE, unsigned int>;
+        using OnBlockCheckResult = std::pair<BLOCK_CHECK_TYPE, unsigned int>;
 
         //检查当前缓冲块内是否能读出一个完整的block
-        using CheckBlock = std::function<CheckBlockResult(const char * /*begin*/, unsigned int /*len*/, unsigned int /*bound*/)>;
+        using OnBlockCheck = std::function<OnBlockCheckResult(const char * /*begin*/, unsigned int /*len*/, unsigned int /*bound*/, unsigned int /*blockLimit*/)>;
 
         //!每读出一个block就调用这个方法dispatch出去
-        using DispatchBlock = std::function<void (TcpSessionPtr   /*session*/, const char * /*begin*/, int /*len*/)>;
+        using OnBlockDispatch = std::function<void (TcpSessionPtr   /*session*/, const char * /*begin*/, int /*len*/)>;
 
         //!连接建立, 关闭, 定时器
-        using SessionEvent = std::function<void(TcpSessionPtr   /*session*/)>;
+        using OnSessionEvent = std::function<void(TcpSessionPtr   /*session*/)>;
 
         using PairString = std::pair<std::string, std::string>;
         using MapString = std::map<std::string, std::string>;
         //!HTTP解包,hadHeader 区别chunked的后续小包, commonLine 指的是GET, POST RESPONSE. 
-        using CheckHTTPBlock = std::function<CheckBlockResult(const char * /*begin*/, unsigned int /*len*/, unsigned int /*bound*/,
+        using OnHTTPBlockCheck = std::function<OnBlockCheckResult(const char * /*begin*/, unsigned int /*len*/, unsigned int /*bound*/,
             bool /*hadHeader*/, bool & /*isChunked*/, PairString& /*commonLine*/, MapString & /*head*/, std::string & /*body*/)>;
         //!HTTP派发
-        using DispatchHTTPMessage = std::function<
+        using OnHTTPBlockDispatch = std::function<
             void(TcpSessionPtr /*session*/, const PairString & /*commonLine*/, const MapString &/*head*/, const std::string & /*body*/)>;
         
 
@@ -160,27 +163,24 @@ namespace zsummer
 
             ProtoType       _protoType = PT_TCP;
             std::string     _rc4TcpEncryption = ""; //empty is not encryption
-            bool            _openFlashPolicy = false;
-            bool            _setNoDelay = true;
+            bool            _openFlashPolicy = false; //检测falsh客户端
+            bool            _setNoDelay = true; 
+            bool            _joinSmallBlock = true; //发送时合并小包一起发送
+            unsigned int    _sessionPulseInterval = 30000; //session pulse间隔
+            unsigned int    _connectPulseInterval = 5000; //connect pulse间隔
+            unsigned int    _reconnects = 0; // 重连次数
+            bool            _reconnectClean = true;//重连时清除未发送的队列.
 
-            unsigned int _sessionPulseInterval = 30000;
-            unsigned int    _connectPulseInterval = 5000;
+            OnBlockCheck _onBlockCheck;
+            OnBlockDispatch _onBlockDispatch;
+            OnHTTPBlockCheck _onHTTPBlockCheck;
+            OnHTTPBlockDispatch _onHTTPBlockDispatch;
+            OnSessionEvent _onSessionClosed;
+            OnSessionEvent _onSessionLinked;
+            OnSessionEvent _onSessionPulse;
 
-            CheckBlock _checkTcpBlock;
-            DispatchBlock _dispatchBlock;
-            CheckHTTPBlock _checkHTTPBlock;
-            DispatchHTTPMessage _dispatchHTTP;
-            SessionEvent _eventSessionClose;
-            SessionEvent _eventSessionBuild;
-            SessionEvent _eventPulse;
             CreateBlock _createBlock ;
             FreeBlock _freeBlock;
-
-            //! valid traits when session is connect
-            unsigned int _reconnectMaxCount = 0; // try reconnect max count
-            unsigned int _reconnectInterval = 5000; //million seconds;
-            bool         _reconnectCleanAllData = true;//clean all data when reconnect;
-
 
         };
 
@@ -235,9 +235,8 @@ namespace zsummer
                 << ", _setNoDelay=" << traits._setNoDelay
                 << ", _sessionPulseInterval=" << traits._sessionPulseInterval
                 << ", _connectPulseInterval=" << traits._connectPulseInterval
-                << ", _reconnectMaxCount=" << traits._reconnectMaxCount
-                << ", _reconnectInterval=" << traits._reconnectInterval
-                << ", _reconnectCleanAllData=" << traits._reconnectCleanAllData
+                << ", _reconnects=" << traits._reconnects
+                << ", _reconnectClean=" << traits._reconnectClean
                 << "}";
             return os;
         }

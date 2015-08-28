@@ -63,12 +63,12 @@ void MessageDispatcher::dispatchSessionMessage(TcpSessionPtr  &session, ProtoID 
         {
             for (auto & fun : iter->second)
             {
-                LCT("Entry dispatchSessionMessage[" << pID << "]  SessionID=" << session->getSessionID());
+                //LCT("Entry dispatchSessionMessage[" << pID << "]  SessionID=" << session->getSessionID());
                 msg.resetMoveCursor();
                 fun(session,  msg);
             }
         }
-        LCT("Leave dispatchSessionMessage[" << pID << "]  SessionID=" << session->getSessionID());
+        //LCT("Leave dispatchSessionMessage[" << pID << "]  SessionID=" << session->getSessionID());
     }
     catch (std::runtime_error e)
     {

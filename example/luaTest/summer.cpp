@@ -224,11 +224,10 @@ static int addConnect(lua_State *L)
     SessionID cID = SessionManager::getRef().addConnecter(luaL_checkstring(L, 1), (unsigned short)luaL_checkinteger(L, 2));
     auto & traits = SessionManager::getRef().getConnecterOptions(cID);
     traits._rc4TcpEncryption = luaL_optstring(L, 3, traits._rc4TcpEncryption.c_str());
-    traits._reconnectMaxCount = (unsigned int)luaL_optinteger(L, 4, traits._reconnectMaxCount);
-    traits._reconnectInterval = (unsigned int)luaL_optinteger(L, 5, traits._reconnectInterval);
-    traits._eventSessionBuild = std::bind(_onConnecterCallback, L, std::placeholders::_1);
-    traits._dispatchBlock = std::bind(_onMessageCallback, L, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-    traits._eventSessionClose = std::bind(_onDisconnectCallback, L, std::placeholders::_1);
+    traits._reconnects = (unsigned int)luaL_optinteger(L, 4, traits._reconnects);
+    traits._onSessionLinked = std::bind(_onConnecterCallback, L, std::placeholders::_1);
+    traits._onBlockDispatch = std::bind(_onMessageCallback, L, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    traits._onSessionClosed = std::bind(_onDisconnectCallback, L, std::placeholders::_1);
 
     if (!SessionManager::getRef().openConnecter(cID))
     {
@@ -247,8 +246,8 @@ static int addListen(lua_State *L)
     extend._sessionOptions._rc4TcpEncryption = luaL_optstring(L, 3, extend._sessionOptions._rc4TcpEncryption.c_str());
     extend._maxSessions = (unsigned int)luaL_optinteger(L, 4, extend._maxSessions);
     extend._sessionOptions._sessionPulseInterval = (unsigned int)luaL_optinteger(L, 5, extend._sessionOptions._sessionPulseInterval);
-    extend._sessionOptions._eventSessionBuild = std::bind(_onConnecterCallback, L, std::placeholders::_1);
-    extend._sessionOptions._dispatchBlock = std::bind(_onMessageCallback, L, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    extend._sessionOptions._onSessionLinked = std::bind(_onConnecterCallback, L, std::placeholders::_1);
+    extend._sessionOptions._onBlockDispatch = std::bind(_onMessageCallback, L, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
     LOGD("lua: addListen:" << extend);
 
     if (!SessionManager::getRef().openAccepter(aID))

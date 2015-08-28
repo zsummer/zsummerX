@@ -60,7 +60,7 @@ bool SessionManager::start()
     {
         return false;
     }
-    _openTime = time(NULL);
+    _statInfo[STAT_STARTTIME] = time(NULL);
     return true;
 }
 
@@ -73,8 +73,6 @@ void SessionManager::stopAccept()
 {
     _stopAccept = false;
 }
-
-
 
 void SessionManager::stopClients()
 {
@@ -136,7 +134,7 @@ bool SessionManager::runOnce(bool isImmediately)
             {
                 if (isConnectID(kv.first))
                 {
-                    kv.second->getOptions()._reconnectMaxCount = 0;
+                    kv.second->getOptions()._reconnects = 0;
                     kickSession(kv.first);
                     count++;
                 }
@@ -165,10 +163,10 @@ AccepterID SessionManager::addAccepter(const std::string & listenIP, unsigned sh
     extend._aID = _lastAcceptID;
     extend._listenIP = listenIP;
     extend._listenPort = listenPort;
-    extend._sessionOptions._checkHTTPBlock = DefaultCheckHTTPBlock;
-    extend._sessionOptions._dispatchHTTP = DefaultDispatchHTTPMessage;
-    extend._sessionOptions._checkTcpBlock = DefaultCheckBlock;
-    extend._sessionOptions._dispatchBlock = DefaultDispatchBlock;
+    extend._sessionOptions._onHTTPBlockCheck = DefaultHTTPBlockCheck;
+    extend._sessionOptions._onHTTPBlockDispatch = DefaultHTTPBlockDispatch;
+    extend._sessionOptions._onBlockCheck = DefaulBlockCheck;
+    extend._sessionOptions._onBlockDispatch = DefaultBlockDispatch;
     extend._sessionOptions._createBlock = DefaultCreateBlock;
     extend._sessionOptions._freeBlock = DefaultFreeBlock;
     return _lastAcceptID;
@@ -325,7 +323,6 @@ void SessionManager::onAcceptNewClient(zsummer::network::NetErrorCode ec, const 
         if (session->bindTcpSocketPrt(s, aID, _lastSessionID))
         {
             _mapTcpSessionPtr[_lastSessionID] = session;
-            //MessageDispatcher::getRef().dispatchOnSessionEstablished(session);
         }
     }
     
@@ -334,32 +331,50 @@ void SessionManager::onAcceptNewClient(zsummer::network::NetErrorCode ec, const 
 }
 
 
+SessionBlock * SessionManager::CreateBlock()
+{
+    SessionBlock * sb = nullptr;
+    if (_freeBlock.empty())
+    {
+        sb = (SessionBlock*)malloc(sizeof(SessionBlock)+SESSION_BLOCK_SIZE);
+        sb->bound = SESSION_BLOCK_SIZE;
+        sb->len = 0;
+        _statInfo[STAT_EXIST_BLOCKS]++;
+    }
+    else
+    {
+        sb = _freeBlock.front();
+        _freeBlock.pop();
+        sb->len = 0;
+        _statInfo[STAT_FREE_BLOCKS] = _freeBlock.size();
+    }
+    return sb;
+}
+void SessionManager::FreeBlock(SessionBlock * sb)
+{
+    //if (_freeBlock.size() > 10000);
+    _freeBlock.push(sb);
+    _statInfo[STAT_FREE_BLOCKS] = _freeBlock.size();
+}
 
 std::string SessionManager::getRemoteIP(SessionID sID)
 {
     auto founder = _mapTcpSessionPtr.find(sID);
-    if (founder == _mapTcpSessionPtr.end())
-    {
-        return "closed session";
-    }
-    else
+    if (founder != _mapTcpSessionPtr.end())
     {
         return founder->second->getRemoteIP();
     }
-    return "";
+    return "*";
 }
+
 unsigned short SessionManager::getRemotePort(SessionID sID)
 {
     auto founder = _mapTcpSessionPtr.find(sID);
-    if (founder == _mapTcpSessionPtr.end())
-    {
-        return -1;
-    }
-    else
+    if (founder != _mapTcpSessionPtr.end())
     {
         return founder->second->getRemotePort();
     }
-    return 0;
+    return -1;
 }
 
 void SessionManager::kickSession(SessionID sID)
@@ -373,16 +388,19 @@ void SessionManager::kickSession(SessionID sID)
     iter->second->close();
 }
 
-void SessionManager::onSessionClose(TcpSessionPtr session)
+void SessionManager::onSessionClose(TcpSessionPtr session, bool clean)
 {
+    if (!clean)
+    {
+        return;
+    }
+    
     _mapTcpSessionPtr.erase(session->getSessionID());
     if (session->getAcceptID() != InvalidAccepterID)
     {
         _mapAccepterOptions[session->getAcceptID()]._currentLinked--;
         _mapAccepterOptions[session->getAcceptID()]._totalAcceptCount++;
     }
-
-    //MessageDispatcher::getRef().dispatchOnSessionDisconnect(session);
 
     if (_stopClients == 2 || _stopServers == 2)
     {
@@ -431,12 +449,12 @@ SessionID SessionManager::addConnecter(const std::string & remoteIP, unsigned sh
     TcpSessionPtr & session = _mapTcpSessionPtr[_lastConnectID];
     session = std::make_shared<TcpSession>();
     
-   session->getOptions()._checkHTTPBlock = DefaultCheckHTTPBlock;
-   session->getOptions()._dispatchHTTP = DefaultDispatchHTTPMessage;
-   session->getOptions()._checkTcpBlock = DefaultCheckBlock;
-   session->getOptions()._dispatchBlock = DefaultDispatchBlock;
-   session->getOptions()._createBlock = DefaultCreateBlock;
-   session->getOptions()._freeBlock = DefaultFreeBlock;
+    session->getOptions()._onHTTPBlockCheck = DefaultHTTPBlockCheck;
+    session->getOptions()._onHTTPBlockDispatch = DefaultHTTPBlockDispatch;
+    session->getOptions()._onBlockCheck = DefaulBlockCheck;
+    session->getOptions()._onBlockDispatch = DefaultBlockDispatch;
+    session->getOptions()._createBlock = DefaultCreateBlock;
+    session->getOptions()._freeBlock = DefaultFreeBlock;
 
     session->setEventLoopPtr(_summer);
     session->setSessionID(_lastConnectID);
@@ -487,12 +505,7 @@ void SessionManager::sendSessionData(SessionID sID, const char * orgData, unsign
         LCW("sendSessionData NOT FOUND SessionID.  SessionID=" << sID);
         return;
     }
-
     iter->second->send(orgData, orgDataLen);
-    //trace log
-    {
-        LCT("sendSessionData Len=" << orgDataLen << ",binarydata=" << zsummer::log4z::Log4zBinary(orgData, orgDataLen >= 10 ? 10 : orgDataLen));
-    }
 }
 
 

@@ -136,7 +136,7 @@ void startServer()
     //! step 1. start Manager.
     SessionManager::getRef().start();
     //process message _RequestSequence
-    auto msg_RequestSequence_fun = [](TcpSessionPtr session, const char * begin, unsigned int len)
+    auto OnSessionBlock = [](TcpSessionPtr session, const char * begin, unsigned int len)
     {
         ReadStream rs(begin, len);
         std::string content; 
@@ -156,7 +156,7 @@ void startServer()
 
     //add Acceptor
     AccepterID aID = SessionManager::getRef().addAccepter("127.0.0.1", g_remotePort);
-    SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._dispatchBlock = msg_RequestSequence_fun;
+    SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._onBlockDispatch = OnSessionBlock;
     SessionManager::getRef().openAccepter(aID);
     //! step 2 running
     SessionManager::getRef().run();
@@ -168,7 +168,7 @@ void startClient()
     SessionManager::getRef().start();
 
     //on connect success
-    auto connectedfun = [](TcpSessionPtr session)
+    auto OnSessionLinked = [](TcpSessionPtr session)
     {
         LOGI("on connect. ID=" << session->getSessionID());
         std::string content = "hello";
@@ -178,7 +178,7 @@ void startClient()
     };
 
     //process message _ResultID
-    auto msg_ResultSequence_fun = [](TcpSessionPtr session, const char * begin, int len)
+    auto OnSessionBlock = [](TcpSessionPtr session, const char * begin, int len)
     {
         ReadStream rs(begin, len);
         std::string content; 
@@ -193,8 +193,8 @@ void startClient()
 
     //add connector
     SessionID cID = SessionManager::getRef().addConnecter(g_remoteIP, g_remotePort);
-    SessionManager::getRef().getConnecterOptions(cID)._eventSessionBuild = connectedfun;
-    SessionManager::getRef().getConnecterOptions(cID)._dispatchBlock = msg_ResultSequence_fun;
+    SessionManager::getRef().getConnecterOptions(cID)._onSessionLinked = OnSessionLinked;
+    SessionManager::getRef().getConnecterOptions(cID)._onBlockDispatch = OnSessionBlock;
     SessionManager::getRef().openConnecter(cID);
 
 

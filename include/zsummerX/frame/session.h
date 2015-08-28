@@ -68,7 +68,7 @@ namespace zsummer
 
             void onSend(zsummer::network::NetErrorCode ec, int nSentLen);
 
-            void onPulseTimer();
+            void onPulse();
 
             void onClose();
 
@@ -82,6 +82,7 @@ namespace zsummer
             inline void setRemoteIP(const std::string &remoteIP){ _remoteIP = remoteIP; }
             inline unsigned short getRemotePort(){ return _remotePort; }
             inline void setRemotePort(unsigned short remotePort){ _remotePort = remotePort; }
+            inline std::size_t getSendQueSize(){ return _sendque.size(); }
             Any setUserParam(int index, const Any &any);
             Any getUserParam(int index);
         private:

@@ -73,8 +73,10 @@ void MonitorFunc()
         << "byte/s, recv count = " << getStatInfo(STAT_RECV_COUNT) / 5
         << "n/s, recv pack = " << getStatInfo(STAT_RECV_PACKS) / 5
         << "n/s, recv bytes = " << getStatInfo(STAT_RECV_BYTES) / 5
-        << "byte/s, linked = " << getStatInfo(STAT_LINKED) 
-        << ", closed = " << getStatInfo(STAT_CLOSED)
+        << "byte/s, linked = " << SessionManager::getRef()._statInfo[STAT_LINKED]
+        << ", closed = " << SessionManager::getRef()._statInfo[STAT_CLOSED]
+        << ", freeBlocks = " << SessionManager::getRef()._statInfo[STAT_FREE_BLOCKS]
+        << ", exsitBlocks = " << SessionManager::getRef()._statInfo[STAT_EXIST_BLOCKS]
         );
 
     memcpy(g_lastStatInfo, SessionManager::getRef()._statInfo, sizeof(g_lastStatInfo));
@@ -131,7 +133,7 @@ public:
 
     void SendFunc(TcpSessionPtr session, bool openTimer)
     {
-        if (SessionManager::getRef().getStatInfo(STAT_SEND_PACKS) - SessionManager::getRef().getStatInfo(STAT_RECV_PACKS) < 10000)
+        if (session->getSendQueSize() < 10000)
         {
             WriteStream ws(ID_EchoPack);
             EchoPack pack;
@@ -280,7 +282,7 @@ int main(int argc, char* argv[])
     ILog4zManager::getPtr()->start();
 
     LOGI("g_remoteIP=" << g_remoteIP << ", g_remotePort=" << g_remotePort << ", g_startType=" << g_startType
-        << ", g_maxClient=" << g_maxClient << ", g_sendType=" << g_sendType << ", g_intervalMs=" << g_intervalMs);
+        << ", g_maxClient=" << g_maxClient << ", g_sendType=" << g_sendType << ", g_intervalMs=" << g_intervalMs << ", hightBenchmark=" << g_hightBenchmark);
 
 
     ILog4zManager::getPtr()->setLoggerLevel(LOG4Z_MAIN_LOGGER_ID, LOG_LEVEL_INFO);
@@ -294,7 +296,6 @@ int main(int argc, char* argv[])
     SessionManager::getRef().createTimer(5000, MonitorFunc);
 
 
-
     //build client and server
     if (g_startType) //client
     {
@@ -303,8 +304,8 @@ int main(int argc, char* argv[])
         for (int i = 0; i < g_maxClient; ++i)
         {
             SessionID cID = SessionManager::getRef().addConnecter(g_remoteIP, g_remotePort);
-            SessionManager::getRef().getConnecterOptions(cID)._reconnectMaxCount = 15;
-            SessionManager::getRef().getConnecterOptions(cID)._eventSessionBuild = std::bind(&CStressClientHandler::onConnected, &client, _1);
+            SessionManager::getRef().getConnecterOptions(cID)._reconnects = 15;
+            SessionManager::getRef().getConnecterOptions(cID)._onSessionLinked = std::bind(&CStressClientHandler::onConnected, &client, _1);
             SessionManager::getRef().openConnecter(cID);
         }
         //running

@@ -88,6 +88,10 @@ std::string TcpSocket::logSection()
     return os.str();
 }
 
+bool TcpSocket::setNoDelay()
+{
+        return zsummer::network::setNoDelay(_socket);
+}
 //new socket to connect, or accept established socket
 bool TcpSocket::initialize(const EventLoopPtr& summer)
 {
@@ -110,7 +114,6 @@ bool TcpSocket::initialize(const EventLoopPtr& summer)
             LCE("TcpSocket create error! ERRCODE=" << WSAGetLastError() << logSection());
             return false;
         }
-        setNoDelay(_socket);
         SOCKADDR_IN localAddr;
         memset(&localAddr, 0, sizeof(SOCKADDR_IN));
         localAddr.sin_family = AF_INET;

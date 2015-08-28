@@ -52,6 +52,7 @@ namespace zsummer
             //if the socket is used to connect,  It's need initialize before call doConnect 
             // if the socket is used to accept new socket, It's need initialize after OnAccept. 
             bool initialize(const EventLoopPtr& summer);
+            bool setNoDelay();
             inline bool getPeerInfo(std::string& remoteIP, unsigned short &remotePort)
             {
                 remoteIP = _remoteIP;

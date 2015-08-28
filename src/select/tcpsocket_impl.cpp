@@ -74,6 +74,10 @@ std::string TcpSocket::logSection()
     return os.str();
 }
 
+bool TcpSocket::setNoDelay()
+{
+    return zsummer::network::setNoDelay(_register._fd);
+}
 bool TcpSocket::initialize(const EventLoopPtr & summer)
 {
      _summer = summer;
@@ -100,7 +104,6 @@ bool TcpSocket::initialize(const EventLoopPtr & summer)
             return false;
         }
         setNonBlock(_register._fd);
-        setNoDelay(_register._fd);
         _register._linkstat = LS_WAITLINK;
     }
 

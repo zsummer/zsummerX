@@ -52,6 +52,7 @@ namespace zsummer
         public:
             TcpSocket();
             ~TcpSocket();
+            bool setNoDelay();
             bool initialize(const EventLoopPtr &summer);
             inline bool getPeerInfo(std::string & remoteIP, unsigned short &remotePort)
             {

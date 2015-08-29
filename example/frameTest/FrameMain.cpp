@@ -51,9 +51,6 @@ std::string g_remoteIP = "0.0.0.0";
 unsigned short g_remotePort = 8081;
 unsigned short g_startIsConnector = 0;  //0 listen, 1 connect
 
-//! define protocol id
-static const ProtoID _RequestID = 1001;
-static const ProtoID _ResultID = 1002;
 
 bool initEnv(int argc, char* argv[]);
 void startServer();

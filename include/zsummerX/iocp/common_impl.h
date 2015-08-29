@@ -50,7 +50,7 @@ namespace zsummer
         class TcpSocket;
         class TcpAccept;
         class UdpSocket;
-        const int InvalideFD = -1;
+        const int InvalidFD = -1;
         struct tagReqHandle 
         {
             OVERLAPPED     _overlapped;

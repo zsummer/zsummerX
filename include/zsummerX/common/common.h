@@ -116,6 +116,7 @@ namespace zsummer
         {
             LS_UNINITIALIZE, //socket default status
             LS_WAITLINK, // socket status after init and will to connect.
+            LS_ATTACHED,
             LS_ESTABLISHED, //socket status is established
             LS_CLOSED, // socket is closed. don't use it again.
         };

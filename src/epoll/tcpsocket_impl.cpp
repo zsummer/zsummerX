@@ -57,10 +57,10 @@ TcpSocket::~TcpSocket()
     {
         LCW("TcpSocket::~TcpSocket[this0x" << this << "] Handler status error. " << logSection());
     }
-    if (_register._fd != InvalideFD)
+    if (_register._fd != InvalidFD)
     {
         ::close(_register._fd);
-        _register._fd = InvalideFD;
+        _register._fd = InvalidFD;
     }
 }
 
@@ -151,7 +151,7 @@ bool TcpSocket::doConnect(const std::string& remoteIP, unsigned short remotePort
     {
         LCW("TcpSocket::doConnect[this0x" << this << "] ::connect error. errno=" << strerror(errno) << logSection());
         ::close(_register._fd);
-        _register._fd = InvalideFD;
+        _register._fd = InvalidFD;
         return false;
     }
     if (!_summer->registerEvent(EPOLL_CTL_ADD, _register))
@@ -378,11 +378,11 @@ bool TcpSocket::doClose()
     {
         _register._linkstat = LS_CLOSED;
         _summer->registerEvent(EPOLL_CTL_DEL, _register);
-        if (_register._fd != InvalideFD)
+        if (_register._fd != InvalidFD)
         {
             shutdown(_register._fd, SHUT_RDWR);
             close(_register._fd);
-            _register._fd = InvalideFD;
+            _register._fd = InvalidFD;
         }
         _onConnectHandler = nullptr;
         _onRecvHandler = nullptr;

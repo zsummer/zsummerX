@@ -65,7 +65,8 @@ namespace zsummer
             EventLoopPtr         _summer;
             std::string        _listenIP;
             short            _listenPort = 0;
-
+            unsigned char _linkstat = LS_UNINITIALIZE;
+            int _fd = InvalidFD;
             sockaddr_in        _addr;
 
             tagRegister _register; //! epoll 注册事件

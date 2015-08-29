@@ -70,7 +70,7 @@ namespace zsummer
         class TcpSocket;
         class TcpAccept;
         class UdpSocket;
-        const int InvalideFD = -1;
+        const int InvalidFD = -1;
         struct tagRegister
         {
             enum REG_TYPE
@@ -85,7 +85,7 @@ namespace zsummer
             epoll_event   _event; //event, auto set
             unsigned char _type = REG_INVALID; //register type
             unsigned char _linkstat = LS_UNINITIALIZE;
-            int              _fd = InvalideFD;   //file descriptor
+            int              _fd = InvalidFD;   //file descriptor
             std::shared_ptr<TcpSocket> _tcpSocketSendPtr;
             std::shared_ptr<TcpSocket> _tcpSocketRecvPtr;
             std::shared_ptr<TcpSocket> _tcpSocketConnectPtr;

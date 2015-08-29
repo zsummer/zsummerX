@@ -46,15 +46,14 @@ using namespace zsummer::network;
 
 TcpAccept::TcpAccept()
 {
-    _register._type = tagRegister::REG_TCP_ACCEPT;
 }
 
 TcpAccept::~TcpAccept()
 {
-    if (_register._fd != InvalideFD)
+    if (_register._fd != InvalidFD)
     {
-        closesocket(_register._fd);
-        _register._fd = InvalideFD;
+        ::close(_register._fd);
+        _register._fd = InvalidFD;
     }
 }
 std::string TcpAccept::AcceptSection()
@@ -68,33 +67,27 @@ std::string TcpAccept::AcceptSection()
 bool TcpAccept::initialize(const EventLoopPtr &summer)
 {
     _summer = summer;
-    _register._linkstat = LS_WAITLINK;
+    _linkstat = LS_WAITLINK;
     return true;
 }
 
 
 bool TcpAccept::openAccept(const std::string& listenIP, unsigned short listenPort)
 {
-    if (!_summer)
+    if (!_summer || _linkstat != LS_WAITLINK)
     {
-        LCE("TcpAccept::openAccept[this0x" << this << "] _summer not bind!" << AcceptSection());
+        LCE("TcpAccept::openAccept[this0x" << this << "] accepter not initialize!" << AcceptSection());
         return false;
     }
 
-    if (_register._fd != InvalideFD)
-    {
-        LCF("TcpAccept::openAccept[this0x" << this << "] accept fd is aready used!" << AcceptSection());
-        return false;
-    }
-
-    _register._fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (_register._fd == InvalideFD)
+    _fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (_fd == InvalidFD)
     {
         LCF("TcpAccept::openAccept[this0x" << this << "] listen socket create err " << OSTREAM_GET_LASTERROR << ", " << AcceptSection());
         return false;
     }
 
-    setNonBlock(_register._fd);
+    setNonBlock(_fd);
 
 
 
@@ -111,24 +104,21 @@ bool TcpAccept::openAccept(const std::string& listenIP, unsigned short listenPor
     if (bind(_register._fd, (sockaddr *) &_addr, sizeof(_addr)) != 0)
     {
         LCF("TcpAccept::openAccept[this0x" << this << "] listen socket bind err, " << OSTREAM_GET_LASTERROR << ", " << AcceptSection());
-        closesocket(_register._fd);
-        _register._fd = InvalideFD;
+        ::close(_fd);
+        _fd = InvalidFD;
         return false;
     }
 
-    if (listen(_register._fd, 200) != 0)
+    if (listen(_fd, 200) != 0)
     {
         LCF("TcpAccept::openAccept[this0x" << this << "] listen socket listen err, " << OSTREAM_GET_LASTERROR << ", " << AcceptSection());
-        closesocket(_register._fd);
-        _register._fd = InvalideFD;
+        ::close(_register._fd);
+        _fd = InvalidFD;
         return false;
     }
 
-    if (!_summer->registerEvent(0, _register))
-    {
-        LCF("TcpAccept::openAccept[this0x" << this << "] listen socket register error." << AcceptSection());
-        return false;
-    }
+    _summer->addTcpAccept(_fd, shared_from_this());
+
     _register._linkstat = LS_ESTABLISHED;
     return true;
 }
@@ -140,52 +130,43 @@ bool TcpAccept::doAccept(const TcpSocketPtr &s, _OnAcceptHandler && handle)
         LCF("TcpAccept::doAccept[this0x" << this << "] err, dumplicate doAccept" << AcceptSection());
         return false;
     }
-    if (_register._linkstat != LS_ESTABLISHED)
+    if (_linkstat != LS_ESTABLISHED)
     {
         LCF("TcpAccept::doAccept[this0x" << this << "] err, _linkstat not work state" << AcceptSection());
         return false;
     }
-    
-    _register._rd = true;
-    _register._tcpacceptPtr = shared_from_this();
-    if (!_summer->registerEvent(1, _register))
-    {
-        LCF("TcpAccept::doAccept[this0x" << this << "] err, _linkstat not work state" << AcceptSection());
-        _register._tcpacceptPtr.reset();
-        return false;
-    }
-
+    _summer->setEvent(_fd, 0);
     _onAcceptHandler = std::move(handle);
     _client = s;
     
     return true;
 }
+
 void TcpAccept::onSelectMessage()
 {
-    std::shared_ptr<TcpAccept> guard(std::move(_register._tcpacceptPtr));
+    auto guard = shared_from_this();
 
     if (!_onAcceptHandler)
     {
         LCF("TcpAccept::onSelectMessage[this0x" << this << "] err, dumplicate doAccept" << AcceptSection());
         return ;
     }
+
     if (_register._linkstat != LS_ESTABLISHED)
     {
         LCF("TcpAccept::onSelectMessage[this0x" << this << "] err, _linkstat not work state" << AcceptSection());
         return ;
     }
-
     _OnAcceptHandler onAccept(std::move(_onAcceptHandler));
-    TcpSocketPtr ps(std::move(_client));
 
-    _register._rd = false;
-    _summer->registerEvent(1,_register);
+    TcpSocketPtr ps(std::move(_client));
+    _summer->unsetEvent(_fd, 0);
 
     sockaddr_in cltaddr;
     memset(&cltaddr, 0, sizeof(cltaddr));
     socklen_t len = sizeof(cltaddr);
-    SOCKET s = ::accept(_register._fd, (sockaddr *)&cltaddr, &len);
-    if (s == -1)
+    int fd = ::accept(_fd, (sockaddr *)&cltaddr, &len);
+    if (fd == -1)
     {
         if (!IS_WOULDBLOCK)
         {
@@ -195,10 +176,9 @@ void TcpAccept::onSelectMessage()
         return ;
     }
 
-    setNonBlock(s);
-    setNoDelay(s);
+    setNonBlock(fd);
 
-    ps->attachSocket(s,inet_ntoa(cltaddr.sin_addr), ntohs(cltaddr.sin_port));
+    ps->attachSocket(fd,inet_ntoa(cltaddr.sin_addr), ntohs(cltaddr.sin_port));
     onAccept(NEC_SUCCESS, ps);
     
     return ;
@@ -207,10 +187,13 @@ void TcpAccept::onSelectMessage()
 bool TcpAccept::close()
 {
     _onAcceptHandler = nullptr;
-    _summer->registerEvent(2, _register);
-    shutdown(_register._fd, SHUT_RDWR);
-    closesocket(_register._fd);
-    _register._fd = InvalideFD;
+    if (_fd != InvalidFD)
+    {
+        _summer->clearSocket(_fd);
+        shutdown(_fd, SHUT_RDWR);
+        ::close(_fd);
+        _fd = InvalidFD;
+    }
     return true;
 }
 

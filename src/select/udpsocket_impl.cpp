@@ -58,7 +58,7 @@ UdpSocket::~UdpSocket()
             LCE("UdpSocket::~UdpSocket[this0x" << this << "] Destruct UdpSocket Error. socket handle not invalid and some request was not completed. fd="
                 << _register._fd );
         }
-        closesocket(_register._fd);
+        ::close(_register._fd);
         _register._fd = -1;
     }
 }
@@ -90,7 +90,7 @@ bool  UdpSocket::initialize(const EventLoopPtr & summer, const char *localIP, un
     if (bind(_register._fd, (sockaddr *) &localAddr, sizeof(localAddr)) != 0)
     {
         LCE("UdpSocket::initialize[this0x" << this << "]: socket bind err, " << OSTREAM_GET_LASTERROR);
-        closesocket(_register._fd);
+        ::close(_register._fd);
         _register._fd = -1;
         return false;
     }

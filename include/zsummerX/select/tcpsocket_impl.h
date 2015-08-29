@@ -65,12 +65,10 @@ namespace zsummer
             bool doRecv(char * buf, unsigned int len, _OnRecvHandler && handler);
             bool doClose();
 
-            
-
             void OnPostClose();
 
             void onSelectMessage(bool rd, bool wt, bool err);
-            bool attachSocket(SOCKET s, const std::string& remoteIP, unsigned short remotePort);
+            bool attachSocket(int fd, const std::string& remoteIP, unsigned short remotePort);
 
         private:
             std::string logSection();
@@ -78,19 +76,20 @@ namespace zsummer
             EventLoopPtr _summer;
             std::string _remoteIP;
             unsigned short _remotePort = 0;
-            tagRegister _register;
+            unsigned char _linkstat = LS_UNINITIALIZE;
+            int _fd = InvalidFD;
             
             
             _OnConnectHandler _onConnectHandler;
 
-            _OnRecvHandler _onRecvHandler;
-            unsigned int _iRecvLen = 0;
-            char    *     _pRecvBuf = NULL;
+            _OnRecvHandler  _onRecvHandler;
+            unsigned int    _iRecvLen = 0;
+            char    *       _pRecvBuf = NULL;
 
 
-            _OnSendHandler _onSendHandler;
-            unsigned int _iSendLen = 0;
-            char *         _pSendBuf = NULL;
+            _OnSendHandler  _onSendHandler;
+            unsigned int    _iSendLen = 0;
+            char *          _pSendBuf = NULL;
         };
 
         typedef std::shared_ptr<TcpSocket> TcpSocketPtr;

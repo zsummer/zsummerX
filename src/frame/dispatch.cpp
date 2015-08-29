@@ -47,8 +47,6 @@ MessageDispatcher & MessageDispatcher::getRef()
 }
 
 
-
-
 void MessageDispatcher::dispatchSessionMessage(TcpSessionPtr  &session, ProtoID pID, zsummer::proto4z::ReadStream & msg)
 {
     MapProtoDispatch::iterator iter = _mapSessionDispatch.find(pID);

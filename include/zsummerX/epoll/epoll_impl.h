@@ -63,7 +63,7 @@ namespace zsummer
         private:
             std::string logSection();
         private:
-            int    _epoll = InvalideFD;
+            int    _epoll = InvalidFD;
             epoll_event _events[5000] = {};
             int        _sockpair[2] = {};
             tagRegister _register;

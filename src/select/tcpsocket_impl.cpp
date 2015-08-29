@@ -45,7 +45,6 @@ using namespace zsummer::network;
 TcpSocket::TcpSocket()
 {
     g_appEnvironment.addCreatedSocketCount();
-    _register._type = tagRegister::REG_TCP_SOCKET;
 }
 
 
@@ -56,10 +55,10 @@ TcpSocket::~TcpSocket()
     {
         LCW("TcpSocket::~TcpSocket[this0x" << this << "] Handler status error. " << logSection());
     }
-    if (_register._fd != InvalideFD)
+    if (_fd != InvalidFD)
     {
-        closesocket(_register._fd);
-        _register._fd = InvalideFD;
+        ::close(_fd);
+        _fd = InvalidFD;
     }
 }
 
@@ -69,54 +68,46 @@ std::string TcpSocket::logSection()
     os << ";; Status: summer.user_count()=" << _summer.use_count() << ", remoteIP=" << _remoteIP << ", remotePort=" << _remotePort
         << ", _onConnectHandler = " << (bool)_onConnectHandler 
         << ", _onRecvHandler = " << (bool)_onRecvHandler << ", _pRecvBuf=" << (void*)_pRecvBuf << ", _iRecvLen=" << _iRecvLen 
-        << ", _onSendHandler = " << (bool)_onSendHandler << ", _pSendBuf=" << (void*)_pSendBuf << ", _iSendLen=" << _iSendLen
-        << "; _register=" << _register; 
+        << ", _onSendHandler = " << (bool)_onSendHandler << ", _pSendBuf=" << (void*)_pSendBuf << ", _iSendLen=" << _iSendLen;
     return os.str();
 }
 
 bool TcpSocket::setNoDelay()
 {
-    return zsummer::network::setNoDelay(_register._fd);
+    return zsummer::network::setNoDelay(_fd);
 }
+
 bool TcpSocket::initialize(const EventLoopPtr & summer)
 {
      _summer = summer;
-    if (_register._linkstat != LS_UNINITIALIZE)
+    if (_linkstat == LS_ATTACHED)
     {
-        if (!_summer->registerEvent(0, _register))
-        {
-            LCE("TcpSocket::initialize[this0x" << this << "] socket already used or not initilize." << logSection());
-            return false;
-        }
-        _register._linkstat = LS_ESTABLISHED;
+        _summer->addTcpSocket(_fd, shared_from_this());
+        _linkstat = LS_ESTABLISHED;
+        return true;
     }
-    else
+    if(_linkstat == LS_UNINITIALIZE)
     {
-        if (_register._fd != -1)
+        _fd = socket(AF_INET, SOCK_STREAM, 0);
+        if (_fd == -1)
         {
-            LCE("TcpSocket::doConnect[this0x" << this << "] fd aready used!" << logSection());
+            LCE("TcpSocket::initialize[this0x" << this << "] fd create failed!" << logSection());
             return false;
         }
-        _register._fd = socket(AF_INET, SOCK_STREAM, 0);
-        if (_register._fd == -1)
-        {
-            LCE("TcpSocket::doConnect[this0x" << this << "] fd create failed!" << logSection());
-            return false;
-        }
-        setNonBlock(_register._fd);
-        _register._linkstat = LS_WAITLINK;
+        setNonBlock(_fd);
+        _linkstat = LS_WAITLINK;
+        return true;
     }
-
-
-
-    return true;
+    LCE("TcpSocket::initialize error");
+    return false;
 }
-bool TcpSocket::attachSocket(SOCKET s, const std::string& remoteIP, unsigned short remotePort)
+
+bool TcpSocket::attachSocket(int fd, const std::string& remoteIP, unsigned short remotePort)
 {
-     _register._fd = s;
+     _fd = fd;
+     _linkstat = LS_ATTACHED;
      _remoteIP = remoteIP;
      _remotePort = remotePort;
-     _register._linkstat = LS_WAITLINK;
     return true;
 }
 
@@ -125,16 +116,14 @@ bool TcpSocket::attachSocket(SOCKET s, const std::string& remoteIP, unsigned sho
 
 bool TcpSocket::doConnect(const std::string & remoteIP, unsigned short remotePort, _OnConnectHandler && handler)
 {
-    if (!_summer)
+
+    if (!_summer || _linkstat != LS_WAITLINK)
     {
         LCE("TcpSocket::doConnect[this0x" << this << "] summer not bind!" << logSection());
         return false;
     }
-    if (_register._linkstat != LS_WAITLINK)
-    {
-        LCE("TcpSocket::doConnect[this0x" << this << "] _linkstat not LS_WAITLINK!" << logSection());
-        return false;
-    }
+    _summer->addTcpSocket(_fd, shared_from_this());
+
 
     _register._wt = true;
 
@@ -154,8 +143,8 @@ bool TcpSocket::doConnect(const std::string & remoteIP, unsigned short remotePor
 #endif
     {
         LCW("TcpSocket::doConnect[this0x" << this << "] ::connect error. " << OSTREAM_GET_LASTERROR << logSection());
-        closesocket(_register._fd);
-        _register._fd = InvalideFD;
+        ::close(_register._fd);
+        _register._fd = InvalidFD;
         return false;
     }
     
@@ -163,8 +152,8 @@ bool TcpSocket::doConnect(const std::string & remoteIP, unsigned short remotePor
     if (!_summer->registerEvent(0, _register))
     {
         LCE("TcpSocket::doConnect[this0x" << this << "] registerEvent Error" << logSection());
-        closesocket(_register._fd);
-        _register._fd = InvalideFD;
+        ::close(_register._fd);
+        _register._fd = InvalidFD;
         _register._tcpSocketConnectPtr.reset();
         return false;
     }
@@ -392,11 +381,11 @@ bool TcpSocket::doClose()
     {
         _register._linkstat = LS_CLOSED;
         _summer->registerEvent(2, _register);
-        if (_register._fd != InvalideFD)
+        if (_register._fd != InvalidFD)
         {
             shutdown(_register._fd, SHUT_RDWR);
-            closesocket(_register._fd);
-            _register._fd = InvalideFD;
+            ::close(_register._fd);
+            _register._fd = InvalidFD;
         }
         _onConnectHandler = nullptr;
         _onRecvHandler = nullptr;

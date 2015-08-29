@@ -44,14 +44,14 @@ using namespace zsummer::network;
 
 bool EventLoop::initialize()
 {
-    if (_epoll != InvalideFD)
+    if (_epoll != InvalidFD)
     {
         LCF("EventLoop::initialize[this0x"<<this <<"] epoll is created ! " << logSection());
         return false;
     }
     const int IGNORE_ENVENTS = 100;
     _epoll = epoll_create(IGNORE_ENVENTS);
-    if (_epoll == InvalideFD)
+    if (_epoll == InvalidFD)
     {
         LCF("EventLoop::initialize[this0x" << this << "] create epoll err errno=" << strerror(errno) << logSection());
         return false;

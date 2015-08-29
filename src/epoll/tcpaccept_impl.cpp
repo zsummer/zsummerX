@@ -54,10 +54,10 @@ TcpAccept::TcpAccept()
 
 TcpAccept::~TcpAccept()
 {
-    if (_register._fd != InvalideFD)
+    if (_register._fd != InvalidFD)
     {
         ::close(_register._fd);
-        _register._fd = InvalideFD;
+        _register._fd = InvalidFD;
     }
 }
 std::string TcpAccept::logSection()
@@ -84,14 +84,14 @@ bool TcpAccept::openAccept(const std::string & listenIP, unsigned short listenPo
         return false;
     }
 
-    if (_register._fd != InvalideFD)
+    if (_register._fd != InvalidFD)
     {
         LCF("TcpAccept::openAccept[this0x" << this << "] accept fd is aready used!" << logSection());
         return false;
     }
 
     _register._fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (_register._fd == InvalideFD)
+    if (_register._fd == InvalidFD)
     {
         LCF("TcpAccept::openAccept[this0x" << this << "] listen socket create err errno =" << strerror(errno) << logSection());
         return false;
@@ -115,7 +115,7 @@ bool TcpAccept::openAccept(const std::string & listenIP, unsigned short listenPo
     {
         LCF("TcpAccept::openAccept[this0x" << this << "] listen socket bind err, errno=" << strerror(errno) << logSection());
         ::close(_register._fd);
-        _register._fd = InvalideFD;
+        _register._fd = InvalidFD;
         return false;
     }
 
@@ -123,7 +123,7 @@ bool TcpAccept::openAccept(const std::string & listenIP, unsigned short listenPo
     {
         LCF("TcpAccept::openAccept[this0x" << this << "] listen socket listen err, errno=" << strerror(errno) << logSection());
         ::close(_register._fd);
-        _register._fd = InvalideFD;
+        _register._fd = InvalidFD;
         return false;
     }
 
@@ -214,7 +214,7 @@ bool TcpAccept::close()
     _summer->registerEvent(EPOLL_CTL_DEL, _register);
     shutdown(_register._fd, SHUT_RDWR);
     ::close(_register._fd);
-    _register._fd = InvalideFD;
+    _register._fd = InvalidFD;
     return true;
 }
 

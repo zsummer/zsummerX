@@ -50,10 +50,10 @@ TcpAccept::TcpAccept()
 
 TcpAccept::~TcpAccept()
 {
-    if (_register._fd != InvalidFD)
+    if (_fd != InvalidFD)
     {
-        ::close(_register._fd);
-        _register._fd = InvalidFD;
+        ::close(_fd);
+        _fd = InvalidFD;
     }
 }
 std::string TcpAccept::AcceptSection()
@@ -61,7 +61,7 @@ std::string TcpAccept::AcceptSection()
     std::stringstream os;
     os << " TcpAccept:Status _summer=" << _summer.use_count() << ", _listenIP=" << _listenIP
         << ", _listenPort=" << _listenPort << ", _onAcceptHandler=" << (bool)_onAcceptHandler
-        << ", _client=" << _client.use_count() << "_register=" << _register;
+        << ", _client=" << _client.use_count() ;
     return os.str();
 }
 bool TcpAccept::initialize(const EventLoopPtr &summer)
@@ -92,7 +92,7 @@ bool TcpAccept::openAccept(const std::string& listenIP, unsigned short listenPor
 
 
     int bReuse = 1;
-    if (setsockopt(_register._fd, SOL_SOCKET, SO_REUSEADDR,  (char *)&bReuse, sizeof(bReuse)) != 0)
+    if (setsockopt(_fd, SOL_SOCKET, SO_REUSEADDR,  (char *)&bReuse, sizeof(bReuse)) != 0)
     {
         LCW("TcpAccept::openAccept[this0x" << this << "] listen socket set reuse fail! " << OSTREAM_GET_LASTERROR << ", " << AcceptSection());
     }
@@ -101,7 +101,7 @@ bool TcpAccept::openAccept(const std::string& listenIP, unsigned short listenPor
     _addr.sin_family = AF_INET;
     _addr.sin_addr.s_addr = inet_addr(listenIP.c_str());
     _addr.sin_port = htons(listenPort);
-    if (bind(_register._fd, (sockaddr *) &_addr, sizeof(_addr)) != 0)
+    if (bind(_fd, (sockaddr *) &_addr, sizeof(_addr)) != 0)
     {
         LCF("TcpAccept::openAccept[this0x" << this << "] listen socket bind err, " << OSTREAM_GET_LASTERROR << ", " << AcceptSection());
         ::close(_fd);
@@ -112,14 +112,14 @@ bool TcpAccept::openAccept(const std::string& listenIP, unsigned short listenPor
     if (listen(_fd, 200) != 0)
     {
         LCF("TcpAccept::openAccept[this0x" << this << "] listen socket listen err, " << OSTREAM_GET_LASTERROR << ", " << AcceptSection());
-        ::close(_register._fd);
+        ::close(_fd);
         _fd = InvalidFD;
         return false;
     }
 
     _summer->addTcpAccept(_fd, shared_from_this());
 
-    _register._linkstat = LS_ESTABLISHED;
+    _linkstat = LS_ESTABLISHED;
     return true;
 }
 
@@ -152,7 +152,7 @@ void TcpAccept::onSelectMessage()
         return ;
     }
 
-    if (_register._linkstat != LS_ESTABLISHED)
+    if (_linkstat != LS_ESTABLISHED)
     {
         LCF("TcpAccept::onSelectMessage[this0x" << this << "] err, _linkstat not work state" << AcceptSection());
         return ;

@@ -37,9 +37,9 @@ link_directories(${ZSUMMERX_LIB_DIR})
 
 
 set(LIB_SUFFIX "")
-
+set(CMAKE_BUILD_TYPE "Debug")
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-set(LIB_SUFFIX "_d")
+	set(LIB_SUFFIX "_d")
 endif()
 
 

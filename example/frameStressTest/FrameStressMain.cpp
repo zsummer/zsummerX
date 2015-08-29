@@ -315,6 +315,7 @@ int main(int argc, char* argv[])
         {
             SessionID cID = SessionManager::getRef().addConnecter(g_remoteIP, g_remotePort);
             SessionManager::getRef().getConnecterOptions(cID)._reconnects = 15;
+            SessionManager::getRef().getConnecterOptions(cID)._connectPulseInterval = 100000;
             SessionManager::getRef().getConnecterOptions(cID)._onSessionLinked = std::bind(&CStressClientHandler::onConnected, &client, _1);
             SessionManager::getRef().openConnecter(cID);
         }

@@ -88,7 +88,6 @@ namespace zsummer
             void addUdpSocket(int fd, UdpSocketPtr s);
             void clearSocket(int fd);
 
-            bool registerEvent(int op/* 0 add,  1 mod, 2 del*/, tagRegister &reg);
             void PostMessage(_OnPostHandler &&handle);
         private:
             std::string logSection();

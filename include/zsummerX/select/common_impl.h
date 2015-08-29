@@ -47,40 +47,8 @@ namespace zsummer
 #define IS_WOULDBLOCK (errno == EAGAIN || errno == EWOULDBLOCK)
 #define OSTREAM_GET_LASTERROR  "errno=" << errno << ", errMSG=" << strerror(errno)
 
-        class TcpSocket;
-        class TcpAccept;
-        class UdpSocket;
-        const int InvalidFD = -1;
-        struct tagRegister
-        {
-            enum REG_TYPE
-            {
-                REG_INVALID,
-                REG_TCP_SOCKET,
-                REG_TCP_ACCEPT,
-                REG_UDP_SOCKET
-            };
-            unsigned short _type = REG_INVALID;
-            unsigned char _linkstat = LS_UNINITIALIZE;
-            bool _rd = false;
-            bool _wt = false;
-            int _fd = InvalidFD;
-            std::shared_ptr<TcpSocket> _tcpSocketSendPtr;
-            std::shared_ptr<TcpSocket> _tcpSocketRecvPtr;
-            std::shared_ptr<TcpSocket> _tcpSocketConnectPtr;
-            std::shared_ptr<TcpAccept> _tcpacceptPtr;
-            std::shared_ptr<UdpSocket> _udpsocketPtr;
-        };
-        typedef std::vector<tagRegister> PoolReggister;
 
-        template <class T>
-        T& operator <<(T &t, const tagRegister & reg)
-        {
-            t << "registerEvent Info: register._fd[" << reg._fd << "] _rd[" << reg._rd
-                << "] _wt[" << reg._wt << "] _linkstat[" << (int)reg._linkstat << "], _type=[" << reg._type << "]";
-                
-            return t;
-        }
+        const int InvalidFD = -1;
     }
 }
 

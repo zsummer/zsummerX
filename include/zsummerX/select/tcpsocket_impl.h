@@ -46,7 +46,8 @@ namespace zsummer
 {
     namespace network
     {
-
+        class EventLoop;
+        using EventLoopPtr = std::shared_ptr<EventLoop>;
         class TcpSocket : public std::enable_shared_from_this<TcpSocket>
         {
         public:

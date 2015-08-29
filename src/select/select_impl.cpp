@@ -221,13 +221,12 @@ std::string EventLoop::logSection()
 
 void EventLoop::runOnce(bool isImmediately)
 {
-    int nfds = 0;
     fd_set fdr;
     fd_set fdw;
     fd_set fde;
     memcpy(&fdr, &_fdreads, sizeof(_fdreads));
-    memcpy(&fdw, &_fdreads, sizeof(_fdreads));
-    memcpy(&fde, &_fdreads, sizeof(_fdreads));
+    memcpy(&fdw, &_fdwrites, sizeof(_fdwrites));
+    memcpy(&fde, &_fderrors, sizeof(_fderrors));
 
     timeval tv;
     if (isImmediately)
@@ -242,7 +241,7 @@ void EventLoop::runOnce(bool isImmediately)
         tv.tv_usec = (ms % 1000) * 1000;
     }
 
-    int retCount = ::select(nfds+1, &fdr, &fdw, &fde, &tv);
+    int retCount = ::select(_maxfd+1, &fdr, &fdw, &fde, &tv);
     if (retCount == -1)
     {
         if (errno == EINTR)
@@ -288,7 +287,7 @@ void EventLoop::runOnce(bool isImmediately)
         }
     }
 
-    for (int i = 0; i < _maxfd ; ++i)
+    for (int i = 0; i <= _maxfd ; ++i)
     {
         //tagHandle  type
         if (FD_ISSET(i, &fdr) || FD_ISSET(i, &fdw) || FD_ISSET(i, &fde))

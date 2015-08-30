@@ -186,14 +186,20 @@ void TcpAccept::onSelectMessage()
 
 bool TcpAccept::close()
 {
-    _onAcceptHandler = nullptr;
-    if (_fd != InvalidFD)
+    auto guard = shared_from_this();
+    if(_linkstat != LS_CLOSED)
     {
-        _summer->clearSocket(_fd);
-        shutdown(_fd, SHUT_RDWR);
-        ::close(_fd);
-        _fd = InvalidFD;
+        _linkstat = LS_CLOSED;
+        _onAcceptHandler = nullptr;
+        if (_fd != InvalidFD)
+        {
+            _summer->clearSocket(_fd);
+            shutdown(_fd, SHUT_RDWR);
+            ::close(_fd);
+            _fd = InvalidFD;
+        }
     }
+
     return true;
 }
 

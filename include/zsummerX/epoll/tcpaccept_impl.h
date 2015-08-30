@@ -53,7 +53,7 @@ namespace zsummer
             bool initialize(const EventLoopPtr &summer);
             bool openAccept(const std::string & listenIP, unsigned short listenPort);
             bool doAccept(const TcpSocketPtr &s, _OnAcceptHandler &&handle);
-            void onEPOLLMessage(bool bSuccess);
+            void onEPOLLMessage(uint32_t event);
             bool close();
 
         private:

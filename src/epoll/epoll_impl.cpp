@@ -81,9 +81,9 @@ bool EventLoop::initialize()
     return true;
 }
 
-bool EventLoop::registerEvent(int op, EventData & reg)
+bool EventLoop::registerEvent(int op, EventData & ed)
 {
-    if (epoll_ctl(_epoll, op, reg._fd, &reg._event) != 0)
+    if (epoll_ctl(_epoll, op, ed._fd, &ed._event) != 0)
     {
         return false;
     }
@@ -114,7 +114,7 @@ std::string EventLoop::logSection()
 
 void EventLoop::runOnce(bool isImmediately)
 {
-    int retCount = epoll_wait(_epoll, _events, 1000,  isImmediately ? 0 : _timer.getNextExpireTime());
+    int retCount = epoll_wait(_epoll, _events, MAX_EPOLL_WAIT,  isImmediately ? 0 : _timer.getNextExpireTime());
     if (retCount == -1)
     {
         if (errno != EINTR)
@@ -134,13 +134,14 @@ void EventLoop::runOnce(bool isImmediately)
 
     for (int i=0; i<retCount; i++)
     {
-        int eventflag = _events[i].events;
-        EventData * pReg = (EventData *)_events[i].data.ptr;
+        EventData * pEvent = (EventData *)_events[i].data.ptr;
         //tagHandle  type
-        if (pReg->_type == EventData::REG_ZSUMMER)
+        if (pEvent->_type == EventData::REG_ZSUMMER)
         {
-            char buf[1000];
-            while (recv(pReg->_fd, buf, 1000, 0) > 0);
+            {
+                char buf[200];
+                while (recv(pEvent->_fd, buf, 200, 0) > 0);
+            }
 
             MessageStack msgs;
             _stackMessagesLock.lock();
@@ -165,69 +166,30 @@ void EventLoop::runOnce(bool isImmediately)
                 delete p;
             }
         }
-        else if (pReg->_type == EventData::REG_TCP_ACCEPT)
+        else if (pEvent->_type == EventData::REG_TCP_ACCEPT)
         {
-            if (eventflag & EPOLLIN)
+            if (pEvent->_tcpacceptPtr)
             {
-                if (pReg->_tcpacceptPtr)
-                {
-                    pReg->_tcpacceptPtr->onEPOLLMessage(true);
-                }
-            }
-            else if (eventflag & EPOLLERR || eventflag & EPOLLHUP)
-            {
-                if (pReg->_tcpacceptPtr)
-                {
-                    pReg->_tcpacceptPtr->onEPOLLMessage(false);
-                }
+                pEvent->_tcpacceptPtr->onEPOLLMessage(_events[i].events);
             }
         }
-        else if (pReg->_type == EventData::REG_TCP_SOCKET)
+        else if (pEvent->_type == EventData::REG_TCP_SOCKET)
         {
-            if (eventflag & EPOLLERR || eventflag & EPOLLHUP)
+            if (pEvent->_tcpSocketPtr)
             {
-                if (pReg->_tcpSocketConnectPtr)
-                {
-                    pReg->_tcpSocketConnectPtr->onEPOLLMessage(EPOLLOUT, true);
-                }
-                else if (pReg->_tcpSocketRecvPtr)
-                {
-                    pReg->_tcpSocketRecvPtr->onEPOLLMessage(EPOLLIN, true);
-                }
-                else if (pReg->_tcpSocketSendPtr)
-                {
-                    pReg->_tcpSocketSendPtr->onEPOLLMessage(EPOLLOUT, true);
-                }
-            }
-            else if (eventflag & EPOLLIN)
-            {
-                if (pReg->_tcpSocketRecvPtr)
-                {
-                    pReg->_tcpSocketRecvPtr->onEPOLLMessage(EPOLLIN, false);
-                }
-            }
-            else if (eventflag & EPOLLOUT)
-            {
-                if (pReg->_tcpSocketConnectPtr)
-                {
-                    pReg->_tcpSocketConnectPtr->onEPOLLMessage(EPOLLOUT, false);
-                }
-                else if (pReg->_tcpSocketSendPtr)
-                {
-                    pReg->_tcpSocketSendPtr->onEPOLLMessage(EPOLLOUT, false);
-                }
+                pEvent->_tcpSocketPtr->onEPOLLMessage(_events[i].events);
             }
         }
-        else if (pReg->_type == EventData::REG_UDP_SOCKET)
+        else if (pEvent->_type == EventData::REG_UDP_SOCKET)
         {
-            if (pReg->_udpsocketPtr)
+            if (pEvent->_udpsocketPtr)
             {
-                pReg->_udpsocketPtr->onEPOLLMessage(pReg->_type, eventflag);
+                pEvent->_udpsocketPtr->onEPOLLMessage(_events[i].events);
             }
         }
         else
         {
-            LCE("EventLoop::runOnce[this0x" << this << "] check register event type failed !!  type=" << pReg->_type << logSection());
+            LCE("EventLoop::runOnce[this0x" << this << "] check register event type failed !!  type=" << pEvent->_type << logSection());
         }
             
     }

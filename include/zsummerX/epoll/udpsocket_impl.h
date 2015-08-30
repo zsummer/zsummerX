@@ -56,7 +56,7 @@ namespace zsummer
             bool initialize(const EventLoopPtr &summer, const char *localIP, unsigned short localPort);
             bool doRecvFrom(char * buf, unsigned int len, _OnRecvFromHandler&& handler);
             bool doSendTo(char * buf, unsigned int len, const char *dstip, unsigned short dstport);
-            bool onEPOLLMessage(int type, int flag);
+            bool onEPOLLMessage(uint32_t event);
         public:
             EventLoopPtr _summer;
             EventData _eventData;

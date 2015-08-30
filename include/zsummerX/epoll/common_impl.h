@@ -45,7 +45,7 @@ namespace zsummer
 {
     namespace network
     {
-
+        const int MAX_EPOLL_WAIT = 5000;
         class TcpSocket;
         class TcpAccept;
         class UdpSocket;
@@ -65,9 +65,7 @@ namespace zsummer
             unsigned char _type = REG_INVALID; //register type
             unsigned char _linkstat = LS_UNINITIALIZE;
             int              _fd = InvalidFD;   //file descriptor
-            std::shared_ptr<TcpSocket> _tcpSocketSendPtr;
-            std::shared_ptr<TcpSocket> _tcpSocketRecvPtr;
-            std::shared_ptr<TcpSocket> _tcpSocketConnectPtr;
+            std::shared_ptr<TcpSocket> _tcpSocketPtr;
             std::shared_ptr<TcpAccept> _tcpacceptPtr;
             std::shared_ptr<UdpSocket> _udpsocketPtr;
         };

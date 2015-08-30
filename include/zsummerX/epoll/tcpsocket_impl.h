@@ -68,8 +68,8 @@ namespace zsummer
             
         public:
             void OnPostClose();
-            void onEPOLLMessage(int flag, bool err);
-            bool attachSocket(int s, const std::string& remoteIP, unsigned short remotePort);
+            void onEPOLLMessage(uint32_t event);
+            bool attachSocket(int fd, const std::string& remoteIP, unsigned short remotePort);
         private:
             std::string logSection();
         private:

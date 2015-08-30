@@ -79,15 +79,16 @@ bool TcpSocket::setNoDelay()
 
 bool TcpSocket::initialize(const EventLoopPtr & summer)
 {
-     _summer = summer;
     if (_linkstat == LS_ATTACHED)
     {
+        _summer = summer;
         _summer->addTcpSocket(_fd, shared_from_this());
         _linkstat = LS_ESTABLISHED;
         return true;
     }
     if(_linkstat == LS_UNINITIALIZE)
     {
+        _summer = summer;
         _fd = socket(AF_INET, SOCK_STREAM, 0);
         if (_fd == -1)
         {
@@ -117,7 +118,7 @@ bool TcpSocket::attachSocket(int fd, const std::string& remoteIP, unsigned short
 bool TcpSocket::doConnect(const std::string & remoteIP, unsigned short remotePort, _OnConnectHandler && handler)
 {
 
-    if (!_summer || _linkstat != LS_WAITLINK)
+    if (!_summer || _linkstat != LS_WAITLINK || _onConnectHandler)
     {
         LCE("TcpSocket::doConnect[this0x" << this << "] summer not bind!" << logSection());
         return false;
@@ -277,6 +278,7 @@ void TcpSocket::onSelectMessage(bool rd, bool wt, bool err)
         }
         else if (ret != -1)
         {
+            auto guard = shared_from_this();
             _summer->unsetEvent(_fd, 0);
             _pRecvBuf = NULL;
             _iRecvLen = 0;
@@ -298,6 +300,7 @@ void TcpSocket::onSelectMessage(bool rd, bool wt, bool err)
         }
         else if (ret != -1)
         {
+            auto guard = shared_from_this();
             _OnSendHandler onSend(std::move(_onSendHandler));
             _pSendBuf = NULL;
             _iSendLen = 0;
@@ -315,6 +318,7 @@ void TcpSocket::onSelectMessage(bool rd, bool wt, bool err)
 
 bool TcpSocket::doClose()
 {
+    auto guard = shared_from_this();
     if (_linkstat != LS_CLOSED)
     {
         _linkstat = LS_CLOSED;

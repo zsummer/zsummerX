@@ -57,36 +57,36 @@ UdpSocket::~UdpSocket()
 }
 bool  UdpSocket::initialize(const EventLoopPtr & summer, const char *localIP, unsigned short localPort)
 {
-    if (_summer || _linkstat != LS_UNINITIALIZE)
+    if (_linkstat == LS_UNINITIALIZE)
     {
-        LCE("UdpSocket::initialize[this0x" << this << "] UdpSocket is aready initialize, _ios not is nullptr. this=" << this);
-        return false;
+        _summer = summer;
+        _fd = socket(AF_INET, SOCK_DGRAM, 0);
+        _linkstat = LS_WAITLINK;
+        if (_fd == InvalidFD)
+        {
+            LCE("UdpSocket::initialize[this0x" << this << "] create socket fail. this=" << this  << ", " << OSTREAM_GET_LASTERROR);
+            return false;
+        }
+        setNonBlock(_fd);
+        sockaddr_in    localAddr;
+        localAddr.sin_family = AF_INET;
+        localAddr.sin_addr.s_addr = inet_addr(localIP);
+        localAddr.sin_port = htons(localPort);
+        if (bind(_fd, (sockaddr *) &localAddr, sizeof(localAddr)) != 0)
+        {
+            LCE("UdpSocket::initialize[this0x" << this << "]: socket bind err, " << OSTREAM_GET_LASTERROR);
+            ::close(_fd);
+            _fd = InvalidFD;
+            return false;
+        }
+
+        _summer->addUdpSocket(_fd, shared_from_this());
+        _linkstat = LS_ESTABLISHED;
     }
 
-    _summer = summer;
-    _fd = socket(AF_INET, SOCK_DGRAM, 0);
-    _linkstat = LS_WAITLINK;
-    if (_fd == InvalidFD)
-    {
-        LCE("UdpSocket::initialize[this0x" << this << "] create socket fail. this=" << this  << ", " << OSTREAM_GET_LASTERROR);
-        return false;
-    }
-    setNonBlock(_fd);
-    sockaddr_in    localAddr;
-    localAddr.sin_family = AF_INET;
-    localAddr.sin_addr.s_addr = inet_addr(localIP);
-    localAddr.sin_port = htons(localPort);
-    if (bind(_fd, (sockaddr *) &localAddr, sizeof(localAddr)) != 0)
-    {
-        LCE("UdpSocket::initialize[this0x" << this << "]: socket bind err, " << OSTREAM_GET_LASTERROR);
-        ::close(_fd);
-        _fd = InvalidFD;
-        return false;
-    }
+    LCE("UdpSocket::initialize[this0x" << this << "] UdpSocket is aready initialize, _ios not is nullptr. this=" << this);
+    return false;
 
-    _summer->addUdpSocket(_fd, shared_from_this());
-    _linkstat = LS_ESTABLISHED;
-    return true;
 }
 
 bool UdpSocket::doSendTo(char * buf, unsigned int len, const char *dstip, unsigned short dstport)
@@ -112,7 +112,7 @@ bool UdpSocket::doSendTo(char * buf, unsigned int len, const char *dstip, unsign
 
 bool UdpSocket::doRecvFrom(char * buf, unsigned int len, _OnRecvFromHandler && handler)
 {
-    if (!_summer)
+    if (!_summer || _linkstat != LS_ESTABLISHED)
     {
         LCE("UdpSocket::doRecv[this0x" << this << "] _summer not bind!");
         return false;

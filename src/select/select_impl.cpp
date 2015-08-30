@@ -55,12 +55,12 @@ bool EventLoop::initialize()
     _sockpair[1] = socket(AF_INET, SOCK_STREAM, 0);
     if (_sockpair[0] == -1 || _sockpair[1] == -1 || acpt == -1)
     {
-        LCF("ZSummerImpl::initialize[this0x" << this << "] bind sockpair socket error. " << logSection());
+        LCF("ZSummerImpl::initialize[this0x" << this << "] bind sockpair socket error. " );
         return false;
     }
     if (::bind(acpt, (sockaddr*)&pairAddr, sizeof(pairAddr)) == -1)
     {
-        LCF("EventLoop::initialize[this0x" << this << "] bind sockpair socket error. " << logSection());
+        LCF("EventLoop::initialize[this0x" << this << "] bind sockpair socket error. " );
         ::close(acpt);
         ::close(_sockpair[0]);
         ::close(_sockpair[1]);
@@ -68,7 +68,7 @@ bool EventLoop::initialize()
     }
     if (listen(acpt, 1) == -1)
     {
-        LCF("EventLoop::initialize[this0x" << this << "] listen sockpair socket error. " << logSection());
+        LCF("EventLoop::initialize[this0x" << this << "] listen sockpair socket error. " );
         ::close(acpt);
         ::close(_sockpair[0]);
         ::close(_sockpair[1]);
@@ -77,7 +77,7 @@ bool EventLoop::initialize()
     socklen_t len = sizeof(pairAddr);
     if (getsockname(acpt, (sockaddr*)&pairAddr, &len) != 0)
     {
-        LCF("EventLoop::initialize[this0x" << this << "] getsockname sockpair socket error. " << logSection());
+        LCF("EventLoop::initialize[this0x" << this << "] getsockname sockpair socket error. " );
         ::close(acpt);
         ::close(_sockpair[0]);
         ::close(_sockpair[1]);
@@ -86,7 +86,7 @@ bool EventLoop::initialize()
 
     if (::connect(_sockpair[0], (sockaddr*)&pairAddr, sizeof(pairAddr)) == -1)
     {
-        LCF("EventLoop::initialize[this0x" << this << "] connect sockpair socket error. " << logSection());
+        LCF("EventLoop::initialize[this0x" << this << "] connect sockpair socket error. " );
         ::close(acpt);
         ::close(_sockpair[0]);
         ::close(_sockpair[1]);
@@ -95,7 +95,7 @@ bool EventLoop::initialize()
     _sockpair[1] = accept(acpt, (sockaddr*)&pairAddr, &len);
     if (_sockpair[1] == -1)
     {
-        LCF("EventLoop::initialize[this0x" << this << "] accept sockpair socket error. " << logSection());
+        LCF("EventLoop::initialize[this0x" << this << "] accept sockpair socket error. " );
         ::close(acpt);
         ::close(_sockpair[0]);
         ::close(_sockpair[1]);
@@ -246,7 +246,7 @@ void EventLoop::runOnce(bool isImmediately)
     {
         if (errno == EINTR)
         {
-            LCT("EventLoop::runOnce[this0x" << this << "]  select err!  " << OSTREAM_GET_LASTERROR << ", " << logSection());
+            LCT("EventLoop::runOnce[this0x" << this << "]  select err!  " << OSTREAM_GET_LASTERROR );
             return; //! error
         }
         return;

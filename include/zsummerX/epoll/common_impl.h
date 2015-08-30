@@ -75,11 +75,7 @@ namespace zsummer
         {
             t << "registerEvent Info: epoll_event.events[" << reg._event.events
                 << "] _type[" << (int)reg._type << "] _linkstat[" << (int)reg._linkstat
-                << "] _fd[" << reg._fd << "]  Notes: REG_INVALID[" << EventData::REG_INVALID << "] REG_ZSUMMER[" << EventData::REG_ZSUMMER
-                << "] REG_TCP_SOCKET[" << EventData::REG_TCP_SOCKET << "] REG_TCP_ACCEPT[" << EventData::REG_TCP_ACCEPT
-                << "] REG_UDP_SOCKET[" << EventData::REG_UDP_SOCKET
-                << "] EPOLL_CTL_ADD[" << EPOLL_CTL_ADD << "] EPOLL_CTL_MOD[" << EPOLL_CTL_MOD << "] EPOLL_CTL_DEL[" << EPOLL_CTL_DEL
-                << "];   EPOLLIN[" << EPOLLIN << "] EPOLLOUT[" << EPOLLOUT << "] EPOLLERR[" << EPOLLERR << "] EPOLLHUP[" << EPOLLHUP;
+                << "] _fd[" << reg._fd << "]";
             return t;
         }
     }

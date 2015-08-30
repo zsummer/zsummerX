@@ -50,7 +50,7 @@ bool EventLoop::initialize()
     _io = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, NULL, 1);
     if (!_io)
     {
-        LCF("CreateIoCompletionPort false!  " << logSection());
+        LCF("CreateIoCompletionPort false!  " );
         return false;
     }
     return true;

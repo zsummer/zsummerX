@@ -80,20 +80,14 @@ bool TcpAccept::openAccept(const std::string & listenIP, unsigned short listenPo
 {
     if (!_summer || _eventData._linkstat != LS_WAITLINK)
     {
-        LCE("TcpAccept::openAccept[this0x" << this << "]  not initialize!" << logSection());
-        return false;
-    }
-
-    if (_eventData._fd != InvalidFD)
-    {
-        LCF("TcpAccept::openAccept[this0x" << this << "] accept fd is aready used!" << logSection());
+        LCE("TcpAccept::openAccept[this0x" << this << "]  not initialize!" );
         return false;
     }
 
     _eventData._fd = socket(AF_INET, SOCK_STREAM, 0);
     if (_eventData._fd == InvalidFD)
     {
-        LCF("TcpAccept::openAccept[this0x" << this << "] listen socket create err errno =" << strerror(errno) << logSection());
+        LCF("TcpAccept::openAccept[this0x" << this << "] listen socket create err errno =" << strerror(errno));
         return false;
     }
 
@@ -103,7 +97,7 @@ bool TcpAccept::openAccept(const std::string & listenIP, unsigned short listenPo
     int bReuse = 1;
     if (setsockopt(_eventData._fd, SOL_SOCKET, SO_REUSEADDR,  &bReuse, sizeof(bReuse)) != 0)
     {
-        LCW("TcpAccept::openAccept[this0x" << this << "] listen socket set reuse fail! errno=" << strerror(errno) << logSection());
+        LCW("TcpAccept::openAccept[this0x" << this << "] listen socket set reuse fail! errno=" << strerror(errno));
     }
 
 
@@ -112,7 +106,7 @@ bool TcpAccept::openAccept(const std::string & listenIP, unsigned short listenPo
     _addr.sin_port = htons(listenPort);
     if (bind(_eventData._fd, (sockaddr *) &_addr, sizeof(_addr)) != 0)
     {
-        LCF("TcpAccept::openAccept[this0x" << this << "] listen socket bind err, errno=" << strerror(errno) << logSection());
+        LCF("TcpAccept::openAccept[this0x" << this << "] listen socket bind err, errno=" << strerror(errno) );
         ::close(_eventData._fd);
         _eventData._fd = InvalidFD;
         return false;
@@ -120,7 +114,7 @@ bool TcpAccept::openAccept(const std::string & listenIP, unsigned short listenPo
 
     if (listen(_eventData._fd, 200) != 0)
     {
-        LCF("TcpAccept::openAccept[this0x" << this << "] listen socket listen err, errno=" << strerror(errno) << logSection());
+        LCF("TcpAccept::openAccept[this0x" << this << "] listen socket listen err, errno=" << strerror(errno) );
         ::close(_eventData._fd);
         _eventData._fd = InvalidFD;
         return false;
@@ -141,7 +135,7 @@ bool TcpAccept::doAccept(const TcpSocketPtr &s, _OnAcceptHandler &&handle)
     }
     if (_eventData._linkstat != LS_ESTABLISHED)
     {
-        LCF("TcpAccept::doAccept[this0x" << this << "] err, _linkstat not work state" << logSection());
+        LCF("TcpAccept::doAccept[this0x" << this << "] err, _linkstat not work state");
         return false;
     }
     
@@ -161,7 +155,7 @@ void TcpAccept::onEPOLLMessage(uint32_t event)
     }
     if (_eventData._linkstat != LS_ESTABLISHED)
     {
-        LCF("TcpAccept::doAccept[this0x" << this << "] err, _linkstat not work state" << logSection());
+        LCF("TcpAccept::doAccept[this0x" << this << "] err, _linkstat not work state" );
         return ;
     }
 
@@ -172,7 +166,7 @@ void TcpAccept::onEPOLLMessage(uint32_t event)
 
     if (event &  EPOLLERR || event & EPOLLHUP)
     {
-        LCE("TcpAccept::doAccept[this0x" << this << "]  EPOLLERR, errno=" << strerror(errno) << logSection());
+        LCE("TcpAccept::doAccept[this0x" << this << "]  EPOLLERR, errno=" << strerror(errno) );
         auto guard = shared_from_this();
         close();
         onAccept(NEC_ERROR, ps);
@@ -188,7 +182,7 @@ void TcpAccept::onEPOLLMessage(uint32_t event)
         {
             if (errno != EAGAIN && errno != EWOULDBLOCK)
             {
-                LCE("TcpAccept::doAccept[this0x" << this << "] ERR: accept return -1, errno=" << strerror(errno) << logSection());
+                LCE("TcpAccept::doAccept[this0x" << this << "] ERR: accept return -1, errno=" << strerror(errno));
             }
             auto guard = shared_from_this();
             close();

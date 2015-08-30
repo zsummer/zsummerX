@@ -82,7 +82,6 @@ TimerID Timer::createTimer(unsigned int delayms, _OnTimerHandler &&handle)
 
 bool Timer::cancelTimer(TimerID timerID)
 {
-    LCT("cancelTimer " << timerID);
     std::map<unsigned long long, _OnTimerHandler* >::iterator iter = _queTimer.find(timerID);
     if (iter != _queTimer.end())
     {

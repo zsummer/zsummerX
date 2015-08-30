@@ -92,7 +92,7 @@ bool TcpSocket::initialize(const EventLoopPtr & summer)
         _fd = socket(AF_INET, SOCK_STREAM, 0);
         if (_fd == -1)
         {
-            LCE("TcpSocket::initialize[this0x" << this << "] fd create failed!" << logSection());
+            LCE("TcpSocket::initialize[this0x" << this << "] fd create failed!" );
             return false;
         }
         setNonBlock(_fd);
@@ -135,7 +135,7 @@ bool TcpSocket::doConnect(const std::string & remoteIP, unsigned short remotePor
     int ret = connect(_fd, (sockaddr *) &addr, sizeof(addr));
     if (ret != 0 && errno != EINPROGRESS)
     {
-        LCW("TcpSocket::doConnect[this0x" << this << "] ::connect error. " << OSTREAM_GET_LASTERROR << logSection());
+        LCW("TcpSocket::doConnect[this0x" << this << "] ::connect error. " << OSTREAM_GET_LASTERROR);
         ::close(_fd);
         _fd = InvalidFD;
         return false;
@@ -163,7 +163,7 @@ bool TcpSocket::doSend(char * buf, unsigned int len, _OnSendHandler && handler)
     }
     if (len == 0)
     {
-        LCE("TcpSocket::doSend[this0x" << this << "] argument err! len ==0" << logSection());
+        LCE("TcpSocket::doSend[this0x" << this << "] argument err! len ==0" );
         return false;
     }
     if (_pSendBuf != NULL || _iSendLen != 0)
@@ -205,7 +205,7 @@ bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler)
 
     if (len == 0 )
     {
-        LCE("TcpSocket::doRecv[this0x" << this << "] argument err !!!  len==0" << logSection());
+        LCE("TcpSocket::doRecv[this0x" << this << "] argument err !!!  len==0" );
         return false;
     }
     if (_pRecvBuf != NULL || _iRecvLen != 0)

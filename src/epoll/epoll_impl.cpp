@@ -46,20 +46,20 @@ bool EventLoop::initialize()
 {
     if (_epoll != InvalidFD)
     {
-        LCF("EventLoop::initialize[this0x"<<this <<"] epoll is created ! " << logSection());
+        LCF("EventLoop::initialize[this0x"<<this <<"] epoll is created ! " );
         return false;
     }
     const int IGNORE_ENVENTS = 100;
     _epoll = epoll_create(IGNORE_ENVENTS);
     if (_epoll == InvalidFD)
     {
-        LCF("EventLoop::initialize[this0x" << this << "] create epoll err errno=" << strerror(errno) << logSection());
+        LCF("EventLoop::initialize[this0x" << this << "] create epoll err errno=" << strerror(errno));
         return false;
     }
 
     if (socketpair(AF_LOCAL, SOCK_STREAM, 0, _sockpair) != 0)
     {
-        LCF("EventLoop::initialize[this0x" << this << "] create socketpair.  errno=" << strerror(errno) << logSection());
+        LCF("EventLoop::initialize[this0x" << this << "] create socketpair.  errno=" << strerror(errno));
         return false;
     }
     setNonBlock(_sockpair[0]);

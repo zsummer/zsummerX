@@ -102,14 +102,14 @@ bool TcpAccept::openAccept(const std::string ip, unsigned short port)
     _server = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
     if (_server == INVALID_SOCKET)
     {
-        LCF("create socket error! " << logSection());
+        LCF("create socket error! ");
         return false;
     }
 
     BOOL bReUseAddr = TRUE;
     if (setsockopt(_server, SOL_SOCKET,SO_REUSEADDR, (char*)&bReUseAddr, sizeof(BOOL)) != 0)
     {
-        LCW("setsockopt  SO_REUSEADDR error! error code=" << WSAGetLastError() << logSection());
+        LCW("setsockopt  SO_REUSEADDR error! error code=" << WSAGetLastError() );
     }
 
     SOCKADDR_IN addr;
@@ -119,7 +119,7 @@ bool TcpAccept::openAccept(const std::string ip, unsigned short port)
     addr.sin_port = htons(port);
     if (bind(_server, (sockaddr *)&addr, sizeof(addr)) != 0)
     {
-        LCF("bind error, ERRCODE=" << WSAGetLastError() << logSection());
+        LCF("bind error, ERRCODE=" << WSAGetLastError() );
         closesocket(_server);
         _server = INVALID_SOCKET;
         return false;
@@ -127,7 +127,7 @@ bool TcpAccept::openAccept(const std::string ip, unsigned short port)
 
     if (listen(_server, SOMAXCONN) != 0)
     {
-        LCF("listen error, ERRCODE=" << WSAGetLastError() << logSection());
+        LCF("listen error, ERRCODE=" << WSAGetLastError() );
         closesocket(_server);
         _server = INVALID_SOCKET;
         return false;
@@ -135,7 +135,7 @@ bool TcpAccept::openAccept(const std::string ip, unsigned short port)
 
     if (CreateIoCompletionPort((HANDLE)_server, _summer->_io, (ULONG_PTR)this, 1) == NULL)
     {
-        LCF("bind to iocp error, ERRCODE=" << WSAGetLastError() << logSection());
+        LCF("bind to iocp error, ERRCODE=" << WSAGetLastError() );
         closesocket(_server);
         _server = INVALID_SOCKET;
         return false;
@@ -163,7 +163,7 @@ bool TcpAccept::doAccept(const TcpSocketPtr & s, _OnAcceptHandler&& handler)
     _socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP,  NULL, 0, WSA_FLAG_OVERLAPPED);
     if (_socket == INVALID_SOCKET)
     {
-        LCF("TcpAccept::doAccept create client socket error! error code=" << WSAGetLastError() << logSection());
+        LCF("TcpAccept::doAccept create client socket error! error code=" << WSAGetLastError() );
         return false;
     }
     setNoDelay(_socket);
@@ -171,7 +171,7 @@ bool TcpAccept::doAccept(const TcpSocketPtr & s, _OnAcceptHandler&& handler)
     {
         if (WSAGetLastError() != ERROR_IO_PENDING)
         {
-            LCE("TcpAccept::doAccept do AcceptEx error, error code =" << WSAGetLastError() << logSection());
+            LCE("TcpAccept::doAccept do AcceptEx error, error code =" << WSAGetLastError() );
             closesocket(_socket);
             _socket = INVALID_SOCKET;
             return false;
@@ -190,7 +190,7 @@ bool TcpAccept::onIOCPMessage(BOOL bSuccess)
 
         if (setsockopt(_socket, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT, (char*)&_server, sizeof(_server)) != 0)
         {
-            LCW("setsockopt SO_UPDATE_ACCEPT_CONTEXT fail!  last error=" << WSAGetLastError()  << logSection());
+            LCW("setsockopt SO_UPDATE_ACCEPT_CONTEXT fail!  last error=" << WSAGetLastError() );
         }
 
         sockaddr * paddr1 = NULL;
@@ -203,7 +203,7 @@ bool TcpAccept::onIOCPMessage(BOOL bSuccess)
     }
     else
     {
-        LCW("AcceptEx failed,  retry doAccept ... , lastError=" << GetLastError() << logSection());
+        LCW("AcceptEx failed,  retry doAccept ... , lastError=" << GetLastError() );
         onAccept(NEC_ERROR, _client);
     }
     return true;

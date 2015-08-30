@@ -114,7 +114,7 @@ bool SessionManager::runOnce(bool isImmediately)
             {
                 if (isSessionID(kv.first))
                 {
-                    kickSession(kv.first);
+                    post(std::bind(&SessionManager::kickSession, this, kv.first));
                     count++;
                 }
             }
@@ -135,7 +135,7 @@ bool SessionManager::runOnce(bool isImmediately)
                 if (isConnectID(kv.first))
                 {
                     kv.second->getOptions()._reconnects = 0;
-                    kickSession(kv.first);
+                    post(std::bind(&SessionManager::kickSession, this, kv.first));
                     count++;
                 }
                 
@@ -300,12 +300,9 @@ void SessionManager::onAcceptNewClient(zsummer::network::NetErrorCode ec, const 
     }
     
     //! check Max Sessions
-
     if (founder->second._currentLinked >= founder->second._maxSessions)
     {
-        LCW("Accept New Client. Too Many Sessions And The new socket will closed. extend=" << founder->second << "] total TcpSocket object count =[create:" << g_appEnvironment.getCreatedSocketCount() << ", close:" << g_appEnvironment.getClosedSocketCount() << "], total TcpSession object count =[create:"
-            << g_appEnvironment.getCreatedSessionCount() << ", close:" << g_appEnvironment.getClosedSessionCount()
-            << "]");
+        LCW("Accept New Client. Too Many Sessions And The new socket will closed. extend=" << founder->second );
     }
     else
     {
@@ -319,8 +316,8 @@ void SessionManager::onAcceptNewClient(zsummer::network::NetErrorCode ec, const 
 
         TcpSessionPtr session = std::make_shared<TcpSession>();
         session->getOptions() = founder->second._sessionOptions;
-        session->setEventLoopPtr(_summer);
-        if (session->bindTcpSocketPrt(s, aID, _lastSessionID))
+        session->setEventLoop(_summer);
+        if (session->attatch(s, aID, _lastSessionID))
         {
             _mapTcpSessionPtr[_lastSessionID] = session;
         }
@@ -388,12 +385,9 @@ void SessionManager::kickSession(SessionID sID)
     iter->second->close();
 }
 
-void SessionManager::onSessionClose(TcpSessionPtr session, bool clean)
+void SessionManager::removeSession(TcpSessionPtr session)
 {
-    if (!clean)
-    {
-        return;
-    }
+
     
     _mapTcpSessionPtr.erase(session->getSessionID());
     if (session->getAcceptID() != InvalidAccepterID)
@@ -456,7 +450,7 @@ SessionID SessionManager::addConnecter(const std::string & remoteIP, unsigned sh
     session->getOptions()._createBlock = DefaultCreateBlock;
     session->getOptions()._freeBlock = DefaultFreeBlock;
 
-    session->setEventLoopPtr(_summer);
+    session->setEventLoop(_summer);
     session->setSessionID(_lastConnectID);
     session->setRemoteIP(remoteIP);
     session->setRemotePort(remotePort);

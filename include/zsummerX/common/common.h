@@ -130,18 +130,10 @@ namespace zsummer
             inline void addClosedSocketCount(){ _totalClosedCTcpSocketObjs++; }
             inline unsigned int getCreatedSocketCount(){ return _totalCreatedCTcpSocketObjs; }
             inline unsigned int getClosedSocketCount(){ return _totalClosedCTcpSocketObjs; }
-
-            inline void addCreatedSessionCount(){ _totalCreatedCTcpSessionObjs++; }
-            inline void addClosedSessionCount(){ _totalClosedCTcpSessionObjs++; }
-            inline unsigned int getCreatedSessionCount(){ return _totalCreatedCTcpSessionObjs; }
-            inline unsigned int getClosedSessionCount(){ return _totalClosedCTcpSessionObjs; }
-
             inline LoggerId getNetCoreLogger(){ return _netLoggerID; }
         private:
             std::atomic_uint _totalCreatedCTcpSocketObjs;
             std::atomic_uint _totalClosedCTcpSocketObjs;
-            std::atomic_uint _totalCreatedCTcpSessionObjs;
-            std::atomic_uint _totalClosedCTcpSessionObjs;
             LoggerId _netLoggerID = 0;
         };
 

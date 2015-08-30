@@ -45,10 +45,7 @@ using namespace zsummer::network;
 
 TcpSession::TcpSession()
 {
-    zsummer::network::g_appEnvironment.addCreatedSessionCount();
-    LCI("TcpSession. total TcpSocket object count =[create:" << zsummer::network::g_appEnvironment.getCreatedSocketCount() << ", close:" << zsummer::network::g_appEnvironment.getClosedSocketCount() << "], total TcpSession object count =[create:"
-        << zsummer::network::g_appEnvironment.getCreatedSessionCount() << ", close:" << zsummer::network::g_appEnvironment.getClosedSessionCount()
-        << "]");
+    SessionManager::getRef()._statInfo[STAT_SESSION_CREATED]++;
     _recving = (SessionBlock*)malloc(sizeof(SessionBlock)+SESSION_BLOCK_SIZE);
     _recving->len = 0;
     _recving->bound = SESSION_BLOCK_SIZE;
@@ -59,7 +56,7 @@ TcpSession::TcpSession()
 
 TcpSession::~TcpSession()
 {
-    zsummer::network::g_appEnvironment.addClosedSessionCount();
+    SessionManager::getRef()._statInfo[STAT_SESSION_DESTROYED]++;
     while (!_sendque.empty())
     {
         _options._freeBlock(_sendque.front());
@@ -70,43 +67,13 @@ TcpSession::~TcpSession()
         _sockptr->doClose();
         _sockptr.reset();
     }
-    
 
     free (_recving);
     _recving = nullptr;
     free (_sending);
     _sending = nullptr;
-    LCI("~TcpSession. total TcpSocket object count =[create:" << zsummer::network::g_appEnvironment.getCreatedSocketCount() << ", close:" << zsummer::network::g_appEnvironment.getClosedSocketCount() << "], total TcpSession object count =[create:"
-        << zsummer::network::g_appEnvironment.getCreatedSessionCount() << ", close:" << zsummer::network::g_appEnvironment.getClosedSessionCount()
-        << "]");
 }
 
-
-bool TcpSession::bindTcpSocketPrt(const TcpSocketPtr &sockptr, AccepterID aID, SessionID sID)
-{
-    _sockptr = sockptr;
-    _acceptID = aID;
-    _sessionID = sID;
-    _sockptr->getPeerInfo(_remoteIP, _remotePort);
-    if (_options._setNoDelay)
-    {
-        sockptr->setNoDelay();
-    }
-    
-    _status = 2;
-    if (!doRecv())
-    {
-        LCW("bindTcpSocketPrt Failed.");
-        return false;
-    }
-    if (_options._onSessionLinked)
-    {
-        _options._onSessionLinked(shared_from_this());
-    }
-    _pulseTimerID = SessionManager::getRef().createTimer(isConnectID(_sessionID) ? _options._connectPulseInterval : _options._sessionPulseInterval, std::bind(&TcpSession::onPulse, shared_from_this()));
-    SessionManager::getRef()._statInfo[STAT_LINKED]++;
-    return true;
-}
 
 void TcpSession::connect()
 {
@@ -117,11 +84,8 @@ void TcpSession::connect()
 
 void TcpSession::reconnect()
 {
-    //!
     if (_sockptr)
     {
-        //socket在close之后不应该再有任何回调.
-        //socket close前只有recv回调才会收到close通知.
         _sockptr->doClose();
         _sockptr.reset();
     }
@@ -132,14 +96,12 @@ void TcpSession::reconnect()
     _rc4StateWrite.makeSBox(_options._rc4TcpEncryption);
     _bFirstRecvData = true;
 
-    if (_options._reconnectClean)
+    while (_options._reconnectClean && !_sendque.empty())
     {
-        while (!_sendque.empty())
-        {
-            _options._freeBlock(_sendque.front());
-            _sendque.pop();
-        }
+        _options._freeBlock(_sendque.front());
+        _sendque.pop();
     }
+
     _sockptr = std::make_shared<TcpSocket>();
     if (!_sockptr->initialize(_eventLoop))
     {
@@ -154,7 +116,32 @@ void TcpSession::reconnect()
     }
 }
 
+bool TcpSession::attatch(const TcpSocketPtr &sockptr, AccepterID aID, SessionID sID)
+{
+    _sockptr = sockptr;
+    _acceptID = aID;
+    _sessionID = sID;
+    _sockptr->getPeerInfo(_remoteIP, _remotePort);
+    if (_options._setNoDelay)
+    {
+        sockptr->setNoDelay();
+    }
+    _status = 2;
+    _pulseTimerID = SessionManager::getRef().createTimer(_options._connectPulseInterval, std::bind(&TcpSession::onPulse, shared_from_this()));
+    SessionManager::getRef()._statInfo[STAT_SESSION_LINKED]++;
 
+    if (_options._onSessionLinked)
+    {
+        _options._onSessionLinked(shared_from_this());
+    }
+
+    if (!doRecv())
+    {
+        close();
+        return false;
+    }
+    return true;
+}
 
 void TcpSession::onConnected(zsummer::network::NetErrorCode ec)
 {
@@ -164,27 +151,26 @@ void TcpSession::onConnected(zsummer::network::NetErrorCode ec)
         return;
     }
     LCI("onConnected success. cID=" << _sessionID);
-    _status = 2;
-    _curReconnectCount = 0;
-    if (_options._setNoDelay)
-    {
-        _sockptr->setNoDelay();
-    }
 
     if (!doRecv())
     {
-        _status = 1;
         return;
     }
-    if (!_sendque.empty())
+    _status = 2;
+    _reconnects = 0;
+    if (_options._setNoDelay)
     {
-        send(nullptr, 0);
+        _sockptr->setNoDelay();
     }
     if (_options._onSessionLinked)
     {
         _options._onSessionLinked(shared_from_this());
     }
-    SessionManager::getRef()._statInfo[STAT_LINKED]++;
+    SessionManager::getRef()._statInfo[STAT_SESSION_LINKED]++;
+    if (!_sendque.empty())
+    {
+        send(nullptr, 0);
+    }
 }
 
 bool TcpSession::doRecv()
@@ -201,19 +187,25 @@ void TcpSession::close()
     LCW("TcpSession to close socket. sID= " << _sessionID );
     if (_sockptr)
     {
+        _status = 3;
         _sockptr->doClose();
         _sockptr.reset();
-        //onClose();
-        if (isConnectID(_sessionID) && _curReconnectCount < _options._reconnects)
+        SessionManager::getRef()._statInfo[STAT_SESSION_CLOSED]++;
+        if (_options._onSessionClosed)
+        {
+            _options._onSessionClosed(shared_from_this());
+        }
+        if (isConnectID(_sessionID) && _reconnects < _options._reconnects)
         {
             _status = 1;
         }
         else
         {
-            _status = 3;
+            SessionManager::getRef().removeSession(shared_from_this());
         }
-        SessionManager::getRef().post(std::bind(&TcpSession::onClose, shared_from_this()));
+        return;
     }
+    LCE("TcpSession::close invalid");
 }
 
 void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
@@ -221,7 +213,7 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
     if (ec)
     {
         LCD("socket closed. ec=" << ec);
-        onClose();
+        close();
         return;
     }
     _recving->len += nRecvedLen;
@@ -281,7 +273,7 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
             if (ret.first == BCT_CORRUPTION)
             {
                 LCW("killed socket: _onBlockCheck error ");
-                onClose();
+                close();
                 return;
             }
             if (ret.first == BCT_SHORTAGE)
@@ -296,7 +288,7 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
             catch (std::runtime_error e)
             {
                 LCW("MessageEntry catch one exception: " << e.what());
-                onClose();
+                close();
                 return;
             }
             usedIndex += ret.second;
@@ -313,7 +305,7 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
             if (ret.first == BCT_CORRUPTION)
             {
                 LCE("killed http socket: _onHTTPBlockCheck error sID=" << _sessionID);
-                onClose();
+                close();
                 return;
             }
             if (ret.first == BCT_SHORTAGE)
@@ -344,7 +336,7 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
     
     if (!doRecv())
     {
-        onClose();
+        close();
     }
 }
 
@@ -488,15 +480,14 @@ void TcpSession::onPulse()
     
     if (_status == 1)
     {
-        if (_options._reconnects == 0 || _curReconnectCount >= _options._reconnects)
+        if (_reconnects >= _options._reconnects)
         {
-            _status = 3;
-            onClose();
+            close();
         }
         else
         {
             reconnect();
-            _curReconnectCount++;
+            _reconnects++;
             if (_options._onSessionPulse)
             {
                 _options._onSessionPulse(shared_from_this());
@@ -514,34 +505,6 @@ void TcpSession::onPulse()
     }
 }
 
-void TcpSession::onClose()
-{
-    LCI("Client Closed!");
-    if (_sockptr)
-    {
-        _sockptr->doClose();
-        _sockptr.reset();
-    }
-    _status = 3;
-    if (isConnectID(_sessionID) && _curReconnectCount < _options._reconnects)
-    {
-        _status = 1;
-    }
-    if (_options._onSessionClosed)
-    {
-        _options._onSessionClosed(shared_from_this());
-    }
-    if (_status == 3)
-    {
-        SessionManager::getRef().onSessionClose(shared_from_this(), true);
-    }
-    else
-    {
-        SessionManager::getRef().onSessionClose(shared_from_this(), false);
-    }
-    
-    SessionManager::getRef()._statInfo[STAT_CLOSED]++;
-}
 
 Any TcpSession::setUserParam(int index, const Any &any)
 {

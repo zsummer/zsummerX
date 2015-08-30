@@ -106,8 +106,10 @@ namespace zsummer
         enum StatType
         {
             STAT_STARTTIME,
-            STAT_LINKED,
-            STAT_CLOSED,
+            STAT_SESSION_CREATED,
+            STAT_SESSION_DESTROYED,
+            STAT_SESSION_LINKED,
+            STAT_SESSION_CLOSED,
             STAT_FREE_BLOCKS,
             STAT_EXIST_BLOCKS,
             STAT_SEND_COUNT,

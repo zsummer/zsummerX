@@ -159,7 +159,7 @@ namespace zsummer
         private:
             friend class TcpSession;
             // 一个established状态的session已经关闭. 
-            void onSessionClose(TcpSessionPtr session, bool clean);
+            void removeSession(TcpSessionPtr session);
 
             //accept到新连接.
             void onAcceptNewClient(zsummer::network::NetErrorCode ec, const TcpSocketPtr & s, const TcpAcceptPtr & accepter, AccepterID aID);

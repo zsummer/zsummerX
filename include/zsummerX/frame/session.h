@@ -51,29 +51,23 @@ namespace zsummer
         public:
             TcpSession();
             ~TcpSession();
-            void send(const char *buf, unsigned int len);
-            void close();
+            inline SessionOptions & getOptions(){ return _options; }
             void connect();
             void reconnect();
-            bool bindTcpSocketPrt(const TcpSocketPtr &sockptr, AccepterID aID, SessionID sID);
-            inline SessionOptions & getOptions(){ return _options; }
+            bool attatch(const TcpSocketPtr &sockptr, AccepterID aID, SessionID sID);
+            void send(const char *buf, unsigned int len);
+            void close();
+            
         private:
-            void cleanSession(bool isCleanAllData, const std::string &rc4TcpEncryption);
 
             bool doRecv();
-
-            void onConnected(zsummer::network::NetErrorCode ec);
-
             void onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen);
-
             void onSend(zsummer::network::NetErrorCode ec, int nSentLen);
-
+            void onConnected(zsummer::network::NetErrorCode ec);
             void onPulse();
 
-            void onClose();
-
         public:
-            inline void setEventLoopPtr(EventLoopPtr el){ _eventLoop = el; }
+            inline void setEventLoop(EventLoopPtr el){ _eventLoop = el; }
             inline SessionID getAcceptID(){ return _acceptID; }
             inline SessionID getSessionID(){ return _sessionID; }
             inline void setSessionID(SessionID sID){ _sessionID = sID; }
@@ -106,7 +100,7 @@ namespace zsummer
             //! send data queue
             std::queue<SessionBlock *> _sendque;
             unsigned long long _totalConnectCount = 0;
-            unsigned long long _curReconnectCount = 0;
+            unsigned long long _reconnects = 0;
 
             //! rc encrypt
             RC4Encryption _rc4StateRead;

@@ -130,9 +130,7 @@ bool TcpSocket::initialize(const EventLoopPtr& summer)
     if (CreateIoCompletionPort((HANDLE)_socket, _summer->_io, (ULONG_PTR)this, 1) == NULL)
     {
         LCE("TcpSocket bind socket to IOCP error.  ERRCODE=" << GetLastError() );
-        closesocket(_socket);
-        _socket = INVALID_SOCKET;
-        _linkStatus = LS_CLOSED;
+        doClose();
         return false;
     }
     return true;
@@ -332,6 +330,11 @@ void TcpSocket::onIOCPMessage(BOOL bSuccess, DWORD dwTranceBytes, unsigned char 
         }
         if (!bSuccess || _linkStatus != LS_ESTABLISHED)
         {
+            if (_socket != INVALID_SOCKET)
+            {
+                closesocket(_socket);
+                _socket = INVALID_SOCKET;
+            }
             return;
         }
         onSend(NetErrorCode::NEC_SUCCESS, dwTranceBytes);
@@ -352,13 +355,13 @@ void TcpSocket::onIOCPMessage(BOOL bSuccess, DWORD dwTranceBytes, unsigned char 
         
         if (!bSuccess)
         {
-            _linkStatus = LS_CLOSED;
+            doClose();
             onRecv(NetErrorCode::NEC_REMOTE_HANGUP, dwTranceBytes);
             return;
         }
         else if (dwTranceBytes == 0)
         {
-            _linkStatus = LS_CLOSED;
+            doClose();
             onRecv(NetErrorCode::NEC_REMOTE_CLOSED, dwTranceBytes);
             return;
         }

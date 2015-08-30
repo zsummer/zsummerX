@@ -244,11 +244,6 @@ void EventLoop::runOnce(bool isImmediately)
     int retCount = ::select(_maxfd+1, &fdr, &fdw, &fde, &tv);
     if (retCount == -1)
     {
-        if (errno == EINTR)
-        {
-            LCT("EventLoop::runOnce[this0x" << this << "]  select err!  " << OSTREAM_GET_LASTERROR );
-            return; //! error
-        }
         return;
     }
 

@@ -52,7 +52,7 @@ UdpSocket::UdpSocket()
     _recvWSABuf.buf = NULL;
     _recvWSABuf.len = 0;
 
-    _nLinkStatus = LS_UNINITIALIZE;
+    _linkStatus = LS_UNINITIALIZE;
 
 }
 
@@ -109,7 +109,7 @@ bool UdpSocket::initialize(const EventLoopPtr &summer, const char *localIP, unsi
         _socket = INVALID_SOCKET;
         return false;
     }
-    _nLinkStatus = LS_ESTABLISHED;
+    _linkStatus = LS_ESTABLISHED;
     return true;
 }
 
@@ -124,7 +124,7 @@ bool UdpSocket::doSendTo(char * buf, unsigned int len, const char *dstip, unsign
         LCF("UdpSocket uninitialize.socket=" << (unsigned int) _socket);
         return false;
     }
-    if (_nLinkStatus != LS_ESTABLISHED)
+    if (_linkStatus != LS_ESTABLISHED)
     {
         LCF("status != LS_ESTABLISHED. socket="<<(unsigned int) _socket);
         return false;
@@ -152,7 +152,7 @@ bool UdpSocket::doRecvFrom(char * buf, unsigned int len, _OnRecvFromHandler&& ha
         LCF("uninitialize.socket=" << (unsigned int) _socket);
         return false;
     }
-    if (_nLinkStatus != LS_ESTABLISHED)
+    if (_linkStatus != LS_ESTABLISHED)
     {
         LCF("socket status != LS_ESTABLISHED. socket="<<(unsigned int) _socket);
         return false;

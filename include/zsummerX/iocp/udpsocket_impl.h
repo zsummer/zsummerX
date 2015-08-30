@@ -65,7 +65,7 @@ namespace zsummer
             sockaddr_in  _recvFrom;
             int             _recvFromLen;
             _OnRecvFromHandler _onRecvHander;
-            LINK_STATUS _nLinkStatus;
+            LINK_STATUS _linkStatus;
         };
         typedef std::shared_ptr<UdpSocket> UdpSocketPtr;
     }

@@ -83,7 +83,7 @@ std::string TcpSocket::logSection()
         << "], _onRecvHandler=" << (bool)_onRecvHandler << ", _sendHandle=" << _sendHandle
         << ", _sendWsaBuf[0x" << (void*)_sendWsaBuf.buf << "," << _sendWsaBuf.len << "], _onSendHandler=" << (bool)_onSendHandler
         << ", _connectHandle=" << _connectHandle << ", _onConnectHandler=" << (bool)_onConnectHandler
-        << ", _nLinkStatus=" << _nLinkStatus << ", Notes: HANDLE_ACCEPT=0, HANDLE_RECV,HANDLE_SEND,HANDLE_CONNECT,HANDLE_RECVFROM,HANDLE_SENDTO=5"
+        << ", _linkStatus=" << _linkStatus << ", Notes: HANDLE_ACCEPT=0, HANDLE_RECV,HANDLE_SEND,HANDLE_CONNECT,HANDLE_RECVFROM,HANDLE_SENDTO=5"
         << " LS_UNINITIALIZE=0,    LS_WAITLINK,LS_ESTABLISHED,LS_CLOSED"; 
     return os.str();
 }
@@ -95,19 +95,10 @@ bool TcpSocket::setNoDelay()
 //new socket to connect, or accept established socket
 bool TcpSocket::initialize(const EventLoopPtr& summer)
 {
-    if (_summer)
+    if (_linkStatus == LS_UNINITIALIZE)
     {
-        LCE("TcpSocket already initialize! " << logSection());
-        return false;
-    }
-    _summer = summer;
-    if (_nLinkStatus != LS_UNINITIALIZE)
-    {
-        _nLinkStatus = LS_ESTABLISHED;
-    }
-    else
-    {
-        _nLinkStatus = LS_WAITLINK;
+        _summer = summer;
+        _linkStatus = LS_WAITLINK;
         _socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
         if (_socket == INVALID_SOCKET)
         {
@@ -125,12 +116,23 @@ bool TcpSocket::initialize(const EventLoopPtr& summer)
             return false;
         }
     }
-
+    else if (_linkStatus == LS_ATTACHED)
+    {
+        _summer = summer;
+        _linkStatus = LS_ESTABLISHED;
+    }
+    else
+    {
+        LCE("TcpSocket already initialize! " << logSection());
+        return false;
+    }
+    
     if (CreateIoCompletionPort((HANDLE)_socket, _summer->_io, (ULONG_PTR)this, 1) == NULL)
     {
         LCE("TcpSocket bind socket to IOCP error.  ERRCODE=" << GetLastError() << logSection());
         closesocket(_socket);
         _socket = INVALID_SOCKET;
+        _linkStatus = LS_CLOSED;
         return false;
     }
     return true;
@@ -139,11 +141,10 @@ bool TcpSocket::initialize(const EventLoopPtr& summer)
 
 bool TcpSocket::attachSocket(SOCKET s, std::string remoteIP, unsigned short remotePort)
 {
-
     _socket = s;
     _remoteIP = remoteIP;
     _remotePort = remotePort;
-    _nLinkStatus = LS_WAITLINK;
+    _linkStatus = LS_ATTACHED;
     return true;
 }
 
@@ -154,16 +155,12 @@ typedef  BOOL (PASCAL  *ConnectEx)(  SOCKET s,  const struct sockaddr* name,  in
 
 bool TcpSocket::doConnect(const std::string& remoteIP, unsigned short remotePort, _OnConnectHandler && handler)
 {
-    if (!_summer)
+    if (!_summer || _linkStatus != LS_WAITLINK)
     {
         LCF("TcpSocket uninitialize." << logSection());
         return false;
     }
-    if (_nLinkStatus != LS_WAITLINK)
-    {
-        LCW("TcpSocket already used or not initilize. " << logSection());
-        return false;
-    }
+
     if (_onConnectHandler)
     {
         LCF("TcpSocket already connect." << logSection());
@@ -209,7 +206,7 @@ bool TcpSocket::doConnect(const std::string& remoteIP, unsigned short remotePort
 
 bool TcpSocket::doSend(char * buf, unsigned int len, _OnSendHandler &&handler)
 {
-    if (_nLinkStatus != LS_ESTABLISHED)
+    if (_linkStatus != LS_ESTABLISHED)
     {
         LCW("TcpSocket status != LS_ESTABLISHED." << logSection());
         return false;
@@ -252,7 +249,7 @@ bool TcpSocket::doSend(char * buf, unsigned int len, _OnSendHandler &&handler)
 
 bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler)
 {
-    if (_nLinkStatus != LS_ESTABLISHED)
+    if (_linkStatus != LS_ESTABLISHED)
     {
         LCW("TcpSocket status != LS_ESTABLISHED. " << logSection());
         return false;
@@ -305,14 +302,14 @@ void TcpSocket::onIOCPMessage(BOOL bSuccess, DWORD dwTranceBytes, unsigned char 
         {
             return;
         }
-        if (_nLinkStatus == LS_CLOSED)
+        if (_linkStatus != LS_WAITLINK)
         {
             return;
         }
         
         if (bSuccess)
         {
-            _nLinkStatus = LS_ESTABLISHED;
+            _linkStatus = LS_ESTABLISHED;
             onConnect(NetErrorCode::NEC_SUCCESS);
         }
         else
@@ -333,7 +330,7 @@ void TcpSocket::onIOCPMessage(BOOL bSuccess, DWORD dwTranceBytes, unsigned char 
         {
             return;
         }
-        if (!bSuccess || _nLinkStatus != LS_ESTABLISHED)
+        if (!bSuccess || _linkStatus != LS_ESTABLISHED)
         {
             return;
         }
@@ -348,21 +345,20 @@ void TcpSocket::onIOCPMessage(BOOL bSuccess, DWORD dwTranceBytes, unsigned char 
         {
             return;
         }
-        if (_nLinkStatus == LS_CLOSED)
+        if (_linkStatus != LS_ESTABLISHED)
         {
             return;
         }
         
-        
         if (!bSuccess)
         {
-            _nLinkStatus = LS_CLOSED;
+            _linkStatus = LS_CLOSED;
             onRecv(NetErrorCode::NEC_REMOTE_HANGUP, dwTranceBytes);
             return;
         }
         else if (dwTranceBytes == 0)
         {
-            _nLinkStatus = LS_CLOSED;
+            _linkStatus = LS_CLOSED;
             onRecv(NetErrorCode::NEC_REMOTE_CLOSED, dwTranceBytes);
             return;
         }
@@ -375,10 +371,11 @@ void TcpSocket::onIOCPMessage(BOOL bSuccess, DWORD dwTranceBytes, unsigned char 
 
 bool TcpSocket::doClose()
 {
-    if (_nLinkStatus == LS_ESTABLISHED || _nLinkStatus == LS_WAITLINK)
+    if (_linkStatus == LS_ESTABLISHED || _linkStatus == LS_WAITLINK)
     {
-        _nLinkStatus = LS_CLOSED;
+        _linkStatus = LS_CLOSED;
         closesocket(_socket);
+        _socket = INVALID_SOCKET;
         return true;
     }
     return true;

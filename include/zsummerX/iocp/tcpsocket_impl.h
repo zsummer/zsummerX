@@ -106,7 +106,7 @@ namespace zsummer
             ExtendHandle _connectHandle;
             _OnConnectHandler _onConnectHandler;
             //status
-            int _nLinkStatus = LS_UNINITIALIZE;
+            int _linkStatus = LS_UNINITIALIZE;
         };
         typedef std::shared_ptr<TcpSocket> TcpSocketPtr;
 

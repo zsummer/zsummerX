@@ -76,7 +76,7 @@ namespace zsummer
             EventLoopPtr _summer;
             std::string _remoteIP;
             unsigned short _remotePort = 0;
-            tagRegister _register;
+            EventData _eventData;
             
             _OnConnectHandler _onConnectHandler;
 
@@ -94,35 +94,6 @@ namespace zsummer
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #endif
-
-
-
-
-
-
-
-
-
 
 

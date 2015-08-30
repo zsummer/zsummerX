@@ -67,12 +67,12 @@ bool EventLoop::initialize()
     setNoDelay(_sockpair[0]);
     setNoDelay(_sockpair[1]);
 
-    _register._event.data.ptr = &_register;
-    _register._event.events = EPOLLIN;
-    _register._fd = _sockpair[1];
-    _register._linkstat = LS_ESTABLISHED;
-    _register._type = tagRegister::REG_ZSUMMER;
-    if (!registerEvent(EPOLL_CTL_ADD, _register))
+    _eventData._event.data.ptr = &_eventData;
+    _eventData._event.events = EPOLLIN;
+    _eventData._fd = _sockpair[1];
+    _eventData._linkstat = LS_ESTABLISHED;
+    _eventData._type = EventData::REG_ZSUMMER;
+    if (!registerEvent(EPOLL_CTL_ADD, _eventData))
     {
         LCF("EventLoop::initialize[this0x" << this << "] EPOLL_CTL_ADD _socketpair error. " << logSection());
         return false;
@@ -81,7 +81,7 @@ bool EventLoop::initialize()
     return true;
 }
 
-bool EventLoop::registerEvent(int op, tagRegister & reg)
+bool EventLoop::registerEvent(int op, EventData & reg)
 {
     if (epoll_ctl(_epoll, op, reg._fd, &reg._event) != 0)
     {
@@ -108,7 +108,7 @@ std::string EventLoop::logSection()
     _stackMessagesLock.unlock();
     os << " EventLoop: _epoll=" << _epoll << ", _sockpair[2]={" << _sockpair[0] << "," << _sockpair[1] << "}"
         << " _stackMessages.size()=" << msgSize << ", current total timer=" << _timer.getTimersCount()
-        << " _register=" << _register;
+        << " _eventData=" << _eventData;
     return os.str();
 }
 
@@ -135,9 +135,9 @@ void EventLoop::runOnce(bool isImmediately)
     for (int i=0; i<retCount; i++)
     {
         int eventflag = _events[i].events;
-        tagRegister * pReg = (tagRegister *)_events[i].data.ptr;
+        EventData * pReg = (EventData *)_events[i].data.ptr;
         //tagHandle  type
-        if (pReg->_type == tagRegister::REG_ZSUMMER)
+        if (pReg->_type == EventData::REG_ZSUMMER)
         {
             char buf[1000];
             while (recv(pReg->_fd, buf, 1000, 0) > 0);
@@ -165,7 +165,7 @@ void EventLoop::runOnce(bool isImmediately)
                 delete p;
             }
         }
-        else if (pReg->_type == tagRegister::REG_TCP_ACCEPT)
+        else if (pReg->_type == EventData::REG_TCP_ACCEPT)
         {
             if (eventflag & EPOLLIN)
             {
@@ -182,7 +182,7 @@ void EventLoop::runOnce(bool isImmediately)
                 }
             }
         }
-        else if (pReg->_type == tagRegister::REG_TCP_SOCKET)
+        else if (pReg->_type == EventData::REG_TCP_SOCKET)
         {
             if (eventflag & EPOLLERR || eventflag & EPOLLHUP)
             {
@@ -218,7 +218,7 @@ void EventLoop::runOnce(bool isImmediately)
                 }
             }
         }
-        else if (pReg->_type == tagRegister::REG_UDP_SOCKET)
+        else if (pReg->_type == EventData::REG_UDP_SOCKET)
         {
             if (pReg->_udpsocketPtr)
             {

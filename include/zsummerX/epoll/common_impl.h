@@ -46,32 +46,11 @@ namespace zsummer
     namespace network
     {
 
-#ifdef WIN32
-
-        enum EPOLL_CTL_ENUM
-        {
-            EPOLL_CTL_ADD,
-            EPOLL_CTL_MOD,
-            EPOLL_CTL_DEL,
-        };
-
-        typedef union epoll_data {
-            void    *ptr;
-            int      fd;
-            uint32_t u32;
-            uint64_t u64;
-        } epoll_data_t;
-
-        struct epoll_event {
-            uint32_t     events;//    Epoll events 
-            epoll_data_t data;//      User data variable 
-        };
-#endif
         class TcpSocket;
         class TcpAccept;
         class UdpSocket;
         const int InvalidFD = -1;
-        struct tagRegister
+        struct EventData
         {
             enum REG_TYPE
             {
@@ -94,13 +73,13 @@ namespace zsummer
         };
 
         template <class T>
-        T& operator <<(T &t, const tagRegister & reg)
+        T& operator <<(T &t, const EventData & reg)
         {
             t << "registerEvent Info: epoll_event.events[" << reg._event.events
                 << "] _type[" << (int)reg._type << "] _linkstat[" << (int)reg._linkstat
-                << "] _fd[" << reg._fd << "]  Notes: REG_INVALID[" << tagRegister::REG_INVALID << "] REG_ZSUMMER[" << tagRegister::REG_ZSUMMER
-                << "] REG_TCP_SOCKET[" << tagRegister::REG_TCP_SOCKET << "] REG_TCP_ACCEPT[" << tagRegister::REG_TCP_ACCEPT
-                << "] REG_UDP_SOCKET[" << tagRegister::REG_UDP_SOCKET
+                << "] _fd[" << reg._fd << "]  Notes: REG_INVALID[" << EventData::REG_INVALID << "] REG_ZSUMMER[" << EventData::REG_ZSUMMER
+                << "] REG_TCP_SOCKET[" << EventData::REG_TCP_SOCKET << "] REG_TCP_ACCEPT[" << EventData::REG_TCP_ACCEPT
+                << "] REG_UDP_SOCKET[" << EventData::REG_UDP_SOCKET
                 << "] EPOLL_CTL_ADD[" << EPOLL_CTL_ADD << "] EPOLL_CTL_MOD[" << EPOLL_CTL_MOD << "] EPOLL_CTL_DEL[" << EPOLL_CTL_DEL
                 << "];   EPOLLIN[" << EPOLLIN << "] EPOLLOUT[" << EPOLLOUT << "] EPOLLERR[" << EPOLLERR << "] EPOLLHUP[" << EPOLLHUP;
             return t;
@@ -111,32 +90,6 @@ namespace zsummer
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #endif
-
-
-
-
-
-
-
-
-
 
 

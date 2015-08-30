@@ -46,18 +46,18 @@ using namespace zsummer::network;
 
 TcpAccept::TcpAccept()
 {
-    _register._event.events = 0;
-    _register._event.data.ptr = &_register;
-    _register._type = tagRegister::REG_TCP_ACCEPT;
+    _eventData._event.events = 0;
+    _eventData._event.data.ptr = &_eventData;
+    _eventData._type = EventData::REG_TCP_ACCEPT;
 }
 
 
 TcpAccept::~TcpAccept()
 {
-    if (_register._fd != InvalidFD)
+    if (_eventData._fd != InvalidFD)
     {
-        ::close(_register._fd);
-        _register._fd = InvalidFD;
+        ::close(_eventData._fd);
+        _eventData._fd = InvalidFD;
     }
 }
 std::string TcpAccept::logSection()
@@ -65,13 +65,13 @@ std::string TcpAccept::logSection()
     std::stringstream os;
     os << " TcpAccept:Status _summer=" << _summer.use_count() << ", _listenIP=" << _listenIP
         << ", _listenPort=" << _listenPort << ", _onAcceptHandler=" << (bool)_onAcceptHandler
-        << ", _client=" << _client.use_count() << "_register=" << _register;
+        << ", _client=" << _client.use_count() << "_eventData=" << _eventData;
     return os.str();
 }
 bool TcpAccept::initialize(const EventLoopPtr & summer)
 {
     _summer = summer;
-    _register._linkstat = LS_WAITLINK;
+    _eventData._linkstat = LS_WAITLINK;
     return true;
 }
 
@@ -84,25 +84,25 @@ bool TcpAccept::openAccept(const std::string & listenIP, unsigned short listenPo
         return false;
     }
 
-    if (_register._fd != InvalidFD)
+    if (_eventData._fd != InvalidFD)
     {
         LCF("TcpAccept::openAccept[this0x" << this << "] accept fd is aready used!" << logSection());
         return false;
     }
 
-    _register._fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (_register._fd == InvalidFD)
+    _eventData._fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (_eventData._fd == InvalidFD)
     {
         LCF("TcpAccept::openAccept[this0x" << this << "] listen socket create err errno =" << strerror(errno) << logSection());
         return false;
     }
 
-    setNonBlock(_register._fd);
+    setNonBlock(_eventData._fd);
 
 
 
     int bReuse = 1;
-    if (setsockopt(_register._fd, SOL_SOCKET, SO_REUSEADDR,  &bReuse, sizeof(bReuse)) != 0)
+    if (setsockopt(_eventData._fd, SOL_SOCKET, SO_REUSEADDR,  &bReuse, sizeof(bReuse)) != 0)
     {
         LCW("TcpAccept::openAccept[this0x" << this << "] listen socket set reuse fail! errno=" << strerror(errno) << logSection());
     }
@@ -111,28 +111,28 @@ bool TcpAccept::openAccept(const std::string & listenIP, unsigned short listenPo
     _addr.sin_family = AF_INET;
     _addr.sin_addr.s_addr = inet_addr(listenIP.c_str());
     _addr.sin_port = htons(listenPort);
-    if (bind(_register._fd, (sockaddr *) &_addr, sizeof(_addr)) != 0)
+    if (bind(_eventData._fd, (sockaddr *) &_addr, sizeof(_addr)) != 0)
     {
         LCF("TcpAccept::openAccept[this0x" << this << "] listen socket bind err, errno=" << strerror(errno) << logSection());
-        ::close(_register._fd);
-        _register._fd = InvalidFD;
+        ::close(_eventData._fd);
+        _eventData._fd = InvalidFD;
         return false;
     }
 
-    if (listen(_register._fd, 200) != 0)
+    if (listen(_eventData._fd, 200) != 0)
     {
         LCF("TcpAccept::openAccept[this0x" << this << "] listen socket listen err, errno=" << strerror(errno) << logSection());
-        ::close(_register._fd);
-        _register._fd = InvalidFD;
+        ::close(_eventData._fd);
+        _eventData._fd = InvalidFD;
         return false;
     }
 
-    if (!_summer->registerEvent(EPOLL_CTL_ADD, _register))
+    if (!_summer->registerEvent(EPOLL_CTL_ADD, _eventData))
     {
         LCF("TcpAccept::openAccept[this0x" << this << "] listen socket register error." << logSection());
         return false;
     }
-    _register._linkstat = LS_ESTABLISHED;
+    _eventData._linkstat = LS_ESTABLISHED;
     return true;
 }
 
@@ -143,14 +143,14 @@ bool TcpAccept::doAccept(const TcpSocketPtr &s, _OnAcceptHandler &&handle)
         LCF("TcpAccept::doAccept[this0x" << this << "] err, dumplicate doAccept" << logSection());
         return false;
     }
-    if (_register._linkstat != LS_ESTABLISHED)
+    if (_eventData._linkstat != LS_ESTABLISHED)
     {
         LCF("TcpAccept::doAccept[this0x" << this << "] err, _linkstat not work state" << logSection());
         return false;
     }
     
-    _register._event.events = EPOLLIN;
-    if (!_summer->registerEvent(EPOLL_CTL_MOD, _register))
+    _eventData._event.events = EPOLLIN;
+    if (!_summer->registerEvent(EPOLL_CTL_MOD, _eventData))
     {
         LCF("TcpAccept::doAccept[this0x" << this << "] err, _linkstat not work state" << logSection());
         return false;
@@ -158,7 +158,7 @@ bool TcpAccept::doAccept(const TcpSocketPtr &s, _OnAcceptHandler &&handle)
 
     _onAcceptHandler = std::move(handle);
     _client = s;
-    _register._tcpacceptPtr = shared_from_this();
+    _eventData._tcpacceptPtr = shared_from_this();
     return true;
 }
 void TcpAccept::onEPOLLMessage(bool bSuccess)
@@ -169,16 +169,16 @@ void TcpAccept::onEPOLLMessage(bool bSuccess)
         LCF("TcpAccept::doAccept[this0x" << this << "] err, dumplicate doAccept" << logSection());
         return ;
     }
-    if (_register._linkstat != LS_ESTABLISHED)
+    if (_eventData._linkstat != LS_ESTABLISHED)
     {
         LCF("TcpAccept::doAccept[this0x" << this << "] err, _linkstat not work state" << logSection());
         return ;
     }
-    std::shared_ptr<TcpAccept> guad(std::move(_register._tcpacceptPtr));
+    std::shared_ptr<TcpAccept> guad(std::move(_eventData._tcpacceptPtr));
     _OnAcceptHandler onAccept(std::move(_onAcceptHandler));
     TcpSocketPtr ps(std::move(_client));
-    _register._event.events = 0;
-    _summer->registerEvent(EPOLL_CTL_MOD, _register);
+    _eventData._event.events = 0;
+    _summer->registerEvent(EPOLL_CTL_MOD, _eventData);
 
     if (!bSuccess)
     {
@@ -191,7 +191,7 @@ void TcpAccept::onEPOLLMessage(bool bSuccess)
         sockaddr_in cltaddr;
         memset(&cltaddr, 0, sizeof(cltaddr));
         socklen_t len = sizeof(cltaddr);
-        int s = accept(_register._fd, (sockaddr *)&cltaddr, &len);
+        int s = accept(_eventData._fd, (sockaddr *)&cltaddr, &len);
         if (s == -1)
         {
             if (errno != EAGAIN && errno != EWOULDBLOCK)
@@ -211,10 +211,10 @@ void TcpAccept::onEPOLLMessage(bool bSuccess)
 bool TcpAccept::close()
 {
     _onAcceptHandler = nullptr;
-    _summer->registerEvent(EPOLL_CTL_DEL, _register);
-    shutdown(_register._fd, SHUT_RDWR);
-    ::close(_register._fd);
-    _register._fd = InvalidFD;
+    _summer->registerEvent(EPOLL_CTL_DEL, _eventData);
+    shutdown(_eventData._fd, SHUT_RDWR);
+    ::close(_eventData._fd);
+    _eventData._fd = InvalidFD;
     return true;
 }
 

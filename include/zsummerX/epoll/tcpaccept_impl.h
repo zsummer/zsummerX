@@ -65,7 +65,7 @@ namespace zsummer
 
             sockaddr_in        _addr;
 
-            tagRegister _register; 
+            EventData _eventData;
             _OnAcceptHandler _onAcceptHandler;
             TcpSocketPtr  _client;
 
@@ -75,35 +75,5 @@ namespace zsummer
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #endif
-
-
-
-
-
-
-
-
-
-
 

@@ -58,7 +58,7 @@ namespace zsummer
             inline bool cancelTimer(unsigned long long timerID){return _timer.cancelTimer(timerID);}
 
         public:
-            bool registerEvent(int op, tagRegister &reg);
+            bool registerEvent(int op, EventData &reg);
             void PostMessage(_OnPostHandler &&handle);
         private:
             std::string logSection();
@@ -66,7 +66,7 @@ namespace zsummer
             int    _epoll = InvalidFD;
             epoll_event _events[5000] = {};
             int        _sockpair[2] = {};
-            tagRegister _register;
+            EventData _eventData;
             MessageStack _stackMessages;
             std::mutex     _stackMessagesLock;
             Timer _timer;
@@ -77,34 +77,7 @@ namespace zsummer
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #endif
-
-
-
-
-
-
-
-
 
 
 

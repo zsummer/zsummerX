@@ -59,7 +59,7 @@ namespace zsummer
             bool onEPOLLMessage(int type, int flag);
         public:
             EventLoopPtr _summer;
-            tagRegister _register;
+            EventData _eventData;
 
             _OnRecvFromHandler _onRecvFromHandler;
             unsigned int _iRecvLen;
@@ -72,34 +72,7 @@ namespace zsummer
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #endif
-
-
-
-
-
-
-
-
 
 
 

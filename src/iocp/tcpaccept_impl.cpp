@@ -45,7 +45,7 @@ TcpAccept::TcpAccept()
     memset(&_handle._overlapped, 0, sizeof(_handle._overlapped));
     _server = INVALID_SOCKET;
     
-    _handle._type = tagReqHandle::HANDLE_ACCEPT;
+    _handle._type = ExtendHandle::HANDLE_ACCEPT;
 
     //client
     _socket = INVALID_SOCKET;

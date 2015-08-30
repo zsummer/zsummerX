@@ -91,19 +91,19 @@ namespace zsummer
             unsigned short _remotePort = 0;
 
             //recv
-            tagReqHandle _recvHandle;
+            ExtendHandle _recvHandle;
             WSABUF         _recvWSABuf;
             _OnRecvHandler _onRecvHandler;
 
 
             //send
-            tagReqHandle _sendHandle;
+            ExtendHandle _sendHandle;
             WSABUF         _sendWsaBuf;
             _OnSendHandler _onSendHandler;
 
 
             //connect
-            tagReqHandle _connectHandle;
+            ExtendHandle _connectHandle;
             _OnConnectHandler _onConnectHandler;
             //status
             int _nLinkStatus = LS_UNINITIALIZE;

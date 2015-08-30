@@ -69,7 +69,7 @@ namespace zsummer
             SOCKET _socket = INVALID_SOCKET;
             char _recvBuf[200];
             DWORD _recvLen = 0;
-            tagReqHandle _handle;
+            ExtendHandle _handle;
             _OnAcceptHandler _onAcceptHandler;
             TcpSocketPtr _client;
 

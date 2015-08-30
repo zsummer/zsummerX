@@ -44,19 +44,19 @@ TcpSocket::TcpSocket()
     g_appEnvironment.addCreatedSocketCount();
     //recv
     memset(&_recvHandle._overlapped, 0, sizeof(_recvHandle._overlapped));
-    _recvHandle._type = tagReqHandle::HANDLE_RECV;
+    _recvHandle._type = ExtendHandle::HANDLE_RECV;
     _recvWSABuf.buf = NULL;
     _recvWSABuf.len = 0;
 
     //send
     memset(&_sendHandle._overlapped, 0, sizeof(_sendHandle._overlapped));
-    _sendHandle._type = tagReqHandle::HANDLE_SEND;
+    _sendHandle._type = ExtendHandle::HANDLE_SEND;
     _sendWsaBuf.buf = NULL;
     _sendWsaBuf.len = 0;
 
     //connect
     memset(&_connectHandle._overlapped, 0, sizeof(_connectHandle._overlapped));
-    _connectHandle._type = tagReqHandle::HANDLE_CONNECT;
+    _connectHandle._type = ExtendHandle::HANDLE_CONNECT;
 }
 
 
@@ -297,7 +297,7 @@ bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler)
 
 void TcpSocket::onIOCPMessage(BOOL bSuccess, DWORD dwTranceBytes, unsigned char cType)
 {
-    if (cType == tagReqHandle::HANDLE_CONNECT)
+    if (cType == ExtendHandle::HANDLE_CONNECT)
     {
         _OnConnectHandler onConnect(std::move(_onConnectHandler));
         std::shared_ptr<TcpSocket> guad(std::move(_connectHandle._tcpSocket));
@@ -325,7 +325,7 @@ void TcpSocket::onIOCPMessage(BOOL bSuccess, DWORD dwTranceBytes, unsigned char 
     }
 
 
-    if (cType == tagReqHandle::HANDLE_SEND)
+    if (cType == ExtendHandle::HANDLE_SEND)
     {
         _OnSendHandler onSend(std::move(_onSendHandler));
         std::shared_ptr<TcpSocket> guad(std::move(_sendHandle._tcpSocket));
@@ -340,7 +340,7 @@ void TcpSocket::onIOCPMessage(BOOL bSuccess, DWORD dwTranceBytes, unsigned char 
         onSend(NetErrorCode::NEC_SUCCESS, dwTranceBytes);
         return;
     }
-    else if (cType == tagReqHandle::HANDLE_RECV)
+    else if (cType == ExtendHandle::HANDLE_RECV)
     {
         std::shared_ptr<TcpSocket> guad(std::move(_recvHandle._tcpSocket));
         _OnRecvHandler onRecv(std::move(_onRecvHandler));

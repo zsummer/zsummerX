@@ -60,7 +60,7 @@ namespace zsummer
             SOCKADDR_IN    _addr;
 
             //recv
-            tagReqHandle _recvHandle;
+            ExtendHandle _recvHandle;
             WSABUF         _recvWSABuf;
             sockaddr_in  _recvFrom;
             int             _recvFromLen;

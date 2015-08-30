@@ -187,14 +187,17 @@ void TcpSession::close()
     LCW("TcpSession to close socket. sID= " << _sessionID );
     if (_sockptr)
     {
+        if (_status == 2)
+        {
+            SessionManager::getRef()._statInfo[STAT_SESSION_CLOSED]++;
+            if (_options._onSessionClosed)
+            {
+                _options._onSessionClosed(shared_from_this());
+            }
+        }
         _status = 3;
         _sockptr->doClose();
         _sockptr.reset();
-        SessionManager::getRef()._statInfo[STAT_SESSION_CLOSED]++;
-        if (_options._onSessionClosed)
-        {
-            _options._onSessionClosed(shared_from_this());
-        }
         if (isConnectID(_sessionID) && _reconnects < _options._reconnects)
         {
             _status = 1;

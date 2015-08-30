@@ -77,7 +77,7 @@ void MonitorFunc()
         << ", socket destroyed = " << zsummer::network::g_appEnvironment.getClosedSocketCount()
         << ", session created = " << SessionManager::getRef()._statInfo[STAT_SESSION_CREATED]
         << ", session destroyed = " << SessionManager::getRef()._statInfo[STAT_SESSION_DESTROYED]
-        << ", linked = " << SessionManager::getRef()._statInfo[STAT_SESSION_LINKED]
+        << ", session linked = " << SessionManager::getRef()._statInfo[STAT_SESSION_LINKED]
         << ", session closed = " << SessionManager::getRef()._statInfo[STAT_SESSION_CLOSED]
         << ", freeBlocks = " << SessionManager::getRef()._statInfo[STAT_FREE_BLOCKS]
         << ", exsitBlocks = " << SessionManager::getRef()._statInfo[STAT_EXIST_BLOCKS]
@@ -318,7 +318,7 @@ int main(int argc, char* argv[])
         for (int i = 0; i < g_maxClient; ++i)
         {
             SessionID cID = SessionManager::getRef().addConnecter(g_remoteIP, g_remotePort);
-            SessionManager::getRef().getConnecterOptions(cID)._reconnects = 15;
+            SessionManager::getRef().getConnecterOptions(cID)._reconnects = 5;
             SessionManager::getRef().getConnecterOptions(cID)._connectPulseInterval = 4000;
             SessionManager::getRef().getConnecterOptions(cID)._onSessionLinked = std::bind(&CStressClientHandler::onConnected, &client, _1);
             SessionManager::getRef().openConnecter(cID);

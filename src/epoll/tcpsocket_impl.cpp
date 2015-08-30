@@ -125,7 +125,7 @@ bool TcpSocket::doConnect(const std::string& remoteIP, unsigned short remotePort
 {
     if (!_summer || _eventData._linkstat != LS_WAITLINK || _onConnectHandler)
     {
-        LCE("TcpSocket::doConnect[this0x" << this << "] status error!" << logSection());
+        LCE("TcpSocket::doConnect[this0x" << this << "] status error!" );
         return false;
     }
 
@@ -202,7 +202,7 @@ bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler)
 {
     if (_eventData._linkstat != LS_ESTABLISHED)
     {
-        LCW("TcpSocket::doRecv[this0x" << this << "] status error !" << logSection());
+        LCW("TcpSocket::doRecv[this0x" << this << "] status error !" );
         return false;
     }
 

@@ -120,7 +120,7 @@ bool TcpSocket::doConnect(const std::string & remoteIP, unsigned short remotePor
 
     if (!_summer || _linkstat != LS_WAITLINK || _onConnectHandler)
     {
-        LCE("TcpSocket::doConnect[this0x" << this << "] summer not bind!" << logSection());
+        LCE("TcpSocket::doConnect[this0x" << this << "] summer not bind!" );
         return false;
     }
 
@@ -152,7 +152,7 @@ bool TcpSocket::doSend(char * buf, unsigned int len, _OnSendHandler && handler)
 {
     if (_linkstat != LS_ESTABLISHED)
     {
-        LCW("TcpSocket::doSend[this0x" << this << "] _linkstat not REG_ESTABLISHED_TCP!" << logSection());
+        LCW("TcpSocket::doSend[this0x" << this << "] _linkstat not REG_ESTABLISHED_TCP!" );
         return false;
     }
 
@@ -193,7 +193,7 @@ bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler)
 {
     if (_linkstat != LS_ESTABLISHED)
     {
-        LCW("TcpSocket::doRecv[this0x" << this << "] type not REG_ESTABLISHED_TCP!" << logSection());
+        LCW("TcpSocket::doRecv[this0x" << this << "] type not REG_ESTABLISHED_TCP!" );
         return false;
     }
 

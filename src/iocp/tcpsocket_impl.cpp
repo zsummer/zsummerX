@@ -157,7 +157,7 @@ bool TcpSocket::doConnect(const std::string& remoteIP, unsigned short remotePort
 {
     if (!_summer || _linkStatus != LS_WAITLINK)
     {
-        LCF("TcpSocket uninitialize." << logSection());
+        LCF("TcpSocket uninitialize." );
         return false;
     }
 
@@ -208,7 +208,7 @@ bool TcpSocket::doSend(char * buf, unsigned int len, _OnSendHandler &&handler)
 {
     if (_linkStatus != LS_ESTABLISHED)
     {
-        LCW("TcpSocket status != LS_ESTABLISHED." << logSection());
+        LCW("TcpSocket status != LS_ESTABLISHED.");
         return false;
     }
     if (!_summer)
@@ -251,7 +251,7 @@ bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler)
 {
     if (_linkStatus != LS_ESTABLISHED)
     {
-        LCW("TcpSocket status != LS_ESTABLISHED. " << logSection());
+        LCW("TcpSocket status != LS_ESTABLISHED. ");
         return false;
     }
     if (!_summer)

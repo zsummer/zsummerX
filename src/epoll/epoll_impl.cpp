@@ -72,12 +72,7 @@ bool EventLoop::initialize()
     _eventData._fd = _sockpair[1];
     _eventData._linkstat = LS_ESTABLISHED;
     _eventData._type = EventData::REG_ZSUMMER;
-    if (!registerEvent(EPOLL_CTL_ADD, _eventData))
-    {
-        LCF("EventLoop::initialize[this0x" << this << "] EPOLL_CTL_ADD _socketpair error. " << logSection());
-        return false;
-    }
-    
+    registerEvent(EPOLL_CTL_ADD, _eventData);
     return true;
 }
 
@@ -85,6 +80,7 @@ bool EventLoop::registerEvent(int op, EventData & ed)
 {
     if (epoll_ctl(_epoll, op, ed._fd, &ed._event) != 0)
     {
+        LCW("EventLoop::registerEvent error. op=" << op << ", event=" << ed._event.events);
         return false;
     }
     return true;

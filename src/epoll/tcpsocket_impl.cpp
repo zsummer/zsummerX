@@ -86,11 +86,7 @@ bool TcpSocket::initialize(const EventLoopPtr& summer)
     if (_eventData._linkstat == LS_ATTACHED)
     {
         _summer = summer;
-        if (!_summer->registerEvent(EPOLL_CTL_ADD, _eventData))
-        {
-            LCE("TcpSocket::initialize[this0x" << this << "] socket already used or not initilize." << logSection());
-            return false;
-        }
+        _summer->registerEvent(EPOLL_CTL_ADD, _eventData);
         _eventData._tcpSocketPtr = shared_from_this();
         _eventData._linkstat = LS_ESTABLISHED;
         setNonBlock(_eventData._fd);
@@ -152,11 +148,7 @@ bool TcpSocket::doConnect(const std::string& remoteIP, unsigned short remotePort
         return false;
     }
 
-    if (!_summer->registerEvent(EPOLL_CTL_ADD, _eventData))
-    {
-        LCW("TcpSocket::initialize[this0x" << this << "] socket already used or not initilize." << logSection());
-        return false;
-    }
+    _summer->registerEvent(EPOLL_CTL_ADD, _eventData);
     _eventData._tcpSocketPtr = shared_from_this();
     _onConnectHandler = std::move(handler);
     return true;
@@ -200,13 +192,7 @@ bool TcpSocket::doSend(char * buf, unsigned int len, _OnSendHandler && handler)
     
 
     _eventData._event.events = _eventData._event.events|EPOLLOUT;
-    if (!_summer->registerEvent(EPOLL_CTL_MOD, _eventData))
-    {
-        LCW("TcpSocket::doSend[this0x" << this << "] registerEvent Error" << logSection());
-        _pSendBuf = nullptr;
-        _iSendLen = 0;
-        return false;
-    }
+    _summer->registerEvent(EPOLL_CTL_MOD, _eventData);
     _onSendHandler = std::move(handler);
     return true;
 }
@@ -247,13 +233,7 @@ bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler)
     
 
     _eventData._event.events = _eventData._event.events|EPOLLIN;
-    if (!_summer->registerEvent(EPOLL_CTL_MOD, _eventData))
-    {
-        LCW("TcpSocket::doRecv[this0x" << this << "] registerEvent Error" << logSection());
-        _pRecvBuf = nullptr;
-        _iRecvLen = 0;
-        return false;
-    }
+    _summer->registerEvent(EPOLL_CTL_MOD, _eventData);
     _onRecvHandler = std::move(handler);
     return true;
 }
@@ -305,10 +285,7 @@ void TcpSocket::onEPOLLMessage(uint32_t event)
         if (event & EPOLLHUP || event & EPOLLERR || ret == 0 || (ret == -1 && (errno != EAGAIN && errno != EWOULDBLOCK) ) )
         {
             _eventData._event.events = _eventData._event.events &~EPOLLIN;
-            if (!_summer->registerEvent(EPOLL_CTL_MOD, _eventData))
-            {
-                LCF("TcpSocket::onEPOLLMessage[this0x" << this << "] registerEvent error.  errno=" << strerror(errno) << logSection());
-            }
+            _summer->registerEvent(EPOLL_CTL_MOD, _eventData);
             ec = NEC_REMOTE_CLOSED;
             _OnRecvHandler onRecv(std::move(_onRecvHandler));
             doClose();
@@ -318,10 +295,7 @@ void TcpSocket::onEPOLLMessage(uint32_t event)
         else if (ret != -1)
         {
             _eventData._event.events = _eventData._event.events &~EPOLLIN;
-            if (!_summer->registerEvent(EPOLL_CTL_MOD, _eventData))
-            {
-                LCF("TcpSocket::onEPOLLMessage[this0x" << this << "] registerEvent error.  errno=" << strerror(errno) << logSection());
-            }
+            _summer->registerEvent(EPOLL_CTL_MOD, _eventData);
             auto guard = shared_from_this();
             _OnRecvHandler onRecv(std::move(_onRecvHandler));
             _pRecvBuf = NULL;
@@ -346,10 +320,7 @@ void TcpSocket::onEPOLLMessage(uint32_t event)
         if (event & EPOLLERR || event & EPOLLHUP || (ret == -1 && (errno != EAGAIN && errno != EWOULDBLOCK)))
         {
             _eventData._event.events = _eventData._event.events &~EPOLLOUT;
-            if (!_summer->registerEvent(EPOLL_CTL_MOD, _eventData))
-            {
-                LCF("TcpSocket::onEPOLLMessage[this0x" << this << "] connect true & EPOLLMod error. errno=" << strerror(errno) << logSection());
-            }
+            _summer->registerEvent(EPOLL_CTL_MOD, _eventData);
             LCE("TcpSocket::onEPOLLMessage[this0x" << this << "] send error. errno=" << strerror(errno) << logSection());
             _onSendHandler = nullptr;
             return ;
@@ -358,10 +329,7 @@ void TcpSocket::onEPOLLMessage(uint32_t event)
         {
             auto guard = shared_from_this();
             _eventData._event.events = _eventData._event.events &~EPOLLOUT;
-            if (!_summer->registerEvent(EPOLL_CTL_MOD, _eventData))
-            {
-                LCF("TcpSocket::onEPOLLMessage[this0x" << this << "] connect true & EPOLLMod error. errno=" << strerror(errno) << logSection());
-            }
+            _summer->registerEvent(EPOLL_CTL_MOD, _eventData);
             _OnSendHandler onSend(std::move(_onSendHandler));
             _pSendBuf = NULL;
             _iSendLen = 0;

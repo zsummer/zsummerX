@@ -127,11 +127,7 @@ bool TcpAccept::openAccept(const std::string & listenIP, unsigned short listenPo
     }
 
     _eventData._tcpacceptPtr = shared_from_this();
-    if (!_summer->registerEvent(EPOLL_CTL_ADD, _eventData))
-    {
-        LCF("TcpAccept::openAccept[this0x" << this << "] listen socket register error." << logSection());
-        return false;
-    }
+    _summer->registerEvent(EPOLL_CTL_ADD, _eventData);
     _eventData._linkstat = LS_ESTABLISHED;
     return true;
 }
@@ -150,11 +146,7 @@ bool TcpAccept::doAccept(const TcpSocketPtr &s, _OnAcceptHandler &&handle)
     }
     
     _eventData._event.events = EPOLLIN;
-    if (!_summer->registerEvent(EPOLL_CTL_MOD, _eventData))
-    {
-        LCF("TcpAccept::doAccept[this0x" << this << "] err, _linkstat not work state" << logSection());
-        return false;
-    }
+    _summer->registerEvent(EPOLL_CTL_MOD, _eventData);
     _onAcceptHandler = std::move(handle);
     _client = s;
     return true;

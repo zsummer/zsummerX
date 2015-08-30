@@ -91,11 +91,7 @@ bool  UdpSocket::initialize(const EventLoopPtr &summer, const char *localIP, uns
             return false;
         }
 
-        if (!_summer->registerEvent(EPOLL_CTL_ADD, _eventData))
-        {
-            LCF("UdpSocket::initialize[this0x" << this << "] EPOLL_CTL_ADD error. _eventData =" << _eventData << ", errno=" << strerror(errno));
-            return false;
-        }
+        _summer->registerEvent(EPOLL_CTL_ADD, _eventData);
         _eventData._udpsocketPtr = shared_from_this();
         _eventData._linkstat = LS_ESTABLISHED;
         return true;
@@ -160,14 +156,7 @@ bool UdpSocket::doRecvFrom(char * buf, unsigned int len, _OnRecvFromHandler&& ha
     _pRecvBuf = buf;
     _iRecvLen = len;
     _eventData._event.events = _eventData._event.events|EPOLLIN;
-    if (!_summer->registerEvent(EPOLL_CTL_MOD, _eventData))
-    {
-        LCF("UdpSocket::doRecv[this0x" << this << "] EPOLLMod error. _eventData=" << _eventData << ", errno=" << strerror(errno));
-        _onRecvFromHandler = nullptr;
-        _pRecvBuf = nullptr;
-        _iRecvLen = 0;
-        return false;
-    }
+    _summer->registerEvent(EPOLL_CTL_MOD, _eventData);
     _onRecvFromHandler = std::move(handler);
     return true;
 }
@@ -191,10 +180,7 @@ bool UdpSocket::onEPOLLMessage(uint32_t event)
         LCE("UdpSocket::onEPOLLMessage[this0x" << this << "] EPOLLHUP  EPOLLERR error. _eventData fd=" << _eventData << ", events=" << event);
         _OnRecvFromHandler onRecv(std::move(_onRecvFromHandler));
         _eventData._event.events = _eventData._event.events&~EPOLLIN;
-        if (!_summer->registerEvent(EPOLL_CTL_DEL, _eventData))
-        {
-            LCF("UdpSocket::onEPOLLMessage[this0x" << this << "] EPOLLMod error. _eventData=" << _eventData << ", errno=" << strerror(errno));
-        }
+        _summer->registerEvent(EPOLL_CTL_DEL, _eventData);
         close(_eventData._fd);
         _eventData._linkstat = LS_CLOSED;
         onRecv(NEC_ERROR, "", 0, 0);
@@ -204,10 +190,7 @@ bool UdpSocket::onEPOLLMessage(uint32_t event)
     {
         _OnRecvFromHandler onRecv(std::move(_onRecvFromHandler));
         _eventData._event.events = _eventData._event.events&~EPOLLIN;
-        if (!_summer->registerEvent(EPOLL_CTL_MOD, _eventData))
-        {
-            LCF("UdpSocket::onEPOLLMessage[this0x" << this << "] EPOLLMod error. _eventData=" << _eventData << ", errno=" << strerror(errno));
-        }
+        _summer->registerEvent(EPOLL_CTL_MOD, _eventData);
         _pRecvBuf = nullptr;
         _iRecvLen = 0;
         onRecv(NEC_SUCCESS, inet_ntoa(raddr.sin_addr), ntohs(raddr.sin_port), ret);

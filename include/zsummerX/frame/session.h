@@ -61,8 +61,8 @@ namespace zsummer
         private:
 
             bool doRecv();
-            void onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen);
-            void onSend(zsummer::network::NetErrorCode ec, int nSentLen);
+            void onRecv(zsummer::network::NetErrorCode ec, int received);
+            void onSend(zsummer::network::NetErrorCode ec, int sent);
             void onConnected(zsummer::network::NetErrorCode ec);
             void onPulse();
 

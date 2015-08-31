@@ -216,7 +216,7 @@ void TcpSession::close()
     LCW("TcpSession::close closing. sID=" << _sessionID);
 }
 
-void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
+void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
 {
     if (ec)
     {
@@ -224,9 +224,9 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
         close();
         return;
     }
-    _recving->len += nRecvedLen;
+    _recving->len += received;
     SessionManager::getRef()._statInfo[STAT_RECV_COUNT]++;
-    SessionManager::getRef()._statInfo[STAT_RECV_BYTES] += nRecvedLen;
+    SessionManager::getRef()._statInfo[STAT_RECV_BYTES] += received;
     // skip encrypt the flash policy data if that open flash policy.
     // skip encrypt when the rc4 encrypt sbox is empty.
     {
@@ -246,6 +246,9 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
                 const char * flashPolicyResponseString = R"---(<cross-domain-policy><allow-access-from domain="*" to-ports="*"/></cross-domain-policy>)---";
                 unsigned int flashPolicyResponseSize = (unsigned int)strlen(flashPolicyResponseString) + 1;
                 send(flashPolicyResponseString, flashPolicyResponseSize);
+                //do other something.
+
+                //do other something end.
                 _bFirstRecvData = false;
             }
             else if (_bFirstRecvData)
@@ -261,8 +264,8 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
                 break;
             }
             
-            unsigned int needEncry = nRecvedLen;
-            if (_recving->len < (unsigned int)nRecvedLen)
+            unsigned int needEncry = received;
+            if (_recving->len < (unsigned int)received)
             {
                 needEncry = _recving->len;
             }
@@ -412,7 +415,7 @@ void TcpSession::send(const char *buf, unsigned int len)
 }
 
 
-void TcpSession::onSend(zsummer::network::NetErrorCode ec, int nSentLen)
+void TcpSession::onSend(zsummer::network::NetErrorCode ec, int sent)
 {
     if (ec)
     {
@@ -420,8 +423,8 @@ void TcpSession::onSend(zsummer::network::NetErrorCode ec, int nSentLen)
         return ;
     }
 
-    _sendingLen += nSentLen;
-    SessionManager::getRef()._statInfo[STAT_SEND_BYTES] += nSentLen;
+    _sendingLen += sent;
+    SessionManager::getRef()._statInfo[STAT_SEND_BYTES] += sent;
     if (_sendingLen < _sending->len)
     {
         SessionManager::getRef()._statInfo[STAT_SEND_COUNT]++;

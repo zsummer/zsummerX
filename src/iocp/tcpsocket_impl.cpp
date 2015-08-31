@@ -280,7 +280,6 @@ bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler)
             LCW("TcpSocket doRecv failed and ERRCODE!=ERROR_IO_PENDING, ERRCODE=" << WSAGetLastError() );
             _recvWSABuf.buf = nullptr;
             _recvWSABuf.len = 0;
-            doClose();
             return false;
         }
     }

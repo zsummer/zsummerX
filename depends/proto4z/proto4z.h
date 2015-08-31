@@ -134,6 +134,7 @@ enum ZSummer_EndianType
 
 
 typedef unsigned int Integer;
+typedef unsigned short ReserveInteger;
 typedef unsigned short ProtoInteger;
 
 const static Integer MaxPackLen = 1024*1024;
@@ -237,6 +238,7 @@ private:
     char * _attachData;//! attach memory pointer
     Integer _maxStreamLen; //! can write max size
     Integer _cursor; //! current move cursor.
+    ReserveInteger _reserve;
     ProtoInteger _pID; //! proto ID
     Integer _headLen;
     bool  _isNoWrite; //! if true then WriteStream will not do any write operation.
@@ -301,6 +303,7 @@ private:
     const char * _attachData;
     Integer _maxDataLen;
     Integer _cursor;
+    ReserveInteger _reserve;
     ProtoInteger _pID; //! proto ID
     bool _isHaveHeader;
 };
@@ -661,10 +664,11 @@ inline std::pair<INTEGRITY_RET_TYPE, Integer> checkBuffIntegrity(const char * bu
 
 inline WriteStream::WriteStream(ProtoInteger pID, char * attachData, Integer maxStreamLen, bool bNoWrite)
 {
+    _reserve = 0;
     _pID = pID;
     _attachData = attachData;
     _maxStreamLen = maxStreamLen;
-    _headLen = sizeof(Integer) + sizeof(ProtoInteger);
+    _headLen = sizeof(Integer)+ sizeof(ReserveInteger) + sizeof(ProtoInteger);
     _cursor = _headLen;
     _isNoWrite = bNoWrite;
     if (_attachData == NULL || _maxStreamLen < _headLen)
@@ -683,12 +687,14 @@ inline WriteStream::WriteStream(ProtoInteger pID, char * attachData, Integer max
     if (_attachData)
     {
         baseTypeToStream<Integer>(packLen, &_attachData[0]);
-        baseTypeToStream<ProtoInteger>(pID, &_attachData[sizeof(Integer)]);
+        baseTypeToStream<ReserveInteger>(_reserve, &_attachData[sizeof(Integer)]);
+        baseTypeToStream<ProtoInteger>(pID, &_attachData[sizeof(Integer) + sizeof(ReserveInteger)]);
     }
     else
     {
         baseTypeToStream<Integer>(packLen, &_data[0]);
-        baseTypeToStream<ProtoInteger>(pID, &_data[sizeof(Integer)]);
+        baseTypeToStream<ReserveInteger>(_reserve, &_data[sizeof(Integer)]);
+        baseTypeToStream<ProtoInteger>(pID, &_data[sizeof(Integer) + sizeof(ReserveInteger)]);
     }
 }
 
@@ -875,13 +881,14 @@ inline ReadStream::ReadStream(const char *attachData, Integer attachDataLen, boo
 
     if (_isHaveHeader)
     {
-        if (_maxDataLen < sizeof(Integer)+sizeof(ProtoInteger))
+        if (_maxDataLen < sizeof(Integer) + sizeof(ReserveInteger) + sizeof(ProtoInteger))
         {
             _attachData = NULL; //assert
         }
 
-        _cursor = sizeof(Integer) + sizeof(ProtoInteger);
-        _pID = streamToBaseType<ProtoInteger>(&_attachData[sizeof(Integer)]);
+        _cursor = sizeof(Integer) + sizeof(ReserveInteger) + sizeof(ProtoInteger);
+        _reserve = streamToBaseType<ReserveInteger>(&_attachData[sizeof(Integer)]);
+        _pID = streamToBaseType<ProtoInteger>(&_attachData[sizeof(Integer) + sizeof(ReserveInteger)]);
         Integer len = streamToBaseType<Integer>(&_attachData[0]);
         if (len < _maxDataLen) // if stream invalid, ReadStream try read data as much as possible.
         {
@@ -893,16 +900,13 @@ inline ReadStream::ReadStream(const char *attachData, Integer attachDataLen, boo
         _cursor = 0;
         _pID = 0;
     }
-
-
-    
 }
 
 inline void ReadStream::resetMoveCursor()
 {
     if (_isHaveHeader)
     {
-        _cursor = sizeof(Integer) + sizeof(ProtoInteger);
+        _cursor = sizeof(Integer) + sizeof(ReserveInteger) + sizeof(ProtoInteger);
     }
     else
     {
@@ -945,7 +949,7 @@ inline const char* ReadStream::getStreamBody()
 {
     if (_isHaveHeader)
     {
-        return _attachData + sizeof(Integer) + sizeof(ProtoInteger);
+        return _attachData + sizeof(Integer) + sizeof(ReserveInteger) + sizeof(ProtoInteger);
     }
     return _attachData;
 }
@@ -955,7 +959,7 @@ inline Integer ReadStream::getStreamBodyLen()
 {
     if (_isHaveHeader)
     {
-        return getStreamLen() - sizeof(Integer) - sizeof(ProtoInteger);
+        return getStreamLen() - sizeof(Integer) - sizeof(ReserveInteger) - sizeof(ProtoInteger);
     }
     return getStreamLen();
 }
@@ -1021,8 +1025,8 @@ const char BLANK = ' ';
 typedef std::pair<std::string, std::string> PairString;
 typedef std::map<std::string, std::string> HTTPHeadMap;
 
-inline INTEGRITY_RET_TYPE checkHTTPBuffIntegrity(const char * buff, unsigned int curBuffLen, unsigned int maxBuffLen, 
-                            bool hadHeader, bool & isChunked, PairString& commonLine, HTTPHeadMap & head, std::string & body, unsigned int &usedCount);
+inline std::pair<INTEGRITY_RET_TYPE, unsigned int> checkHTTPBuffIntegrity(const char * buff, unsigned int curBuffLen, unsigned int maxBuffLen,
+                            bool hadHeader, bool & isChunked, PairString& commonLine, HTTPHeadMap & head, std::string & body);
 
 std::string urlEncode(const std::string& orgString);
 std::string urlDecode(const std::string& orgString);
@@ -1243,15 +1247,15 @@ inline unsigned int InnerReadLine(const char * buff, unsigned int curBuffLen, un
     return cursor;
 }
 
-inline INTEGRITY_RET_TYPE checkHTTPBuffIntegrity(const char * buff, unsigned int curBuffLen, unsigned int maxBuffLen,
-    bool hadHeader, bool &isChunked, PairString& commonLine, HTTPHeadMap & head, std::string & body, unsigned int &usedCount)
+inline std::pair<INTEGRITY_RET_TYPE, unsigned int> checkHTTPBuffIntegrity(const char * buff, unsigned int curBuffLen, unsigned int maxBuffLen,
+    bool hadHeader, bool &isChunked, PairString& commonLine, HTTPHeadMap & head, std::string & body)
 {
     if (!hadHeader)
     {
         isChunked = false;
     }
     int bodyLenght = -1;
-    usedCount = 0;
+    unsigned int usedCount = 0;
     PairString keyValue;
 
     //extract head
@@ -1265,7 +1269,7 @@ inline INTEGRITY_RET_TYPE checkHTTPBuffIntegrity(const char * buff, unsigned int
         }
         catch (INTEGRITY_RET_TYPE t)
         {
-            return t;
+            return std::make_pair(t, usedCount);
         }
 
         //extract head line
@@ -1294,7 +1298,7 @@ inline INTEGRITY_RET_TYPE checkHTTPBuffIntegrity(const char * buff, unsigned int
         }
         catch (INTEGRITY_RET_TYPE t)
         {
-            return t;
+            return std::make_pair(t, 0);
         }
     }
     
@@ -1311,37 +1315,37 @@ inline INTEGRITY_RET_TYPE checkHTTPBuffIntegrity(const char * buff, unsigned int
             //chunked end. need closed.
             if (keyValue.first.empty())
             {
-                return IRT_CORRUPTION;
+                return std::make_pair(IRT_CORRUPTION, 0);
             }
             sscanf(keyValue.first.c_str(), "%x", &bodyLenght);
             if (bodyLenght == 0)
             {
                 //http socket end.
-                return IRT_CORRUPTION;
+                return std::make_pair(IRT_CORRUPTION, 0);
             }
             
         }
         catch (INTEGRITY_RET_TYPE t)
         {
-            return t;
+            return std::make_pair(t, 0);
         }
     }
     else if (hadHeader)
     {
-        return IRT_SHORTAGE;
+        return std::make_pair(IRT_SHORTAGE, 0);
     }
     else if (commonLine.first == "GET")
     {
-        return IRT_SUCCESS;
+        return std::make_pair(IRT_SUCCESS, usedCount);
     }
     
     if (bodyLenght == -1 || usedCount + bodyLenght > maxBuffLen)
     {
-        return IRT_CORRUPTION;
+        return std::make_pair(IRT_CORRUPTION, 0);
     }
     if (bodyLenght + usedCount > curBuffLen)
     {
-        return IRT_SHORTAGE;
+        return std::make_pair(IRT_SHORTAGE, 0);
     }
     body.assign(buff + usedCount, bodyLenght);
     usedCount += bodyLenght;
@@ -1356,17 +1360,17 @@ inline INTEGRITY_RET_TYPE checkHTTPBuffIntegrity(const char * buff, unsigned int
             //chunked end. need closed.
             if (!keyValue.first.empty())
             {
-                return IRT_CORRUPTION;
+                return std::make_pair(IRT_CORRUPTION, 0);
             }
         }
         catch (INTEGRITY_RET_TYPE t)
         {
-            return t;
+            return std::make_pair(t, 0);
         }
     }
     
 
-    return IRT_SUCCESS;
+    return std::make_pair(IRT_SUCCESS, usedCount);
 }
 
 

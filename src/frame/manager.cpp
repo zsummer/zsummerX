@@ -387,8 +387,6 @@ void SessionManager::kickSession(SessionID sID)
 
 void SessionManager::removeSession(TcpSessionPtr session)
 {
-
-    
     _mapTcpSessionPtr.erase(session->getSessionID());
     if (session->getAcceptID() != InvalidAccepterID)
     {

@@ -63,9 +63,8 @@ namespace zsummer
         inline OnBlockCheckResult DefaultHTTPBlockCheck(const char * begin, unsigned int len, unsigned int bound,
             bool hadHeader, bool & isChunked, PairString& commonLine, MapString & head, std::string & body)
         {
-            unsigned int used = 0;
-            auto ret = zsummer::proto4z::checkHTTPBuffIntegrity(begin, len, bound, hadHeader, isChunked, commonLine, head, body, used);
-            return std::make_pair((BLOCK_CHECK_TYPE)ret, used);
+            auto ret = zsummer::proto4z::checkHTTPBuffIntegrity(begin, len, bound, hadHeader, isChunked, commonLine, head, body);
+            return std::make_pair((BLOCK_CHECK_TYPE)ret.first, ret.second);
         }
 
         inline void DefaultHTTPBlockDispatch(TcpSessionPtr session, const PairString & commonLine, const MapString &head, const std::string & body)

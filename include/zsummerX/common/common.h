@@ -174,12 +174,12 @@ namespace zsummer
 
 
 
-#define LCD( log ) LOG_DEBUG( zsummer::network::g_appEnvironment.getNetCoreLogger(), __FUNCTION__ <<": "<< log )
-#define LCI( log ) LOG_INFO( zsummer::network::g_appEnvironment.getNetCoreLogger(), __FUNCTION__ <<": "<<  log )
-#define LCW( log ) LOG_WARN( zsummer::network::g_appEnvironment.getNetCoreLogger(), __FUNCTION__ << ": "<< log )
-#define LCE( log ) LOG_ERROR( zsummer::network::g_appEnvironment.getNetCoreLogger(), __FUNCTION__ << ": "<< log )
-#define LCA( log ) LOG_ALARM( zsummer::network::g_appEnvironment.getNetCoreLogger(), __FUNCTION__ << ": "<< log )
-#define LCF( log ) LOG_FATAL( zsummer::network::g_appEnvironment.getNetCoreLogger(), __FUNCTION__ << ": "<< log )
+#define LCD( log ) LOG_DEBUG( zsummer::network::g_appEnvironment.getNetCoreLogger(), log )
+#define LCI( log ) LOG_INFO( zsummer::network::g_appEnvironment.getNetCoreLogger(),  log )
+#define LCW( log ) LOG_WARN( zsummer::network::g_appEnvironment.getNetCoreLogger(),  log )
+#define LCE( log ) LOG_ERROR( zsummer::network::g_appEnvironment.getNetCoreLogger(), log )
+#define LCA( log ) LOG_ALARM( zsummer::network::g_appEnvironment.getNetCoreLogger(), log )
+#define LCF( log ) LOG_FATAL( zsummer::network::g_appEnvironment.getNetCoreLogger(), log )
 
 
 

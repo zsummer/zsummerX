@@ -184,7 +184,7 @@ bool TcpSession::doRecv()
 
 void TcpSession::close()
 {
-    LCW("TcpSession to close socket. sID= " << _sessionID );
+    LCD("TcpSession to close socket. sID= " << _sessionID );
     if (_sockptr)
     {
         if (_status == 2)
@@ -208,7 +208,7 @@ void TcpSession::close()
         }
         return;
     }
-    LCE("TcpSession::close invalid");
+    LCW("TcpSession::close closing.");
 }
 
 void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
@@ -401,7 +401,7 @@ void TcpSession::send(const char *buf, unsigned int len)
         bool sendRet = _sockptr->doSend(_sending->begin, _sending->len, std::bind(&TcpSession::onSend, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
         if (!sendRet)
         {
-            LCE("send error ");
+            LCW("send error ");
         }
     }
 }

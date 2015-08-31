@@ -235,7 +235,6 @@ bool TcpSocket::doSend(char * buf, unsigned int len, _OnSendHandler &&handler)
             LCW("TcpSocket doSend failed and ERRCODE!=ERROR_IO_PENDING ERRCODE=" << WSAGetLastError() );
             _sendWsaBuf.buf = nullptr;
             _sendWsaBuf.len = 0;
-            doClose();
             return false;
         }
     }

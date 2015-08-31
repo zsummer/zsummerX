@@ -89,9 +89,15 @@ void TcpSession::reconnect()
         _sockptr->doClose();
         _sockptr.reset();
     }
+    _sockptr = std::make_shared<TcpSocket>();
+    if (!_sockptr->initialize(_eventLoop))
+    {
+        LCE("connect init error");
+        return;
+    }
     _recving->len = 0;
     _sending->len = 0;
-    _sendingCurIndex = 0;
+    _sendingLen = 0;
     _rc4StateRead.makeSBox(_options._rc4TcpEncryption);
     _rc4StateWrite.makeSBox(_options._rc4TcpEncryption);
     _bFirstRecvData = true;
@@ -100,13 +106,6 @@ void TcpSession::reconnect()
     {
         _options._freeBlock(_sendque.front());
         _sendque.pop();
-    }
-
-    _sockptr = std::make_shared<TcpSocket>();
-    if (!_sockptr->initialize(_eventLoop))
-    {
-        LCE("connect init error");
-        return;
     }
 
     if (!_sockptr->doConnect(_remoteIP, _remotePort, std::bind(&TcpSession::onConnected, shared_from_this(), std::placeholders::_1)))
@@ -415,12 +414,12 @@ void TcpSession::onSend(zsummer::network::NetErrorCode ec, int nSentLen)
         return ;
     }
 
-    _sendingCurIndex += nSentLen;
+    _sendingLen += nSentLen;
     SessionManager::getRef()._statInfo[STAT_SEND_BYTES] += nSentLen;
-    if (_sendingCurIndex < _sending->len)
+    if (_sendingLen < _sending->len)
     {
         SessionManager::getRef()._statInfo[STAT_SEND_COUNT]++;
-        bool sendRet = _sockptr->doSend(_sending->begin + _sendingCurIndex, _sending->len - _sendingCurIndex, std::bind(&TcpSession::onSend, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
+        bool sendRet = _sockptr->doSend(_sending->begin + _sendingLen, _sending->len - _sendingLen, std::bind(&TcpSession::onSend, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
         if (!sendRet)
         {
             LCW("send error from onSend");
@@ -428,9 +427,9 @@ void TcpSession::onSend(zsummer::network::NetErrorCode ec, int nSentLen)
         }
         return;
     }
-    if (_sendingCurIndex == _sending->len)
+    if (_sendingLen == _sending->len)
     {
-        _sendingCurIndex = 0;
+        _sendingLen = 0;
         _sending->len = 0;
         if (!_sendque.empty())
         {

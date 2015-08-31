@@ -95,7 +95,7 @@ namespace zsummer
             //! 
             SessionBlock* _recving = nullptr;
             SessionBlock* _sending = nullptr;
-            unsigned int _sendingCurIndex = 0;
+            unsigned int _sendingLen = 0;
 
             //! send data queue
             std::queue<SessionBlock *> _sendque;

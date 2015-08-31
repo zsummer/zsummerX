@@ -183,31 +183,37 @@ bool TcpSession::doRecv()
 
 void TcpSession::close()
 {
-    LCD("TcpSession to close socket. sID= " << _sessionID );
-    if (_sockptr)
+    if (_status != 3 && _status != 0)
     {
+        if (_sockptr)
+        {
+            _sockptr->doClose();
+            _sockptr.reset();
+        }
+        LCD("TcpSession to close socket. sID= " << _sessionID);
         if (_status == 2)
         {
             SessionManager::getRef()._statInfo[STAT_SESSION_CLOSED]++;
             if (_options._onSessionClosed)
             {
-                _options._onSessionClosed(shared_from_this());
+                SessionManager::getRef().post(std::bind(_options._onSessionClosed, shared_from_this()));
             }
         }
-        _status = 3;
-        _sockptr->doClose();
-        _sockptr.reset();
+
         if (isConnectID(_sessionID) && _reconnects < _options._reconnects)
         {
             _status = 1;
+            LCD("TcpSession already closed. try reconnect ... sID= " << _sessionID);
         }
         else
         {
-            SessionManager::getRef().removeSession(shared_from_this());
+            _status = 3;
+            SessionManager::getRef().post(std::bind(&SessionManager::removeSession, SessionManager::getPtr(), shared_from_this()));
+            LCI("TcpSession remove self from manager. sID= " << _sessionID);
         }
         return;
     }
-    LCW("TcpSession::close closing.");
+    LCW("TcpSession::close closing. sID=" << _sessionID);
 }
 
 void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)

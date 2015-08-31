@@ -114,11 +114,11 @@ bool SessionManager::runOnce(bool isImmediately)
             {
                 if (isSessionID(kv.first))
                 {
-                    post(std::bind(&SessionManager::kickSession, this, kv.first));
+                    SessionManager::getRef().kickSession(kv.first);
                     count++;
                 }
             }
-            LCW("SessionManager::kickAllClients() [" << count << "], session[" << _mapTcpSessionPtr.size() << "] success.");
+            LCI("SessionManager::kickAllClients() [" << count << "]  success.");
             if (count == 0 && _funClientsStop)
             {
                 auto temp = std::move(_funClientsStop);
@@ -135,13 +135,12 @@ bool SessionManager::runOnce(bool isImmediately)
                 if (isConnectID(kv.first))
                 {
                     kv.second->getOptions()._reconnects = 0;
-                    post(std::bind(&SessionManager::kickSession, this, kv.first));
+                    SessionManager::getRef().kickSession(kv.first);
                     count++;
                 }
                 
             }
-
-            LCW("SessionManager::kickAllConnect() [" << count << "], session[" << _mapTcpSessionPtr.size() << "] success.");
+            LCI("SessionManager::kickAllConnect() [" << count << "] success.");
             if (count == 0 && _funServerStop)
             {
                 auto temp = std::move(_funServerStop);

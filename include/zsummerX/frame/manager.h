@@ -77,8 +77,7 @@ namespace zsummer
             SessionManager是一个单例singleton, 是一个对zsummerX底层接口的高级封装, 如果需要自己封装 则可以参考frame的做法或者example中的例子进行封装或使用.
             这个单例提供了所有网络的高级的可操作接口, 比如启动网络模块单例, 开启网络循环, 依次关闭部分网络功能 最后退出网络循环,  添加多个监听接口, 添加多个连出, 发送数据,
                 跨线程的通知机制post, 创建取消定时器, 获取连接信息, 设置定时检测, 设置断线重莲次数和间隔, 设置是否支持flash Policy, 设置最大可连入的连接数, 设置协议是二进制的TCP协议(proto4z协议流), 
-                设置协议是HTTP(可做WEB服务器和客户端使用, 很方便的做一些SDK认证和平台接入),  可获取运行时的网络状态数据.
-            消息处理的handler注册 参看文件dispatch.h
+                设置协议是HTTP(可做WEB服务器和客户端使用, 很方便的做一些SDK认证和平台接入).
         */
         class SessionManager
         {
@@ -108,7 +107,7 @@ namespace zsummer
             template<class H>
             void post(H &&h){ _summer->post(std::move(h)); }
 
-            //创建定时器 单位是毫秒 非线程安全, 如有多线程下的需求请配合POST来实现.
+            //创建定时器 单位是毫秒 非线程安全.
             template <class H>
             zsummer::network::TimerID createTimer(unsigned int delayms, H &&h){ return _summer->createTimer(delayms, std::move(h)); }
             //取消定时器.  注意, 如果在定时器的回调handler中取消当前定时器 会失败的.
@@ -142,9 +141,7 @@ namespace zsummer
             inline unsigned long long getStatInfo(int stat){ return _statInfo[stat]; }
             unsigned long long _statInfo[STAT_SIZE];
         public:
-            //该组接口说明:
-            // stopXXXX系列接口可以在信号处理函数中调用, 也只有该系列函数可以在信号处理函数中使用.
-            // 一些stopXXX接口提供完成通知, 但需要调用setStopXXXX去注册回调函数.
+            // stopXXXX系列接口可以在信号处理函数中调用.
             void stopAccept();
             void stopClients();
             void setStopClientsHandler(std::function<void()> handler);

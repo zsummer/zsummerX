@@ -129,23 +129,25 @@ enum ZSummer_EndianType
 //////////////////////////////////////////////////////////////////////////
 
 // Memory layout
-//|-----   header  -----|-------  body  --------|
-//|--packlen-|-protoID--|-------  body  --------|
+//|----------  header  ---------|-------  body  --------|
+//|--packlen-|-reserve-protoID--|-------  body  --------|
 
-
+//header
 typedef unsigned int Integer;
 typedef unsigned short ReserveInteger;
 typedef unsigned short ProtoInteger;
+//header end.
 
-const static Integer MaxPackLen = 1024*1024;
+
+const static Integer MaxPackLen = (Integer)(-1) > 1024 * 1024 ? 1024 * 1024 : (Integer)-1;
 
 //stream translate to Integer with endian type.
-template<class Integer>
-Integer streamToBaseType(const char stream[sizeof(Integer)]);
+template<class BaseType>
+BaseType streamToBaseType(const char stream[sizeof(BaseType)]);
 
 //integer translate to stream with endian type.
-template<class Integer>
-void baseTypeToStream(Integer integer, char *stream);
+template<class BaseType>
+void baseTypeToStream(char *stream, BaseType v);
 
 //!get runtime local endian type. 
 static const unsigned short __gc_localEndianType = 1;
@@ -185,9 +187,9 @@ checkBuffIntegrity(const char * buff, Integer curBuffLen, Integer boundLen, Inte
 class WriteStream
 {
 public:
-    //! bNoWrite : if true then WriteStream will not do any write operation.
-    //! attachData : Attach to the existing memory.
-    inline WriteStream(ProtoInteger pID, char * attachData = NULL, Integer maxStreamLen = 0, bool bNoWrite = false);
+    //! testStream : if true then WriteStream will not do any write operation.
+    //! attach : the existing memory.
+    inline WriteStream(ProtoInteger pID, char * attach = NULL, Integer attachLen = 0, bool testStream = false);
     ~WriteStream(){}
 public:
     //get total stream buff, the pointer must be used immediately.
@@ -201,8 +203,12 @@ public:
     inline Integer getStreamBodyLen(){ return _cursor - _headLen; }
 
     //write original data.
-    inline WriteStream & appendOriginalData(const void * data, Integer unit);
-    inline WriteStream & fixOriginalData(Integer offset, Integer unit);
+    inline WriteStream & appendOriginalData(const void * data, Integer len);
+    template<class T>
+    inline WriteStream & fixOriginalData(Integer offset, T unit);
+    inline WriteStream & fixOriginalData(Integer offset, const void * data, Integer len);
+
+    inline WriteStream & setReserve(ReserveInteger n);
 
     inline WriteStream & operator << (bool data) { return writeSimpleData(data); }
     inline WriteStream & operator << (char data) { return writeSimpleData(data); }
@@ -234,14 +240,14 @@ protected:
     inline WriteStream & writeSimpleData(T t);
 private:
 
-    std::string _data; //! If not attach any memory, class WriteStream will used this to managing memory.
-    char * _attachData;//! attach memory pointer
-    Integer _maxStreamLen; //! can write max size
+    std::string _auto; //! If not attach any memory, class WriteStream will used this to managing memory.
+    char * _attach;//! attach memory pointer
+    Integer _attachLen; //! can write max size
     Integer _cursor; //! current move cursor.
     ReserveInteger _reserve;
     ProtoInteger _pID; //! proto ID
     Integer _headLen;
-    bool  _isNoWrite; //! if true then WriteStream will not do any write operation.
+    bool  _testStream; //! if true then WriteStream will not do any write operation.
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -252,13 +258,15 @@ private:
 class ReadStream
 {
 public:
-    inline ReadStream(const char *attachData, Integer attachDataLen, bool isHaveHeader = true);
+    inline ReadStream(const char *attach, Integer attachLen, bool isHaveHeader = true);
     ~ReadStream(){}
 public:
     //reset cursor
     inline void resetMoveCursor();
     //get protocol id
-    inline ProtoInteger getProtoID(){return _pID;}
+    inline ProtoInteger getProtoID(){ return _pID; }
+    //get reserve id
+    inline ReserveInteger getReserve(){ return _reserve; }
     //get attach data buff
     inline const char* getStream();
     //get pack length in stream
@@ -300,8 +308,8 @@ protected:
     inline ReadStream & readSimpleData(T & t);
 
 private:
-    const char * _attachData;
-    Integer _maxDataLen;
+    const char * _attach;
+    Integer _attachLen;
     Integer _cursor;
     ReserveInteger _reserve;
     ProtoInteger _pID; //! proto ID
@@ -589,7 +597,7 @@ BaseType streamToBaseType(const char stream[sizeof(BaseType)])
 }
 
 template<class BaseType>
-void baseTypeToStream(BaseType v, char *stream)
+void baseTypeToStream(char *stream, BaseType v)
 {
     unsigned short bytes = sizeof(BaseType);
     if (bytes == 1)
@@ -662,59 +670,56 @@ inline std::pair<INTEGRITY_RET_TYPE, Integer> checkBuffIntegrity(const char * bu
 //////////////////////////////////////////////////////////////////////////
 
 
-inline WriteStream::WriteStream(ProtoInteger pID, char * attachData, Integer maxStreamLen, bool bNoWrite)
+inline WriteStream::WriteStream(ProtoInteger pID, char * attach, Integer attachLen, bool testStream)
 {
     _reserve = 0;
     _pID = pID;
-    _attachData = attachData;
-    _maxStreamLen = maxStreamLen;
+    _attach = attach;
+    _attachLen = attachLen;
     _headLen = sizeof(Integer)+ sizeof(ReserveInteger) + sizeof(ProtoInteger);
     _cursor = _headLen;
-    _isNoWrite = bNoWrite;
-    if (_attachData == NULL || _maxStreamLen < _headLen)
+    _testStream = testStream;
+    if (_attach == NULL)
     {
-        _attachData = NULL;
-        _data.reserve(1200);
-        _data.resize(_cursor, '\0');
+        _attach = NULL;
+        _auto.reserve(1200);
+        _auto.resize(_cursor, '\0');
+        _attachLen = MaxPackLen;
     }
-    if (_maxStreamLen < _headLen || _maxStreamLen > MaxPackLen)
+    if (_attachLen > MaxPackLen)
     {
-        _maxStreamLen = MaxPackLen;
+        _attachLen = MaxPackLen;
     }
 
     //write header
-    Integer packLen = _headLen;
-    if (_attachData)
-    {
-        baseTypeToStream<Integer>(packLen, &_attachData[0]);
-        baseTypeToStream<ReserveInteger>(_reserve, &_attachData[sizeof(Integer)]);
-        baseTypeToStream<ProtoInteger>(pID, &_attachData[sizeof(Integer) + sizeof(ReserveInteger)]);
-    }
-    else
-    {
-        baseTypeToStream<Integer>(packLen, &_data[0]);
-        baseTypeToStream<ReserveInteger>(_reserve, &_data[sizeof(Integer)]);
-        baseTypeToStream<ProtoInteger>(pID, &_data[sizeof(Integer) + sizeof(ReserveInteger)]);
-    }
+    char *dst = NULL;
+    if (_attach) 
+        dst = &attach[0];
+    else 
+        dst = &_auto[0];
+    baseTypeToStream(dst, _headLen);
+    baseTypeToStream(dst + sizeof(Integer), _reserve);
+    baseTypeToStream(dst + sizeof(Integer) + sizeof(ReserveInteger), pID);
+
 }
 
 
 
 inline void WriteStream::checkMoveCursor(Integer unit)
 {
-    if (_maxStreamLen < _headLen)
+    if (_attachLen < _headLen)
     {
         throw std::runtime_error("construction param error. attach memory size less than mini size.");
     }
-    if (_cursor > _maxStreamLen)
+    if (_cursor > _attachLen)
     {
         throw std::runtime_error("bound over. cursor in end-of-data.");
     }
-    if (unit > _maxStreamLen)
+    if (unit > _attachLen)
     {
         throw std::runtime_error("bound over. new unit be discarded.");
     }
-    if (_maxStreamLen - _cursor < unit)
+    if (_attachLen - _cursor < unit)
     {
         throw std::runtime_error("bound over. new unit be discarded.");
     }
@@ -723,18 +728,18 @@ inline void WriteStream::checkMoveCursor(Integer unit)
 
 inline void WriteStream::fixPackLen()
 {
-    if (_isNoWrite)
+    if (_testStream)
     {
         return;
     }
     Integer packLen = _cursor;
-    if (_attachData)
+    if (_attach)
     {
-        baseTypeToStream<Integer>(packLen, &_attachData[0]);
+        baseTypeToStream(&_attach[0], packLen);
     }
     else
     {
-        baseTypeToStream<Integer>(packLen, &_data[0]);
+        baseTypeToStream(&_auto[0], packLen);
     }
 }
 
@@ -743,17 +748,17 @@ inline void WriteStream::fixPackLen()
 
 inline char* WriteStream::getStream()
 {
-    if (_isNoWrite)
+    if (_testStream)
     {
         return NULL;
     }
-    if (_attachData)
+    if (_attach)
     {
-        return _attachData;
+        return _attach;
     }
     else
     {
-        return &_data[0];
+        return &_auto[0];
     }
     return NULL;
 }
@@ -761,73 +766,107 @@ inline char* WriteStream::getStream()
 
 inline char* WriteStream::getStreamBody()
 {
-    if (_isNoWrite)
+    if (_testStream)
     {
         return NULL;
     }
-    if (_attachData)
+    if (_attach)
     {
-        return _attachData + _headLen;
+        return _attach + _headLen;
     }
     else
     {
-        return &_data[0] + _headLen;
+        return &_auto[0] + _headLen;
     }
     return NULL;
 }
 
 
-inline WriteStream & WriteStream::appendOriginalData(const void * data, Integer unit)
+inline WriteStream & WriteStream::appendOriginalData(const void * data, Integer len)
 {
-    checkMoveCursor(unit);
-    if (!_isNoWrite)
+    checkMoveCursor(len);
+    if (!_testStream)
     {
-        if (_attachData)
+        if (_attach)
         {
-            memcpy(&_attachData[_cursor], data, unit);
+            memcpy(&_attach[_cursor], data, len);
         }
         else
         {
-            _data.append((const char*)data, unit);
+            _auto.append((const char*)data, len);
         }
     }
-    _cursor += unit;
+    _cursor += len;
     fixPackLen();
     return *this;
 }
-inline WriteStream & WriteStream::fixOriginalData(Integer offset, Integer unit)
+template<class T>
+inline WriteStream & WriteStream::fixOriginalData(Integer offset, T unit)
 {
-    if (offset + sizeof(Integer) > _cursor)
+    if (offset + sizeof(unit) > _cursor)
     {
         throw std::runtime_error("fixOriginalData over stream.");
     }
-    if (_attachData)
+    if (_attach)
     {
-        baseTypeToStream<Integer>(unit, &_attachData[offset]);
+        baseTypeToStream(&_attach[offset], unit);
     }
     else
     {
-        baseTypeToStream<Integer>(unit, &_data[offset]);
+        baseTypeToStream(&_auto[offset], unit);
     }
     return *this;
 }
+
+inline WriteStream & WriteStream::fixOriginalData(Integer offset, const void * data, Integer len)
+{
+    if (offset + len > _cursor)
+    {
+        throw std::runtime_error("fixOriginalData over stream.");
+    }
+    if (_attach)
+    {
+        memcpy(&_attach[offset], data, len);
+    }
+    else
+    {
+        memcpy(&_auto[offset], data, len);
+    }
+    return *this;
+}
+inline WriteStream & WriteStream::setReserve(ReserveInteger n)
+{
+    if (!_testStream)
+    {
+        if (_attach)
+        {
+            baseTypeToStream(&_attach[sizeof(Integer)], n);
+        }
+        else
+        {
+            baseTypeToStream(&_auto[sizeof(Integer)], n);
+        }
+    }
+    return *this;
+}
+
  template <class T> 
 inline WriteStream & WriteStream::writeIntegerData(T t)
 {
     Integer unit = sizeof(T);
     checkMoveCursor(unit);
-    if (!_isNoWrite)
+    if (!_testStream)
     {
-        if (_attachData)
+        if (_attach)
         {
-            baseTypeToStream<T>(t, &_attachData[_cursor]);
+            baseTypeToStream(&_attach[_cursor], t);
         }
         else
         {
-            _data.append((const char*)&t, unit);
+            _auto.append((const char*)&t, unit);
             if (LittleEndian != __localEndianType())
             {
-                baseTypeToStream<T>(t, &_data[_cursor]);
+                baseTypeToStream(&_auto[_cursor], t);
             }
         }
     }
@@ -842,15 +881,15 @@ inline WriteStream & WriteStream::writeSimpleData(T t)
 {
     Integer unit = sizeof(T);
     checkMoveCursor(unit);
-    if (!_isNoWrite)
+    if (!_testStream)
     {
-        if (_attachData)
+        if (_attach)
         {
-            memcpy(&_attachData[_cursor], &t, unit);
+            memcpy(&_attach[_cursor], &t, unit);
         }
         else
         {
-            _data.append((const char*)&t, unit);
+            _auto.append((const char*)&t, unit);
         }
     }
 
@@ -868,31 +907,31 @@ inline WriteStream & WriteStream::writeSimpleData(T t)
 //! implement 
 //////////////////////////////////////////////////////////////////////////
 
-inline ReadStream::ReadStream(const char *attachData, Integer attachDataLen, bool isHaveHeader)
+inline ReadStream::ReadStream(const char *attach, Integer attachLen, bool isHaveHeader)
 {
-    _attachData = attachData;
-    _maxDataLen = attachDataLen;
+    _attach = attach;
+    _attachLen = attachLen;
     _isHaveHeader = isHaveHeader;
-    if (_maxDataLen > MaxPackLen)
+    if (_attachLen > MaxPackLen)
     {
-        _maxDataLen = MaxPackLen;
+        _attachLen = MaxPackLen;
     }
 
 
     if (_isHaveHeader)
     {
-        if (_maxDataLen < sizeof(Integer) + sizeof(ReserveInteger) + sizeof(ProtoInteger))
+        if (_attachLen < sizeof(Integer) + sizeof(ReserveInteger) + sizeof(ProtoInteger))
         {
-            _attachData = NULL; //assert
+            throw std::runtime_error("ReadStream attach buff less then head len");
         }
 
         _cursor = sizeof(Integer) + sizeof(ReserveInteger) + sizeof(ProtoInteger);
-        _reserve = streamToBaseType<ReserveInteger>(&_attachData[sizeof(Integer)]);
-        _pID = streamToBaseType<ProtoInteger>(&_attachData[sizeof(Integer) + sizeof(ReserveInteger)]);
-        Integer len = streamToBaseType<Integer>(&_attachData[0]);
-        if (len < _maxDataLen) // if stream invalid, ReadStream try read data as much as possible.
+        Integer len = streamToBaseType<Integer>(&_attach[0]);
+        _reserve = streamToBaseType<ReserveInteger>(&_attach[sizeof(Integer)]);
+        _pID = streamToBaseType<ProtoInteger>(&_attach[sizeof(Integer) + sizeof(ReserveInteger)]);
+        if (len < _attachLen) // if stream invalid, ReadStream try read data as much as possible.
         {
-            _maxDataLen = len;
+            _attachLen = len;
         }
     }
     else
@@ -917,15 +956,15 @@ inline void ReadStream::resetMoveCursor()
 
 inline void ReadStream::checkMoveCursor(Integer unit)
 {
-    if (_cursor > _maxDataLen)
+    if (_cursor > _attachLen)
     {
         throw std::runtime_error("bound over. cursor in end-of-data.");
     }
-    if (unit > _maxDataLen)
+    if (unit > _attachLen)
     {
         throw std::runtime_error("bound over. new unit be discarded.");
     }
-    if (_maxDataLen - _cursor < unit)
+    if (_attachLen - _cursor < unit)
     {
         throw std::runtime_error("bound over. new unit be discarded.");
     }
@@ -935,13 +974,13 @@ inline void ReadStream::checkMoveCursor(Integer unit)
 
 inline const char* ReadStream::getStream()
 {
-    return _attachData;
+    return _attach;
 }
 
 
 inline Integer ReadStream::getStreamLen()
 {
-    return _maxDataLen;
+    return _attachLen;
 }
 
 
@@ -949,9 +988,9 @@ inline const char* ReadStream::getStreamBody()
 {
     if (_isHaveHeader)
     {
-        return _attachData + sizeof(Integer) + sizeof(ReserveInteger) + sizeof(ProtoInteger);
+        return _attach + sizeof(Integer) + sizeof(ReserveInteger) + sizeof(ProtoInteger);
     }
-    return _attachData;
+    return _attach;
 }
 
 
@@ -967,7 +1006,7 @@ inline Integer ReadStream::getStreamBodyLen()
 
 inline const char* ReadStream::getStreamUnread()
 {
-    return &_attachData[_cursor];
+    return &_attach[_cursor];
 }
 
 
@@ -981,7 +1020,7 @@ inline ReadStream & ReadStream::readIntegerData(T & t)
 {
     Integer unit = sizeof(T);
     checkMoveCursor(unit);
-    t = streamToBaseType<T>(&_attachData[_cursor]);
+    t = streamToBaseType<T>(&_attach[_cursor]);
     _cursor += unit;
     return * this;
 }
@@ -990,7 +1029,7 @@ inline ReadStream & ReadStream::readSimpleData(T & t)
 {
     Integer unit = sizeof(T);
     checkMoveCursor(unit);
-    memcpy(&t, &_attachData[_cursor], unit);
+    memcpy(&t, &_attach[_cursor], unit);
     _cursor += unit;
     return * this;
 }
@@ -998,7 +1037,7 @@ inline ReadStream & ReadStream::readSimpleData(T & t)
 inline const char * ReadStream::peekOriginalData(Integer unit)
 {
     checkMoveCursor(unit);
-    return &_attachData[_cursor];
+    return &_attach[_cursor];
 }
 
 inline void ReadStream::skipOriginalData(Integer unit)

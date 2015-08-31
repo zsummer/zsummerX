@@ -17,14 +17,14 @@ local echo = {  _iarray = {{_char=1,_uchar=2,_short=3,_ushort=4,_int=5,_uint=6,_
 				}
 
 -- 连接成功事件
-function onConnect(sID, remoteIP, remotePort)
+function whenLinked(sID, remoteIP, remotePort)
 	print("session is on connected. sID=" .. sID .. ", remoteIP=" .. remoteIP .. ", remotePort=" .. remotePort)
 	local data = Proto4z.encode(echo, "EchoPack")
 	Proto4z.dump(echo)
 	Proto4z.putbin(data)
 	summer.sendContent(sID, Proto4z.EchoPack.__getID, data)
 end
-summer.registerConnect(onConnect)
+summer.whenLinked(whenLinked)
 
 -- 收到消息
 function onMessage(sID, pID, content)
@@ -41,13 +41,13 @@ function onMessage(sID, pID, content)
 	end
 
 end
-summer.registerMessage(onMessage)
+summer.whenMessage(onMessage)
 
 -- 连接断开事件
-function onDisconnect(sID, remoteIP, remotePort)
+function whenClosed(sID, remoteIP, remotePort)
 	print("session is on disconnect. sID=" .. sID .. ", remoteIP=" .. remoteIP .. ", remotePort=" .. remotePort)
 end
-summer.registerDisconnect(onDisconnect)
+summer.whenClosed(whenClosed)
 
 
 --启动网络

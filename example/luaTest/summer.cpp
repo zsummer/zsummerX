@@ -106,15 +106,15 @@ static int pcall_error(lua_State *L)
 
 //////////////////////////////////////////////////////////////////////////
 
-static int _connectCB = LUA_NOREF;
-static int _messageCB = LUA_NOREF;
-static int _disconnectCB = LUA_NOREF;
+static int _linkedRef = LUA_NOREF;
+static int _messageRef = LUA_NOREF;
+static int _closedRef = LUA_NOREF;
 
 
-static void _onConnecterCallback(lua_State * L, TcpSessionPtr session)
+static void _onSessionLinked(lua_State * L, TcpSessionPtr session)
 {
     lua_pushcfunction(L, pcall_error);
-    lua_rawgeti(L, LUA_REGISTRYINDEX, _connectCB);
+    lua_rawgeti(L, LUA_REGISTRYINDEX, _linkedRef);
     lua_pushnumber(L, session->getSessionID());
     lua_pushstring(L, session->getRemoteIP().c_str());
     lua_pushnumber(L, session->getRemotePort());
@@ -129,11 +129,11 @@ static void _onConnecterCallback(lua_State * L, TcpSessionPtr session)
     }
 }
 
-static void _onMessageCallback(lua_State * L, TcpSessionPtr session, const char * begin, unsigned int len)
+static void _onMessage(lua_State * L, TcpSessionPtr session, const char * begin, unsigned int len)
 {
     ReadStream rs(begin, len);
     lua_pushcfunction(L, pcall_error);
-    lua_rawgeti(L, LUA_REGISTRYINDEX, _messageCB);
+    lua_rawgeti(L, LUA_REGISTRYINDEX, _messageRef);
     lua_pushinteger(L, session->getSessionID());
     lua_pushinteger(L, rs.getProtoID());
     lua_pushlstring(L, rs.getStreamBody(), rs.getStreamBodyLen());
@@ -148,15 +148,15 @@ static void _onMessageCallback(lua_State * L, TcpSessionPtr session, const char 
     }
 }
 
-static void _onDisconnectCallback(lua_State * L, TcpSessionPtr session)
+static void _onSessionClosed(lua_State * L, TcpSessionPtr session)
 {
-    if (_disconnectCB == LUA_NOREF)
+    if (_closedRef == LUA_NOREF)
     {
-        LOGW("_onDisconnectCallback warning: cannot found ther callback.");
+        LOGW("_onSessionClosed warning: cannot found ther callback.");
         return;
     }
     lua_pushcfunction(L, pcall_error);
-    lua_rawgeti(L, LUA_REGISTRYINDEX, _disconnectCB);
+    lua_rawgeti(L, LUA_REGISTRYINDEX, _closedRef);
     lua_pushnumber(L, session->getSessionID());
     lua_pushstring(L, session->getRemoteIP().c_str());
     lua_pushnumber(L, session->getRemotePort());
@@ -219,9 +219,9 @@ static int addConnect(lua_State *L)
     auto & traits = SessionManager::getRef().getConnecterOptions(cID);
     traits._rc4TcpEncryption = luaL_optstring(L, 3, traits._rc4TcpEncryption.c_str());
     traits._reconnects = (unsigned int)luaL_optinteger(L, 4, traits._reconnects);
-    traits._onSessionLinked = std::bind(_onConnecterCallback, L, std::placeholders::_1);
-    traits._onBlockDispatch = std::bind(_onMessageCallback, L, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-    traits._onSessionClosed = std::bind(_onDisconnectCallback, L, std::placeholders::_1);
+    traits._onSessionLinked = std::bind(_onSessionLinked, L, std::placeholders::_1);
+    traits._onBlockDispatch = std::bind(_onMessage, L, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    traits._onSessionClosed = std::bind(_onSessionClosed, L, std::placeholders::_1);
 
     if (!SessionManager::getRef().openConnecter(cID))
     {
@@ -240,8 +240,8 @@ static int addListen(lua_State *L)
     extend._sessionOptions._rc4TcpEncryption = luaL_optstring(L, 3, extend._sessionOptions._rc4TcpEncryption.c_str());
     extend._maxSessions = (unsigned int)luaL_optinteger(L, 4, extend._maxSessions);
     extend._sessionOptions._sessionPulseInterval = (unsigned int)luaL_optinteger(L, 5, extend._sessionOptions._sessionPulseInterval);
-    extend._sessionOptions._onSessionLinked = std::bind(_onConnecterCallback, L, std::placeholders::_1);
-    extend._sessionOptions._onBlockDispatch = std::bind(_onMessageCallback, L, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    extend._sessionOptions._onSessionLinked = std::bind(_onSessionLinked, L, std::placeholders::_1);
+    extend._sessionOptions._onBlockDispatch = std::bind(_onMessage, L, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
     LOGD("lua: addListen:" << extend);
 
     if (!SessionManager::getRef().openAccepter(aID))
@@ -255,32 +255,32 @@ static int addListen(lua_State *L)
 
 
 
-static int registerConnect(lua_State * L)
+static int setLinkedRef(lua_State * L)
 {
     luaL_checktype(L, 1, LUA_TFUNCTION);
     lua_settop(L, 1);
-    if (_connectCB != LUA_NOREF)
+    if (_linkedRef != LUA_NOREF)
     {
-        LOGE("registerConnect error. connect callback already .");
+        LOGE("setLinkedRef error. connect callback already .");
         return 0;
     }
-    _connectCB = luaL_ref(L, LUA_REGISTRYINDEX);
+    _linkedRef = luaL_ref(L, LUA_REGISTRYINDEX);
     return 0;
 }
 
 
 
 
-static int registerMessage(lua_State * L)
+static int setMessageRef(lua_State * L)
 {
     luaL_checktype(L, 1, LUA_TFUNCTION);
     lua_settop(L, 1);
-    if (_messageCB != LUA_NOREF)
+    if (_messageRef != LUA_NOREF)
     {
-        LOGE("registerMessage error. connect callback already .");
+        LOGE("setMessageRef error. connect callback already .");
         return 0;
     }
-    _messageCB = luaL_ref(L, LUA_REGISTRYINDEX);
+    _messageRef = luaL_ref(L, LUA_REGISTRYINDEX);
     return 0;
 }
 
@@ -288,17 +288,17 @@ static int registerMessage(lua_State * L)
 
 
 
-static int registerDisconnect(lua_State * L)
+static int setClosedRef(lua_State * L)
 {
     luaL_checktype(L, 1, LUA_TFUNCTION);
     lua_settop(L, 1);
-    if (_disconnectCB != LUA_NOREF)
+    if (_closedRef != LUA_NOREF)
     {
-        LOGE("registerDisconnect error. connect callback already .");
+        LOGE("setClosedRef error. connect callback already .");
         return 0;
     }
 
-    _disconnectCB = luaL_ref(L, LUA_REGISTRYINDEX);
+    _closedRef = luaL_ref(L, LUA_REGISTRYINDEX);
     return 0;
 }
 
@@ -378,9 +378,9 @@ static luaL_Reg summer[] = {
     { "runOnce", runOnce }, //message pump, run it once.
     { "addConnect", addConnect }, //add one connect.
     { "addListen", addListen }, //add listen.
-    { "registerConnect", registerConnect }, //register event when connect success.
-    { "registerMessage", registerMessage }, //register event when recv message.
-    { "registerDisconnect", registerDisconnect }, //register event when disconnect.
+    { "whenLinked", setLinkedRef }, //register event when connect success.
+    { "whenMessage", setMessageRef }, //register event when recv message.
+    { "whenClosed", setClosedRef }, //register event when disconnect.
     { "sendContent", sendContent }, //send content, don't care serialize and package.
     { "sendData", sendData }, // send original data, need to serialize and package via proto4z. 
     { "kick", kick }, // kick session. 

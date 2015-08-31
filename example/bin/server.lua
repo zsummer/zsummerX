@@ -30,19 +30,19 @@ function onMessage(sID, pID, content)
 	end
 
 end
-summer.registerMessage(onMessage)
+summer.whenMessage(onMessage)
 
 
 -- 连接成功事件
-function onConnect(sID, remoteIP, remotePort)
+function whenLinked(sID, remoteIP, remotePort)
 	print("session is on connected. sID=" .. sID .. ", remoteIP=" .. remoteIP .. ", remotePort=" .. remotePort)
 end
-summer.registerConnect(onConnect)
+summer.whenLinked(whenLinked)
 -- 连接断开事件
-function onDisconnect(sID, remoteIP, remotePort)
+function whenClosed(sID, remoteIP, remotePort)
 	print("session is on disconnect. sID=" .. sID .. ", remoteIP=" .. remoteIP .. ", remotePort=" .. remotePort)
 end
-summer.registerDisconnect(onDisconnect)
+summer.whenClosed(whenClosed)
 
 
 --启动网络

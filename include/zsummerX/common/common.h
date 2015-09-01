@@ -88,35 +88,33 @@ namespace zsummer
             NEC_REMOTE_HANGUP,
         };
 
-        
-        //! post callback
-        typedef std::function<void()> _OnPostHandler;
-        //timer callback
-        typedef std::function<void()> _OnTimerHandler;
-
-        //accept callback
         class TcpSocket;
-        typedef std::function<void(NetErrorCode, std::shared_ptr<TcpSocket>)> _OnAcceptHandler;
-        //connect callback
-        typedef std::function<void(NetErrorCode)> _OnConnectHandler;
+        using TcpSocketPtr = std::shared_ptr<TcpSocket>;
 
-        //send or recv callback
-        //! type int : translate bytes already.
-        typedef std::function<void(NetErrorCode, int)> _OnSendHandler;
-        typedef _OnSendHandler _OnRecvHandler;
+        //! post callback
+        using _OnPostHandler = std::function<void()>;
+        //timer callback
+        using _OnTimerHandler = std::function<void()>;
+        //accept callback
+        using _OnAcceptHandler = std::function<void(NetErrorCode, TcpSocketPtr)>;
+        //connect callback
+        using _OnConnectHandler = std::function<void(NetErrorCode)>;
+        //send or recv callback  @int : translate bytes.
+        using _OnSendHandler = std::function<void(NetErrorCode, int)>;
+        using _OnRecvHandler = std::function<void(NetErrorCode, int)>;
 
         //udp callback
-        //! const char *: remote ip
-        //! unsigned short: remote port
-        //! int : translate bytes
-        typedef std::function<void (NetErrorCode, const char*, unsigned short, int)> _OnRecvFromHandler;
+        //! @const char *: remote ip
+        //! @unsigned short: remote port
+        //! @int : translate bytes
+        using _OnRecvFromHandler = std::function<void(NetErrorCode, const char*, unsigned short, int)>;
 
 
         enum LINK_STATUS
         {
             LS_UNINITIALIZE, //socket default status
             LS_WAITLINK, // socket status after init and will to connect.
-            LS_ATTACHED,
+            LS_ATTACHED, // socket attached will to initialize.
             LS_ESTABLISHED, //socket status is established
             LS_CLOSED, // socket is closed. don't use it again.
         };

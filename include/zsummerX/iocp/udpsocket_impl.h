@@ -67,7 +67,7 @@ namespace zsummer
             _OnRecvFromHandler _onRecvHander;
             LINK_STATUS _linkStatus;
         };
-        typedef std::shared_ptr<UdpSocket> UdpSocketPtr;
+        using UdpSocketPtr = std::shared_ptr<UdpSocket>;
     }
 }
 

@@ -24,7 +24,7 @@ int main(int argc, char* argv[])
     cin >> nServer;
     
     boost::asio::io_service ios;
-    typedef std::shared_ptr<boost::asio::ip::tcp::socket> SocketPtr;
+    using SocketPtr = std::shared_ptr<boost::asio::ip::tcp::socket>;
     SocketPtr clientPtr(new boost::asio::ip::tcp::socket(ios));
 
     unsigned long long recvCount = 0;

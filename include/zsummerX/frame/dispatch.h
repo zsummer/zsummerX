@@ -53,7 +53,7 @@ namespace zsummer
         */
        
         //!register message 
-        typedef std::function < void(TcpSessionPtr&, zsummer::proto4z::ReadStream &) > OnMessageFunction;
+        using OnMessageFunction = std::function < void(TcpSessionPtr&, zsummer::proto4z::ReadStream &) >;
 
 
         using ProtoID = zsummer::proto4z::ProtoInteger;
@@ -63,7 +63,7 @@ namespace zsummer
         {
         private:
             MessageDispatcher(){}
-            typedef std::unordered_map<unsigned short, std::vector<OnMessageFunction> > MapProtoDispatch;
+            using MapProtoDispatch = std::unordered_map<unsigned short, std::vector<OnMessageFunction> >;
         public:
             static MessageDispatcher & getRef();
             inline static MessageDispatcher * getPtr(){ return &getRef(); }

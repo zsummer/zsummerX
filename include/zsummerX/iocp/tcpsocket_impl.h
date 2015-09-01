@@ -108,7 +108,7 @@ namespace zsummer
             //status
             int _linkStatus = LS_UNINITIALIZE;
         };
-        typedef std::shared_ptr<TcpSocket> TcpSocketPtr;
+        using TcpSocketPtr = std::shared_ptr<TcpSocket>;
 
     }
 }

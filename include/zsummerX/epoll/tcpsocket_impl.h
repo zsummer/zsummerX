@@ -88,7 +88,7 @@ namespace zsummer
             unsigned int _iSendLen = 0;
             char *         _pSendBuf = NULL;
         };
-        typedef std::shared_ptr<TcpSocket> TcpSocketPtr;
+        using TcpSocketPtr = std::shared_ptr<TcpSocket>;
     }
 
 }

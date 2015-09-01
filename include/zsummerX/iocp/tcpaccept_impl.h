@@ -74,7 +74,7 @@ namespace zsummer
             TcpSocketPtr _client;
 
         };
-        typedef std::shared_ptr<TcpAccept> TcpAcceptPtr;
+        using TcpAcceptPtr = std::shared_ptr<TcpAccept>;
 
     }
 

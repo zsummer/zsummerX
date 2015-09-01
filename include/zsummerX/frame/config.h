@@ -124,7 +124,7 @@ namespace zsummer
         };
 
         class TcpSession;
-        typedef  std::shared_ptr<TcpSession> TcpSessionPtr;
+        using TcpSessionPtr = std::shared_ptr<TcpSession>;
 
         struct SessionBlock 
         {

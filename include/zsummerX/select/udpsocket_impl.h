@@ -66,7 +66,7 @@ namespace zsummer
             unsigned int _iRecvLen;
             char    *     _pRecvBuf;
         };
-        typedef std::shared_ptr<UdpSocket> UdpSocketPtr;
+        using UdpSocketPtr = std::shared_ptr<UdpSocket> ;
     }
 
 }

@@ -60,7 +60,7 @@ namespace zsummer
         class EventLoop : public std::enable_shared_from_this<EventLoop>
         {
         public:
-            typedef std::vector<void*> MessageStack;
+            using MessageStack = std::vector<void*> ;
             EventLoop(){}
             ~EventLoop(){}
             bool initialize();
@@ -106,7 +106,7 @@ namespace zsummer
             //! timmer
             Timer _timer;
         };
-        typedef std::shared_ptr<EventLoop> EventLoopPtr;
+        using EventLoopPtr = std::shared_ptr<EventLoop> ;
     }
 
 }

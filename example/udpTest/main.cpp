@@ -55,7 +55,7 @@ struct Picnic
     char           recvData[_MSG_BUF_LEN];
     UdpSocketPtr sock;
 };
-typedef std::shared_ptr<Picnic> PicnicPtr;
+using PicnicPtr = std::shared_ptr<Picnic>;
 
 unsigned long long g_totalEcho;
 unsigned long long g_totalEchoTime;

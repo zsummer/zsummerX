@@ -40,47 +40,14 @@
  * VERSION:  1.0
  * PURPOSE:  A lightweight library for process protocol .
  * CREATION: 2013.07.04
- * LCHANGE:  2014.08.20
+ * LCHANGE:  2015.09.01
  * LICENSE:  Expat/MIT License, See Copyright Notice at the begin of this file.
  */
 
 /*
- * Web Site: www.zsummer.net
  * mail: yawei.zhang@foxmail.com
  */
 
-/* 
- * UPDATES LOG
- * 
- * VERSION 0.1.0 <DATE: 2013.07.4>
- *     create the first project.  
- *     support big-endian or little-endian
- * 
- * VERSION 0.3.0 <DATE: 2014.03.17>
- *  support user-defined header
- *  WriteStream support auto alloc memory or attach exist memory
- *  proto4z support stl container
- * 
- * VERSION 0.4.0 <DATE: 2014.05.16>
- *  Add some useful interface method
- * 
- * VERSION 0.5.0 <DATE: 2014.08.06>
- *  Add static buff for optimize
- *  Add genProto tools
- * 
- * VERSION 1.0.0 <DATE: 2014.08.20>
- *  Add HTTP protocol
- * 
- * VERSION 1.1.0 <DATE: 2014.11.11>
- *  support HTTP chunked header
- *  support HTTP decode and encode method
- *
- * VERSION 1.2.0 <DATE: 2014.12.19>
- *  new naming notations
- *  simplify traits
- *  
- * 
- */
 #pragma once
 #ifndef _PROTO4Z_H_
 #define _PROTO4Z_H_

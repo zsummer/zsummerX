@@ -77,8 +77,8 @@ namespace zsummer
             inline unsigned short getRemotePort(){ return _remotePort; }
             inline void setRemotePort(unsigned short remotePort){ _remotePort = remotePort; }
             inline std::size_t getSendQueSize(){ return _sendque.size(); }
-            Any setUserParam(int index, const Any &any);
-            Any getUserParam(int index);
+            Any setUserParam(size_t index, const Any &any);
+            Any getUserParam(size_t index);
         private:
             SessionOptions _options;
             EventLoopPtr _eventLoop;

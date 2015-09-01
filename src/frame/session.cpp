@@ -517,18 +517,21 @@ void TcpSession::onPulse()
 }
 
 
-Any TcpSession::setUserParam(int index, const Any &any)
+Any TcpSession::setUserParam(size_t index, const Any &any)
 {
-    if (_param.size() <= (unsigned int)index)
+    if (_param.size() <= index)
     {
-        _param.assign(index + 1 - _param.size(), Any());
+        for (size_t i = _param.size(); i < index + 1; i++)
+        {
+            _param.push_back(Any());
+        }
     }
     _param[index] = any;
     return any;
 }
-Any TcpSession::getUserParam(int index)
+Any TcpSession::getUserParam(size_t index)
 {
-    if ((unsigned int)index >= _param.size())
+    if (index >= _param.size())
     {
         return Any();
     }

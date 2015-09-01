@@ -521,7 +521,7 @@ Any TcpSession::setUserParam(int index, const Any &any)
 {
     if (_param.size() <= (unsigned int)index)
     {
-        _param.assign(index + 1 - _param.size(), Any(0));
+        _param.assign(index + 1 - _param.size(), Any());
     }
     _param[index] = any;
     return any;
@@ -530,7 +530,7 @@ Any TcpSession::getUserParam(int index)
 {
     if ((unsigned int)index >= _param.size())
     {
-        return Any(0);
+        return Any();
     }
     return _param[index];
 }

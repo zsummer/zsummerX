@@ -203,29 +203,48 @@ namespace zsummer
         class Any
         {
         public:
+            Any()
+            {
+
+            }
             Any(unsigned long long n)
             {
-                _integer = n;
+                _number = n;
             }
             Any(const std::string & str)
             {
-                _isInteger = false;
                 _string = str;
             }
-            bool _isInteger = true;
-            unsigned long long _integer;
+            Any(void * p)
+            {
+                _pointer = p;
+            }
+        public:
+            inline unsigned long long getNumber() const { return _number; }
+            inline std::string getString() const { return _string; }
+            inline void * getPtr() const { return _pointer; }
+        private:
+            unsigned long long _number = 0;
             std::string _string;
+            void * _pointer = nullptr;
         };
-        
 
 
+        template<class Number>
+        Number numberCast(const Any & any)
+        {
+            return (Number)any.getNumber();
+        }
 
-
-
-
-
-
-
+        inline std::string  stringCast(const Any & any)
+        {
+            return any.getString();
+        }
+        template<class Pointer>
+        Pointer * pointerCast(const Any & any)
+        {
+            return (Pointer *)any.getPtr();
+        }
 
 
 

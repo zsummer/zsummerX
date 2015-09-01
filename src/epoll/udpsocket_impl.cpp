@@ -43,11 +43,11 @@ using namespace zsummer::network;
 
 UdpSocket::UdpSocket()
 {
-    _register._event.data.ptr = &_register;
-    _register._event.events = 0;
-    _register._fd = -1;
-    _register._linkstat = LS_UNINITIALIZE;
-    _register._type = tagRegister::REG_UDP_SOCKET;
+    _eventData._event.data.ptr = &_eventData;
+    _eventData._event.events = 0;
+    _eventData._fd = -1;
+    _eventData._linkstat = LS_UNINITIALIZE;
+    _eventData._type = EventData::REG_UDP_SOCKET;
     _iRecvLen  = 0;
     _pRecvBuf = nullptr;
 }
@@ -55,61 +55,56 @@ UdpSocket::UdpSocket()
 
 UdpSocket::~UdpSocket()
 {
-    if (_register._fd != -1)
+    if (_onRecvFromHandler )
     {
-        if (_onRecvFromHandler )
-        {
-            LCF("UdpSocket::~UdpSocket[this0x" << this << "] Destruct UdpSocket Error. socket handle not invalid and some request was not completed. fd="
-                << _register._fd );
-        }
-        ::close(_register._fd);
-        _register._fd = -1;
+        LCF("UdpSocket::~UdpSocket[this0x" << this << "] Destruct UdpSocket Error. socket handle not invalid and some request was not completed. fd="
+            << _eventData._fd );
+    }
+    if (_eventData._fd != InvalidFD)
+    {
+        ::close(_eventData._fd);
+        _eventData._fd = InvalidFD;
     }
 }
 bool  UdpSocket::initialize(const EventLoopPtr &summer, const char *localIP, unsigned short localPort)
 {
-    if (_summer)
+    if (_eventData._linkstat == LS_UNINITIALIZE)
     {
-        LCE("UdpSocket::initialize[this0x" << this << "] UdpSocket is aready initialize, _ios not is nullptr. this=" << this);
-        return false;
+        _summer = summer;
+        _eventData._fd = socket(AF_INET, SOCK_DGRAM, 0);
+        _eventData._linkstat = LS_WAITLINK;
+        if (_eventData._fd == InvalidFD)
+        {
+            LCE("UdpSocket::initialize[this0x" << this << "] create socket fail. this=" << this << ", errno=" << strerror(errno));
+            return false;
+        }
+        setNonBlock(_eventData._fd);
+        sockaddr_in    localAddr;
+        localAddr.sin_family = AF_INET;
+        localAddr.sin_addr.s_addr = inet_addr(localIP);
+        localAddr.sin_port = htons(localPort);
+        if (bind(_eventData._fd, (sockaddr *) &localAddr, sizeof(localAddr)) != 0)
+        {
+            LCE("UdpSocket::initialize[this0x" << this << "]: socket bind err, errno=" << strerror(errno));
+            ::close(_eventData._fd);
+            _eventData._fd = InvalidFD;
+            return false;
+        }
+
+        _summer->registerEvent(EPOLL_CTL_ADD, _eventData);
+        _eventData._udpsocketPtr = shared_from_this();
+        _eventData._linkstat = LS_ESTABLISHED;
+        return true;
     }
-    if (_register._fd != -1)
-    {
-        LCE("UdpSocket::initialize[this0x" << this << "] UdpSocket is aready initialize, _fd not is -1. this=" << this << ", fd=" << _register._fd);
-        return false;
-    }
-    _summer = summer;
-    _register._fd = socket(AF_INET, SOCK_DGRAM, 0);
-    _register._linkstat = LS_WAITLINK;
-    if (_register._fd == -1)
-    {
-        LCE("UdpSocket::initialize[this0x" << this << "] create socket fail. this=" << this << ", errno=" << strerror(errno));
-        return false;
-    }
-    setNonBlock(_register._fd);
-    sockaddr_in    localAddr;
-    localAddr.sin_family = AF_INET;
-    localAddr.sin_addr.s_addr = inet_addr(localIP);
-    localAddr.sin_port = htons(localPort);
-    if (bind(_register._fd, (sockaddr *) &localAddr, sizeof(localAddr)) != 0)
-    {
-        LCE("UdpSocket::initialize[this0x" << this << "]: socket bind err, errno=" << strerror(errno));
-        ::close(_register._fd);
-        _register._fd = -1;
-        return false;
-    }
-    if (!_summer->registerEvent(EPOLL_CTL_ADD, _register))
-    {
-        LCF("UdpSocket::initialize[this0x" << this << "] EPOLL_CTL_ADD error. _register =" << _register << ", errno=" << strerror(errno));
-        return false;
-    }
-    _register._linkstat = LS_ESTABLISHED;
-    return true;
+
+
+    LCE("UdpSocket::initialize[this0x" << this << "] UdpSocket is aready initialize, _ios not is nullptr. this=" << this);
+    return false;
 }
 
 bool UdpSocket::doSendTo(char * buf, unsigned int len, const char *dstip, unsigned short dstport)
 {
-    if (!_summer)
+    if (!_summer || _eventData._linkstat != LS_ESTABLISHED)
     {
         LCE("UdpSocket::doSend[this0x" << this << "] IIOServer not bind!");
         return false;
@@ -123,7 +118,7 @@ bool UdpSocket::doSendTo(char * buf, unsigned int len, const char *dstip, unsign
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = inet_addr(dstip);
     addr.sin_port = htons(dstport);
-    int ret =sendto(_register._fd, buf, len, 0, (sockaddr*)&addr, sizeof(addr));
+    int ret =sendto(_eventData._fd, buf, len, 0, (sockaddr*)&addr, sizeof(addr));
     if (ret == -1 )
     {
         LOGW("sendto error. errno=" << errno);
@@ -135,7 +130,7 @@ bool UdpSocket::doSendTo(char * buf, unsigned int len, const char *dstip, unsign
 
 bool UdpSocket::doRecvFrom(char * buf, unsigned int len, _OnRecvFromHandler&& handler)
 {
-    if (!_summer)
+    if (!_summer || _eventData._linkstat != LS_ESTABLISHED)
     {
         LCE("UdpSocket::doRecv[this0x" << this << "] _summer not bind!");
         return false;
@@ -160,85 +155,46 @@ bool UdpSocket::doRecvFrom(char * buf, unsigned int len, _OnRecvFromHandler&& ha
     
     _pRecvBuf = buf;
     _iRecvLen = len;
-    _register._event.events = _register._event.events|EPOLLIN;
-    if (!_summer->registerEvent(EPOLL_CTL_MOD, _register))
-    {
-        LCF("UdpSocket::doRecv[this0x" << this << "] EPOLLMod error. _register=" << _register << ", errno=" << strerror(errno));
-        _onRecvFromHandler = nullptr;
-        _pRecvBuf = nullptr;
-        _iRecvLen = 0;
-        return false;
-    }
+    _eventData._event.events = _eventData._event.events|EPOLLIN;
+    _summer->registerEvent(EPOLL_CTL_MOD, _eventData);
     _onRecvFromHandler = std::move(handler);
-    _register._udpsocketPtr = shared_from_this();
     return true;
 }
 
 
-bool UdpSocket::onEPOLLMessage(int type, int flag)
+bool UdpSocket::onEPOLLMessage(uint32_t event)
 {
     if (!_onRecvFromHandler)
     {
         LCE("UdpSocket::onEPOLLMessage[this0x" << this << "] unknown error");
         return false;
     }
-    std::shared_ptr<UdpSocket> guad(std::move(_register._udpsocketPtr));
-    if (flag & EPOLLHUP || flag & EPOLLERR)
+
+    sockaddr_in raddr;
+    memset(&raddr, 0, sizeof(raddr));
+    socklen_t len = sizeof(raddr);
+    int ret = recvfrom(_eventData._fd, _pRecvBuf, _iRecvLen, 0, (sockaddr*)&raddr, &len);
+
+    if (event & EPOLLHUP || event & EPOLLERR || ret == 0 ||(ret ==-1 && (errno !=EAGAIN && errno != EWOULDBLOCK)))
     {
-        if (flag & EPOLLHUP)
-        {
-            LCE("UdpSocket::onEPOLLMessage[this0x" << this << "] EPOLLHUP  error. _register fd=" << _register << ", events=" << flag);
-        }
-        if (flag & EPOLLERR)
-        {
-            LCE("UdpSocket::onEPOLLMessage[this0x" << this << "]  EPOLLERR error. _register fd=" << _register << ", events=" << flag);
-        }
-        if (_onRecvFromHandler)
-        {
-            _OnRecvFromHandler onRecv(std::move(_onRecvFromHandler));
-            _pRecvBuf = nullptr;
-            _iRecvLen = 0;
-            onRecv(NEC_ERROR, "", 0, 0);
-        }
+        LCE("UdpSocket::onEPOLLMessage[this0x" << this << "] EPOLLHUP  EPOLLERR error. _eventData fd=" << _eventData << ", events=" << event);
+        _OnRecvFromHandler onRecv(std::move(_onRecvFromHandler));
+        _eventData._event.events = _eventData._event.events&~EPOLLIN;
+        _summer->registerEvent(EPOLL_CTL_DEL, _eventData);
+        close(_eventData._fd);
+        _eventData._linkstat = LS_CLOSED;
+        onRecv(NEC_ERROR, "", 0, 0);
         return false;
     }
-
-    if (flag & EPOLLIN && _onRecvFromHandler)
+    else if (ret != -1)
     {
         _OnRecvFromHandler onRecv(std::move(_onRecvFromHandler));
-        _register._event.events = _register._event.events&~EPOLLIN;
-
-        if (!_summer->registerEvent(EPOLL_CTL_MOD, _register))
-        {
-            LCF("UdpSocket::onEPOLLMessage[this0x" << this << "] EPOLLMod error. _register=" << _register << ", errno=" << strerror(errno));
-            return false;
-        }
-
-        sockaddr_in raddr;
-        memset(&raddr, 0, sizeof(raddr));
-        socklen_t len = sizeof(raddr);
-        int ret = recvfrom(_register._fd, _pRecvBuf, _iRecvLen, 0, (sockaddr*)&raddr, &len);
-
+        _eventData._event.events = _eventData._event.events&~EPOLLIN;
+        _summer->registerEvent(EPOLL_CTL_MOD, _eventData);
         _pRecvBuf = nullptr;
         _iRecvLen = 0;
-        if (ret == 0 || (ret ==-1 && (errno !=EAGAIN && errno != EWOULDBLOCK)) )
-        {
-            LCE("UdpSocket::onEPOLLMessage[this0x" << this << "] recv error.  _register=" << _register << ", ret=" << ret << ", errno=" << strerror(errno));
-            onRecv(NEC_ERROR, "", 0, 0);
-            return false;
-        }
-        if (ret == -1)
-        {
-            LCE("UdpSocket::onEPOLLMessage[this0x" << this << "] recv error.  _register=" << _register << ", ret=" << ret << ", errno=" << strerror(errno));
-            onRecv(NEC_ERROR, "", 0, 0);
-            return false;
-        }
-
         onRecv(NEC_SUCCESS, inet_ntoa(raddr.sin_addr), ntohs(raddr.sin_port), ret);
     }
-    
-    
-
     return true;
 }
 

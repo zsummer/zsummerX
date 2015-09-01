@@ -96,7 +96,7 @@ int main(int argc, char* argv[])
     if (g_startIsConnector) //client
     {
         //callback when connect success.
-        auto connectedfun = [](TcpSessionPtr session)
+        auto OnSessionLinked = [](TcpSessionPtr session)
         {
 //            std::string jsonString = R"---(data={%22uid%22:10001,%22session%22:%220192023a7bbd73250516f069df18b500%22})---";
             std::string jsonString = R"---(data=)---";
@@ -113,11 +113,11 @@ int main(int argc, char* argv[])
 //            wh.addHead("DNT", "1");
 //            wh.addHead("Connection", "Keep-Alive");
             wh.post("/user/oauth", jsonString);
-            session->doSend(wh.getStream(), wh.getStreamLen());
+            session->send(wh.getStream(), wh.getStreamLen());
         };
 
         //callback when receive http data
-        auto msg_ResultSequence_fun = [](TcpSessionPtr session,  const zsummer::proto4z::PairString &commondLine, const zsummer::proto4z::HTTPHeadMap &head, const std::string & body)
+        auto OnHTTPBlock = [](TcpSessionPtr session, const zsummer::proto4z::PairString &commondLine, const zsummer::proto4z::HTTPHeadMap &head, const std::string & body)
         {
             if (commondLine.second != "200")
             {
@@ -131,19 +131,13 @@ int main(int argc, char* argv[])
             return ;
         };
 
-        //! register event and message
-        MessageDispatcher::getRef().registerOnSessionEstablished(connectedfun); //!connect success
-        MessageDispatcher::getRef().registerOnSessionHTTPMessage(msg_ResultSequence_fun);//! message
 
+        SessionID cID = SessionManager::getRef().addConnecter(g_remoteIP, g_remotePort);
+        SessionManager::getRef().getConnecterOptions(cID)._protoType = PT_HTTP;
+        SessionManager::getRef().getConnecterOptions(cID)._onHTTPBlockDispatch = OnHTTPBlock;
+        SessionManager::getRef().getConnecterOptions(cID)._onSessionLinked = OnSessionLinked;
+        SessionManager::getRef().openConnecter(cID);
 
-        //add connector
-        ConnectConfig traits;
-        traits._remoteIP = g_remoteIP;
-        traits._remotePort = g_remotePort;
-        traits._protoType = PT_HTTP;
-        traits._reconnectInterval = 5000;
-        traits._reconnectMaxCount = 0;
-        SessionManager::getRef().addConnector(traits);
 
         //! step 2 running
         SessionManager::getRef().run();
@@ -152,7 +146,7 @@ int main(int argc, char* argv[])
     {
 
         //result when receive http data
-        auto msg_ResultSequence_fun = [](TcpSessionPtr session, const zsummer::proto4z::PairString &commondLine, const zsummer::proto4z::HTTPHeadMap &head, const std::string & body)
+        auto OnHTTPBlock = [](TcpSessionPtr session, const zsummer::proto4z::PairString &commondLine, const zsummer::proto4z::HTTPHeadMap &head, const std::string & body)
         {
             LOGI("recv request. commond=" << commondLine.first << ", commondvalue=" << commondLine.second);
             zsummer::proto4z::WriteHTTP wh;
@@ -164,20 +158,18 @@ int main(int argc, char* argv[])
             wh.addHead("DNT", "1");
             wh.addHead("Connection", "Keep-Alive");
             wh.response("200", "What's your name ?");
-            session->doSend(wh.getStream(), wh.getStreamLen());
+            session->send(wh.getStream(), wh.getStreamLen());
             SessionManager::getRef().createTimer(2000, std::bind(&SessionManager::kickSession, SessionManager::getPtr(), session->getSessionID()));
             //step 3. stop server.
         //    SessionManager::getRef().createTimer(1000,std::bind(&SessionManager::stop, SessionManager::getPtr()));
             return ;
         };
 
-        //! register message
-        MessageDispatcher::getRef().registerOnSessionHTTPMessage(msg_ResultSequence_fun);
 
-        ListenConfig traits;
-        traits._listenPort = g_remotePort;
-        traits._protoType = PT_HTTP;
-        SessionManager::getRef().addAcceptor(traits);
+        AccepterID aID = SessionManager::getRef().addAccepter("0.0.0.0", g_remotePort);
+        SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._protoType = PT_HTTP;
+        SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._onHTTPBlockDispatch = OnHTTPBlock;
+        SessionManager::getRef().openAccepter(aID);
         //! step 2 running
         SessionManager::getRef().run();
     }

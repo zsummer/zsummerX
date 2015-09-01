@@ -50,118 +50,151 @@ bool EventLoop::initialize()
     memset(&pairAddr, 0, sizeof(pairAddr));
     pairAddr.sin_family = AF_INET;
     pairAddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-    SOCKET acpt = socket(AF_INET, SOCK_STREAM, 0);
+    int acpt = socket(AF_INET, SOCK_STREAM, 0);
     _sockpair[0] = socket(AF_INET, SOCK_STREAM, 0);
     _sockpair[1] = socket(AF_INET, SOCK_STREAM, 0);
     if (_sockpair[0] == -1 || _sockpair[1] == -1 || acpt == -1)
     {
-        LCF("ZSummerImpl::initialize[this0x" << this << "] bind sockpair socket error. " << logSection());
+        LCF("ZSummerImpl::initialize[this0x" << this << "] bind sockpair socket error. " );
         return false;
     }
     if (::bind(acpt, (sockaddr*)&pairAddr, sizeof(pairAddr)) == -1)
     {
-        LCF("EventLoop::initialize[this0x" << this << "] bind sockpair socket error. " << logSection());
-        closesocket(acpt);
-        closesocket(_sockpair[0]);
-        closesocket(_sockpair[1]);
+        LCF("EventLoop::initialize[this0x" << this << "] bind sockpair socket error. " );
+        ::close(acpt);
+        ::close(_sockpair[0]);
+        ::close(_sockpair[1]);
         return false;
     }
     if (listen(acpt, 1) == -1)
     {
-        LCF("EventLoop::initialize[this0x" << this << "] listen sockpair socket error. " << logSection());
-        closesocket(acpt);
-        closesocket(_sockpair[0]);
-        closesocket(_sockpair[1]);
+        LCF("EventLoop::initialize[this0x" << this << "] listen sockpair socket error. " );
+        ::close(acpt);
+        ::close(_sockpair[0]);
+        ::close(_sockpair[1]);
         return false;
     }
     socklen_t len = sizeof(pairAddr);
     if (getsockname(acpt, (sockaddr*)&pairAddr, &len) != 0)
     {
-        LCF("EventLoop::initialize[this0x" << this << "] getsockname sockpair socket error. " << logSection());
-        closesocket(acpt);
-        closesocket(_sockpair[0]);
-        closesocket(_sockpair[1]);
+        LCF("EventLoop::initialize[this0x" << this << "] getsockname sockpair socket error. " );
+        ::close(acpt);
+        ::close(_sockpair[0]);
+        ::close(_sockpair[1]);
         return false;
     }
 
     if (::connect(_sockpair[0], (sockaddr*)&pairAddr, sizeof(pairAddr)) == -1)
     {
-        LCF("EventLoop::initialize[this0x" << this << "] connect sockpair socket error. " << logSection());
-        closesocket(acpt);
-        closesocket(_sockpair[0]);
-        closesocket(_sockpair[1]);
+        LCF("EventLoop::initialize[this0x" << this << "] connect sockpair socket error. " );
+        ::close(acpt);
+        ::close(_sockpair[0]);
+        ::close(_sockpair[1]);
         return false;
     }
     _sockpair[1] = accept(acpt, (sockaddr*)&pairAddr, &len);
     if (_sockpair[1] == -1)
     {
-        LCF("EventLoop::initialize[this0x" << this << "] accept sockpair socket error. " << logSection());
-        closesocket(acpt);
-        closesocket(_sockpair[0]);
-        closesocket(_sockpair[1]);
+        LCF("EventLoop::initialize[this0x" << this << "] accept sockpair socket error. " );
+        ::close(acpt);
+        ::close(_sockpair[0]);
+        ::close(_sockpair[1]);
         return false;
     }
-    closesocket(acpt);
+    ::close(acpt);
 
     setNonBlock(_sockpair[0]);
     setNonBlock(_sockpair[1]);
     setNoDelay(_sockpair[0]);
     setNoDelay(_sockpair[1]);
 
+    FD_ZERO(&_fdreads);
+    FD_ZERO(&_fdwrites);
+    FD_ZERO(&_fderrors);
+    setEvent(_sockpair[1], 0);
+    _arrayTcpAccept.resize(MAX_NUMBER_FD);
+    _arrayTcpSocket.resize(MAX_NUMBER_FD);
+    _arrayUdpSocket.resize(MAX_NUMBER_FD);
     return true;
 }
 
-bool EventLoop::registerEvent(int op, tagRegister & reg)
+void EventLoop::setEvent(int fd, int op /*0 read, 1 write, 2 error*/)
 {
-    if (op == 1)
+    if (fd >= MAX_NUMBER_FD)
     {
-        auto founder = std::find_if(_poolRegister.begin(), _poolRegister.end(), [&reg](const tagRegister & r){ return reg._fd == r._fd; });
-        if (founder == _poolRegister.end())
-        {
-            LOGE("EventLoop::registerEvent not found register. op=" << op << ", reg._type=" << reg._type);
-            return false;
-        }
-        else
-        {
-            *founder = reg;
-            return true;
-        }
+        LCE("EventLoop::setEvent error. fd = " << fd << " greater than MAX_NUMBER_FD = " << MAX_NUMBER_FD);
+        return;
     }
-    else
-    {
-        auto founder = std::find_if(_poolRegister.begin(), _poolRegister.end(), [&reg](const tagRegister & r){ return reg._fd == r._fd; });
-        if (founder == _poolRegister.end())
-        {
-            if (op == 0)
-            {
-                if (_poolRegister.size() >= FD_SETSIZE)
-                {
-                    LOGE("EventLoop::registerEvent add. register is too many. op=" << op << ", reg=" << reg);
-                    return false;
-                }
-                _poolRegister.push_back(reg);
-                return true;
-            }
-            else
-            {
-                LOGE("EventLoop::registerEvent del. register not found. op=" << op << ", reg=" << reg);
-                return false;
-            }
-
-        }
-        else
-        {
-            if (op    == 0)
-            {
-                LOGE("EventLoop::registerEvent add. register aready exsit. op=" << op << ", reg=" << reg);
-                return false;
-            }
-            _poolRegister.erase(founder);
-        }
-    }
-    return true;
+    if (fd > _maxfd)
+        _maxfd = fd;
+    if (op == 0)
+        FD_SET(fd, &_fdreads);
+    else if(op == 1)
+        FD_SET(fd, &_fdwrites);
+    else if(op == 2)
+        FD_SET(fd, &_fderrors);
 }
 
+void EventLoop::unsetEvent(int fd, int op /*0 read, 1 write, 2 error*/)
+{
+    if (fd >= MAX_NUMBER_FD)
+    {
+        LCE("EventLoop::setEvent error. fd = " << fd << " greater than MAX_NUMBER_FD = " << MAX_NUMBER_FD);
+        return;
+    }
+    if (op == 0)
+        FD_CLR(fd, &_fdreads);
+    else if(op == 1)
+        FD_CLR(fd, &_fdwrites);
+    else if(op == 2)
+        FD_CLR(fd, &_fderrors);
+}
+
+void EventLoop::addTcpAccept(int fd, TcpAcceptPtr s)
+{
+    if (fd >= MAX_NUMBER_FD)
+    {
+        LCE("EventLoop::setEvent error. fd = " << fd << " greater than MAX_NUMBER_FD = " << MAX_NUMBER_FD);
+        return;
+    }
+    _arrayTcpAccept[fd] = s;
+}
+
+void EventLoop::addTcpSocket(int fd, TcpSocketPtr s)
+{
+    if (fd >= MAX_NUMBER_FD)
+    {
+        LCE("EventLoop::setEvent error. fd = " << fd << " greater than MAX_NUMBER_FD = " << MAX_NUMBER_FD);
+        return;
+    }
+    _arrayTcpSocket[fd] = s;
+}
+
+void EventLoop::addUdpSocket(int fd, UdpSocketPtr s)
+{
+    if (fd >= MAX_NUMBER_FD)
+    {
+        LCE("EventLoop::setEvent error. fd = " << fd << " greater than MAX_NUMBER_FD = " << MAX_NUMBER_FD);
+        return;
+    }
+    _arrayUdpSocket[fd] = s;
+}
+
+
+void EventLoop::clearSocket(int fd)
+{
+    if (fd >= MAX_NUMBER_FD)
+    {
+        LCE("EventLoop::setEvent error. fd = " << fd << " greater than MAX_NUMBER_FD = " << MAX_NUMBER_FD);
+        return;
+    }
+    unsetEvent(fd, 0);
+    unsetEvent(fd, 1);
+    unsetEvent(fd, 2);
+    _arrayTcpAccept[fd].reset();
+    _arrayTcpSocket[fd].reset();
+    _arrayUdpSocket[fd].reset();
+}
 
 void EventLoop::PostMessage(_OnPostHandler &&handle)
 {
@@ -182,48 +215,18 @@ std::string EventLoop::logSection()
     _stackMessagesLock.unlock();
     os << " logSection:  _sockpair[2]={" << _sockpair[0] << "," << _sockpair[1] << "}"
         << " _stackMessages.size()=" << msgSize << ", current total timer=" << _timer.getTimersCount()
-        << " _poolRegister=" << _poolRegister.size();
+        << " _maxfd=" << _maxfd;
     return os.str();
 }
 
 void EventLoop::runOnce(bool isImmediately)
 {
-    int nfds = 0;
     fd_set fdr;
     fd_set fdw;
     fd_set fde;
-    FD_ZERO(&fdr);
-    FD_ZERO(&fdw);
-    FD_ZERO(&fde);
-    for (auto & r : _poolRegister)
-    {
-        if (r._rd)
-        {
-            FD_SET(r._fd, &fdr);
-            if (r._fd > nfds)
-            {
-                nfds = (int)r._fd;
-            }
-            
-        }
-        if (r._wt)
-        {
-            FD_SET(r._fd, &fdw);
-            if (r._type == tagRegister::REG_TCP_SOCKET && r._linkstat == LS_WAITLINK)
-            {
-                FD_SET(r._fd, &fde);
-            }
-            if (r._fd > nfds)
-            {
-                nfds = (int)r._fd;
-            }
-        }
-    }
-    FD_SET(_sockpair[1], &fdr);
-    if (_sockpair[1] > nfds)
-    {
-        nfds = (int)_sockpair[1];
-    }
+    memcpy(&fdr, &_fdreads, sizeof(_fdreads));
+    memcpy(&fdw, &_fdwrites, sizeof(_fdwrites));
+    memcpy(&fde, &_fderrors, sizeof(_fderrors));
 
     timeval tv;
     if (isImmediately)
@@ -238,14 +241,9 @@ void EventLoop::runOnce(bool isImmediately)
         tv.tv_usec = (ms % 1000) * 1000;
     }
 
-    int retCount = ::select(nfds+1, &fdr, &fdw, &fde, &tv);
+    int retCount = ::select(_maxfd+1, &fdr, &fdw, &fde, &tv);
     if (retCount == -1)
     {
-        if (IS_EINTR)
-        {
-            LCT("EventLoop::runOnce[this0x" << this << "]  select err!  " << OSTREAM_GET_LASTERROR << ", " << logSection());
-            return; //! error
-        }
         return;
     }
 
@@ -283,84 +281,24 @@ void EventLoop::runOnce(bool isImmediately)
             delete p;
         }
     }
-    
 
-    PoolReggister poolRegister = _poolRegister;
-    for (auto & r : poolRegister)
+    for (int i = 0; i <= _maxfd ; ++i)
     {
         //tagHandle  type
-        if (r._type == tagRegister::REG_TCP_ACCEPT)
+        if (FD_ISSET(i, &fdr) || FD_ISSET(i, &fdw) || FD_ISSET(i, &fde))
         {
-            if (FD_ISSET(r._fd, &fdr))
+            if (_arrayTcpAccept[i])
+                _arrayTcpAccept[i]->onSelectMessage();
+            if (_arrayTcpSocket[i])
             {
-                if (r._tcpacceptPtr)
-                {
-                    r._tcpacceptPtr->onSelectMessage();
-                }
+                _arrayTcpSocket[i]->onSelectMessage(FD_ISSET(i, &fdr), FD_ISSET(i, &fdw), FD_ISSET(i, &fde));
             }
-        }
-        else if (r._type == tagRegister::REG_TCP_SOCKET)
-        {
-            bool rd = r._rd && FD_ISSET(r._fd, &fdr) != 0 ;
-            bool wt = r._wt && FD_ISSET(r._fd, &fdw) != 0;
-            if (FD_ISSET(r._fd, &fde) != 0)
+            if (_arrayUdpSocket[i])
             {
-                if (r._rd && r._tcpSocketRecvPtr)
-                {
-                    r._tcpSocketRecvPtr->onSelectMessage(true, false, true);
-                }
-                if (r._wt)
-                {
-                    if (r._tcpSocketSendPtr)
-                    {
-                        r._tcpSocketSendPtr->onSelectMessage(false, true, true);
-                    }
-                    if (r._tcpSocketConnectPtr)
-                    {
-                        r._tcpSocketConnectPtr->onSelectMessage(false, true, true);
-                    }
-                }
+                _arrayUdpSocket[i]->onSelectMessage(FD_ISSET(i, &fdr), FD_ISSET(i, &fdw), FD_ISSET(i, &fde));
             }
-            else
-            {
-                if (rd && r._tcpSocketRecvPtr)
-                {
-                    r._tcpSocketRecvPtr->onSelectMessage(true, false, false);
-                }
-                if (wt)
-                {
-                    if (r._tcpSocketSendPtr)
-                    {
-                        r._tcpSocketSendPtr->onSelectMessage(false, true, false);
-                    }
-                    if (r._tcpSocketConnectPtr)
-                    {
-                        r._tcpSocketConnectPtr->onSelectMessage(false, true, false);
-                    }
-                }
-            }
-        }
-        else if (r._type == tagRegister::REG_UDP_SOCKET)
-        {
-            bool rd = r._rd && FD_ISSET(r._fd, &fdr) != 0;
-            bool wt = r._wt && FD_ISSET(r._fd, &fdw) != 0;
-            if (rd || wt)
-            {
-                if (r._udpsocketPtr)
-                {
-                    r._udpsocketPtr->onSelectMessage(r._type, rd, wt);
-                }
-            }
-        }
-        else
-        {
-            
-            LCE("ZSummerImpl::runOnce[this0x" << this << "] check register event type failed !!  type=" << r << logSection());
         }
     }
-
-
-
 }
 
 

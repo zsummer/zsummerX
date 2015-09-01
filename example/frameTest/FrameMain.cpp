@@ -51,9 +51,6 @@ std::string g_remoteIP = "0.0.0.0";
 unsigned short g_remotePort = 8081;
 unsigned short g_startIsConnector = 0;  //0 listen, 1 connect
 
-//! define protocol id
-static const ProtoID _RequestID = 1001;
-static const ProtoID _ResultID = 1002;
 
 bool initEnv(int argc, char* argv[]);
 void startServer();
@@ -136,12 +133,14 @@ void startServer()
     //! step 1. start Manager.
     SessionManager::getRef().start();
     //process message _RequestSequence
-    OnMessageFunction msg_RequestSequence_fun = [](TcpSessionPtr session, ReadStream & rs)
+    auto OnSessionBlock = [](TcpSessionPtr session, const char * begin, unsigned int len)
     {
-        std::string content = rs.getStreamBody();
+        ReadStream rs(begin, len);
+        std::string content; 
+        rs >> content;
         LOGI("recv SessionID = " << session->getSessionID() << ", content = " << content);
         content += " ==> echo.";
-        SessionManager::getRef().sendSessionData(session->getSessionID(), _ResultID, content.c_str(), (unsigned int)content.length() + 1);
+        SessionManager::getRef().sendSessionData(session->getSessionID(), begin, len);
 
         //! step 3 stop server after 1 second.
         SessionManager::getRef().createTimer(1000, [](){
@@ -151,13 +150,11 @@ void startServer()
             SessionManager::getRef().stop(); });
     };
 
-    MessageDispatcher::getRef().registerSessionMessage(_RequestID, msg_RequestSequence_fun); //!register message for protoID: _RequestSequence
 
     //add Acceptor
-    ListenConfig traits;
-    traits._listenPort = g_remotePort;
-    SessionManager::getRef().addAcceptor(traits);
-
+    AccepterID aID = SessionManager::getRef().addAccepter("127.0.0.1", g_remotePort);
+    SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._onBlockDispatch = OnSessionBlock;
+    SessionManager::getRef().openAccepter(aID);
     //! step 2 running
     SessionManager::getRef().run();
 }
@@ -168,17 +165,21 @@ void startClient()
     SessionManager::getRef().start();
 
     //on connect success
-    auto connectedfun = [](TcpSessionPtr session)
+    auto OnSessionLinked = [](TcpSessionPtr session)
     {
         LOGI("on connect. ID=" << session->getSessionID());
         std::string content = "hello";
-        SessionManager::getRef().sendSessionData(session->getSessionID(), _RequestID, content.c_str(), (unsigned int)content.length() + 1);
+        WriteStream ws(100);
+        ws << content;
+        SessionManager::getRef().sendSessionData(session->getSessionID(), ws.getStream(), ws.getStreamLen());
     };
 
     //process message _ResultID
-    auto msg_ResultSequence_fun = [](TcpSessionPtr session, ReadStream & rs)
+    auto OnSessionBlock = [](TcpSessionPtr session, const char * begin, unsigned int len)
     {
-        std::string content = rs.getStreamBody();
+        ReadStream rs(begin, len);
+        std::string content; 
+        rs >> content;
         LOGI("recv ConnectorID = " << session->getSessionID() << ", content = " << content);
         //! step 3 stop server
         SessionManager::getRef().stopAccept();
@@ -187,15 +188,13 @@ void startClient()
         SessionManager::getRef().stop();
     };
 
-    //! register event and message
-    MessageDispatcher::getRef().registerOnSessionEstablished(connectedfun); //!register connect success
-    MessageDispatcher::getRef().registerSessionMessage(_ResultID, msg_ResultSequence_fun);//!register message for protoID: _ResultSequence
-
     //add connector
-    ConnectConfig traits;
-    traits._remoteIP = g_remoteIP;
-    traits._remotePort = g_remotePort;
-    SessionManager::getRef().addConnector(traits);
+    SessionID cID = SessionManager::getRef().addConnecter(g_remoteIP, g_remotePort);
+    SessionManager::getRef().getConnecterOptions(cID)._onSessionLinked = OnSessionLinked;
+    SessionManager::getRef().getConnecterOptions(cID)._onBlockDispatch = OnSessionBlock;
+    SessionManager::getRef().openConnecter(cID);
+
+
 
     //! step 2 running
     SessionManager::getRef().run();

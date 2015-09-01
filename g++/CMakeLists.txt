@@ -45,3 +45,4 @@ install(TARGETS zsummerX_select${LIB_SUFFIX}
 	ARCHIVE DESTINATION lib)
 
 install(DIRECTORY ${zsummerX_SOURCE_DIR}/include/zsummerX  DESTINATION include)
+

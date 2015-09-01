@@ -48,11 +48,11 @@ UdpSocket::UdpSocket()
 
     //recv
     memset(&_recvHandle._overlapped, 0, sizeof(_recvHandle._overlapped));
-    _recvHandle._type = tagReqHandle::HANDLE_RECVFROM;
+    _recvHandle._type = ExtendHandle::HANDLE_RECVFROM;
     _recvWSABuf.buf = NULL;
     _recvWSABuf.len = 0;
 
-    _nLinkStatus = LS_UNINITIALIZE;
+    _linkStatus = LS_UNINITIALIZE;
 
 }
 
@@ -109,7 +109,7 @@ bool UdpSocket::initialize(const EventLoopPtr &summer, const char *localIP, unsi
         _socket = INVALID_SOCKET;
         return false;
     }
-    _nLinkStatus = LS_ESTABLISHED;
+    _linkStatus = LS_ESTABLISHED;
     return true;
 }
 
@@ -124,7 +124,7 @@ bool UdpSocket::doSendTo(char * buf, unsigned int len, const char *dstip, unsign
         LCF("UdpSocket uninitialize.socket=" << (unsigned int) _socket);
         return false;
     }
-    if (_nLinkStatus != LS_ESTABLISHED)
+    if (_linkStatus != LS_ESTABLISHED)
     {
         LCF("status != LS_ESTABLISHED. socket="<<(unsigned int) _socket);
         return false;
@@ -152,7 +152,7 @@ bool UdpSocket::doRecvFrom(char * buf, unsigned int len, _OnRecvFromHandler&& ha
         LCF("uninitialize.socket=" << (unsigned int) _socket);
         return false;
     }
-    if (_nLinkStatus != LS_ESTABLISHED)
+    if (_linkStatus != LS_ESTABLISHED)
     {
         LCF("socket status != LS_ESTABLISHED. socket="<<(unsigned int) _socket);
         return false;
@@ -195,7 +195,7 @@ bool UdpSocket::doRecvFrom(char * buf, unsigned int len, _OnRecvFromHandler&& ha
 
 bool UdpSocket::onIOCPMessage(BOOL bSuccess, DWORD dwTranceBytes, unsigned char cType)
 {
-    if (cType == tagReqHandle::HANDLE_RECVFROM)
+    if (cType == ExtendHandle::HANDLE_RECVFROM)
     {
         std::shared_ptr<UdpSocket> guad(std::move(_recvHandle._udpSocket));
         _OnRecvFromHandler onRecv(std::move(_onRecvHander));

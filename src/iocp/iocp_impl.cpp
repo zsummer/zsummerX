@@ -50,7 +50,7 @@ bool EventLoop::initialize()
     _io = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, NULL, 1);
     if (!_io)
     {
-        LCF("CreateIoCompletionPort false!  " << logSection());
+        LCF("CreateIoCompletionPort false!  " );
         return false;
     }
     return true;
@@ -120,10 +120,10 @@ void EventLoop::runOnce(bool isImmediately)
     }
     
     //! net data
-    tagReqHandle & req = *(HandlerFromOverlaped(pOverlapped));
+    ExtendHandle & req = *(HandlerFromOverlaped(pOverlapped));
     switch (req._type)
     {
-    case tagReqHandle::HANDLE_ACCEPT:
+    case ExtendHandle::HANDLE_ACCEPT:
         {
             if (req._tcpAccept)
             {
@@ -131,9 +131,9 @@ void EventLoop::runOnce(bool isImmediately)
             }
         }
         break;
-    case tagReqHandle::HANDLE_RECV:
-    case tagReqHandle::HANDLE_SEND:
-    case tagReqHandle::HANDLE_CONNECT:
+    case ExtendHandle::HANDLE_RECV:
+    case ExtendHandle::HANDLE_SEND:
+    case ExtendHandle::HANDLE_CONNECT:
         {
             if (req._tcpSocket)
             {
@@ -141,8 +141,8 @@ void EventLoop::runOnce(bool isImmediately)
             }
         }
         break;
-    case tagReqHandle::HANDLE_SENDTO:
-    case tagReqHandle::HANDLE_RECVFROM:
+    case ExtendHandle::HANDLE_SENDTO:
+    case ExtendHandle::HANDLE_RECVFROM:
         {
             if (req._udpSocket)
             {

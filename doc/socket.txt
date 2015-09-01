@@ -1,0 +1,11 @@
+
+TcpSocket 必须由shared_ptr构建.
+
+如果是connect方式使用 先initialize进行初始化, 然后发起connect操作
+
+如果是accept产生的 先填充socket数据 然后再进行initialize进行初始化.
+
+只有正常连接recv 才能能捕获socket错误. send发生错误后静默处理.
+
+close操作执行后不能调用任何callback.
+

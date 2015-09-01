@@ -44,22 +44,22 @@ using namespace zsummer::network;
 
 bool EventLoop::initialize()
 {
-    if (_epoll != InvalideFD)
+    if (_epoll != InvalidFD)
     {
-        LCF("EventLoop::initialize[this0x"<<this <<"] epoll is created ! " << logSection());
+        LCF("EventLoop::initialize[this0x"<<this <<"] epoll is created ! " );
         return false;
     }
     const int IGNORE_ENVENTS = 100;
     _epoll = epoll_create(IGNORE_ENVENTS);
-    if (_epoll == InvalideFD)
+    if (_epoll == InvalidFD)
     {
-        LCF("EventLoop::initialize[this0x" << this << "] create epoll err errno=" << strerror(errno) << logSection());
+        LCF("EventLoop::initialize[this0x" << this << "] create epoll err errno=" << strerror(errno));
         return false;
     }
 
     if (socketpair(AF_LOCAL, SOCK_STREAM, 0, _sockpair) != 0)
     {
-        LCF("EventLoop::initialize[this0x" << this << "] create socketpair.  errno=" << strerror(errno) << logSection());
+        LCF("EventLoop::initialize[this0x" << this << "] create socketpair.  errno=" << strerror(errno));
         return false;
     }
     setNonBlock(_sockpair[0]);
@@ -67,24 +67,20 @@ bool EventLoop::initialize()
     setNoDelay(_sockpair[0]);
     setNoDelay(_sockpair[1]);
 
-    _register._event.data.ptr = &_register;
-    _register._event.events = EPOLLIN;
-    _register._fd = _sockpair[1];
-    _register._linkstat = LS_ESTABLISHED;
-    _register._type = tagRegister::REG_ZSUMMER;
-    if (!registerEvent(EPOLL_CTL_ADD, _register))
-    {
-        LCF("EventLoop::initialize[this0x" << this << "] EPOLL_CTL_ADD _socketpair error. " << logSection());
-        return false;
-    }
-    
+    _eventData._event.data.ptr = &_eventData;
+    _eventData._event.events = EPOLLIN;
+    _eventData._fd = _sockpair[1];
+    _eventData._linkstat = LS_ESTABLISHED;
+    _eventData._type = EventData::REG_ZSUMMER;
+    registerEvent(EPOLL_CTL_ADD, _eventData);
     return true;
 }
 
-bool EventLoop::registerEvent(int op, tagRegister & reg)
+bool EventLoop::registerEvent(int op, EventData & ed)
 {
-    if (epoll_ctl(_epoll, op, reg._fd, &reg._event) != 0)
+    if (epoll_ctl(_epoll, op, ed._fd, &ed._event) != 0)
     {
+        LCW("EventLoop::registerEvent error. op=" << op << ", event=" << ed._event.events);
         return false;
     }
     return true;
@@ -108,13 +104,13 @@ std::string EventLoop::logSection()
     _stackMessagesLock.unlock();
     os << " EventLoop: _epoll=" << _epoll << ", _sockpair[2]={" << _sockpair[0] << "," << _sockpair[1] << "}"
         << " _stackMessages.size()=" << msgSize << ", current total timer=" << _timer.getTimersCount()
-        << " _register=" << _register;
+        << " _eventData=" << _eventData;
     return os.str();
 }
 
 void EventLoop::runOnce(bool isImmediately)
 {
-    int retCount = epoll_wait(_epoll, _events, 1000,  isImmediately ? 0 : _timer.getNextExpireTime());
+    int retCount = epoll_wait(_epoll, _events, MAX_EPOLL_WAIT,  isImmediately ? 0 : _timer.getNextExpireTime());
     if (retCount == -1)
     {
         if (errno != EINTR)
@@ -134,13 +130,14 @@ void EventLoop::runOnce(bool isImmediately)
 
     for (int i=0; i<retCount; i++)
     {
-        int eventflag = _events[i].events;
-        tagRegister * pReg = (tagRegister *)_events[i].data.ptr;
+        EventData * pEvent = (EventData *)_events[i].data.ptr;
         //tagHandle  type
-        if (pReg->_type == tagRegister::REG_ZSUMMER)
+        if (pEvent->_type == EventData::REG_ZSUMMER)
         {
-            char buf[1000];
-            while (recv(pReg->_fd, buf, 1000, 0) > 0);
+            {
+                char buf[200];
+                while (recv(pEvent->_fd, buf, 200, 0) > 0);
+            }
 
             MessageStack msgs;
             _stackMessagesLock.lock();
@@ -165,69 +162,30 @@ void EventLoop::runOnce(bool isImmediately)
                 delete p;
             }
         }
-        else if (pReg->_type == tagRegister::REG_TCP_ACCEPT)
+        else if (pEvent->_type == EventData::REG_TCP_ACCEPT)
         {
-            if (eventflag & EPOLLIN)
+            if (pEvent->_tcpacceptPtr)
             {
-                if (pReg->_tcpacceptPtr)
-                {
-                    pReg->_tcpacceptPtr->onEPOLLMessage(true);
-                }
-            }
-            else if (eventflag & EPOLLERR || eventflag & EPOLLHUP)
-            {
-                if (pReg->_tcpacceptPtr)
-                {
-                    pReg->_tcpacceptPtr->onEPOLLMessage(false);
-                }
+                pEvent->_tcpacceptPtr->onEPOLLMessage(_events[i].events);
             }
         }
-        else if (pReg->_type == tagRegister::REG_TCP_SOCKET)
+        else if (pEvent->_type == EventData::REG_TCP_SOCKET)
         {
-            if (eventflag & EPOLLERR || eventflag & EPOLLHUP)
+            if (pEvent->_tcpSocketPtr)
             {
-                if (pReg->_tcpSocketConnectPtr)
-                {
-                    pReg->_tcpSocketConnectPtr->onEPOLLMessage(EPOLLOUT, true);
-                }
-                else if (pReg->_tcpSocketRecvPtr)
-                {
-                    pReg->_tcpSocketRecvPtr->onEPOLLMessage(EPOLLIN, true);
-                }
-                else if (pReg->_tcpSocketSendPtr)
-                {
-                    pReg->_tcpSocketSendPtr->onEPOLLMessage(EPOLLOUT, true);
-                }
-            }
-            else if (eventflag & EPOLLIN)
-            {
-                if (pReg->_tcpSocketRecvPtr)
-                {
-                    pReg->_tcpSocketRecvPtr->onEPOLLMessage(EPOLLIN, false);
-                }
-            }
-            else if (eventflag & EPOLLOUT)
-            {
-                if (pReg->_tcpSocketConnectPtr)
-                {
-                    pReg->_tcpSocketConnectPtr->onEPOLLMessage(EPOLLOUT, false);
-                }
-                else if (pReg->_tcpSocketSendPtr)
-                {
-                    pReg->_tcpSocketSendPtr->onEPOLLMessage(EPOLLOUT, false);
-                }
+                pEvent->_tcpSocketPtr->onEPOLLMessage(_events[i].events);
             }
         }
-        else if (pReg->_type == tagRegister::REG_UDP_SOCKET)
+        else if (pEvent->_type == EventData::REG_UDP_SOCKET)
         {
-            if (pReg->_udpsocketPtr)
+            if (pEvent->_udpsocketPtr)
             {
-                pReg->_udpsocketPtr->onEPOLLMessage(pReg->_type, eventflag);
+                pEvent->_udpsocketPtr->onEPOLLMessage(_events[i].events);
             }
         }
         else
         {
-            LCE("EventLoop::runOnce[this0x" << this << "] check register event type failed !!  type=" << pReg->_type << logSection());
+            LCE("EventLoop::runOnce[this0x" << this << "] check register event type failed !!  type=" << pEvent->_type << logSection());
         }
             
     }

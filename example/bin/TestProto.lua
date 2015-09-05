@@ -5,7 +5,6 @@ Proto4z.EC_UNKNOWN_ID = 1001--unknwon id
  
 Proto4z.TestIntegerData = {} --测试 
 Proto4z.TestIntegerData.__getName = "TestIntegerData" 
-Proto4z.TestIntegerData.__getTag = "111111101" 
 Proto4z.TestIntegerData[1] = {name="_char", type="i8" }  
 Proto4z.TestIntegerData[2] = {name="_uchar", type="ui8" }  
 Proto4z.TestIntegerData[3] = {name="_short", type="i16" }  
@@ -18,13 +17,11 @@ Proto4z.TestIntegerData[9] = {name="_ui64", type="ui64" }
  
 Proto4z.TestFloatData = {} --测试 
 Proto4z.TestFloatData.__getName = "TestFloatData" 
-Proto4z.TestFloatData.__getTag = "11" 
 Proto4z.TestFloatData[1] = {name="_float", type="float" }  
 Proto4z.TestFloatData[2] = {name="_double", type="double" }  
  
 Proto4z.TestStringData = {} --测试 
 Proto4z.TestStringData.__getName = "TestStringData" 
-Proto4z.TestStringData.__getTag = "1" 
 Proto4z.TestStringData[1] = {name="_string", type="string" }  
  
 Proto4z.IntArray = {}  
@@ -69,7 +66,6 @@ Proto4z.register(30000,"EchoPack")
 Proto4z.EchoPack = {}  
 Proto4z.EchoPack.__getID = 30000 
 Proto4z.EchoPack.__getName = "EchoPack" 
-Proto4z.EchoPack.__getTag = "111111" 
 Proto4z.EchoPack[1] = {name="_iarray", type="TestIntegerDataArray" }  
 Proto4z.EchoPack[2] = {name="_farray", type="TestFloatDataArray" }  
 Proto4z.EchoPack[3] = {name="_sarray", type="TestStringDataArray" }  
@@ -77,3 +73,7 @@ Proto4z.EchoPack[4] = {name="_imap", type="TestIntegerDataMap" }
 Proto4z.EchoPack[5] = {name="_fmap", type="TestFloatDataMap" }  
 Proto4z.EchoPack[6] = {name="_smap", type="TestStringDataMap" }  
  
+Proto4z.register(30001,"Pulse") 
+Proto4z.Pulse = {}  
+Proto4z.Pulse.__getID = 30001 
+Proto4z.Pulse.__getName = "Pulse" 

@@ -56,7 +56,7 @@ namespace zsummer
         }
         inline void DefaultBlockDispatch(TcpSessionPtr session, const char * begin, unsigned int len)
         {
-            LCD("DefaultBlockDispatch empty. ");
+            LCW("DefaultBlockDispatch empty. ");
         }
 
         inline OnBlockCheckResult DefaultHTTPBlockCheck(const char * begin, unsigned int len, unsigned int bound,
@@ -68,7 +68,7 @@ namespace zsummer
 
         inline void DefaultHTTPBlockDispatch(TcpSessionPtr session, const PairString & commonLine, const MapString &head, const std::string & body)
         {
-            LCD("DefaultHTTPBlockDispatch empty.");
+            LCW("DefaultHTTPBlockDispatch empty.");
         }
 
 

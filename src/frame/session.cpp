@@ -36,7 +36,7 @@
 
 #include <zsummerX/frame/session.h>
 #include <zsummerX/frame/manager.h>
-#include <zsummerX/frame/dispatch.h>
+
 
 using namespace zsummer::proto4z;
 using namespace zsummer::network;

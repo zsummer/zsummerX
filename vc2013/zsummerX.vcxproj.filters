@@ -60,9 +60,6 @@
     <ClCompile Include="..\src\frame\manager.cpp">
       <Filter>src\frame</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\frame\dispatch.cpp">
-      <Filter>src\frame</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\zsummerX\common\common.h">
@@ -96,9 +93,6 @@
       <Filter>include\frame</Filter>
     </ClInclude>
     <ClInclude Include="..\include\zsummerX\frame\manager.h">
-      <Filter>include\frame</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\zsummerX\frame\dispatch.h">
       <Filter>include\frame</Filter>
     </ClInclude>
   </ItemGroup>

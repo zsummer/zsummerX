@@ -102,8 +102,6 @@ class CStressClientHandler
 public:
     CStressClientHandler()
     {
-        MessageDispatcher::getRef().registerSessionMessage(ID_EchoPack,
-            std::bind(&CStressClientHandler::msg_ResultSequence_fun, this, _1, _2));
     }
 
     void onConnected(TcpSessionPtr session)
@@ -115,7 +113,7 @@ public:
     {
     }
 
-    void msg_ResultSequence_fun(TcpSessionPtr session, ReadStream & rs)
+    void onMessage(TcpSessionPtr session, ReadStream & rs)
     {
         if (g_hightBenchmark)
         {
@@ -203,11 +201,9 @@ class CStressServerHandler
 public:
     CStressServerHandler()
     {
-        MessageDispatcher::getRef().registerSessionMessage(ID_EchoPack,
-            std::bind(&CStressServerHandler::msg_RequestSequence_fun, this, _1, _2));
     }
 
-    void msg_RequestSequence_fun (TcpSessionPtr session, ReadStream & rs)
+    void onMessage(TcpSessionPtr session, ReadStream & rs)
     {
         if (g_hightBenchmark)
         {
@@ -321,6 +317,11 @@ int main(int argc, char* argv[])
             SessionManager::getRef().getConnecterOptions(cID)._reconnects = 5;
             SessionManager::getRef().getConnecterOptions(cID)._connectPulseInterval = 4000;
             SessionManager::getRef().getConnecterOptions(cID)._onSessionLinked = std::bind(&CStressClientHandler::onConnected, &client, _1);
+            SessionManager::getRef().getConnecterOptions(cID)._onBlockDispatch = [&client](TcpSessionPtr   session, const char * begin, unsigned int len)
+            {
+                ReadStream rs(begin, len);
+                client.onMessage(session, rs);
+            };
             SessionManager::getRef().openConnecter(cID);
         }
         //running
@@ -330,6 +331,11 @@ int main(int argc, char* argv[])
     {
         CStressServerHandler server;
         AccepterID aID = SessionManager::getRef().addAccepter("0.0.0.0", g_remotePort);
+        SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._onBlockDispatch = [&server](TcpSessionPtr   session, const char * begin, unsigned int len)
+        {
+            ReadStream rs(begin, len);
+            server.onMessage(session, rs);
+        };
         SessionManager::getRef().openAccepter(aID);
         //running
         SessionManager::getRef().run();

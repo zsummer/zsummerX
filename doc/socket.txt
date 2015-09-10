@@ -7,5 +7,5 @@ TcpSocket 必须由shared_ptr构建.
 
 只有正常连接recv 才能能捕获socket错误. send发生错误后静默处理.
 
-close操作执行后不能调用任何callback.
+[内部实现]close操作执行后不能调用任何callback.
 

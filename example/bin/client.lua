@@ -17,7 +17,7 @@ local echo = {  _iarray = {{_char=1,_uchar=2,_short=3,_ushort=4,_int=5,_uint=6,_
                 }
 
 -- 连接成功事件
-function whenLinked(sID, remoteIP, remotePort)
+local function whenLinked(sID, remoteIP, remotePort)
     print("session is on connected. sID=" .. sID .. ", remoteIP=" .. remoteIP .. ", remotePort=" .. remotePort)
     local data = Proto4z.encode(echo, "EchoPack")
     Proto4z.dump(echo)
@@ -27,8 +27,8 @@ end
 summer.whenLinked(whenLinked)
 
 -- 收到消息
-function onMessage(sID, pID, content)
-    --print("onMessage. sID=" .. sID .. ", pID=" .. pID )
+local function whenMessage(sID, pID, content)
+    --print("whenMessage. sID=" .. sID .. ", pID=" .. pID )
     --Proto4z.putbin(content)
     local name = Proto4z.getName(pID)
     if name == nil then
@@ -44,20 +44,25 @@ function onMessage(sID, pID, content)
     end
 
 end
-summer.whenMessage(onMessage)
+summer.whenMessage(whenMessage)
 
 -- 连接断开事件
-function whenClosed(sID, remoteIP, remotePort)
+local function whenClosed(sID, remoteIP, remotePort)
     print("session is on disconnect. sID=" .. sID .. ", remoteIP=" .. remoteIP .. ", remotePort=" .. remotePort)
 end
 summer.whenClosed(whenClosed)
 
+-- 脉冲
+local function whenPulse(sID)
+    print("session is on pulse. sID=" .. sID )
+end
+summer.whenPulse(whenPulse)
 
 --启动网络
 summer.start()
 
 --连接服务器
-local id = summer.addConnect("127.0.0.1", 8081, nil, 10)
+local id = summer.addConnect("127.0.0.1", 8081, nil, 5)
 if id == nil then
     summer.logw("id == nil when addConnect")
 end

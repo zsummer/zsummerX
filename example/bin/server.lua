@@ -9,8 +9,8 @@ local lastTime = os.time()
 local echoCount = 0
 
 -- 收到消息
-function onMessage(sID, pID, content)
-    --print("onMessage. sID=" .. sID .. ", pID=" .. pID )
+local function whenMessage(sID, pID, content)
+    --print("whenMessage. sID=" .. sID .. ", pID=" .. pID )
     --Proto4z.putbin(content)
     local name = Proto4z.getName(pID)
     if name == nil then
@@ -30,16 +30,16 @@ function onMessage(sID, pID, content)
     end
 
 end
-summer.whenMessage(onMessage)
+summer.whenMessage(whenMessage)
 
 
 -- 连接成功事件
-function whenLinked(sID, remoteIP, remotePort)
+local function whenLinked(sID, remoteIP, remotePort)
     print("session is on connected. sID=" .. sID .. ", remoteIP=" .. remoteIP .. ", remotePort=" .. remotePort)
 end
 summer.whenLinked(whenLinked)
 -- 连接断开事件
-function whenClosed(sID, remoteIP, remotePort)
+local function whenClosed(sID, remoteIP, remotePort)
     print("session is on disconnect. sID=" .. sID .. ", remoteIP=" .. remoteIP .. ", remotePort=" .. remotePort)
 end
 summer.whenClosed(whenClosed)

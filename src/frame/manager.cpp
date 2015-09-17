@@ -328,12 +328,19 @@ void SessionManager::onAcceptNewClient(zsummer::network::NetErrorCode ec, const 
 
 SessionBlock * SessionManager::CreateBlock()
 {
+    unsigned int timestamp = time(NULL);
+    unsigned int timetick = (unsigned int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     SessionBlock * sb = nullptr;
     if (_freeBlock.empty())
     {
         sb = (SessionBlock*)malloc(sizeof(SessionBlock)+SESSION_BLOCK_SIZE);
         sb->bound = SESSION_BLOCK_SIZE;
         sb->len = 0;
+        sb->createTime = timestamp;
+        sb->reused = 0;
+        sb->timestamp = timestamp;
+        sb->timetick = timetick;
+        sb->type = 0;
         _statInfo[STAT_EXIST_BLOCKS]++;
     }
     else
@@ -341,6 +348,9 @@ SessionBlock * SessionManager::CreateBlock()
         sb = _freeBlock.front();
         _freeBlock.pop();
         sb->len = 0;
+        sb->reused ++;
+        sb->timestamp = timestamp;
+        sb->timetick = timetick;
         _statInfo[STAT_FREE_BLOCKS] = _freeBlock.size();
     }
     return sb;

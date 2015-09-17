@@ -128,8 +128,13 @@ namespace zsummer
 
         struct SessionBlock 
         {
-            unsigned int len = 0;
+            unsigned int type = 0;
+            unsigned int createTime = 0;
+            unsigned int reused = 0;
+            unsigned int timestamp = 0;
+            unsigned int timetick = 0;
             unsigned int bound = 0;
+            unsigned int len = 0;
             char begin[0];
         };
         

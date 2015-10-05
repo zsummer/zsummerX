@@ -98,9 +98,9 @@ namespace zsummer
 
         enum BLOCK_CHECK_TYPE
         {
-            BCT_SUCCESS = 0, //³É¹¦, ·µ»Øµ±Ç°block´óÐ¡
-            BCT_SHORTAGE = 1, //²»×ã, ·µ»Øµ±Ç°block»¹ÐèÒªµÄ´óÐ¡
-            BCT_CORRUPTION = 2, //´íÎó, ÐèÒª¹Ø±Õsocket
+            BCT_SUCCESS = 0, //ï¿½É¹ï¿½, ï¿½ï¿½ï¿½Øµï¿½Ç°blockï¿½ï¿½Ð¡
+            BCT_SHORTAGE = 1, //ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½Øµï¿½Ç°blockï¿½ï¿½ï¿½ï¿½Òªï¿½Ä´ï¿½Ð¡
+            BCT_CORRUPTION = 2, //ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½Òªï¿½Ø±ï¿½socket
         };
 
         enum StatType
@@ -145,21 +145,21 @@ namespace zsummer
         
         using OnBlockCheckResult = std::pair<BLOCK_CHECK_TYPE, unsigned int>;
 
-        //¼ì²éµ±Ç°»º³å¿éÄÚÊÇ·ñÄÜ¶Á³öÒ»¸öÍêÕûµÄblock
+        //ï¿½ï¿½éµ±Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç·ï¿½ï¿½Ü¶ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½block
         using OnBlockCheck = std::function<OnBlockCheckResult(const char * /*begin*/, unsigned int /*len*/, unsigned int /*bound*/, unsigned int /*blockLimit*/)>;
 
-        //!Ã¿¶Á³öÒ»¸öblock¾Íµ÷ÓÃÕâ¸ö·½·¨dispatch³öÈ¥
+        //!Ã¿ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½blockï¿½Íµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½dispatchï¿½ï¿½È¥
         using OnBlockDispatch = std::function<void(TcpSessionPtr   /*session*/, const char * /*begin*/, unsigned int /*len*/)>;
 
-        //!Á¬½Ó½¨Á¢, ¹Ø±Õ, ¶¨Ê±Æ÷
+        //!ï¿½ï¿½ï¿½Ó½ï¿½ï¿½ï¿½, ï¿½Ø±ï¿½, ï¿½ï¿½Ê±ï¿½ï¿½
         using OnSessionEvent = std::function<void(TcpSessionPtr   /*session*/)>;
 
         using PairString = std::pair<std::string, std::string>;
         using MapString = std::map<std::string, std::string>;
-        //!HTTP½â°ü,hadHeader Çø±ðchunkedµÄºóÐøÐ¡°ü, commonLine Ö¸µÄÊÇGET, POST RESPONSE. 
+        //!HTTPï¿½ï¿½ï¿½,hadHeader ï¿½ï¿½ï¿½ï¿½chunkedï¿½Äºï¿½ï¿½ï¿½Ð¡ï¿½ï¿½, commonLine Ö¸ï¿½ï¿½ï¿½ï¿½GET, POST RESPONSE. 
         using OnHTTPBlockCheck = std::function<OnBlockCheckResult(const char * /*begin*/, unsigned int /*len*/, unsigned int /*bound*/,
             bool /*hadHeader*/, bool & /*isChunked*/, PairString& /*commonLine*/, MapString & /*head*/, std::string & /*body*/)>;
-        //!HTTPÅÉ·¢
+        //!HTTPï¿½É·ï¿½
         using OnHTTPBlockDispatch = std::function<
             void(TcpSessionPtr /*session*/, const PairString & /*commonLine*/, const MapString &/*head*/, const std::string & /*body*/)>;
         
@@ -170,13 +170,13 @@ namespace zsummer
 
             ProtoType       _protoType = PT_TCP;
             std::string     _rc4TcpEncryption = ""; //empty is not encryption
-            bool            _openFlashPolicy = false; //¼ì²âfalsh¿Í»§¶Ë
+            bool            _openFlashPolicy = false; //ï¿½ï¿½ï¿½falshï¿½Í»ï¿½ï¿½ï¿½
             bool            _setNoDelay = true; 
-            bool            _joinSmallBlock = true; //·¢ËÍÊ±ºÏ²¢Ð¡°üÒ»Æð·¢ËÍ
-            unsigned int    _sessionPulseInterval = 30000; //session pulse¼ä¸ô
-            unsigned int    _connectPulseInterval = 5000; //connect pulse¼ä¸ô
-            unsigned int    _reconnects = 0; // ÖØÁ¬´ÎÊý
-            bool            _reconnectClean = true;//ÖØÁ¬Ê±Çå³ýÎ´·¢ËÍµÄ¶ÓÁÐ.
+            bool            _joinSmallBlock = true; //ï¿½ï¿½ï¿½ï¿½Ê±ï¿½Ï²ï¿½Ð¡ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½
+            unsigned int    _sessionPulseInterval = 30000; //session pulseï¿½ï¿½ï¿½
+            unsigned int    _connectPulseInterval = 5000; //connect pulseï¿½ï¿½ï¿½
+            unsigned int    _reconnects = 0; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+            bool            _reconnectClean = true;//ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½Î´ï¿½ï¿½ï¿½ÍµÄ¶ï¿½ï¿½ï¿½.
 
             OnBlockCheck _onBlockCheck;
             OnBlockDispatch _onBlockDispatch;
@@ -208,28 +208,20 @@ namespace zsummer
         class Any
         {
         public:
-            Any()
-            {
-
-            }
-            Any(unsigned long long n)
-            {
-                _number = n;
-            }
-            Any(const std::string & str)
-            {
-                _string = str;
-            }
-            Any(void * p)
-            {
-                _pointer = p;
-            }
+            Any(){}
+            Any(unsigned long long n):_number(n){}
+            Any(const std::string & str):_string(str){}
+            Any(void * p):_pointer(p){}
+            Any(double df):_float(df){}
+            Any(unsigned long long n, double df, std::string str, void*p):_number(n), _float(df), _string(str), _pointer(p){}
         public:
             inline unsigned long long getNumber() const { return _number; }
+            inline double getFloat() const { return _float; }
             inline std::string getString() const { return _string; }
             inline void * getPtr() const { return _pointer; }
         private:
             unsigned long long _number = 0;
+            double _float = 0.0;
             std::string _string;
             void * _pointer = nullptr;
         };

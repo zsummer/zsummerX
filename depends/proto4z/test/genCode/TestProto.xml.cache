@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF - 8"?>
+
+<cppmd5>fd99a12cefcf201935f4c38552421c6d</cppmd5> 
+<luamd5>26ee2e0f0e5c8d7577f2f106c0434638</luamd5> 
+<csharpmd5>167c17db79ef9043afdc4a7f6ac08152</csharpmd5> 
+<sqlmd5>63b636ef3ef34771303e33ae3cb03b55</sqlmd5> 
+<xmlmd5>446000f6bca8068f7acef9f835d81778</xmlmd5> 
+<cacheNumber>
+    <cache key = "ID_EchoPack" Number = "30000" /> 
+    <cache key = "ID_Pulse" Number = "30001" /> 
+</cacheNumber>

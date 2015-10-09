@@ -1,0 +1,88 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<ProtoTraits>
+    <MinNo>30000</MinNo>
+    <MaxNo>32000</MaxNo>
+</ProtoTraits>
+
+<!-- support base type,  don't use the other type like int, long, short.
+--  
+-- i8
+-- ui8
+-- i16
+-- ui16
+-- i32
+-- ui32
+-- i64
+-- ui64
+-- float
+-- double
+-- string
+--  
+-->
+
+
+
+<Proto>
+     <!-- 常量类型 -->
+    <const name="MAX_SESSIONS" value="5000" type="ui16" desc="max session count" />
+
+    <!-- 枚举类型 -->
+    <enum type="ui16" name="GAME_TYPE" >
+        <member name="GTYPE_INVALID" desc="无效" />
+        <member name="GTYPE_WAITING" desc="等待" />
+        <member name="GTYPE_INGAME" value="10" desc="游戏中" />
+        <member name="GTYPE_LEAVE" desc="离开" />
+    </enum>
+
+
+    <!-- 整形-->
+    <struct name="TestIntegerData" store="true" desc="测试">
+        <member name="_char"    type="i8"    desc=""/>
+        <member name="_uchar"    type="ui8"    desc=""/>
+        <member name="_short"    type="i16"    desc=""/>
+        <member name="_ushort"    type="ui16"     desc=""/>
+        <member name="_int"    type="i32"     desc=""/>
+        <member name="_uint"    type="ui32" tag="key"    desc=""/>
+        <member name="_i64"    type="i64" tag="key"     desc=""/>
+        <member name="_ui128"    type="ui64"    tag="del" desc=""/>
+        <member name="_ui64"    type="ui64"    tag="ignore" desc=""/>
+    </struct>
+    <!-- 浮点-->
+    <struct name="TestFloatData" desc="测试">
+        <member name="_float"    type="float"    desc=""/>
+        <member name="_double"    type="double"    desc=""/>
+    </struct>
+
+    <!-- 字符串-->
+    <struct name="TestStringData" desc="测试">
+        <member name="_string"    type="string"    desc=""/>
+    </struct>
+
+    <!-- 支持数组类型-->
+    <array name="IntArray" type="ui32" desc=""/>
+    <array name="TestIntegerDataArray" type="TestIntegerData" desc=""/>
+    <array name="TestFloatDataArray" type="TestFloatData" desc=""/>
+    <array name="TestStringDataArray" type="TestStringData" desc=""/>
+    
+    <!-- 支持字典类型-->
+    <map key="string" name="TestIntegerDataMap" value="TestIntegerData" desc=""/>
+    <map key="string" name="TestFloatDataMap" value="TestFloatData" desc=""/>
+    <map key="string" name="TestStringDataMap" value="TestStringData" desc=""/>
+
+    
+    <!-- 协议类型-->
+    <proto    name="EchoPack" desc= "">
+        <member name="_iarray" type="TestIntegerDataArray"     desc=""/>
+        <member name="_farray" type="TestFloatDataArray"     desc=""/>
+        <member name="_sarray" type="TestStringDataArray"     desc=""/>
+        <member name="_imap" type="TestIntegerDataMap"     desc=""/>
+        <member name="_fmap" type="TestFloatDataMap"     desc=""/>
+        <member name="_smap" type="TestStringDataMap"     desc=""/>
+    </proto>
+
+    <!-- 协议类型-->
+    <proto    name="Pulse" desc= "">
+    </proto>
+
+</Proto>

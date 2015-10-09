@@ -1,0 +1,53 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="genCPP.cpp" />
+    <ClCompile Include="genCSharp.cpp" />
+    <ClCompile Include="genLUA.cpp" />
+    <ClCompile Include="genSQL.cpp" />
+    <ClCompile Include="log4z.cpp">
+      <Filter>depends</Filter>
+    </ClCompile>
+    <ClCompile Include="md5.cpp">
+      <Filter>depends</Filter>
+    </ClCompile>
+    <ClCompile Include="tinyxml2.cpp">
+      <Filter>depends</Filter>
+    </ClCompile>
+    <ClCompile Include="utility.cpp">
+      <Filter>depends</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="parseProto.cpp" />
+    <ClCompile Include="parseCache.cpp" />
+    <ClCompile Include="genBase.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="utility.h">
+      <Filter>depends</Filter>
+    </ClInclude>
+    <ClInclude Include="log4z.h">
+      <Filter>depends</Filter>
+    </ClInclude>
+    <ClInclude Include="md5.h">
+      <Filter>depends</Filter>
+    </ClInclude>
+    <ClInclude Include="tinyxml2.h">
+      <Filter>depends</Filter>
+    </ClInclude>
+    <ClInclude Include="any.h" />
+    <ClInclude Include="parseProto.h" />
+    <ClInclude Include="genBase.h" />
+    <ClInclude Include="parseCache.h" />
+    <ClInclude Include="common.h" />
+    <ClInclude Include="genCPP.h" />
+    <ClInclude Include="genCSharp.h" />
+    <ClInclude Include="genLUA.h" />
+    <ClInclude Include="genSQL.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="depends">
+      <UniqueIdentifier>{f1d9dc7f-22b7-4cf2-a5be-5904911bfa38}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

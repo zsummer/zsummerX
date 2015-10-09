@@ -98,9 +98,9 @@ namespace zsummer
 
         enum BLOCK_CHECK_TYPE
         {
-            BCT_SUCCESS = 0, //�ɹ�, ���ص�ǰblock��С
-            BCT_SHORTAGE = 1, //����, ���ص�ǰblock����Ҫ�Ĵ�С
-            BCT_CORRUPTION = 2, //����, ��Ҫ�ر�socket
+            BCT_SUCCESS = 0, //success, return block size 
+            BCT_SHORTAGE = 1, //too short, return need size 
+            BCT_CORRUPTION = 2, //error, need close socket. 
         };
 
         enum StatType
@@ -145,21 +145,21 @@ namespace zsummer
         
         using OnBlockCheckResult = std::pair<BLOCK_CHECK_TYPE, unsigned int>;
 
-        //��鵱ǰ��������Ƿ��ܶ���һ��������block
+        //check one block integrity 
         using OnBlockCheck = std::function<OnBlockCheckResult(const char * /*begin*/, unsigned int /*len*/, unsigned int /*bound*/, unsigned int /*blockLimit*/)>;
 
-        //!ÿ����һ��block�͵����������dispatch��ȥ
+        //!dispatch one integrity block 
         using OnBlockDispatch = std::function<void(TcpSessionPtr   /*session*/, const char * /*begin*/, unsigned int /*len*/)>;
 
-        //!���ӽ���, �ر�, ��ʱ��
+        //!event linked, closed, ontimer
         using OnSessionEvent = std::function<void(TcpSessionPtr   /*session*/)>;
 
         using PairString = std::pair<std::string, std::string>;
         using MapString = std::map<std::string, std::string>;
-        //!HTTP���,hadHeader ����chunked�ĺ���С��, commonLine ָ����GET, POST RESPONSE. 
+        //!HTTP unpack, hadHeader used by 'chunked', commonLine can be GET, POST RESPONSE.  
         using OnHTTPBlockCheck = std::function<OnBlockCheckResult(const char * /*begin*/, unsigned int /*len*/, unsigned int /*bound*/,
             bool /*hadHeader*/, bool & /*isChunked*/, PairString& /*commonLine*/, MapString & /*head*/, std::string & /*body*/)>;
-        //!HTTP�ɷ�
+        //!HTTP dispatch  
         using OnHTTPBlockDispatch = std::function<
             void(TcpSessionPtr /*session*/, const PairString & /*commonLine*/, const MapString &/*head*/, const std::string & /*body*/)>;
         
@@ -169,14 +169,14 @@ namespace zsummer
         {
 
             ProtoType       _protoType = PT_TCP;
-            std::string     _rc4TcpEncryption = ""; //empty is not encryption
-            bool            _openFlashPolicy = false; //���falsh�ͻ���
+            std::string     _rc4TcpEncryption = ""; //empty is not encryption 
+            bool            _openFlashPolicy = false; //check falsh client  
             bool            _setNoDelay = true; 
-            bool            _joinSmallBlock = true; //����ʱ�ϲ�С��һ����
-            unsigned int    _sessionPulseInterval = 30000; //session pulse���
-            unsigned int    _connectPulseInterval = 5000; //connect pulse���
-            unsigned int    _reconnects = 0; // ��������
-            bool            _reconnectClean = true;//����ʱ���δ���͵Ķ���.
+            bool            _joinSmallBlock = true; //merge small block  
+            unsigned int    _sessionPulseInterval = 30000;  
+            unsigned int    _connectPulseInterval = 5000;  
+            unsigned int    _reconnects = 0; // can reconnect count 
+            bool            _reconnectClean = true;//clean unsend block . 
 
             OnBlockCheck _onBlockCheck;
             OnBlockDispatch _onBlockDispatch;

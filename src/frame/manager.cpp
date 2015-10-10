@@ -328,7 +328,7 @@ void SessionManager::onAcceptNewClient(zsummer::network::NetErrorCode ec, const 
 
 SessionBlock * SessionManager::CreateBlock()
 {
-    unsigned int timestamp = time(NULL);
+    unsigned int timestamp = (unsigned int)time(NULL);
     unsigned int timetick = (unsigned int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     SessionBlock * sb = nullptr;
     if (_freeBlock.empty())

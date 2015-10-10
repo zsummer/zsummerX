@@ -1,6 +1,13 @@
 cmake_minimum_required(VERSION 2.6)
 project(zsummerX)
 
+#set(GLIBC_FLAG  "-v -static-libgcc -static-libstdc++ -Wl,--no-export-dynamic")
+#set(GLIBC_INCLUDE "/home/summer/dependlibs/glibc_static/include")
+#set(GLIBC_LIB "/home/summer/dependlibs/glibc_static/lib")
+#add_definitions(-DGLIBC_INCLUDEDIR=${GLIBC_INCLUDE} -DGLIBC_LIBRARYDIR=${GLIBC_LIB})
+#include_directories(${GLIBC_INCLUDE} )
+#link_directories(${GLIBC_LIB})
+#set_target_properties (${BINNAME} PROPERTIES LINK_FLAGS "${GLIBC_FLAG}")
 
 set(DEP_PROTO4Z_INC_DIR  ${zsummerX_SOURCE_DIR}/depends CACHE PATH "")
 

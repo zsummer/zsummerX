@@ -209,11 +209,11 @@ namespace zsummer
         {
         public:
             Any(){}
-            Any(unsigned long long n):_number(n){}
-            Any(const std::string & str):_string(str){}
-            Any(void * p):_pointer(p){}
-            Any(double df):_float(df){}
-            Any(unsigned long long n, double df, std::string str, void*p):_number(n), _float(df), _string(str), _pointer(p){}
+            Any(unsigned long long n) :_number(n){}
+            Any(const std::string & str) :_string(str){}
+            Any(void * p) :_pointer(p){}
+            explicit Any(double df) :_float(df){}
+            Any(unsigned long long n, double df, std::string str, void*p) :_number(n), _float(df), _string(str), _pointer(p){}
         public:
             inline unsigned long long getNumber() const { return _number; }
             inline double getFloat() const { return _float; }

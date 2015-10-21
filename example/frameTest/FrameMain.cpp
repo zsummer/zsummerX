@@ -58,13 +58,15 @@ void startClient();
 
 // main
 //////////////////////////////////////////////////////////////////////////
-
+void TestSessionUserParam();
 int main(int argc, char* argv[])
 {
+    
     if (!initEnv(argc, argv))
     {
         return 0;
     }
+    TestSessionUserParam();
     
     if (g_startIsConnector) //client mod
     {
@@ -200,5 +202,22 @@ void startClient()
     SessionManager::getRef().run();
 }
 
+void TestSessionUserParam()
+{
+    TcpSessionPtr session = std::make_shared<TcpSession>();
+    
+    session->setUserParamDouble(10, 66.66);
+    session->setUserParam(10, 25);
+    session->setUserParam(10, "string");
 
+    LOGI("TestSessionUserParam. double=66.66, number=25, string=string");
+    double d;
+    unsigned long long ull;
+    std::string str;
+    std::tie(d, ull, str) = session->getUserParam(10);
+    LOGI("TestSessionUserParam. std::tie double=" << d << ", number=" << ull << ", string=" << str);
+    d = session->getUserParamDouble(10);
+    ull = session->getUserParamNumber(10);
+    str = session->getUserParamString(10);
+}
 

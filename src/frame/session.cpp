@@ -383,6 +383,12 @@ void TcpSession::send(const char *buf, unsigned int len)
     //push to send queue
     if (!_sendque.empty() || _status != 2 || _sending->len != 0)
     {
+        if (_sendque.size() >= _options._maxSendListCount)
+        {
+            close();
+            return;
+        }
+        
         SessionBlock * sb = _options._createBlock();
         if (sb->bound < len)
         {

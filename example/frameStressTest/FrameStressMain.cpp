@@ -316,6 +316,11 @@ int main(int argc, char* argv[])
             SessionID cID = SessionManager::getRef().addConnecter(g_remoteIP, g_remotePort);
             SessionManager::getRef().getConnecterOptions(cID)._reconnects = 5;
             SessionManager::getRef().getConnecterOptions(cID)._connectPulseInterval = 4000;
+            if (g_sendType != 0)
+            {
+                SessionManager::getRef().getConnecterOptions(cID)._maxSendListCount = 20000;
+            }
+            
             SessionManager::getRef().getConnecterOptions(cID)._onSessionLinked = std::bind(&CStressClientHandler::onConnected, &client, _1);
             SessionManager::getRef().getConnecterOptions(cID)._onBlockDispatch = [&client](TcpSessionPtr   session, const char * begin, unsigned int len)
             {
@@ -331,6 +336,10 @@ int main(int argc, char* argv[])
     {
         CStressServerHandler server;
         AccepterID aID = SessionManager::getRef().addAccepter("0.0.0.0", g_remotePort);
+        if (g_sendType != 0)
+        {
+            SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._maxSendListCount = 20000;
+        }
         SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._onBlockDispatch = [&server](TcpSessionPtr   session, const char * begin, unsigned int len)
         {
             ReadStream rs(begin, len);

@@ -58,7 +58,7 @@ bool EventLoop::initialize()
 
 void EventLoop::post(_OnPostHandler &&h)
 {
-    _OnPostHandler *ptr = new _OnPostHandler(h);
+    _OnPostHandler *ptr = new _OnPostHandler(std::move(h));
     PostQueuedCompletionStatus(_io, 0, PCK_USER_DATA, (LPOVERLAPPED)(ptr));
 }
 

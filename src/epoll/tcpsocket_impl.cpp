@@ -286,7 +286,14 @@ void TcpSocket::onEPOLLMessage(uint32_t event)
         {
             _eventData._event.events = _eventData._event.events &~EPOLLIN;
             _summer->registerEvent(EPOLL_CTL_MOD, _eventData);
-            ec = NEC_REMOTE_CLOSED;
+            if (ret == 0 || event & EPOLLHUP)
+            {
+                ec = NEC_REMOTE_CLOSED;
+            }
+            else
+            {
+                ec = NEC_ERROR;
+            }
             _OnRecvHandler onRecv(std::move(_onRecvHandler));
             doClose();
             onRecv(ec, 0);

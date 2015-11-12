@@ -354,7 +354,7 @@ void TcpSocket::onIOCPMessage(BOOL bSuccess, DWORD dwTranceBytes, unsigned char 
         if (!bSuccess)
         {
             doClose();
-            onRecv(NetErrorCode::NEC_REMOTE_HANGUP, dwTranceBytes);
+            onRecv(NetErrorCode::NEC_ERROR, dwTranceBytes);
             return;
         }
         else if (dwTranceBytes == 0)

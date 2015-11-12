@@ -268,7 +268,14 @@ void TcpSocket::onSelectMessage(bool rd, bool wt, bool err)
         if (ret == 0 || (ret == -1 && !IS_WOULDBLOCK))
         {
             _OnRecvHandler onRecv(std::move(_onRecvHandler));
-            ec = NEC_ERROR;
+            if (ret == 0)
+            {
+                ec = NEC_REMOTE_CLOSED;
+            }
+            else
+            {
+                ec = NEC_ERROR;
+            }
             doClose();
             onRecv(ec, 0);
             if (_linkstat == LS_CLOSED)

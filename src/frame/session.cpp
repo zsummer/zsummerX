@@ -220,7 +220,15 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
 {
     if (ec)
     {
-        LCD("socket closed. ec=" << ec);
+        _lastRecvError = ec;
+        if (_lastRecvError == NEC_REMOTE_CLOSED)
+        {
+            LCI("socket closed. remote shutdown. sID=" << _sessionID);
+        }
+        else
+        {
+            LCI("socket closed. local shutdown. sID=" << _sessionID);
+        }
         close();
         return;
     }

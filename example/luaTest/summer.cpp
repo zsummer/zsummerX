@@ -405,7 +405,6 @@ static int _post(lua_State * L)
 
 static int _status(lua_State * L)
 {
-    SessionID sID = (int)luaL_checkinteger(L, 1);
     lua_newtable(L);
     for (int i = STAT_STARTTIME; i < STAT_SIZE; i++)
     {

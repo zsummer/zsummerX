@@ -7,36 +7,8 @@ logi = summer.logi
 loge = summer.loge
 
 
-function rateUpdate(props, rate)
-    local r = props[rate] or 0.0
-    r = r / 1000.0
-    props[rate] = r
-end
 
-function test(props)
-    local rate = props.hp or 0.0
-    props.hp = rate
-end
-
-function update(props)
-    local attrs = {"hp", "atk", "curHP", "def",  "anti"}
-    for k,v in pairs(attrs) do
-        props[v]  = math.random()
-        rateUpdate(props, v)
-    end
-    test(props)
-end
-
-
-_props = {}
-for i=1, 10000 do
-    local props = {}
-    update(props)
-    _props = props
-end
-
-
-
+setmetatable(_G, {__newindex=function(tb, k, v) logw("global newindex. k=" .. k .. ", trace=" .. debug.traceback()) end})
 
 
 

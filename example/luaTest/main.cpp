@@ -84,51 +84,6 @@ int safedofile(lua_State * L, const char * file)
 
 
 
-zsummer::Performence __perf;
-
-inline void hook_run_fn(lua_State *L, lua_Debug *ar)
-{
-    // 获取Lua调用信息
-    lua_getinfo(L, "Snl", ar);
-    std::string key;
-    if (ar->source)
-    {
-        key += ar->source;
-    }
-    key += "_";
-    if (ar->what)
-    {
-        key += ar->what;
-    }
-    key += "_";
-    if (ar->namewhat)
-    {
-        key += ar->namewhat;
-    }
-    key += "_";
-    if (ar->name)
-    {
-        key += ar->name;
-    }
-    if (ar->event == LUA_HOOKCALL)
-    {
-        __perf._stack.push(key, lua_gc(L, LUA_GCCOUNT, 0) * 1024 + lua_gc(L, LUA_GCCOUNTB, 0));
-    }
-    else/* if (ar->event == LUA_HOOKRET)*/
-    {
-        //lua_gc(L, LUA_GCCOLLECT, 0);
-        auto t = __perf._stack.pop(key, lua_gc(L, LUA_GCCOUNT, 0) * 1024 + lua_gc(L, LUA_GCCOUNTB, 0));
-        if (std::get<0>(t))
-        {
-            __perf.call(key, std::get<1>(t), std::get<2>(t));
-        }
-        if (__perf.expire(10000.0))
-        {
-            __perf.dump(100);
-        }
-    }
-}
-
 
 int main(int argc, char* argv[])
 {
@@ -162,11 +117,7 @@ int main(int argc, char* argv[])
     luaopen_proto4z_util(L);
     lua_gc(L, LUA_GCRESTART, 0);
 
-    {
-        //lua_Hook oldhook = lua_gethook(L);
-        //int oldmask = lua_gethookmask(L);
-        //lua_sethook(L, &hook_run_fn, LUA_MASKCALL | LUA_MASKRET, 0);
-    }
+    luaopen_performence(L);
     
 
     if (argc > 1)

@@ -35,12 +35,18 @@
  */
 
 #include "summer.h"
-
 #include <zsummerX/zsummerX.h>
 using namespace zsummer::proto4z;
 using namespace zsummer::network;
+static void hook_run_fn(lua_State *L, lua_Debug *ar);
+zsummer::Performence __perf;
+void luaopen_performence(lua_State * L)
+{
+    //lua_Hook oldhook = lua_gethook(L);
+    //int oldmask = lua_gethookmask(L);
+    lua_sethook(L, &hook_run_fn, LUA_MASKCALL | LUA_MASKRET, 0);
 
-
+}
 
 
 static int logt(lua_State * L)
@@ -458,4 +464,46 @@ int luaopen_summer(lua_State *L)
 }
 
 
+void hook_run_fn(lua_State *L, lua_Debug *ar)
+{
+    // 获取Lua调用信息
+    lua_getinfo(L, "Snl", ar);
+    std::string key;
+    if (ar->source)
+    {
+        key += ar->source;
+    }
+    key += "_";
+    if (ar->what)
+    {
+        key += ar->what;
+    }
+    key += "_";
+    if (ar->namewhat)
+    {
+        key += ar->namewhat;
+    }
+    key += "_";
+    if (ar->name)
+    {
+        key += ar->name;
+    }
+    if (ar->event == LUA_HOOKCALL)
+    {
+        __perf._stack.push(key, lua_gc(L, LUA_GCCOUNT, 0) * 1024 + lua_gc(L, LUA_GCCOUNTB, 0));
+    }
+    else if (ar->event == LUA_HOOKRET)
+    {
+        //lua_gc(L, LUA_GCCOLLECT, 0);
+        auto t = __perf._stack.pop(key, lua_gc(L, LUA_GCCOUNT, 0) * 1024 + lua_gc(L, LUA_GCCOUNTB, 0));
+        if (std::get<0>(t))
+        {
+            __perf.call(key, std::get<1>(t), std::get<2>(t));
+        }
+        if (__perf.expire(10000.0))
+        {
+            __perf.dump(100);
+        }
+    }
+}
 

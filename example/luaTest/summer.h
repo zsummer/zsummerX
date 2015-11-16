@@ -56,6 +56,7 @@ extern "C"
 #include <sstream>
 
 #ifdef WIN32
+#define WIN32_LEAN_AND_MEAN
 #include <io.h>
 #include <shlwapi.h>
 #include <process.h>
@@ -85,7 +86,7 @@ extern "C"
 
 
 int luaopen_summer(lua_State *L);
-
+void luaopen_performence(lua_State * L);
 
 namespace zsummer
 {
@@ -288,6 +289,10 @@ namespace zsummer
         std::map<std::string, Param > _once;
         Timestamp _lastPerf;
     };
+
+
+   
+
 
 };
 

@@ -8,7 +8,6 @@ loge = summer.loge
 
 
 
-setmetatable(_G, {__newindex=function(tb, k, v) logw("global newindex. k=" .. k .. ", trace=" .. debug.traceback()) end})
 
 
 

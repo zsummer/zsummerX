@@ -417,7 +417,9 @@ static int _status(lua_State * L)
 
 static int _steadyTime(lua_State * L)
 {
-    return (unsigned int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    unsigned int now = (unsigned int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    lua_pushinteger(L, now);
+    return 1;
 }
 
 

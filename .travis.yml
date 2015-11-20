@@ -1,0 +1,23 @@
+sudo: true
+language: cpp
+compiler: 
+  - g++ 
+  - clang
+os:
+  - linux
+  - osx
+before_install:
+  - source ./test/travis/env.sh
+
+install:
+  - source ./test/travis/setup.sh
+
+script:
+  - cmake --version
+  - cmake .
+  - make
+  - ls example/bin/*
+  - cd example/bin
+  - ./luaTest server &
+  - ./luaTest &
+

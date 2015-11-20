@@ -36,6 +36,7 @@
 
 #include "summer.h"
 #include <zsummerX/zsummerX.h>
+#include <chrono>
 using namespace zsummer::proto4z;
 using namespace zsummer::network;
 
@@ -416,22 +417,7 @@ static int _status(lua_State * L)
 
 static int _steadyTime(lua_State * L)
 {
-    unsigned int ret = 0;
-#ifdef WIN32
-    ret = GetTickCount();
-#elif defined(__APPLE__)
-    const int64_t kOneMillion = 1000 * 1000;
-    mach_timebase_info_data_t timebase_info;
-    mach_timebase_info(&timebase_info);
-    ret = (unsigned int)((mach_absolute_time() * timebase_info.numer) / (kOneMillion * timebase_info.denom));
-#else
-    struct timespec ts;
-    if (clock_gettime(CLOCK_MONOTONIC_RAW, &ts) != 0)
-        ret = 0;
-    ret = ts.tv_sec * 1000 + (ts.tv_nsec / 1000 / 1000);
-#endif
-    lua_pushinteger(L, ret);
-    return 1;
+    return (unsigned int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 }
 
 

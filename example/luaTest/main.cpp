@@ -41,7 +41,7 @@ extern "C"
 int luaopen_proto4z_util(lua_State *L);
 }
 
-
+#include "performance.h"
 
 
 #include <zsummerX/zsummerX.h>

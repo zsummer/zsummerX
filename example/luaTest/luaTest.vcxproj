@@ -54,6 +54,7 @@
     <ClCompile Include="lua\lvm.c" />
     <ClCompile Include="lua\lzio.c" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="performance.cpp" />
     <ClCompile Include="summer.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -83,6 +84,7 @@
     <ClInclude Include="lua\lundump.h" />
     <ClInclude Include="lua\lvm.h" />
     <ClInclude Include="lua\lzio.h" />
+    <ClInclude Include="performance.h" />
     <ClInclude Include="summer.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

@@ -105,6 +105,7 @@
     <ClCompile Include="lua\lproto4z.c">
       <Filter>lua</Filter>
     </ClCompile>
+    <ClCompile Include="performance.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="summer.h" />
@@ -186,6 +187,7 @@
     <ClInclude Include="lua\lzio.h">
       <Filter>lua</Filter>
     </ClInclude>
+    <ClInclude Include="performance.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="lua">

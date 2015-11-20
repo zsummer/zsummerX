@@ -18,6 +18,8 @@ script:
   - make
   - ls example/bin/*
   - cd example/bin
+  - ./luaTest_select server &
+  - ./luaTest_select 
   - ./luaTest server &
-  - ./luaTest &
+  - ./luaTest 
 

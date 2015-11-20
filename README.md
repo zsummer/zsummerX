@@ -1,6 +1,7 @@
 Welcome to the zsummerX wiki!  
   
 # introduction:  
+[![Build Status](https://travis-ci.org/zsummer/zsummerX.svg?branch=master)](https://travis-ci.org/zsummer/zsummerX)  
 zsummerX is an C++ cross-platform, high-performance and lightweight net library.  
 
 zsummerX implementation used by EPOLL LT / IOCP / SELECT,  the interface use proactor.  

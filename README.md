@@ -18,7 +18,7 @@ needless third-party library, simple and strong .
 
 high-performance and high-concurrency on linux or windows.  
 
-can work on meny operattion if used select . example mac , iOS , android . 
+can work on many operation if used select . example mac , iOS , android . 
 
 
 #compile conditions   

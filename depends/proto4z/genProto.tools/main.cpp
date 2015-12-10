@@ -101,7 +101,6 @@ int main(int argc, char *argv[])
 
     
     LOGA("All Success..");
-    getchar();
 
     return 0;
 }

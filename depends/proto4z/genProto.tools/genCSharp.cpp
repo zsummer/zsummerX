@@ -362,18 +362,18 @@ std::string GenCSharp::genDataProto(const DataProto & dp, bool isProto)
         //null
         if (!getCSharpType(m._type).isBase)
         {
-            text += "            if (" + m._name + " == null) " + m._name + " = new " + m._type + "();" + LFCR;
+            text += "            if (this." + m._name + " == null) this." + m._name + " = new " + m._type + "();" + LFCR;
         }
 
 
         //encode
         if (getCSharpType(m._type).isBase)
         {
-            text += "            "  "data.AddRange(" + getCSharpType(m._type).baseEncode + "(" + m._name + "));" + LFCR;
+            text += "            "  "data.AddRange(" + getCSharpType(m._type).baseEncode + "(this." + m._name + "));" + LFCR;
         }
         else
         {
-            text += "            "  "data.AddRange(" + m._name + ".__encode());" + LFCR;
+            text += "            "  "data.AddRange(this." + m._name + ".__encode());" + LFCR;
         }
     }
     text += "            "  "return data;" + LFCR;

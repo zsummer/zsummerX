@@ -15,5 +15,19 @@ else()
 endif()
 set(CMAKE_CXX_FLAGS -std=c++11)
 
+
 add_executable(lua53 ${source} ${luasrc})
-target_link_libraries(lua53 m)
+
+
+if(APPLE)
+        target_link_libraries(lua53  pthread  m)
+else()
+        target_link_libraries(lua53  pthread  rt m)
+endif()
+
+
+
+
+
+
+

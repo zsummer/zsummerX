@@ -77,6 +77,9 @@
     <ClInclude Include="..\lvm.h" />
     <ClInclude Include="..\lzio.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\proto4z.lua" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{0459E5F7-73C8-4665-9E5C-355E5ADA243D}</ProjectGuid>
     <RootNamespace>fast_test</RootNamespace>

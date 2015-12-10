@@ -127,8 +127,8 @@ int main()
     std::cout << "write and read stream used time: " << getSteadyTime() - now << std::endl;
 
   
-    cout << "press any key to continue." << endl;
-    getchar();
+//     cout << "press any key to continue." << endl;
+//     getchar();
     return 0;
 }
 

@@ -10,7 +10,7 @@ zsummerX depend by  C++ 11  implementation
 zsummerX是C++11实现的proactor模型的网络库, 实现分底层,frame层.  
 底层是封装不同平台差异化的接口并提供一个统一的proactor接口, 使用epoll,iocp,select实现, 其中select兼容linux和mac系统以及其移动平台的adroid,iOS系统, 支持tcp,udp协议.    
 frame层提供高级的封装, 通过勾选option选项,可以很方便的实现http协议处理(简单的web服务器或者客户端), 自定义的二进制协议(默认的二进制tcp协议是proto4z实现的), 并支持短线重连, rc4连接加密, 支持flash的Policy策略认证, 支持最大连接数,最大消息队列等.
-协议支持tcp,udp,http和proto4z的二进制协议(类似pb). 
+
 
   
 

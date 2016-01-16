@@ -77,7 +77,7 @@ TcpSession::~TcpSession()
 
 void TcpSession::connect()
 {
-    _pulseTimerID = SessionManager::getRef().createTimer(isConnectID(_sessionID) ? _options._connectPulseInterval : _options._sessionPulseInterval, std::bind(&TcpSession::onPulse, shared_from_this()));
+    _pulseTimerID = SessionManager::getRef().createTimer(_options._connectPulseInterval, std::bind(&TcpSession::onPulse, shared_from_this()));
     _status = 1;
     reconnect();
 }
@@ -126,7 +126,7 @@ bool TcpSession::attatch(const TcpSocketPtr &sockptr, AccepterID aID, SessionID 
         sockptr->setNoDelay();
     }
     _status = 2;
-    _pulseTimerID = SessionManager::getRef().createTimer(_options._connectPulseInterval, std::bind(&TcpSession::onPulse, shared_from_this()));
+    _pulseTimerID = SessionManager::getRef().createTimer(_options._sessionPulseInterval, std::bind(&TcpSession::onPulse, shared_from_this()));
     SessionManager::getRef()._statInfo[STAT_SESSION_LINKED]++;
 
     if (_options._onSessionLinked)
@@ -517,7 +517,7 @@ void TcpSession::onPulse()
             {
                 _options._onSessionPulse(shared_from_this());
             }
-            _pulseTimerID = SessionManager::getRef().createTimer(isConnectID(_sessionID) ? _options._connectPulseInterval : _options._sessionPulseInterval, std::bind(&TcpSession::onPulse, shared_from_this()));
+            _pulseTimerID = SessionManager::getRef().createTimer(_options._connectPulseInterval, std::bind(&TcpSession::onPulse, shared_from_this()));
         }
     }
     else if (_status == 2)

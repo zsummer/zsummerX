@@ -56,7 +56,7 @@ ZSummerEnvironment::ZSummerEnvironment()
     }
 #endif
     _netLoggerID = zsummer::log4z::ILog4zManager::getRef().createLogger("NetWork");
-    zsummer::log4z::ILog4zManager::getRef().setLoggerLevel(_netLoggerID, LOG_LEVEL_WARN);
+    zsummer::log4z::ILog4zManager::getRef().setLoggerLevel(_netLoggerID, LOG_LEVEL_DEBUG);
 }
 ZSummerEnvironment::~ZSummerEnvironment()
 {

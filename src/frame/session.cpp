@@ -372,6 +372,7 @@ void TcpSession::send(const char *buf, unsigned int len)
         if (_status == 2 && _sending->len == 0 && !_sendque.empty())
         {
             SessionBlock *sb = _sendque.front();
+            _sendque.pop();
             memcpy(_sending->begin, sb->begin, sb->len);
             _sending->len = sb->len;
             _options._freeBlock(sb);

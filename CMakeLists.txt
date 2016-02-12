@@ -15,10 +15,6 @@ set(DEP_LOG4Z_INC_DIR  ${zsummerX_SOURCE_DIR}/depends CACHE PATH "")
 
 set(DEP_LOG4Z_LIB_DIR  ${zsummerX_SOURCE_DIR}/depends/log4z/lib CACHE PATH "")
 
-set(DEP_LUA_INC_DIR  ${zsummerX_SOURCE_DIR}/depends/lua CACHE PATH "")
-
-set(DEP_LUA_LIB_DIR  ${zsummerX_SOURCE_DIR}/depends/lua/lib CACHE PATH "")
-
 set(ZSUMMERX_LIB_DIR ${zsummerX_SOURCE_DIR}/lib CACHE PATH "")
 
 set(ZSUMMERX_INC_DIR ${zsummerX_SOURCE_DIR}/include CACHE PATH "")

@@ -100,7 +100,11 @@ int main(int argc, char* argv[])
     signal(SIGCHLD, SIG_IGN);
 #endif
     signal(SIGINT, sigFun);
-
+    if(argc < 3)
+    {
+        printf("please input param like 'tcp server', 'tcp client', 'web server', 'web client'\n");
+        return 1;
+    }
 
     ILog4zManager::getRef().start();
     ILog4zManager::getRef().setLoggerFileLine(LOG4Z_MAIN_LOGGER_ID, false);
@@ -120,13 +124,27 @@ int main(int argc, char* argv[])
     luaopen_performence(L);
     
 
-    if (argc > 1)
+    if (strcmp(argv[1], "tcp") == 0)
     {
-        status = safedofile(L, "./server.lua");
+        if(strcmp(argv[2], "server") == 0)
+        {
+            status = safedofile(L, "./tcpserver.lua");
+        }
+        else
+        {
+            status = safedofile(L, "./tcpclient.lua");
+        }
     }
     else
     {
-        status = safedofile(L, "./client.lua");
+        if(strcmp(argv[2], "server") == 0)
+        {
+            status = safedofile(L, "./webserver.lua");
+        }
+        else
+        {
+            status = safedofile(L, "./webclient.lua");
+        }
     }
     
     

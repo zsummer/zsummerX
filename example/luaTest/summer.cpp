@@ -144,12 +144,14 @@ static void _onMessage(lua_State * L, TcpSessionPtr session, const char * begin,
     {
         const char *msg = lua_tostring(L, -1);
         if (msg == NULL) msg = "(error object is not a string)";
+        LOGE("code crash when process message. sID=" << session->getSessionID() << ", block len=" << len
+            << ", block=" << zsummer::log4z::Log4zBinary(begin, len));
         LOGE(msg);
         lua_pop(L, 1);
     }
 }
 //param: sID, {key=,value=}, {head kv}, body
-static void _onWebMessage(lua_State * L, TcpSessionPtr session, const PairString & commonLine,
+static void _onWebMessage(lua_State * L, TcpSessionPtr session, const zsummer::network::PairString & commonLine,
                           const MapString &head, const std::string & body)
 {
     lua_pushcfunction(L, pcall_error);
@@ -187,6 +189,9 @@ static void _onWebMessage(lua_State * L, TcpSessionPtr session, const PairString
     {
         const char *msg = lua_tostring(L, -1);
         if (msg == NULL) msg = "(error object is not a string)";
+        LOGE("code crash when process web message. sID=" << session->getSessionID()
+            << ", commond line=" << commonLine.first << " " << commonLine.second << ", body(max500byte)=" << body.substr(0, 500)
+            << ", head=" << head);
         LOGE(msg);
         lua_pop(L, 1);
     }

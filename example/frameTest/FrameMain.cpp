@@ -194,6 +194,10 @@ void startClient()
     SessionID cID = SessionManager::getRef().addConnecter(g_remoteIP, g_remotePort);
     SessionManager::getRef().getConnecterOptions(cID)._onSessionLinked = OnSessionLinked;
     SessionManager::getRef().getConnecterOptions(cID)._onBlockDispatch = OnSessionBlock;
+    SessionManager::getRef().getConnecterOptions(cID)._onSessionPulse = [](TcpSessionPtr session)
+    {
+        LOGI("session pulse"); 
+    };
     SessionManager::getRef().openConnecter(cID);
 
 

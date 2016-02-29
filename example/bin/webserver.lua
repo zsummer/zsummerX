@@ -34,8 +34,8 @@ summer.whenClosed(whenClosed)
 --启动网络
 summer.start()
 
---连接服务器
-local id = summer.addListen("127.0.0.1",8081,"", nil, nil, 1)
+--服务器监听
+local id = summer.addListen("0.0.0.0",8081,"", nil, nil, 1)
 if id == nil then
     summer.logw("id == nil when addListen")
 end

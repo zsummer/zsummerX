@@ -508,5 +508,25 @@ void SessionManager::sendSessionData(SessionID sID, const char * orgData, unsign
     iter->second->send(orgData, orgDataLen);
 }
 
-
+void SessionManager::fakeSessionData(SessionID sID, const char * orgData, unsigned int orgDataLen)
+{
+    auto fake = [&](SessionID ssID, std::string data)
+    {
+        auto iter = _mapTcpSessionPtr.find(ssID);
+        if (iter == _mapTcpSessionPtr.end())
+        {
+            LCW("sendSessionData NOT FOUND SessionID.  SessionID=" << sID);
+            return;
+        }
+        try
+        {
+            iter->second->getOptions()._onBlockDispatch(iter->second, data.c_str(), data.length());
+        }
+        catch (std::runtime_error e)
+        {
+            LOGE("fakeSessionData error. e=" << e.what());
+        }
+    };
+    post(std::bind(fake, sID, std::string(orgData, orgDataLen)));
+}
 

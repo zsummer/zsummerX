@@ -171,9 +171,9 @@ void startClient()
     {
         LOGI("on connect. ID=" << session->getSessionID());
         std::string content = "hello";
-        WriteStream ws(100);
+        WriteStream ws(111);
         ws << content;
-        SessionManager::getRef().sendSessionData(session->getSessionID(), ws.getStream(), ws.getStreamLen());
+        SessionManager::getRef().fakeSessionData(session->getSessionID(), ws.getStream(), ws.getStreamLen());
     };
 
     //process message _ResultID
@@ -183,6 +183,13 @@ void startClient()
         std::string content; 
         rs >> content;
         LOGI("recv ConnectorID = " << session->getSessionID() << ", content = " << content);
+        if (rs.getProtoID() == 111)
+        {
+            WriteStream ws(100);
+            ws << content;
+            SessionManager::getRef().fakeSessionData(session->getSessionID(), ws.getStream(), ws.getStreamLen());
+            return;
+        }
         //! step 3 stop server
         SessionManager::getRef().stopAccept();
         SessionManager::getRef().stopClients();

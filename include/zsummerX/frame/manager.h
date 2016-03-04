@@ -131,6 +131,7 @@ namespace zsummer
             //send data.
             void sendSessionData(SessionID sID, const char * orgData, unsigned int orgDataLen);
 
+            void fakeSessionData(SessionID sID, const char * orgData, unsigned int orgDataLen);
 
             //close session socket.
             void kickSession(SessionID sID);

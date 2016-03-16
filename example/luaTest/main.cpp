@@ -50,8 +50,8 @@ using namespace zsummer::network;
 #include <fstream>
 void sigFun(int sig)
 {
-    SessionManager::getRef().stopAccept();
-    SessionManager::getRef().stopClients();
+    SessionManager::getRef().stop();
+    SessionManager::getRef().post(std::bind([](){SessionManager::getRef().kickClientSession(); SessionManager::getRef().kickConnect(); }));
 }
 
 static int pcall_error(lua_State *L)

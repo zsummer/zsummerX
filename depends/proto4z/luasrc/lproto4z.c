@@ -231,7 +231,7 @@ static int pack(lua_State * L)
         }
         else
         {
-            unsigned long long v = (unsigned long long)luaL_optinteger(L, 1, 0);
+            unsigned long long v = (unsigned long long)luaL_optnumber(L, 1, 0);
             if (!isLittleEndian())
             {
                 byteRevese((char*)&v, 8);

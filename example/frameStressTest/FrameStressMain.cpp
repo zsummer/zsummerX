@@ -223,21 +223,14 @@ public:
 
 void sigFun(int sig)
 {
-    SessionManager::getRef().stopAccept();
-    SessionManager::getRef().stopClients();
-}
-
-void onAllClientsStoped()
-{
-    LOGA("onAllClientsStoped");
-    SessionManager::getRef().stopServers();
-}
-
-void onAllServersStoped()
-{
-    LOGA("onAllServersStoped");
     SessionManager::getRef().stop();
+    SessionManager::getRef().post(std::bind([](){
+        SessionManager::getRef().stopAccept();
+        SessionManager::getRef().kickClientSession();
+        SessionManager::getRef().kickConnect(); }));
 }
+
+
 
 int main(int argc, char* argv[])
 {
@@ -298,8 +291,6 @@ int main(int argc, char* argv[])
     ILog4zManager::getPtr()->setLoggerLevel(LOG4Z_MAIN_LOGGER_ID, LOG_LEVEL_INFO);
 
 
-    SessionManager::getRef().setStopClientsHandler(onAllClientsStoped);
-    SessionManager::getRef().setStopServersHandler(onAllServersStoped);
     SessionManager::getRef().start();
 
 

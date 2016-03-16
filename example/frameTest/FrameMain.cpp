@@ -147,8 +147,8 @@ void startServer()
         //! step 3 stop server after 1 second.
         SessionManager::getRef().createTimer(1000, [](){
             SessionManager::getRef().stopAccept();
-            SessionManager::getRef().stopClients();
-            SessionManager::getRef().stopServers();
+            SessionManager::getRef().kickClientSession();
+            SessionManager::getRef().kickConnect();
             SessionManager::getRef().stop(); });
     };
 
@@ -192,8 +192,8 @@ void startClient()
         }
         //! step 3 stop server
         SessionManager::getRef().stopAccept();
-        SessionManager::getRef().stopClients();
-        SessionManager::getRef().stopServers();
+        SessionManager::getRef().kickClientSession();
+        SessionManager::getRef().kickConnect();
         SessionManager::getRef().stop();
     };
 

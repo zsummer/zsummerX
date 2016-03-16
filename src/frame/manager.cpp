@@ -68,29 +68,17 @@ void SessionManager::stop()
     _running = false;
 }
 
-void SessionManager::stopAccept()
+void SessionManager::stopAccept(AccepterID aID)
 {
-    _stopAccept = false;
+    for (auto &ao : _mapAccepterOptions)
+    {
+        if (aID == InvalidAccepterID || ao.second._aID == aID)
+        {
+            ao.second._closed = true;
+        }
+    }
 }
 
-void SessionManager::stopClients()
-{
-    _stopClients = 1;
-}
-
-void SessionManager::stopServers()
-{
-    _stopServers = 1;
-}
-
-void SessionManager::setStopClientsHandler(std::function<void()> handler)
-{
-    _funClientsStop = handler;
-}
-void SessionManager::setStopServersHandler(std::function<void()> handler)
-{
-    _funServerStop = handler;
-}
 
 bool SessionManager::run()
 {
@@ -105,48 +93,6 @@ bool SessionManager::runOnce(bool isImmediately)
 {
     if (_running || !_mapTcpSessionPtr.empty())
     {
-        if (_stopClients == 1)
-        {
-            _stopClients = 2;
-            int count = 0;
-            for (auto kv : _mapTcpSessionPtr)
-            {
-                if (isSessionID(kv.first))
-                {
-                    SessionManager::getRef().kickSession(kv.first);
-                    count++;
-                }
-            }
-            LCI("SessionManager::kickAllClients() [" << count << "]  success.");
-            if (count == 0 && _funClientsStop)
-            {
-                auto temp = std::move(_funClientsStop);
-                temp();
-                _stopClients = 3;
-            }
-        }
-        if (_stopServers == 1)
-        {
-            int count = 0;
-            _stopServers = 2;
-            for (auto &kv : _mapTcpSessionPtr)
-            {
-                if (isConnectID(kv.first))
-                {
-                    kv.second->getOptions()._reconnects = 0;
-                    SessionManager::getRef().kickSession(kv.first);
-                    count++;
-                }
-                
-            }
-            LCI("SessionManager::kickAllConnect() [" << count << "] success.");
-            if (count == 0 && _funServerStop)
-            {
-                auto temp = std::move(_funServerStop);
-                temp();
-                _stopServers = 3;
-            }
-        }
         _summer->runOnce(isImmediately);
         return true;
     }
@@ -156,7 +102,7 @@ bool SessionManager::runOnce(bool isImmediately)
 
 AccepterID SessionManager::addAccepter(const std::string & listenIP, unsigned short listenPort)
 {
-    _lastAcceptID = nextSessionID(_lastAcceptID);
+    _lastAcceptID = nextAccepterID(_lastAcceptID);
     auto & extend = _mapAccepterOptions[_lastAcceptID];
     extend._aID = _lastAcceptID;
     extend._listenIP = listenIP;
@@ -238,15 +184,20 @@ AccepterID SessionManager::getAccepterID(SessionID sID)
 
 void SessionManager::onAcceptNewClient(zsummer::network::NetErrorCode ec, const TcpSocketPtr& s, const TcpAcceptPtr &accepter, AccepterID aID)
 {
-    if (!_running ||  _stopAccept)
+    if (!_running)
     {
-        LCI("shutdown accepter. aID=" << aID);
+        LCI("server already shutdown. accepter. aID=" << aID);
         return;
     }
     auto founder = _mapAccepterOptions.find(aID);
     if (founder == _mapAccepterOptions.end())
     {
         LCE("Unknown AccepterID aID=" << aID);
+        return;
+    }
+    if (founder->second._closed)
+    {
+        LCI("accepter closed. accepter. aID=" << aID);
         return;
     }
     if (ec)
@@ -385,12 +336,50 @@ unsigned short SessionManager::getRemotePort(SessionID sID)
 void SessionManager::kickSession(SessionID sID)
 {
     auto iter = _mapTcpSessionPtr.find(sID);
-    if (iter == _mapTcpSessionPtr.end())
+    if (iter == _mapTcpSessionPtr.end() || !iter->second)
     {
         LCW("kickSession NOT FOUND SessionID. SessionID=" << sID);
         return;
     }
     iter->second->close();
+}
+
+void SessionManager::kickClientSession(AccepterID aID)
+{
+    for (auto &ms : _mapTcpSessionPtr)
+    {
+        if (aID == InvalidAccepterID || ms.second->getAcceptID() == aID)
+        {
+            ms.second->close();
+        }
+    }
+}
+void SessionManager::kickConnect(SessionID cID)
+{
+    if (cID != InvalidSessionID)
+    {
+        auto iter = _mapTcpSessionPtr.find(cID);
+        if (iter == _mapTcpSessionPtr.end() || !iter->second)
+        {
+            LCW("SessionManager::kickConnect NOT FOUND SessionID. SessionID=" << cID);
+            return;
+        }
+        iter->second->getOptions()._reconnects = 0;
+        iter->second->close();
+        LCD("SessionManager::kickConnect cID=" << cID);
+    }
+    else
+    {
+        for (auto &ms : _mapTcpSessionPtr)
+        {
+            if ( ms.second->getAcceptID() == InvalidAccepterID)
+            {
+                ms.second->getOptions()._reconnects = 0;
+                ms.second->close();
+                LCD("SessionManager::kickConnect [all] cID=" << ms.second->getSessionID());
+            }
+        }
+    }
 }
 
 void SessionManager::removeSession(TcpSessionPtr session)
@@ -402,44 +391,6 @@ void SessionManager::removeSession(TcpSessionPtr session)
         _mapAccepterOptions[session->getAcceptID()]._totalAcceptCount++;
     }
 
-    if (_stopClients == 2 || _stopServers == 2)
-    {
-        int clients = 0;
-        int servers = 0;
-        for (auto & kv : _mapTcpSessionPtr)
-        {
-            if (isSessionID(kv.first))
-            {
-                clients++;
-            }
-            else if (isConnectID(kv.first))
-            {
-                servers++;
-            }
-            else
-            {
-                LCE("error. invalid session id in _mapTcpSessionPtr");
-            }
-        }
-        if (_stopClients == 2)
-        {
-            _stopClients = 3;
-            if (_funClientsStop)
-            {
-                auto temp = std::move(_funClientsStop);
-                temp();
-            }
-        }
-        if (_stopServers == 2)
-        {
-            _stopServers = 3;
-            if (_funServerStop)
-            {
-                auto temp = std::move(_funServerStop);
-                temp();
-            }
-        }
-    }
     
 }
 
@@ -520,7 +471,7 @@ void SessionManager::fakeSessionData(SessionID sID, const char * orgData, unsign
         }
         try
         {
-            iter->second->getOptions()._onBlockDispatch(iter->second, data.c_str(), data.length());
+            iter->second->getOptions()._onBlockDispatch(iter->second, data.c_str(), (unsigned int)data.length());
         }
         catch (std::runtime_error e)
         {

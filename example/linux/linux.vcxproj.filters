@@ -19,6 +19,18 @@
     <ClCompile Include="..\..\src\common\common.cpp">
       <Filter>epoll</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\select\select_impl.cpp">
+      <Filter>select</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\select\tcpaccept_impl.cpp">
+      <Filter>select</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\select\tcpsocket_impl.cpp">
+      <Filter>select</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\select\udpsocket_impl.cpp">
+      <Filter>select</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\depends\log4z\log4z.h">
@@ -44,6 +56,21 @@
     </ClInclude>
     <ClInclude Include="..\..\depends\proto4z\proto4z.h">
       <Filter>protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\zsummerX\select\common_impl.h">
+      <Filter>select</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\zsummerX\select\select_impl.h">
+      <Filter>select</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\zsummerX\select\tcpaccept_impl.h">
+      <Filter>select</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\zsummerX\select\tcpsocket_impl.h">
+      <Filter>select</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\zsummerX\select\udpsocket_impl.h">
+      <Filter>select</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

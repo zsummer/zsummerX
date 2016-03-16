@@ -9,7 +9,7 @@
  * 
  * ===============================================================================
  * 
- * Copyright (C) 2010-2015 YaweiZhang <yawei.zhang@foxmail.com>.
+ * Copyright (C) 2010-2016 YaweiZhang <yawei.zhang@foxmail.com>.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -203,8 +203,7 @@ void EventLoop::PostMessage(_OnPostHandler &&handle)
     if (_stackMessages.empty()){ char c = '0'; send(_sockpair[0], &c, 1, 0); }
     _stackMessages.push_back(pHandler);
     _stackMessagesLock.unlock();
-    char c='0';
-    send(_sockpair[0], &c, 1, 0);
+
 }
 
 std::string EventLoop::logSection()

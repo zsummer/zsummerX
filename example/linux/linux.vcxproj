@@ -151,6 +151,10 @@
     <ClCompile Include="..\..\src\epoll\tcpaccept_impl.cpp" />
     <ClCompile Include="..\..\src\epoll\tcpsocket_impl.cpp" />
     <ClCompile Include="..\..\src\epoll\udpsocket_impl.cpp" />
+    <ClCompile Include="..\..\src\select\select_impl.cpp" />
+    <ClCompile Include="..\..\src\select\tcpaccept_impl.cpp" />
+    <ClCompile Include="..\..\src\select\tcpsocket_impl.cpp" />
+    <ClCompile Include="..\..\src\select\udpsocket_impl.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\depends\log4z\log4z.h" />
@@ -161,6 +165,11 @@
     <ClInclude Include="..\..\include\zsummerX\epoll\tcpaccept_impl.h" />
     <ClInclude Include="..\..\include\zsummerX\epoll\tcpsocket_impl.h" />
     <ClInclude Include="..\..\include\zsummerX\epoll\udpsocket_impl.h" />
+    <ClInclude Include="..\..\include\zsummerX\select\common_impl.h" />
+    <ClInclude Include="..\..\include\zsummerX\select\select_impl.h" />
+    <ClInclude Include="..\..\include\zsummerX\select\tcpaccept_impl.h" />
+    <ClInclude Include="..\..\include\zsummerX\select\tcpsocket_impl.h" />
+    <ClInclude Include="..\..\include\zsummerX\select\udpsocket_impl.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

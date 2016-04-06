@@ -307,7 +307,7 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
             catch (std::exception e)
             {
                 LCW("MessageEntry catch one exception: " << e.what());
-                close();
+//                close();
                 return;
             }
             catch (...)

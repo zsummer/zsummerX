@@ -111,7 +111,7 @@ int main(int argc, char* argv[])
                 break;
             }
         }
-        catch (std::runtime_error e)
+        catch (std::exception e)
         {
             cout << "MessageEntry catch one exception: "<< e.what()<<endl;
             return ;

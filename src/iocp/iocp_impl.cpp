@@ -107,7 +107,7 @@ void EventLoop::runOnce(bool isImmediately)
         {
             (*func)();
         }
-        catch (std::runtime_error e)
+        catch (std::exception e)
         {
             LCW("when call [post] callback throw one runtime_error. err=" << e.what());
         }

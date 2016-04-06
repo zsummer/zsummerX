@@ -473,9 +473,13 @@ void SessionManager::fakeSessionData(SessionID sID, const char * orgData, unsign
         {
             iter->second->getOptions()._onBlockDispatch(iter->second, data.c_str(), (unsigned int)data.length());
         }
-        catch (std::runtime_error e)
+        catch (std::exception e)
         {
             LOGE("fakeSessionData error. e=" << e.what());
+        }
+        catch (...)
+        {
+            LCW("fakeSessionData catch one unknown exception.");
         }
     };
     post(std::bind(fake, sID, std::string(orgData, orgDataLen)));

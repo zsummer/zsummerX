@@ -159,7 +159,7 @@ void CClient::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
     {
         MessageEntry(rs);
     }
-    catch (std::runtime_error e)
+    catch (std::exception e)
     {
         LOGD("MessageEntry catch one exception: "<< e.what() );
         _sockptr->doClose();

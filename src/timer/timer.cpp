@@ -127,7 +127,7 @@ void Timer::checkTimer()
                 //LCD("call timer(). now=" << (now >> ReserveBit)  << ", expire=" << (timerID >> ReserveBit));
                 (*handler)();
             }
-            catch (std::runtime_error e)
+            catch (std::exception e)
             {
                 LCW("OnTimerHandler have runtime_error exception. err=" << e.what());
             }

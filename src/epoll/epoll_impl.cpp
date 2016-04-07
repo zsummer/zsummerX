@@ -151,7 +151,7 @@ void EventLoop::runOnce(bool isImmediately)
                 {
                     (*p)();
                 }
-                catch (std::exception e)
+                catch (const std::exception & e)
                 {
                     LCW("OnPostHandler have runtime_error exception. err=" << e.what());
                 }

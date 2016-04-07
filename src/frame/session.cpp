@@ -304,11 +304,11 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
                 SessionManager::getRef()._statInfo[STAT_RECV_PACKS]++;
                 _options._onBlockDispatch(shared_from_this(), _recving->begin + usedIndex, ret.second);
             }
-            catch (std::exception e)
+            catch (const std::exception & e)
             {
                 LCW("MessageEntry catch one exception: " << e.what());
 //                close();
-                return;
+//                return;
             }
             catch (...)
             {

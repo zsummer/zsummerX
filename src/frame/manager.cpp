@@ -120,7 +120,7 @@ AccepterOptions & SessionManager::getAccepterOptions(AccepterID aID)
 {
     if (aID == InvalidAccepterID)
     {
-        throw std::runtime_error("AccepterID can not be InvalidAccepterID");
+        PROTO4Z_THROW("AccepterID can not be InvalidAccepterID");
     }
     return _mapAccepterOptions[aID];
 }
@@ -419,7 +419,7 @@ SessionOptions & SessionManager::getConnecterOptions(SessionID cID)
     auto founder = _mapTcpSessionPtr.find(cID);
     if (founder == _mapTcpSessionPtr.end())
     {
-        throw std::runtime_error("getConnecterOptions error.");
+        PROTO4Z_THROW("getConnecterOptions error.");
     }
     return founder->second->getOptions();
 }
@@ -473,7 +473,7 @@ void SessionManager::fakeSessionData(SessionID sID, const char * orgData, unsign
         {
             iter->second->getOptions()._onBlockDispatch(iter->second, data.c_str(), (unsigned int)data.length());
         }
-        catch (std::exception e)
+        catch (const std::exception & e)
         {
             LOGE("fakeSessionData error. e=" << e.what());
         }

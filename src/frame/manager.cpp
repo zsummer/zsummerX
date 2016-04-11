@@ -255,12 +255,14 @@ void SessionManager::onAcceptNewClient(zsummer::network::NetErrorCode ec, const 
     }
     else
     {
-        LCD("Accept New Client. Accept new Sessions. The new socket  remoteAddress=" << remoteIP << ":" << remotePort 
-            << ", Aready linked sessions = " << founder->second._currentLinked << ", extend=" << founder->second);
+
         founder->second._currentLinked++;
         founder->second._totalAcceptCount++;
-
         _lastSessionID = nextSessionID(_lastSessionID);
+
+        LCD("Accept New Client. Accept new Sessions sID=" << _lastSessionID << ". The new socket  remoteAddress=" << remoteIP << ":" << remotePort
+            << ", Aready linked sessions = " << founder->second._currentLinked << ", extend=" << founder->second);
+
         s->initialize(_summer);
 
         TcpSessionPtr session = std::make_shared<TcpSession>();
@@ -338,9 +340,10 @@ void SessionManager::kickSession(SessionID sID)
     auto iter = _mapTcpSessionPtr.find(sID);
     if (iter == _mapTcpSessionPtr.end() || !iter->second)
     {
-        LCW("kickSession NOT FOUND SessionID. SessionID=" << sID);
+        LCW("kickSession NOT FOUND SessionID. SessionID=" << sID << ", trace=" << zsummer::proto4z::proto4z_traceback());
         return;
     }
+    LCD("kickSession SessionID. SessionID=" << sID << ", trace=" << zsummer::proto4z::proto4z_traceback());
     iter->second->close();
 }
 
@@ -366,7 +369,7 @@ void SessionManager::kickConnect(SessionID cID)
         }
         iter->second->getOptions()._reconnects = 0;
         iter->second->close();
-        LCD("SessionManager::kickConnect cID=" << cID);
+        LCD("SessionManager::kickConnect cID=" << cID << ", trace=" << zsummer::proto4z::proto4z_traceback());
     }
     else
     {

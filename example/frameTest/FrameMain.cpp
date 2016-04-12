@@ -154,7 +154,7 @@ void startServer()
 
 
     //add Acceptor
-    AccepterID aID = SessionManager::getRef().addAccepter("127.0.0.1", g_remotePort);
+    AccepterID aID = SessionManager::getRef().addAccepter("0.0.0.0", g_remotePort);
     SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._onBlockDispatch = OnSessionBlock;
     SessionManager::getRef().openAccepter(aID);
     //! step 2 running
@@ -190,6 +190,7 @@ void startClient()
             SessionManager::getRef().fakeSessionData(session->getSessionID(), ws.getStream(), ws.getStreamLen());
             return;
         }
+        SessionManager::getRef().kickSession(session->getSessionID());
         //! step 3 stop server
         SessionManager::getRef().stopAccept();
         SessionManager::getRef().kickClientSession();

@@ -5,7 +5,9 @@ Proto4z.GTYPE_WAITING = 1--等待
 Proto4z.GTYPE_INGAME = 10--游戏中 
 Proto4z.GTYPE_LEAVE = 11--离开 
  
+Proto4z.register(30000,"TestIntegerData") 
 Proto4z.TestIntegerData = {} --测试 
+Proto4z.TestIntegerData.__getID = 30000 
 Proto4z.TestIntegerData.__getName = "TestIntegerData" 
 Proto4z.TestIntegerData[1] = {name="_char", type="i8" }  
 Proto4z.TestIntegerData[2] = {name="_uchar", type="ui8" }  
@@ -14,15 +16,18 @@ Proto4z.TestIntegerData[4] = {name="_ushort", type="ui16" }
 Proto4z.TestIntegerData[5] = {name="_int", type="i32" }  
 Proto4z.TestIntegerData[6] = {name="_uint", type="ui32" }  
 Proto4z.TestIntegerData[7] = {name="_i64", type="i64" }  
-Proto4z.TestIntegerData[8] = {name="_ui128", type="ui64", del = true }  
-Proto4z.TestIntegerData[9] = {name="_ui64", type="ui64" }  
+Proto4z.TestIntegerData[8] = {name="_ui64", type="ui64" }  
  
+Proto4z.register(30001,"TestFloatData") 
 Proto4z.TestFloatData = {} --测试 
+Proto4z.TestFloatData.__getID = 30001 
 Proto4z.TestFloatData.__getName = "TestFloatData" 
 Proto4z.TestFloatData[1] = {name="_float", type="float" }  
 Proto4z.TestFloatData[2] = {name="_double", type="double" }  
  
+Proto4z.register(30002,"TestStringData") 
 Proto4z.TestStringData = {} --测试 
+Proto4z.TestStringData.__getID = 30002 
 Proto4z.TestStringData.__getName = "TestStringData" 
 Proto4z.TestStringData[1] = {name="_string", type="string" }  
  
@@ -64,9 +69,9 @@ Proto4z.TestStringDataMap.__getDesc = "map"
 Proto4z.TestStringDataMap.__getTypeK = "string" 
 Proto4z.TestStringDataMap.__getTypeV = "TestStringData" 
  
-Proto4z.register(30000,"EchoPack") 
+Proto4z.register(30003,"EchoPack") 
 Proto4z.EchoPack = {}  
-Proto4z.EchoPack.__getID = 30000 
+Proto4z.EchoPack.__getID = 30003 
 Proto4z.EchoPack.__getName = "EchoPack" 
 Proto4z.EchoPack[1] = {name="_iarray", type="TestIntegerDataArray" }  
 Proto4z.EchoPack[2] = {name="_farray", type="TestFloatDataArray" }  
@@ -75,7 +80,7 @@ Proto4z.EchoPack[4] = {name="_imap", type="TestIntegerDataMap" }
 Proto4z.EchoPack[5] = {name="_fmap", type="TestFloatDataMap" }  
 Proto4z.EchoPack[6] = {name="_smap", type="TestStringDataMap" }  
  
-Proto4z.register(30001,"Pulse") 
+Proto4z.register(30004,"Pulse") 
 Proto4z.Pulse = {}  
-Proto4z.Pulse.__getID = 30001 
+Proto4z.Pulse.__getID = 30004 
 Proto4z.Pulse.__getName = "Pulse" 

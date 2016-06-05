@@ -33,7 +33,6 @@ void  fillOnePack(EchoPack &pack)
     idata._uint = 500;
     idata._i64 = 600;
     idata._ui64 = 700;
-    idata._ui128 = 255;
 
     TestFloatData fdata;
     fdata._float = (float)123123.111111;

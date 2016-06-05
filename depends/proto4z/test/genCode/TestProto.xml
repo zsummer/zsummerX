@@ -37,7 +37,7 @@
 
 
     <!-- 整形-->
-    <struct name="TestIntegerData" store="true" desc="测试">
+    <packet name="TestIntegerData" desc="测试">
         <member name="_char"    type="i8"    desc=""/>
         <member name="_uchar"    type="ui8"    desc=""/>
         <member name="_short"    type="i16"    desc=""/>
@@ -45,19 +45,18 @@
         <member name="_int"    type="i32"     desc=""/>
         <member name="_uint"    type="ui32" tag="key"    desc=""/>
         <member name="_i64"    type="i64" tag="key"     desc=""/>
-        <member name="_ui128"    type="ui64"    tag="del" desc=""/>
         <member name="_ui64"    type="ui64"    tag="ignore" desc=""/>
-    </struct>
+    </packet>
     <!-- 浮点-->
-    <struct name="TestFloatData" desc="测试">
+    <packet name="TestFloatData" desc="测试">
         <member name="_float"    type="float"    desc=""/>
         <member name="_double"    type="double"    desc=""/>
-    </struct>
+    </packet>
 
     <!-- 字符串-->
-    <struct name="TestStringData" desc="测试">
+    <packet name="TestStringData" desc="测试">
         <member name="_string"    type="string"    desc=""/>
-    </struct>
+    </packet>
 
     <!-- 支持数组类型-->
     <array name="IntArray" type="ui32" desc=""/>
@@ -72,17 +71,17 @@
 
     
     <!-- 协议类型-->
-    <proto    name="EchoPack" desc= "">
+    <packet    name="EchoPack" desc= "">
         <member name="_iarray" type="TestIntegerDataArray"     desc=""/>
         <member name="_farray" type="TestFloatDataArray"     desc=""/>
         <member name="_sarray" type="TestStringDataArray"     desc=""/>
         <member name="_imap" type="TestIntegerDataMap"     desc=""/>
         <member name="_fmap" type="TestFloatDataMap"     desc=""/>
         <member name="_smap" type="TestStringDataMap"     desc=""/>
-    </proto>
+    </packet>
 
     <!-- 协议类型-->
-    <proto    name="Pulse" desc= "">
-    </proto>
+    <packet    name="Pulse" desc= "">
+    </packet>
 
 </Proto>

@@ -1,53 +1,90 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="genCPP.cpp" />
-    <ClCompile Include="genCSharp.cpp" />
-    <ClCompile Include="genLUA.cpp" />
-    <ClCompile Include="genSQL.cpp" />
-    <ClCompile Include="log4z.cpp">
+    <ClCompile Include="depends\log4z.cpp">
       <Filter>depends</Filter>
     </ClCompile>
-    <ClCompile Include="md5.cpp">
+    <ClCompile Include="depends\tinyxml2.cpp">
       <Filter>depends</Filter>
     </ClCompile>
-    <ClCompile Include="tinyxml2.cpp">
+    <ClCompile Include="depends\utls.cpp">
       <Filter>depends</Filter>
     </ClCompile>
-    <ClCompile Include="utility.cpp">
-      <Filter>depends</Filter>
+    <ClCompile Include="depends\md5\md5.cpp">
+      <Filter>depends\md5</Filter>
     </ClCompile>
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="parseProto.cpp" />
-    <ClCompile Include="parseCache.cpp" />
-    <ClCompile Include="genBase.cpp" />
+    <ClCompile Include="src\genBase.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\genCPP.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\genCSharp.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\genLUA.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\main.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\parseCache.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\parseProto.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="utility.h">
+    <ClInclude Include="depends\log4z.h">
       <Filter>depends</Filter>
     </ClInclude>
-    <ClInclude Include="log4z.h">
+    <ClInclude Include="depends\tinyxml2.h">
       <Filter>depends</Filter>
     </ClInclude>
-    <ClInclude Include="md5.h">
+    <ClInclude Include="depends\utls.h">
       <Filter>depends</Filter>
     </ClInclude>
-    <ClInclude Include="tinyxml2.h">
+    <ClInclude Include="depends\utlsImpl.h">
       <Filter>depends</Filter>
     </ClInclude>
-    <ClInclude Include="any.h" />
-    <ClInclude Include="parseProto.h" />
-    <ClInclude Include="genBase.h" />
-    <ClInclude Include="parseCache.h" />
-    <ClInclude Include="common.h" />
-    <ClInclude Include="genCPP.h" />
-    <ClInclude Include="genCSharp.h" />
-    <ClInclude Include="genLUA.h" />
-    <ClInclude Include="genSQL.h" />
+    <ClInclude Include="depends\md5\md5.h">
+      <Filter>depends\md5</Filter>
+    </ClInclude>
+    <ClInclude Include="src\any.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\common.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\genBase.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\genCPP.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\genCSharp.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\genLUA.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\parseCache.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\parseProto.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="depends">
       <UniqueIdentifier>{f1d9dc7f-22b7-4cf2-a5be-5904911bfa38}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="depends\md5">
+      <UniqueIdentifier>{12df6003-3bb6-45de-8f58-5ad2efbb987b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{c4c353c7-26d4-430c-821f-01bb989526ea}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

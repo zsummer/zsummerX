@@ -17,6 +17,10 @@ namespace Proto4z
  
     public class TestIntegerData: Proto4z.IProtoObject //测试  
     {     
+        //proto id   
+        public const ushort protoID = 30000;  
+        static public ushort getProtoID() { return 30000; } 
+        static public string getProtoName() { return "TestIntegerData"; } 
         //members   
         public char _char;  
         public byte _uchar;  
@@ -25,7 +29,6 @@ namespace Proto4z
         public int _int;  
         public uint _uint;  
         public long _i64;  
-        public ulong _ui128;  
         public ulong _ui64;  
         public TestIntegerData()  
         { 
@@ -36,10 +39,9 @@ namespace Proto4z
             _int = 0;  
             _uint = 0;  
             _i64 = 0;  
-            _ui128 = 0;  
             _ui64 = 0;  
         } 
-        public TestIntegerData(char _char, byte _uchar, short _short, ushort _ushort, int _int, uint _uint, long _i64, ulong _ui128, ulong _ui64) 
+        public TestIntegerData(char _char, byte _uchar, short _short, ushort _ushort, int _int, uint _uint, long _i64, ulong _ui64) 
         { 
             this._char = _char; 
             this._uchar = _uchar; 
@@ -48,20 +50,19 @@ namespace Proto4z
             this._int = _int; 
             this._uint = _uint; 
             this._i64 = _i64; 
-            this._ui128 = _ui128; 
             this._ui64 = _ui64; 
         } 
         public System.Collections.Generic.List<byte> __encode() 
         { 
             var data = new System.Collections.Generic.List<byte>(); 
-            data.AddRange(Proto4z.BaseProtoObject.encodeI8(_char)); 
-            data.AddRange(Proto4z.BaseProtoObject.encodeUI8(_uchar)); 
-            data.AddRange(Proto4z.BaseProtoObject.encodeI16(_short)); 
-            data.AddRange(Proto4z.BaseProtoObject.encodeUI16(_ushort)); 
-            data.AddRange(Proto4z.BaseProtoObject.encodeI32(_int)); 
-            data.AddRange(Proto4z.BaseProtoObject.encodeUI32(_uint)); 
-            data.AddRange(Proto4z.BaseProtoObject.encodeI64(_i64)); 
-            data.AddRange(Proto4z.BaseProtoObject.encodeUI64(_ui64)); 
+            data.AddRange(Proto4z.BaseProtoObject.encodeI8(this._char)); 
+            data.AddRange(Proto4z.BaseProtoObject.encodeUI8(this._uchar)); 
+            data.AddRange(Proto4z.BaseProtoObject.encodeI16(this._short)); 
+            data.AddRange(Proto4z.BaseProtoObject.encodeUI16(this._ushort)); 
+            data.AddRange(Proto4z.BaseProtoObject.encodeI32(this._int)); 
+            data.AddRange(Proto4z.BaseProtoObject.encodeUI32(this._uint)); 
+            data.AddRange(Proto4z.BaseProtoObject.encodeI64(this._i64)); 
+            data.AddRange(Proto4z.BaseProtoObject.encodeUI64(this._ui64)); 
             return data; 
         } 
         public int __decode(byte[] binData, ref int pos) 
@@ -80,6 +81,10 @@ namespace Proto4z
  
     public class TestFloatData: Proto4z.IProtoObject //测试  
     {     
+        //proto id   
+        public const ushort protoID = 30001;  
+        static public ushort getProtoID() { return 30001; } 
+        static public string getProtoName() { return "TestFloatData"; } 
         //members   
         public float _float;  
         public double _double;  
@@ -96,8 +101,8 @@ namespace Proto4z
         public System.Collections.Generic.List<byte> __encode() 
         { 
             var data = new System.Collections.Generic.List<byte>(); 
-            data.AddRange(Proto4z.BaseProtoObject.encodeSingle(_float)); 
-            data.AddRange(Proto4z.BaseProtoObject.encodeDouble(_double)); 
+            data.AddRange(Proto4z.BaseProtoObject.encodeSingle(this._float)); 
+            data.AddRange(Proto4z.BaseProtoObject.encodeDouble(this._double)); 
             return data; 
         } 
         public int __decode(byte[] binData, ref int pos) 
@@ -110,6 +115,10 @@ namespace Proto4z
  
     public class TestStringData: Proto4z.IProtoObject //测试  
     {     
+        //proto id   
+        public const ushort protoID = 30002;  
+        static public ushort getProtoID() { return 30002; } 
+        static public string getProtoName() { return "TestStringData"; } 
         //members   
         public string _string;  
         public TestStringData()  
@@ -123,7 +132,7 @@ namespace Proto4z
         public System.Collections.Generic.List<byte> __encode() 
         { 
             var data = new System.Collections.Generic.List<byte>(); 
-            data.AddRange(Proto4z.BaseProtoObject.encodeString(_string)); 
+            data.AddRange(Proto4z.BaseProtoObject.encodeString(this._string)); 
             return data; 
         } 
         public int __decode(byte[] binData, ref int pos) 
@@ -357,8 +366,8 @@ namespace Proto4z
     public class EchoPack: Proto4z.IProtoObject 
     {     
         //proto id   
-        public const ushort protoID = 30000;  
-        static public ushort getProtoID() { return 30000; } 
+        public const ushort protoID = 30003;  
+        static public ushort getProtoID() { return 30003; } 
         static public string getProtoName() { return "EchoPack"; } 
         //members   
         public TestIntegerDataArray _iarray;  
@@ -388,18 +397,18 @@ namespace Proto4z
         public System.Collections.Generic.List<byte> __encode() 
         { 
             var data = new System.Collections.Generic.List<byte>(); 
-            if (_iarray == null) _iarray = new TestIntegerDataArray(); 
-            data.AddRange(_iarray.__encode()); 
-            if (_farray == null) _farray = new TestFloatDataArray(); 
-            data.AddRange(_farray.__encode()); 
-            if (_sarray == null) _sarray = new TestStringDataArray(); 
-            data.AddRange(_sarray.__encode()); 
-            if (_imap == null) _imap = new TestIntegerDataMap(); 
-            data.AddRange(_imap.__encode()); 
-            if (_fmap == null) _fmap = new TestFloatDataMap(); 
-            data.AddRange(_fmap.__encode()); 
-            if (_smap == null) _smap = new TestStringDataMap(); 
-            data.AddRange(_smap.__encode()); 
+            if (this._iarray == null) this._iarray = new TestIntegerDataArray(); 
+            data.AddRange(this._iarray.__encode()); 
+            if (this._farray == null) this._farray = new TestFloatDataArray(); 
+            data.AddRange(this._farray.__encode()); 
+            if (this._sarray == null) this._sarray = new TestStringDataArray(); 
+            data.AddRange(this._sarray.__encode()); 
+            if (this._imap == null) this._imap = new TestIntegerDataMap(); 
+            data.AddRange(this._imap.__encode()); 
+            if (this._fmap == null) this._fmap = new TestFloatDataMap(); 
+            data.AddRange(this._fmap.__encode()); 
+            if (this._smap == null) this._smap = new TestStringDataMap(); 
+            data.AddRange(this._smap.__encode()); 
             return data; 
         } 
         public int __decode(byte[] binData, ref int pos) 
@@ -423,8 +432,8 @@ namespace Proto4z
     public class Pulse: Proto4z.IProtoObject 
     {     
         //proto id   
-        public const ushort protoID = 30001;  
-        static public ushort getProtoID() { return 30001; } 
+        public const ushort protoID = 30004;  
+        static public ushort getProtoID() { return 30004; } 
         static public string getProtoName() { return "Pulse"; } 
         //members   
         public Pulse()  

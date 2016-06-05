@@ -57,11 +57,12 @@ local echo = {  _iarray = {{_char=1,_uchar=2,_short=3,_ushort=4,_int=5,_uint=6,_
 				}
 
 function process(echo, isDebug)
+	if isDebug then dump(echo, "process") end
 	local data = proto.encode(echo, "EchoPack")
+	if isDebug then dump(data, "encode") end
 	local dr = proto.decode(data, proto.getName(proto.EchoPack.__getID))
 	if isDebug then
-		dump(echo, "org data")
-		dump(dr, "decode data")
+		dump(dr, "decode")
 	end
 end
 

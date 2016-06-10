@@ -48,9 +48,17 @@ the frame interface is advanced and esay, you can use the frame interface to qui
 21.     LoopEvent支持立即返回模式和无事件等待模式, 前者可以寄生在类似U3D的update中, 方便嵌入客户端.  
 22.     简洁务实的实现方案, 代码量小于6000行.  
 23.     对C++11的shared_ptr和functional的有效使用, 接口的易用性和上层代码的稳定性接近脚本语言的水平.   
-
+24.     提供[lua胶水代码 summer.h summer.cpp](https://github.com/zsummer/zsummerX/tree/master/example/luaTest), 可以直接在lua中使用zsummerX.    
+  
 #### frame options 代码预览   
 ```C++
+
+        enum ProtoType
+        {
+            PT_TCP,
+            PT_HTTP,
+        };
+        
         struct SessionOptions 
         {
 
@@ -74,7 +82,20 @@ the frame interface is advanced and esay, you can use the frame interface to qui
 
             CreateBlock _createBlock ;
             FreeBlock _freeBlock;
-
+        };
+        
+        struct AccepterOptions
+        {
+            AccepterID _aID = InvalidAccepterID;
+            TcpAcceptPtr _accepter;
+            std::string        _listenIP;
+            unsigned short    _listenPort = 0;
+            unsigned int    _maxSessions = 5000;
+            std::vector<std::string> _whitelistIP;
+            unsigned long long _totalAcceptCount = 0;
+            unsigned long long _currentLinked = 0;
+            bool _closed = false;
+            SessionOptions _sessionOptions;
         };
 ```   
 ### compile conditions   

@@ -39,7 +39,7 @@ the frame interface is advanced and esay, you can use the frame interface to qui
 12.     提供运行时的堆栈记录接口, 在抛出异常的时候可以把堆栈信息打印到日志.  
 13.     proto4z的异常均会携带堆栈信息,方便判断错误.
 14.     强大的log4z日志系统, zsummerX的网络库日志单独使用一个logger,并可以独立控制该logger的日志级别,显示与否等相关控制.  
-15.     提供并包优化方案, 可以一次性最大可能读取网络数据,然后再分包处理.在洪水测试和实际项目中,该机制的性能提升非常明显.  
+15.     提供并包优化方案, 可以一次性最大可能读取和写入网络数据.在洪水测试和实际项目中,该机制的性能提升非常明显.  
 16.     最大发送队列控制, 可以防止因网络异常或者非法攻击造成的内存失控.  
 17.     可以手动控制zsummerX的网络缓冲的创建和销毁, 以提高内存使用的性能.  
 18.     完备的统计信息,包括底层io次数, 吞吐量, 数据包发送和接受次数, 发送队列长度, 限制free内存数量和使用率等统计信息.  
@@ -49,7 +49,34 @@ the frame interface is advanced and esay, you can use the frame interface to qui
 22.     简洁务实的实现方案, 代码量小于6000行.  
 23.     对C++11的shared_ptr和functional的有效使用, 接口的易用性和上层代码的稳定性接近脚本语言的水平.   
 
+#### frame options 代码预览   
+```C++
+        struct SessionOptions 
+        {
 
+            ProtoType       _protoType = PT_TCP;
+            std::string     _rc4TcpEncryption = ""; //empty is not encryption 
+            bool            _openFlashPolicy = false; //check falsh client  
+            bool            _setNoDelay = true; 
+            bool            _joinSmallBlock = true; //merge small block  
+            unsigned int    _sessionPulseInterval = 30000;  
+            unsigned int    _connectPulseInterval = 5000;  
+            unsigned int    _reconnects = 0; // can reconnect count 
+            bool            _reconnectClean = true;//clean unsend block . 
+            unsigned int    _maxSendListCount = 600;
+            OnBlockCheck _onBlockCheck;
+            OnBlockDispatch _onBlockDispatch;
+            OnHTTPBlockCheck _onHTTPBlockCheck;
+            OnHTTPBlockDispatch _onHTTPBlockDispatch;
+            OnSessionEvent _onSessionClosed;
+            OnSessionEvent _onSessionLinked;
+            OnSessionEvent _onSessionPulse;
+
+            CreateBlock _createBlock ;
+            FreeBlock _freeBlock;
+
+        };
+```   
 ### compile conditions   
 on windows need VS2013 or latter version  
 on linux need g++ 4.7 or latter version  

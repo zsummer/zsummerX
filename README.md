@@ -25,7 +25,7 @@ the frame interface is advanced and esay, you can use the frame interface to qui
   
    
 #### frame接口提供以下特性支持    
-1.      支持proto4z的二进制协议(支持C++,lua,C#,SQL 详见proto4z的wiki).  
+1.      支持[proto4z](https://github.com/zsummer/proto4z)的二进制协议(支持C++,lua,C#,SQL).  
 2.      支持http协议, 可以几行代码构建出一个web服务器或者web客户端.    
 3.      以上两种协议为Option中的默认定制方案,通过定制option的默认接口, 可以支持任意二进制协议.        
 4.      支持socket断线重连, 断线重连参数可以通过Option定制.      
@@ -38,7 +38,7 @@ the frame interface is advanced and esay, you can use the frame interface to qui
 11.     完善的异常保护机制,在try catch种执行使用者提供的消息处理回调方法,可以做到捕获所有C++的异常从而把异常错误限制在单个消息处理流程中.
 12.     提供运行时的堆栈记录接口, 在抛出异常的时候可以把堆栈信息打印到日志.  
 13.     proto4z的异常均会携带堆栈信息,方便判断错误.
-14.     强大的log4z日志系统, zsummerX的网络库日志单独使用一个logger,并可以独立控制该logger的日志级别,显示与否等相关控制.  
+14.     强大的[log4z日志系统](https://github.com/zsummer/log4z), zsummerX的网络库日志单独使用一个logger,并可以独立控制该logger的日志级别,显示与否等相关控制.  
 15.     提供并包优化方案, 可以一次性最大可能读取和写入网络数据.在洪水测试和实际项目中,该机制的性能提升非常明显.  
 16.     最大发送队列控制, 可以防止因网络异常或者非法攻击造成的内存失控.  
 17.     可以手动控制zsummerX的网络缓冲的创建和销毁, 以提高内存使用的性能.  

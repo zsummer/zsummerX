@@ -7,19 +7,24 @@ the underlying interface meet the standards proactor, and the implementation use
 the frame interface is advanced and esay, you can use the frame interface to quick development, it's provide OPTIONS module, don't need to worry problem with flexibility.  
     
   
-zsummerX是一个跨win/mac/linux/ios/android平台的高性能轻量级网络库, 采用C++11标准实现.  
-zsummerX提供两套接口供开发者使用.  
-- **最高灵活性的底层接口**  
+**zsummerX是一个跨win/mac/linux/ios/android平台的高性能轻量级网络库, 采用C++11标准实现.**  
+  
+  
+### interface implementation   
+#### 高度灵活的底层接口    
 1.     遵从proactor网络模型,与boost asio的接口形式非常接近.
 2.     支持TCP, UDP, 支持多线程.  
 3.     支持post接口,可以将任意外部线程的数据和方法通过该接口转移到zsummer的loop中执行.  
 4.     支持定时器.  
 5.     需要使用者维护缓存的生命周期管理, 需要使用者对底层有所了解.  
-- **更易用但仍然拥有足够灵活性的frame接口**  
+   
+#### 更易用但仍然拥有足够灵活性的frame接口   
 1.      在底层Socket抽象之上再度封装出Session抽象, 并由SessionMansger单例来统一管理.  
 2.      封装掉除了socket建立,断开,消息处理外的所有实现, 然后通过OPTION接口来给需要一定灵活性的需求以简洁干净的定制切口.    
-3.      多线程方案因单例影响, 只能在io处理后进行多线程方案, socket io只能单线程. (游戏行业和大多数行业即使用环境都足够用了, 不够的话可以多进程方案)  
--    **frame接口提供以下特性支持:**  
+3.      多线程方案因单例影响, 只能在io处理后进行多线程方案, socket io只能单线程. (游戏行业和大多数行业即使用环境都足够用了, 不够的话可以多进程方案)    
+  
+   
+#### frame接口提供以下特性支持    
 1.      支持proto4z的二进制协议(支持C++,lua,C#,SQL 详见proto4z的wiki).  
 2.      支持http协议, 可以几行代码构建出一个web服务器或者web客户端.    
 3.      以上两种协议为Option中的默认定制方案,通过定制option的默认接口, 可以支持任意二进制协议.        

@@ -1365,7 +1365,7 @@ inline std::pair<INTEGRITY_RET_TYPE, unsigned int> checkHTTPBuffIntegrity(const 
             {
                 return std::make_pair(IRT_CORRUPTION, 0);
             }
-            sscanf(tmpLine.c_str(), "%x", &bodyLenght);
+            sscanf(tmpMethod.c_str(), "%x", &bodyLenght);
             if (bodyLenght == 0)
             {
                 //http socket end.

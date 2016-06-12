@@ -39,7 +39,7 @@ summer.whenPulse(whenPulse)
 summer.start()
 
 --连接服务器
-local id = summer.addConnect("127.0.0.1", 8081, nil, nil,nil, 1 )
+local id = summer.addConnect("127.0.0.1", 8881, nil, nil,nil, 1 )
 if id == nil then
     summer.logw("id == nil when addConnect")
 end

@@ -31,7 +31,7 @@ local function whenLinked(sID, remoteIP, remotePort)
     local data = Proto4z.encode(echo, "EchoPack")
     Proto4z.dump(echo)
     Proto4z.putbin(data)
-    summer.sendContent(sID, Proto4z.EchoPack.__getID, data)
+    summer.sendContent(sID, Proto4z.EchoPack.__protoID, data)
 end
 summer.whenLinked(whenLinked)
 
@@ -46,7 +46,7 @@ local function whenMessage(sID, pID, content)
             local echo = Proto4z.decode(content, name)
             --Proto4z.dump(echo)
             local data = Proto4z.encode(echo, "EchoPack")
-            summer.sendContent(sID, Proto4z.EchoPack.__getID, data)
+            summer.sendContent(sID, Proto4z.EchoPack.__protoID, data)
             --local data = Proto4z.pack(echo, "EchoPack")
             --summer.sendData(sID, data)
             
@@ -71,7 +71,7 @@ summer.whenPulse(whenPulse)
 summer.start()
 
 --连接服务器
-local id = summer.addConnect("127.0.0.1", 8081, nil, 5)
+local id = summer.addConnect("127.0.0.1", 8881, nil, 5)
 if id == nil then
     summer.logw("id == nil when addConnect")
 end

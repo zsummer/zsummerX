@@ -35,7 +35,7 @@ summer.whenClosed(whenClosed)
 summer.start()
 
 --服务器监听
-local id = summer.addListen("0.0.0.0",8081,"", nil, nil, 1)
+local id = summer.addListen("0.0.0.0",8881,"", nil, nil, 1)
 if id == nil then
     summer.logw("id == nil when addListen")
 end

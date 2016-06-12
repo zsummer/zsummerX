@@ -117,6 +117,8 @@ int main(int argc, char* argv[])
 
     lua_gc(L, LUA_GCSTOP, 0);  /* stop collector during initialization */
     luaL_openlibs(L);  /* open libraries */
+    lua_newtable(L);
+    lua_setglobal(L, "Proto4z");
     luaopen_summer(L);
     luaopen_proto4z_util(L);
     lua_gc(L, LUA_GCRESTART, 0);

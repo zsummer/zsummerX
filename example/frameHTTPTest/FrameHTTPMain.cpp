@@ -45,7 +45,7 @@ using namespace zsummer::network;
 
 std::string g_remoteIP = "0.0.0.0";
 unsigned short g_remotePort = 8081;
-unsigned short g_startIsConnector = 0;  //0 listen, 1 connect
+unsigned short g_startIsConnector = 0;  //0 listen, 1 connect, 3 connect cnblogs
 
 
 int main(int argc, char* argv[])
@@ -93,7 +93,7 @@ int main(int argc, char* argv[])
     SessionManager::getRef().start();
 
 
-    if (g_startIsConnector) //client
+    if (g_startIsConnector == 1) //client
     {
         //callback when connect success.
         auto OnSessionLinked = [](TcpSessionPtr session)
@@ -117,15 +117,15 @@ int main(int argc, char* argv[])
         };
 
         //callback when receive http data
-        auto OnHTTPBlock = [](TcpSessionPtr session, const zsummer::proto4z::PairString &commondLine, const zsummer::proto4z::HTTPHeadMap &head, const std::string & body)
+        auto OnHTTPBlock = [](TcpSessionPtr session, const std::string & method, const std::string &methodLine, const std::map<std::string,std::string> &head, const std::string & body)
         {
-            if (commondLine.second != "200")
+            if (methodLine != "200")
             {
-                LOGI("response false. commond=" << commondLine.first << ", commondvalue=" << commondLine.second);
+                LOGI("response false. commond=" << method << ", commondvalue=" << methodLine);
                 session->close();
                 return ;
             }
-            LOGI("response success. commond=" << commondLine.first << ", commondvalue=" << commondLine.second << ", content=" << body);
+            LOGI("response success. commond=" << method << ", commondvalue=" << methodLine << ", content=" << body);
             session->close();            //step 3. stop
             //SessionManager::getRef().stop();
             return ;
@@ -142,13 +142,14 @@ int main(int argc, char* argv[])
         //! step 2 running
         SessionManager::getRef().run();
     }
-    else
+    else if( g_startIsConnector == 0)
     {
 
         //result when receive http data
-        auto OnHTTPBlock = [](TcpSessionPtr session, const zsummer::proto4z::PairString &commondLine, const zsummer::proto4z::HTTPHeadMap &head, const std::string & body)
+        auto OnHTTPBlock = [](TcpSessionPtr session, const std::string & method, const std::string &methodLine, 
+            const std::map<std::string, std::string> &head, const std::string & body)
         {
-            LOGI("recv request. commond=" << commondLine.first << ", commondvalue=" << commondLine.second);
+            LOGI("recv request. commond=" << method << ", commondvalue=" << methodLine);
             zsummer::proto4z::WriteHTTP wh;
             wh.addHead("Accept", " text/html, application/xhtml+xml, */*");
             wh.addHead("Accept-Language", "zh-CN");
@@ -173,7 +174,49 @@ int main(int argc, char* argv[])
         //! step 2 running
         SessionManager::getRef().run();
     }
-    
+    else 
+    {
+        //callback when connect success.
+        auto OnSessionLinked = [](TcpSessionPtr session)
+        {
+            //            std::string jsonString = R"---(data={%22uid%22:10001,%22session%22:%220192023a7bbd73250516f069df18b500%22})---";
+            std::string jsonString = R"---(data=)---";
+            jsonString += zsummer::proto4z::urlEncode(std::string(R"---({"uid":10001,"session":"0192023a7bbd73250516f069df18b500"})---"));
+
+            LOGI("send to ConnectorID=" << session->getSessionID());
+            zsummer::proto4z::WriteHTTP wh;
+            wh.addHead("Content-Type", "application/x-www-form-urlencoded");
+            wh.addHead("Host", "www.cnblogs.com");
+            wh.get("/");
+            session->send(wh.getStream(), wh.getStreamLen());
+        };
+
+        //callback when receive http data
+        auto OnHTTPBlock = [](TcpSessionPtr session, const std::string & method, const std::string &methodLine, const std::map<std::string, std::string> &head, const std::string & body)
+        {
+            if (methodLine != "200")
+            {
+                LOGI("response false. commond=" << method << ", commondvalue=" << methodLine);
+                session->close();
+                return;
+            }
+            LOGI("response success. commond=" << method << ", commondvalue=" << methodLine << ", content=" << body);
+            session->close();            //step 3. stop
+                                         //SessionManager::getRef().stop();
+            return;
+        };
+
+
+        SessionID cID = SessionManager::getRef().addConnecter("223.6.248.220", 80);
+        SessionManager::getRef().getConnecterOptions(cID)._protoType = PT_HTTP;
+        SessionManager::getRef().getConnecterOptions(cID)._onHTTPBlockDispatch = OnHTTPBlock;
+        SessionManager::getRef().getConnecterOptions(cID)._onSessionLinked = OnSessionLinked;
+        SessionManager::getRef().openConnecter(cID);
+
+
+        //! step 2 running
+        SessionManager::getRef().run();
+    }
 
     return 0;
 }

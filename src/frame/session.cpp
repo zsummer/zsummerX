@@ -319,10 +319,11 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
         else
         {
             std::string body;
+            bool isFirstRead = _httpHeader.empty();
             auto ret = _options._onHTTPBlockCheck(_recving->begin + usedIndex,
                 _recving->len - usedIndex,
                 _recving->bound - usedIndex,
-                _httpHadHeader, _httpIsChunked, _httpCommonLine, _httpHeader,
+                _httpIsChunked, _httpMethod, _httpMethodLine, _httpHeader,
                 body);
 
             if (ret.first == BCT_CORRUPTION)
@@ -333,15 +334,19 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
             }
             if (ret.first == BCT_SHORTAGE)
             {
+                if (isFirstRead)
+                {
+                    _httpMethod.clear();
+                    _httpMethodLine.clear();
+                    _httpHeader.clear();
+                    _httpIsChunked = false;
+                }
                 break;
             }
 
-            if (!_httpHadHeader)
-            {
-                _httpHadHeader = true;
-            }
+
             SessionManager::getRef()._statInfo[STAT_RECV_PACKS]++;
-            _options._onHTTPBlockDispatch(shared_from_this(), _httpCommonLine, _httpHeader, body);
+            _options._onHTTPBlockDispatch(shared_from_this(), _httpMethod, _httpMethodLine, _httpHeader, body);
             usedIndex += ret.second;
         }
         

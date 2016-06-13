@@ -176,17 +176,15 @@ int main(int argc, char* argv[])
     }
     else 
     {
-        //callback when connect success.
         auto OnSessionLinked = [](TcpSessionPtr session)
         {
-            //            std::string jsonString = R"---(data={%22uid%22:10001,%22session%22:%220192023a7bbd73250516f069df18b500%22})---";
-            std::string jsonString = R"---(data=)---";
-            jsonString += zsummer::proto4z::urlEncode(std::string(R"---({"uid":10001,"session":"0192023a7bbd73250516f069df18b500"})---"));
-
             LOGI("send to ConnectorID=" << session->getSessionID());
             zsummer::proto4z::WriteHTTP wh;
-            wh.addHead("Content-Type", "application/x-www-form-urlencoded");
+            //wh.addHead("Content-Type", "application/x-www-form-urlencoded");
             wh.addHead("Host", "www.cnblogs.com");
+            //wh.addHead("Host", "i.imgur.com");
+            //wh.addHead("Host", "www.baidu.com");
+//            wh.get("/g8JCJrs.gif");
             wh.get("/");
             session->send(wh.getStream(), wh.getStreamLen());
         };
@@ -206,8 +204,9 @@ int main(int argc, char* argv[])
             return;
         };
 
-
         SessionID cID = SessionManager::getRef().addConnecter("223.6.248.220", 80);
+//        SessionID cID = SessionManager::getRef().addConnecter("23.235.47.193", 80);
+//        SessionID cID = SessionManager::getRef().addConnecter("123.125.114.144", 80);
         SessionManager::getRef().getConnecterOptions(cID)._protoType = PT_HTTP;
         SessionManager::getRef().getConnecterOptions(cID)._onHTTPBlockDispatch = OnHTTPBlock;
         SessionManager::getRef().getConnecterOptions(cID)._onSessionLinked = OnSessionLinked;

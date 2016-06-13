@@ -1074,6 +1074,14 @@ public:
         sprintf(buf, "%u", (unsigned int)content.length());
         _head.insert(std::make_pair("Content-Length", buf));
         _buff.append("POST " + uri + " HTTP/1.1" + CRLF);
+        if (_head.find("Connection") == _head.end())
+        {
+            _head.insert(std::make_pair("Connection", " keep-alive"));
+        }
+        if (_head.find("User-Agent") == _head.end())
+        {
+            _head.insert(std::make_pair("User-Agent", " Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) proto4z"));
+        }
         writeGeneralHead();
         _buff.append(CRLF);
         _buff.append(content);
@@ -1082,6 +1090,14 @@ public:
     {
         _head.insert(std::make_pair("Content-Length", "0"));
         _buff.append("GET " + uri + " HTTP/1.1" + CRLF);
+        if (_head.find("Connection") == _head.end())
+        {
+            _head.insert(std::make_pair("Connection", " keep-alive"));
+        }
+        if (_head.find("User-Agent") == _head.end())
+        {
+            _head.insert(std::make_pair("User-Agent", " Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) proto4z"));
+        }
         writeGeneralHead();
         _buff.append(CRLF);
     }
@@ -1098,18 +1114,12 @@ public:
 protected:
     void writeGeneralHead()
     {
-        if (_head.find("Connection") == _head.end())
-        {
-            _head.insert(std::make_pair("Connection", " keep-alive"));
-        }
+
         if (_head.find("Accept") == _head.end())
         {
             _head.insert(std::make_pair("Accept", " */*"));
         }
-        if (_head.find("User-Agent") == _head.end())
-        {
-            _head.insert(std::make_pair("User-Agent", " Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.101"));
-        }
+
         if (_head.find("Accept-Languaget") == _head.end())
         {
             _head.insert(std::make_pair("Accept-Languaget", " zh-CN,zh;q=0.8"));

@@ -180,12 +180,8 @@ int main(int argc, char* argv[])
         {
             LOGI("send to ConnectorID=" << session->getSessionID());
             zsummer::proto4z::WriteHTTP wh;
-            //wh.addHead("Content-Type", "application/x-www-form-urlencoded");
             wh.addHead("Host", "www.cnblogs.com");
-            //wh.addHead("Host", "i.imgur.com");
-            //wh.addHead("Host", "www.baidu.com");
-//            wh.get("/g8JCJrs.gif");
-            wh.get("/");
+            wh.get("/test.php");
             session->send(wh.getStream(), wh.getStreamLen());
         };
 
@@ -199,14 +195,12 @@ int main(int argc, char* argv[])
                 return;
             }
             LOGI("response success. commond=" << method << ", commondvalue=" << methodLine << ", content=" << body);
-            session->close();            //step 3. stop
+            //session->close();            //step 3. stop
                                          //SessionManager::getRef().stop();
             return;
         };
 
-        SessionID cID = SessionManager::getRef().addConnecter("223.6.248.220", 80);
-//        SessionID cID = SessionManager::getRef().addConnecter("23.235.47.193", 80);
-//        SessionID cID = SessionManager::getRef().addConnecter("123.125.114.144", 80);
+        SessionID cID = SessionManager::getRef().addConnecter("104.238.150.38", 80);
         SessionManager::getRef().getConnecterOptions(cID)._protoType = PT_HTTP;
         SessionManager::getRef().getConnecterOptions(cID)._onHTTPBlockDispatch = OnHTTPBlock;
         SessionManager::getRef().getConnecterOptions(cID)._onSessionLinked = OnSessionLinked;

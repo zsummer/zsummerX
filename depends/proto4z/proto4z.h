@@ -40,7 +40,7 @@
  * VERSION:  1.0
  * PURPOSE:  A lightweight library for process protocol .
  * CREATION: 2013.07.04
- * LCHANGE:  2015.09.01
+ * LCHANGE:  2016.06.16
  * LICENSE:  Expat/MIT License, See Copyright Notice at the begin of this file.
  */
 
@@ -189,11 +189,14 @@ public:
     //get body stream length.
     inline Integer getStreamBodyLen(){ return _cursor - _headLen; }
 
+    inline std::string pickStream();
+    
     //write original data.
     inline WriteStream & appendOriginalData(const void * data, Integer len);
     template<class T>
     inline WriteStream & fixOriginalData(Integer offset, T unit);
     inline WriteStream & fixOriginalData(Integer offset, const void * data, Integer len);
+
 
     inline WriteStream & setReserve(ReserveInteger n);
 
@@ -734,7 +737,17 @@ inline void WriteStream::fixPackLen()
 }
 
 
-
+inline std::string WriteStream::pickStream()
+{
+    if (_attach)
+    {
+        return std::string(_attach, _cursor);
+    }
+    else
+    {
+        return std::move(_auto);
+    }
+}
 
 inline char* WriteStream::getStream()
 {

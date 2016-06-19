@@ -120,7 +120,7 @@ cd zsummerX/example/bin/
 ./frameStressTest_d 127.0.0.1 81 1  
 
   
-### Author: YaweiZhang  
-**Web Site**: www.zsummer.net  
+### About The Author  
+**Author**: YaweiZhang  
 **mail**: yawei.zhang@foxmail.com  
 **github**: https://github.com/zsummer/zsummerX  

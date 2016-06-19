@@ -121,6 +121,6 @@ cd zsummerX/example/bin/
 
   
 ### Author: YaweiZhang  
-Web Site: www.zsummer.net  
-mail: yawei.zhang@foxmail.com  
-github: https://github.com/zsummer  
+**Web Site**: www.zsummer.net  
+**mail**: yawei.zhang@foxmail.com  
+**github**: https://github.com/zsummer/zsummerX  

@@ -143,6 +143,17 @@ bool TcpAccept::openAccept(const std::string ip, unsigned short port)
     return true;
 }
 
+bool TcpAccept::close()
+{
+    if (_server != INVALID_SOCKET)
+    {
+        LCI("TcpAccept::close. socket=" << _server);
+        closesocket(_server);
+        _server = INVALID_SOCKET;
+    }
+    return true;
+}
+
 bool TcpAccept::doAccept(const TcpSocketPtr & s, _OnAcceptHandler&& handler)
 {
     if (_onAcceptHandler)
@@ -203,7 +214,7 @@ bool TcpAccept::onIOCPMessage(BOOL bSuccess)
     }
     else
     {
-        LCW("AcceptEx failed,  retry doAccept ... , lastError=" << GetLastError() );
+        LCW("AcceptEx failed ... , lastError=" << GetLastError() );
         onAccept(NEC_ERROR, _client);
     }
     return true;

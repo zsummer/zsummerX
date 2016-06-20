@@ -202,6 +202,7 @@ bool TcpAccept::close()
     auto guard = shared_from_this();
     if (_eventData._linkstat != LS_CLOSED)
     {
+        LCI("TcpAccept::close. socket=" << _eventData._fd);
         _eventData._linkstat = LS_CLOSED;
         _summer->registerEvent(EPOLL_CTL_DEL, _eventData);
         _onAcceptHandler = nullptr;

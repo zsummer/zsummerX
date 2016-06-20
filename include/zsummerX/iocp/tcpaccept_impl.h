@@ -52,6 +52,7 @@ namespace zsummer
             bool openAccept(const std::string ip, unsigned short port);
             bool doAccept(const TcpSocketPtr& s, _OnAcceptHandler &&handler);
             bool onIOCPMessage(BOOL bSuccess);
+            bool close();
         private:
             std::string logSection();
         private:

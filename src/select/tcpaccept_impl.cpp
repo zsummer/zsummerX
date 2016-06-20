@@ -189,6 +189,7 @@ bool TcpAccept::close()
     auto guard = shared_from_this();
     if(_linkstat != LS_CLOSED)
     {
+        LCI("TcpAccept::close. socket=" << _fd);
         _linkstat = LS_CLOSED;
         _onAcceptHandler = nullptr;
         if (_fd != InvalidFD)

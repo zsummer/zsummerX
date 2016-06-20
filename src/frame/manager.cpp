@@ -74,7 +74,14 @@ void SessionManager::stopAccept(AccepterID aID)
     {
         if (aID == InvalidAccepterID || ao.second._aID == aID)
         {
-            ao.second._closed = true;
+            if (!ao.second._closed)
+            {
+                ao.second._closed = true;
+                if (ao.second._accepter)
+                {
+                    ao.second._accepter->close();
+                }
+            }
         }
     }
 }

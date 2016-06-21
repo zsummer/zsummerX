@@ -38,7 +38,7 @@
 #ifndef _ZSUMMERX_TIMER_H_
 #define _ZSUMMERX_TIMER_H_
 #include "../common/common.h"
-
+#include <math.h>
 
 // one timmer system  based on red-black tree (std::map).
 namespace zsummer

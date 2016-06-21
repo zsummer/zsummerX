@@ -38,6 +38,7 @@
 #include  <zsummerX/timer/timer.h>
 using namespace zsummer::network;
 #include <algorithm>
+#include <math.h>
 
 Timer::Timer()
 {

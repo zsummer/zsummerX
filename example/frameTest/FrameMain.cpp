@@ -174,6 +174,7 @@ void startClient()
         WriteStream ws(111);
         ws << content;
         SessionManager::getRef().fakeSessionData(session->getSessionID(), ws.getStream(), ws.getStreamLen());
+        SessionManager::getRef().sendSessionData(session->getSessionID(), ws.getStream(), ws.getStreamLen());
     };
 
     //process message _ResultID
@@ -187,7 +188,7 @@ void startClient()
         {
             WriteStream ws(100);
             ws << content;
-            SessionManager::getRef().fakeSessionData(session->getSessionID(), ws.getStream(), ws.getStreamLen());
+            SessionManager::getRef().sendSessionData(session->getSessionID(), ws.getStream(), ws.getStreamLen());
             return;
         }
         SessionManager::getRef().kickSession(session->getSessionID());

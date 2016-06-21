@@ -215,6 +215,7 @@ namespace zsummer
             TcpAcceptPtr _accepter;
             std::string        _listenIP;
             unsigned short    _listenPort = 0;
+            bool            _setReuse = true;
             unsigned int    _maxSessions = 5000;
             std::vector<std::string> _whitelistIP;
             unsigned long long _totalAcceptCount = 0;

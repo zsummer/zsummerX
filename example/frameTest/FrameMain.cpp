@@ -56,12 +56,35 @@ bool initEnv(int argc, char* argv[]);
 void startServer();
 void startClient();
 
+void sigFun(int sig)
+{
+    SessionManager::getRef().stop();
+    SessionManager::getRef().post(std::bind([]() {
+        SessionManager::getRef().stopAccept();
+        SessionManager::getRef().kickClientSession();
+        SessionManager::getRef().kickConnect(); }));
+}
+
+
 // main
 //////////////////////////////////////////////////////////////////////////
 void TestSessionUserParam();
 int main(int argc, char* argv[])
 {
-    
+#ifndef _WIN32
+    //! ignore some signal
+    signal(SIGHUP, SIG_IGN);
+    signal(SIGALRM, SIG_IGN);
+    signal(SIGPIPE, SIG_IGN);
+    signal(SIGXCPU, SIG_IGN);
+    signal(SIGXFSZ, SIG_IGN);
+    signal(SIGPROF, SIG_IGN);
+    signal(SIGVTALRM, SIG_IGN);
+    signal(SIGQUIT, SIG_IGN);
+    signal(SIGCHLD, SIG_IGN);
+#endif
+    signal(SIGINT, sigFun);
+
     if (!initEnv(argc, argv))
     {
         return 0;
@@ -156,6 +179,7 @@ void startServer()
     //add Acceptor
     AccepterID aID = SessionManager::getRef().addAccepter("0.0.0.0", g_remotePort);
     SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._onBlockDispatch = OnSessionBlock;
+    SessionManager::getRef().getAccepterOptions(aID)._setReuse = true;
     SessionManager::getRef().openAccepter(aID);
     //! step 2 running
     SessionManager::getRef().run();

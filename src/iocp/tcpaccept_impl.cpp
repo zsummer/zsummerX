@@ -83,7 +83,7 @@ bool TcpAccept::initialize(EventLoopPtr& summer)
     return true;
 }
 
-bool TcpAccept::openAccept(const std::string ip, unsigned short port)
+bool TcpAccept::openAccept(const std::string ip, unsigned short port, bool reuse)
 {
     if (!_summer)
     {
@@ -106,11 +106,11 @@ bool TcpAccept::openAccept(const std::string ip, unsigned short port)
         return false;
     }
 
-    BOOL bReUseAddr = TRUE;
-    if (setsockopt(_server, SOL_SOCKET,SO_REUSEADDR, (char*)&bReUseAddr, sizeof(BOOL)) != 0)
+    if (reuse)
     {
-        LCW("setsockopt  SO_REUSEADDR error! error code=" << WSAGetLastError() );
+        setReuse(_server);
     }
+    
 
     SOCKADDR_IN addr;
     memset(&addr, 0, sizeof(addr));

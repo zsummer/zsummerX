@@ -72,7 +72,7 @@ bool TcpAccept::initialize(const EventLoopPtr &summer)
 }
 
 
-bool TcpAccept::openAccept(const std::string& listenIP, unsigned short listenPort)
+bool TcpAccept::openAccept(const std::string& listenIP, unsigned short listenPort, bool reuse)
 {
     if (!_summer || _linkstat != LS_WAITLINK)
     {
@@ -89,13 +89,12 @@ bool TcpAccept::openAccept(const std::string& listenIP, unsigned short listenPor
 
     setNonBlock(_fd);
 
-
-
-    int bReuse = 1;
-    if (setsockopt(_fd, SOL_SOCKET, SO_REUSEADDR,  (char *)&bReuse, sizeof(bReuse)) != 0)
+    if (reuse)
     {
-        LCW("TcpAccept::openAccept[this0x" << this << "] listen socket set reuse fail! " << OSTREAM_GET_LASTERROR << ", " << AcceptSection());
+        setReuse(_fd);
     }
+
+
 
 
     _addr.sin_family = AF_INET;

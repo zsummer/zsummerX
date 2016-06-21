@@ -158,7 +158,7 @@ bool SessionManager::openAccepter(AccepterID aID)
         LCE("openAccept error. extend info=" << founder->second);
         return false;
     }
-    if (!accepter->openAccept(founder->second._listenIP, founder->second._listenPort))
+    if (!accepter->openAccept(founder->second._listenIP, founder->second._listenPort, founder->second._setReuse))
     {
         LCE("openAccept error. extend info=" << founder->second);
         return false;

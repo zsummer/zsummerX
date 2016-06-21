@@ -145,25 +145,26 @@ namespace zsummer
             int bTrue = true?1:0;
             return setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (char*)&bTrue, sizeof(bTrue)) == 0;
         }
+        inline bool setReuse(int fd)
+        {
+            int bReuse = 1;
+            return setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &bReuse, sizeof(bReuse)) == 0;
+        }
 #else
         inline bool setNonBlock(SOCKET s) 
         {        
             unsigned long val = 1;
-            int nb = ioctlsocket(s, FIONBIO, &val);
-            if (nb != NO_ERROR)
-            {
-                return false;
-            }
-            return true;
+            return ioctlsocket(s, FIONBIO, &val) == NO_ERROR;
         }
         inline bool setNoDelay(SOCKET s)
         {
             BOOL bTrue = TRUE;
-            if (setsockopt(s,IPPROTO_TCP, TCP_NODELAY, (char*)&bTrue, sizeof(bTrue)) != 0)
-            {
-                return false;
-            }
-            return true;
+            return setsockopt(s, IPPROTO_TCP, TCP_NODELAY, (char*)&bTrue, sizeof(bTrue)) == 0;
+        }
+        inline bool setReuse(SOCKET s)
+        {
+            BOOL bReUseAddr = TRUE;
+            return setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char*)&bReUseAddr, sizeof(BOOL)) == 0;
         }
 #endif
     }

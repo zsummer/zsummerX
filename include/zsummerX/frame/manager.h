@@ -111,7 +111,13 @@ namespace zsummer
 
             //创建定时器 单位是毫秒 非线程安全.
             template <class H>
-            zsummer::network::TimerID createTimer(unsigned int delayms, H &&h){ return _summer->createTimer(delayms, std::move(h)); }
+            zsummer::network::TimerID createTimer(unsigned int delayms, H &&h, bool useSystemTime = true)
+            { return _summer->createTimer(delayms, std::move(h), useSystemTime); }
+            template <class H>
+            zsummer::network::TimerID createTimer(unsigned int delayms, const H &h, bool useSystemTime = true)
+            {
+                return _summer->createTimer(delayms, h, useSystemTime);
+            }
             //取消定时器.  注意, 如果在定时器的回调handler中取消当前定时器 会失败的.
             bool cancelTimer(unsigned long long timerID){ return _summer->cancelTimer(timerID); }
 

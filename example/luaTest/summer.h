@@ -62,6 +62,7 @@ extern "C"
 #include <process.h>
 #pragma comment(lib, "shlwapi")
 #pragma warning(disable:4996)
+#pragma warning(disable:4503)
 
 #else
 #include <unistd.h>

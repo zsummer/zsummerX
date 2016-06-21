@@ -69,14 +69,7 @@ std::string EventLoop::logSection()
     return os.str();
 }
 
-unsigned long long EventLoop::createTimer(unsigned int delayms, _OnTimerHandler &&handle)
-{
-    return _timer.createTimer(delayms, std::move(handle)); 
-}
-bool EventLoop::cancelTimer(unsigned long long timerID)
-{
-    return _timer.cancelTimer(timerID); 
-}
+
 
 void EventLoop::runOnce(bool isImmediately)
 {

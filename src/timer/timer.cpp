@@ -37,91 +37,128 @@
 
 #include  <zsummerX/timer/timer.h>
 using namespace zsummer::network;
-
+#include <algorithm>
 
 Timer::Timer()
 {
-    _queSeq = 0;
-    _nextExpire = (unsigned long long) - 1;
+
 }
 Timer::~Timer()
 {
 }
 //get current time tick. unit is millisecond.
-unsigned  long long Timer::getSteadyTime()
+unsigned long long Timer::getSteadyTick()
 {
     return (unsigned long long)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
 }
 
+//get current time tick. unit is millisecond.
+unsigned long long Timer::getSystemTick()
+{
+    return (unsigned long long)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+}
+
+TimerID Timer::makeTimeID(bool useSystemTick, unsigned int delayTick)
+{
+    unsigned long long tick = 0;
+    if (useSystemTick)
+    {
+        tick = getSystemTick() - _startSystemTime;
+    }
+    else
+    {
+        tick = getSteadyTick() - _startSteadyTime;
+    }
+    tick += delayTick;
+    tick <<= SequenceBit;
+    tick |= (++_queSeq & SequenceMask);
+    tick &= TimeSeqMask;
+    if (useSystemTick)
+    {
+        tick |= UsedSysMask;
+    }
+    return tick;
+}
+std::pair<bool, unsigned long long> Timer::resolveTimeID(TimerID timerID)
+{
+    return std::make_pair((timerID & UsedSysMask) != 0, (timerID & TimeSeqMask) >> SequenceBit);
+}
+using std::min;
 //get next expire time  be used to set timeout when calling select / epoll_wait / GetQueuedCompletionStatus.
 unsigned int Timer::getNextExpireTime()
 {
-    unsigned long long now = getSteadyTime();
-    unsigned long long delay = (_nextExpire >> ReserveBit) - now;
-    delay = delay > 100 ? 100 : delay;
-    return (unsigned int)delay;
+    unsigned long long steady = -1;
+    unsigned long long sys = -1;
+    if (!_sysQue.empty())
+    {
+        sys = getSystemTick() - _startSystemTime - resolveTimeID(_sysQue.begin()->first).second;
+    }
+    if (!_steadyQue.empty())
+    {
+        steady = getSteadyTick() - _startSteadyTime - resolveTimeID(_steadyQue.begin()->first).second;
+    }
+    return (unsigned int)min(min(sys, steady), 100ULL);
 }
-
-TimerID Timer::createTimer(unsigned int delayms, _OnTimerHandler &&handle)
+TimerID Timer::createTimer(unsigned int delayTick, const _OnTimerHandler &handle, bool useSysTime)
+{
+    return createTimer(delayTick, std::bind(handle), useSysTime);
+}
+TimerID Timer::createTimer(unsigned int delayTick, _OnTimerHandler &&handle, bool useSysTime)
 {
     _OnTimerHandler *pfunc = new _OnTimerHandler(std::move(handle));
-    unsigned long long now = getSteadyTime();
-    unsigned long long expire = now + delayms;
-    
-    unsigned long long timerID = (expire << ReserveBit) | _queSeq++ ;
-    if (_queSeq >= MaxSequence) _queSeq = 0;
-    while (!_queTimer.insert(std::make_pair(timerID, pfunc)).second)
+    TimerID timerID = makeTimeID(useSysTime, delayTick);
+    if (useSysTime)
     {
-        timerID++;
-        if (++_queSeq >= MaxSequence) _queSeq = 0;
+        while (!_sysQue.insert(std::make_pair(timerID, pfunc)).second)
+        {
+            timerID = makeTimeID(useSysTime, delayTick);
+        }
     }
-    if (_nextExpire > timerID) _nextExpire = timerID;
-    //LCT("createTimer. delayms=" << delayms << ", _ques=" << _queTimer.size());
+    else
+    {
+        while (!_steadyQue.insert(std::make_pair(timerID, pfunc)).second)
+        {
+            timerID = makeTimeID(useSysTime, delayTick);
+        }
+    }
     return timerID;
 }
 
 bool Timer::cancelTimer(TimerID timerID)
 {
-    std::map<unsigned long long, _OnTimerHandler* >::iterator iter = _queTimer.find(timerID);
-    if (iter != _queTimer.end())
+    auto ret = resolveTimeID(timerID);
+    if (ret.first)
     {
-        delete iter->second;
-        _queTimer.erase(iter);
-        return true;
+        auto founder = _sysQue.find(timerID);
+        if (founder != _sysQue.end())
+        {
+            _sysQue.erase(founder);
+            return true;
+        }
+    }
+    else
+    {
+        auto founder = _steadyQue.find(timerID);
+        if (founder != _steadyQue.end())
+        {
+            _steadyQue.erase(founder);
+            return true;
+        }
     }
     return false;
 }
 
 void Timer::checkTimer()
 {
-    //LCT("checkTimer. ques=" << _queTimer.size() << ", next=" << _nextExpire);
-    if (!_queTimer.empty())
+    if (!_steadyQue.empty())
     {
-        unsigned long long now = getSteadyTime();
-        now = (now << ReserveBit) | MaxSequence;
-        if (_nextExpire > now)
+        unsigned long long now = getSteadyTick() - _startSteadyTime;
+        while (!_steadyQue.empty() && now > resolveTimeID(_steadyQue.begin()->first).second)
         {
-            //LCT("_nextExpire > now. next=" << _nextExpire)
-            return;
-        }
-
-        while (1)
-        {
-            if (_queTimer.empty())
-            {
-                _nextExpire = (unsigned long long)-1;
-                break;
-            }
-            auto iter = _queTimer.begin();
-            unsigned long long timerID = iter->first;
-            _OnTimerHandler * handler = iter->second;
-            if (timerID > now)
-            {
-                _nextExpire = timerID;
-                break;
-            }
+            TimerID timerID = _sysQue.begin()->first;
+            _OnTimerHandler * handler = _steadyQue.begin()->second;
             //erase the pointer from timer queue before call handler.
-            _queTimer.erase(iter);
+            _steadyQue.erase(_steadyQue.begin());
             try
             {
                 //LCD("call timer(). now=" << (now >> ReserveBit)  << ", expire=" << (timerID >> ReserveBit));
@@ -129,15 +166,39 @@ void Timer::checkTimer()
             }
             catch (const std::exception & e)
             {
-                LCW("OnTimerHandler have runtime_error exception. err=" << e.what());
+                LCW("OnTimerHandler have runtime_error exception. timerID=" << timerID << ", err=" << e.what());
             }
             catch (...)
             {
-                LCW("OnTimerHandler have unknown exception.");
+                LCW("OnTimerHandler have unknown exception. timerID=" << timerID);
             }
             delete handler;
         }
-
+    }
+    if (!_sysQue.empty())
+    {
+        unsigned long long now = getSystemTick() - _startSystemTime;
+        while (!_sysQue.empty() && now > resolveTimeID(_sysQue.begin()->first).second)
+        {
+            TimerID timerID = _sysQue.begin()->first;
+            _OnTimerHandler * handler = _sysQue.begin()->second;
+            //erase the pointer from timer queue before call handler.
+            _sysQue.erase(_sysQue.begin());
+            try
+            {
+                //LCD("call timer(). now=" << (now >> ReserveBit)  << ", expire=" << (timerID >> ReserveBit));
+                (*handler)();
+            }
+            catch (const std::exception & e)
+            {
+                LCW("OnTimerHandler have runtime_error exception. timerID=" << timerID << ", err=" << e.what());
+            }
+            catch (...)
+            {
+                LCW("OnTimerHandler have unknown exception. timerID=" << timerID);
+            }
+            delete handler;
+        }
     }
 }
 

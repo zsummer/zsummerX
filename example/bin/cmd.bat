@@ -1,2 +1,2 @@
-cmd.exe
+powershell.exe
 pause

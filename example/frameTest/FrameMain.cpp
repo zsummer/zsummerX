@@ -58,11 +58,12 @@ void startClient();
 
 void sigFun(int sig)
 {
-    SessionManager::getRef().stop();
-    SessionManager::getRef().post(std::bind([]() {
+    SessionManager::getRef().createTimer(1000, std::bind([]() {
         SessionManager::getRef().stopAccept();
         SessionManager::getRef().kickClientSession();
-        SessionManager::getRef().kickConnect(); }));
+        SessionManager::getRef().kickConnect(); 
+        SessionManager::getRef().stop();
+    }), false);
 }
 
 

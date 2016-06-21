@@ -71,9 +71,13 @@ namespace zsummer
             {
                 PostMessage(std::move(h));
             }
-            inline unsigned long long createTimer(unsigned int delayms, _OnTimerHandler &&handle)
+            inline unsigned long long createTimer(unsigned int delayms, _OnTimerHandler &&handle, bool useSystemTime = true)
             {
-                return _timer.createTimer(delayms, std::move(handle));
+                return _timer.createTimer(delayms, std::move(handle), useSystemTime);
+            }
+            inline unsigned long long createTimer(unsigned int delayms, const _OnTimerHandler &handle, bool useSystemTime = true)
+            {
+                return _timer.createTimer(delayms, handle, useSystemTime);
             }
             inline bool cancelTimer(unsigned long long timerID)
             {

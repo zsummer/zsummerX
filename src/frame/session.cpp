@@ -77,9 +77,16 @@ TcpSession::~TcpSession()
 
 void TcpSession::connect()
 {
-    _pulseTimerID = SessionManager::getRef().createTimer(_options._connectPulseInterval, std::bind(&TcpSession::onPulse, shared_from_this()));
-    _status = 1;
-    reconnect();
+    if (_status == 0)
+    {
+        _pulseTimerID = SessionManager::getRef().createTimer(_options._connectPulseInterval, std::bind(&TcpSession::onPulse, shared_from_this()));
+        _status = 1;
+        reconnect();
+    }
+    else
+    {
+        LCE("can't connect on a old session.  please use addConnect try again.");
+    }
 }
 
 void TcpSession::reconnect()
@@ -131,7 +138,18 @@ bool TcpSession::attatch(const TcpSocketPtr &sockptr, AccepterID aID, SessionID 
 
     if (_options._onSessionLinked)
     {
-        _options._onSessionLinked(shared_from_this());
+        try
+        {
+            _options._onSessionLinked(shared_from_this());
+        }
+        catch (const std::exception & e)
+        {
+            LOGE("TcpSession::attatch _onSessionLinked error. e=" << e.what());
+        }
+        catch (...)
+        {
+            LCW("TcpSession::attatch _onSessionLinked catch one unknown exception.");
+        }
     }
 
     if (!doRecv())
@@ -163,7 +181,18 @@ void TcpSession::onConnected(zsummer::network::NetErrorCode ec)
     }
     if (_options._onSessionLinked)
     {
-        _options._onSessionLinked(shared_from_this());
+        try
+        {
+            _options._onSessionLinked(shared_from_this());
+        }
+        catch (const std::exception & e)
+        {
+            LOGE("TcpSession::onConnected error. e=" << e.what());
+        }
+        catch (...)
+        {
+            LCW("TcpSession::onConnected catch one unknown exception.");
+        }
     }
     SessionManager::getRef()._statInfo[STAT_SESSION_LINKED]++;
     if (!_sendque.empty())
@@ -288,7 +317,23 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
     {
         if (_options._protoType == PT_TCP)
         {
-            auto ret = _options._onBlockCheck(_recving->begin + usedIndex, _recving->len - usedIndex, _recving->bound - usedIndex, _recving->bound);
+            OnBlockCheckResult ret;
+            try
+            {
+                ret = _options._onBlockCheck(_recving->begin + usedIndex, _recving->len - usedIndex, _recving->bound - usedIndex, _recving->bound);
+            }
+            catch (const std::exception & e)
+            {
+                LCW("MessageEntry _onBlockCheck catch one exception: " << e.what());
+                close();
+                return;
+            }
+            catch (...)
+            {
+                LCW("MessageEntry _onBlockCheck catch one unknown exception: ");
+                close();
+                return;
+            }
             if (ret.first == BCT_CORRUPTION)
             {
                 LCW("killed socket: _onBlockCheck error ");
@@ -306,13 +351,13 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
             }
             catch (const std::exception & e)
             {
-                LCW("MessageEntry catch one exception: " << e.what());
+                LCW("MessageEntry _onBlockDispatch catch one exception: " << e.what());
 //                close();
 //                return;
             }
             catch (...)
             {
-                LCW("MessageEntry catch one unknown exception: ");
+                LCW("MessageEntry _onBlockDispatch catch one unknown exception: ");
             }
             usedIndex += ret.second;
         }
@@ -320,11 +365,28 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
         {
             std::string body;
             bool isFirstRead = _httpHeader.empty();
-            auto ret = _options._onHTTPBlockCheck(_recving->begin + usedIndex,
-                _recving->len - usedIndex,
-                _recving->bound - usedIndex,
-                _httpIsChunked, _httpMethod, _httpMethodLine, _httpHeader,
-                body);
+            OnBlockCheckResult ret;
+            try
+            {
+                ret = _options._onHTTPBlockCheck(_recving->begin + usedIndex,
+                    _recving->len - usedIndex,
+                    _recving->bound - usedIndex,
+                    _httpIsChunked, _httpMethod, _httpMethodLine, _httpHeader,
+                    body);
+            }
+            catch (const std::exception & e)
+            {
+                LCW("MessageEntry _onHTTPBlockCheck catch one exception: " << e.what());
+                close();
+                return;
+            }
+            catch (...)
+            {
+                LCW("MessageEntry _onHTTPBlockCheck catch one unknown exception: ");
+                close();
+                return;
+            }
+
 
             if (ret.first == BCT_CORRUPTION)
             {
@@ -346,7 +408,20 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
 
 
             SessionManager::getRef()._statInfo[STAT_RECV_PACKS]++;
-            _options._onHTTPBlockDispatch(shared_from_this(), _httpMethod, _httpMethodLine, _httpHeader, body);
+            try
+            {
+                _options._onHTTPBlockDispatch(shared_from_this(), _httpMethod, _httpMethodLine, _httpHeader, body);
+
+            }
+            catch (const std::exception & e)
+            {
+                LCW("MessageEntry _onHTTPBlockDispatch catch one exception: " << e.what());
+            }
+            catch (...)
+            {
+                LCW("MessageEntry _onHTTPBlockDispatch catch one unknown exception: ");
+            }
+
             usedIndex += ret.second;
         }
         
@@ -517,6 +592,21 @@ void TcpSession::onPulse()
     {
         if (_reconnects >= _options._reconnects)
         {
+            if (_options._onReconnectEnd)
+            {
+                try
+                {
+                    _options._onReconnectEnd(shared_from_this());
+                }
+                catch (const std::exception & e)
+                {
+                    LCE("_options._onReconnectEnd catch excetion=" << e.what());
+                }
+                catch (...)
+                {
+                    LCE("_options._onReconnectEnd catch excetion");
+                }
+            }
             close();
         }
         else
@@ -525,7 +615,18 @@ void TcpSession::onPulse()
             _reconnects++;
             if (_options._onSessionPulse)
             {
-                _options._onSessionPulse(shared_from_this());
+                try
+                {
+                    _options._onSessionPulse(shared_from_this());
+                }
+                catch (const std::exception & e)
+                {
+                    LCW("TcpSession::onPulse catch one exception: " << e.what());
+                }
+                catch (...)
+                {
+                    LCW("TcpSession::onPulse catch one unknown exception: ");
+                }
             }
             _pulseTimerID = SessionManager::getRef().createTimer(_options._connectPulseInterval, std::bind(&TcpSession::onPulse, shared_from_this()));
         }
@@ -534,7 +635,18 @@ void TcpSession::onPulse()
     {
         if (_options._onSessionPulse)
         {
-            _options._onSessionPulse(shared_from_this());
+            try
+            {
+                _options._onSessionPulse(shared_from_this());
+            }
+            catch (const std::exception & e)
+            {
+                LCW("TcpSession::onPulse catch one exception: " << e.what());
+            }
+            catch (...)
+            {
+                LCW("TcpSession::onPulse catch one unknown exception: ");
+            }
         }
         _pulseTimerID = SessionManager::getRef().createTimer(isConnectID(_sessionID) ? _options._connectPulseInterval : _options._sessionPulseInterval, std::bind(&TcpSession::onPulse, shared_from_this()));
     }

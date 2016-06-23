@@ -200,6 +200,7 @@ namespace zsummer
             OnBlockDispatch _onBlockDispatch;
             OnHTTPBlockCheck _onHTTPBlockCheck;
             OnHTTPBlockDispatch _onHTTPBlockDispatch;
+            OnSessionEvent _onReconnectEnd;
             OnSessionEvent _onSessionClosed;
             OnSessionEvent _onSessionLinked;
             OnSessionEvent _onSessionPulse;

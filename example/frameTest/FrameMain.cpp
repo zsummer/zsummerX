@@ -201,6 +201,15 @@ void startClient()
         SessionManager::getRef().fakeSessionData(session->getSessionID(), ws.getStream(), ws.getStreamLen());
         SessionManager::getRef().sendSessionData(session->getSessionID(), ws.getStream(), ws.getStreamLen());
     };
+    //on connect end
+    auto OnReconnectEnd = [](TcpSessionPtr session)
+    {
+        LOGI("on connect end. ID=" << session->getSessionID());
+        SessionManager::getRef().stopAccept();
+        SessionManager::getRef().kickClientSession();
+        SessionManager::getRef().kickConnect();
+        SessionManager::getRef().stop();
+    };
 
     //process message _ResultID
     auto OnSessionBlock = [](TcpSessionPtr session, const char * begin, unsigned int len)
@@ -226,6 +235,7 @@ void startClient()
 
     //add connector
     SessionID cID = SessionManager::getRef().addConnecter(g_remoteIP, g_remotePort);
+    SessionManager::getRef().getConnecterOptions(cID)._onReconnectEnd = OnReconnectEnd;
     SessionManager::getRef().getConnecterOptions(cID)._onSessionLinked = OnSessionLinked;
     SessionManager::getRef().getConnecterOptions(cID)._onBlockDispatch = OnSessionBlock;
     SessionManager::getRef().getConnecterOptions(cID)._onSessionPulse = [](TcpSessionPtr session)

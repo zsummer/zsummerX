@@ -65,7 +65,7 @@ namespace zsummer
 
             //listen
             SOCKET            _server = INVALID_SOCKET;
-
+            bool              _isIPV6 = false;
 
             //client
             SOCKET _socket = INVALID_SOCKET;

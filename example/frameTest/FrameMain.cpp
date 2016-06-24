@@ -47,7 +47,7 @@ using namespace zsummer::proto4z;
 using namespace zsummer::network;
 
 //default param
-std::string g_remoteIP = "0.0.0.0";
+std::string g_remoteIP = "";
 unsigned short g_remotePort = 8081;
 unsigned short g_startIsConnector = 0;  //0 listen, 1 connect
 
@@ -178,10 +178,16 @@ void startServer()
 
 
     //add Acceptor
-    AccepterID aID = SessionManager::getRef().addAccepter("0.0.0.0", g_remotePort);
+    AccepterID     aID = SessionManager::getRef().addAccepter("::", g_remotePort);
     SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._onBlockDispatch = OnSessionBlock;
     SessionManager::getRef().getAccepterOptions(aID)._setReuse = true;
     SessionManager::getRef().openAccepter(aID);
+    aID = SessionManager::getRef().addAccepter("0.0.0.0", g_remotePort);
+    SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._onBlockDispatch = OnSessionBlock;
+    SessionManager::getRef().getAccepterOptions(aID)._setReuse = true;
+    SessionManager::getRef().openAccepter(aID);
+
+
     //! step 2 running
     SessionManager::getRef().run();
 }
@@ -194,8 +200,8 @@ void startClient()
     //on connect success
     auto OnSessionLinked = [](TcpSessionPtr session)
     {
-        LOGI("on connect. ID=" << session->getSessionID());
-        std::string content = "hello";
+        LOGI("on connect. ID=" << session->getSessionID() << ", ip=" << session->getRemoteIP());
+        std::string content = "hello I am " + session->getRemoteIP();
         WriteStream ws(111);
         ws << content;
         SessionManager::getRef().fakeSessionData(session->getSessionID(), ws.getStream(), ws.getStreamLen());
@@ -204,7 +210,7 @@ void startClient()
     //on connect end
     auto OnReconnectEnd = [](TcpSessionPtr session)
     {
-        LOGI("on connect end. ID=" << session->getSessionID());
+        LOGI("on connect end. ID=" << session->getSessionID() << ", ip=" << session->getRemoteIP());
         SessionManager::getRef().stopAccept();
         SessionManager::getRef().kickClientSession();
         SessionManager::getRef().kickConnect();
@@ -225,12 +231,14 @@ void startClient()
             SessionManager::getRef().sendSessionData(session->getSessionID(), ws.getStream(), ws.getStreamLen());
             return;
         }
-        SessionManager::getRef().kickSession(session->getSessionID());
-        //! step 3 stop server
-        SessionManager::getRef().stopAccept();
-        SessionManager::getRef().kickClientSession();
-        SessionManager::getRef().kickConnect();
-        SessionManager::getRef().stop();
+        SessionManager::getRef().createTimer(2000, [session]() {
+            SessionManager::getRef().kickSession(session->getSessionID());
+            //! step 3 stop server
+            SessionManager::getRef().stopAccept();
+            SessionManager::getRef().kickClientSession();
+            SessionManager::getRef().kickConnect();
+            SessionManager::getRef().stop(); });
+
     };
 
     //add connector
@@ -240,10 +248,18 @@ void startClient()
     SessionManager::getRef().getConnecterOptions(cID)._onBlockDispatch = OnSessionBlock;
     SessionManager::getRef().getConnecterOptions(cID)._onSessionPulse = [](TcpSessionPtr session)
     {
-        LOGI("session pulse"); 
+        LOGI("session pulse");
     };
     SessionManager::getRef().openConnecter(cID);
-
+    cID = SessionManager::getRef().addConnecter("::1", g_remotePort);
+    SessionManager::getRef().getConnecterOptions(cID)._onReconnectEnd = OnReconnectEnd;
+    SessionManager::getRef().getConnecterOptions(cID)._onSessionLinked = OnSessionLinked;
+    SessionManager::getRef().getConnecterOptions(cID)._onBlockDispatch = OnSessionBlock;
+    SessionManager::getRef().getConnecterOptions(cID)._onSessionPulse = [](TcpSessionPtr session)
+    {
+        LOGI("session pulse");
+    };
+    SessionManager::getRef().openConnecter(cID);
 
 
     //! step 2 running

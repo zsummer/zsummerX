@@ -99,27 +99,18 @@ bool TcpSocket::initialize(const EventLoopPtr& summer)
     {
         _summer = summer;
         _linkStatus = LS_WAITLINK;
-        _socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
-        if (_socket == INVALID_SOCKET)
-        {
-            LCE("TcpSocket create error! ERRCODE=" << WSAGetLastError() );
-            return false;
-        }
-        SOCKADDR_IN localAddr;
-        memset(&localAddr, 0, sizeof(SOCKADDR_IN));
-        localAddr.sin_family = AF_INET;
-        if (bind(_socket, (sockaddr *)&localAddr, sizeof(SOCKADDR_IN)) != 0)
-        {
-            LCE("TcpSocket bind local addr error! ERRCODE=" << WSAGetLastError());
-            closesocket(_socket);
-            _socket = INVALID_SOCKET;
-            return false;
-        }
+
     }
     else if (_linkStatus == LS_ATTACHED)
     {
         _summer = summer;
         _linkStatus = LS_ESTABLISHED;
+        if (CreateIoCompletionPort((HANDLE)_socket, _summer->_io, (ULONG_PTR)this, 1) == NULL)
+        {
+            LCE("TcpSocket bind socket to IOCP error.  ERRCODE=" << GetLastError());
+            doClose();
+            return false;
+        }
     }
     else
     {
@@ -127,22 +118,18 @@ bool TcpSocket::initialize(const EventLoopPtr& summer)
         return false;
     }
     
-    if (CreateIoCompletionPort((HANDLE)_socket, _summer->_io, (ULONG_PTR)this, 1) == NULL)
-    {
-        LCE("TcpSocket bind socket to IOCP error.  ERRCODE=" << GetLastError() );
-        doClose();
-        return false;
-    }
+
     return true;
 }
 
 
-bool TcpSocket::attachSocket(SOCKET s, std::string remoteIP, unsigned short remotePort)
+bool TcpSocket::attachSocket(SOCKET s, std::string remoteIP, unsigned short remotePort, bool isIPV6)
 {
     _socket = s;
     _remoteIP = remoteIP;
     _remotePort = remotePort;
     _linkStatus = LS_ATTACHED;
+    _isIPV6 = isIPV6;
     return true;
 }
 
@@ -164,7 +151,53 @@ bool TcpSocket::doConnect(const std::string& remoteIP, unsigned short remotePort
         LCF("TcpSocket already connect." << logSection());
         return false;
     }
-    
+    _isIPV6 = remoteIP.find(':') != std::string::npos;
+    if (_isIPV6)
+    {
+        _socket = WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
+        if (_socket == INVALID_SOCKET)
+        {
+            LCE("TcpSocket create error! ERRCODE=" << WSAGetLastError());
+            return false;
+        }
+        SOCKADDR_IN6 localAddr;
+        memset(&localAddr, 0, sizeof(localAddr));
+        localAddr.sin6_family = AF_INET6;
+        if (bind(_socket, (sockaddr *)&localAddr, sizeof(localAddr)) != 0)
+        {
+            LCE("TcpSocket bind local addr error! ERRCODE=" << WSAGetLastError());
+            closesocket(_socket);
+            _socket = INVALID_SOCKET;
+            return false;
+        }
+    }
+    else
+    {
+        _socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
+        if (_socket == INVALID_SOCKET)
+        {
+            LCE("TcpSocket create error! ERRCODE=" << WSAGetLastError());
+            return false;
+        }
+        SOCKADDR_IN localAddr;
+        memset(&localAddr, 0, sizeof(localAddr));
+        localAddr.sin_family = AF_INET;
+        if (bind(_socket, (sockaddr *)&localAddr, sizeof(localAddr)) != 0)
+        {
+            LCE("TcpSocket bind local addr error! ERRCODE=" << WSAGetLastError());
+            closesocket(_socket);
+            _socket = INVALID_SOCKET;
+            return false;
+        }
+    }
+    if (CreateIoCompletionPort((HANDLE)_socket, _summer->_io, (ULONG_PTR)this, 1) == NULL)
+    {
+        LCE("TcpSocket bind socket to IOCP error.  ERRCODE=" << GetLastError());
+        doClose();
+        return false;
+    }
+
+
 
     GUID gid = WSAID_CONNECTEX;
     ConnectEx lpConnectEx = NULL;
@@ -177,23 +210,55 @@ bool TcpSocket::doConnect(const std::string& remoteIP, unsigned short remotePort
 
     _remoteIP = remoteIP;
     _remotePort = remotePort;
-    SOCKADDR_IN remoteAddr;
-    remoteAddr.sin_addr.s_addr = inet_addr(_remoteIP.c_str());
-    remoteAddr.sin_family = AF_INET;
-    remoteAddr.sin_port = htons(_remotePort);
-    
-
-    char buf[1];
-    DWORD dwBytes = 0;
-    if (!lpConnectEx(_socket, (sockaddr *)&remoteAddr, sizeof(remoteAddr), buf, 0, &dwBytes, &_connectHandle._overlapped))
+    if (remoteIP.find(':') != std::string::npos)
     {
-        if (WSAGetLastError() != ERROR_IO_PENDING)
+        _isIPV6 = true;
+        SOCKADDR_IN6 remoteAddr;
+        memset(&remoteAddr, 0, sizeof(remoteAddr));
+        if (inet_pton(AF_INET6, remoteIP.c_str(), &remoteAddr.sin6_addr) <= 0)
         {
-            LCF("TcpSocket doConnect failed and ERRCODE!=ERROR_IO_PENDING, ERRCODE=" << WSAGetLastError());
+            LCE("ipv6 format error.  remoteIP=" << remoteIP);
             return false;
         }
 
+        remoteAddr.sin6_family = AF_INET6;
+        remoteAddr.sin6_port = htons(_remotePort);
+        char buf[1];
+        DWORD dwBytes = 0;
+        if (!lpConnectEx(_socket, (sockaddr *)&remoteAddr, sizeof(remoteAddr), buf, 0, &dwBytes, &_connectHandle._overlapped))
+        {
+            if (WSAGetLastError() != ERROR_IO_PENDING)
+            {
+                LCF("TcpSocket doConnect failed and ERRCODE!=ERROR_IO_PENDING, ERRCODE=" << WSAGetLastError());
+                return false;
+            }
+
+        }
     }
+    else
+    {
+        _isIPV6 = false;
+        SOCKADDR_IN remoteAddr;
+        memset(&remoteAddr, 0, sizeof(remoteAddr));
+        remoteAddr.sin_addr.s_addr = inet_addr(_remoteIP.c_str());
+        remoteAddr.sin_family = AF_INET;
+        remoteAddr.sin_port = htons(_remotePort);
+        char buf[1];
+        DWORD dwBytes = 0;
+        if (!lpConnectEx(_socket, (sockaddr *)&remoteAddr, sizeof(remoteAddr), buf, 0, &dwBytes, &_connectHandle._overlapped))
+        {
+            if (WSAGetLastError() != ERROR_IO_PENDING)
+            {
+                LCF("TcpSocket doConnect failed and ERRCODE!=ERROR_IO_PENDING, ERRCODE=" << WSAGetLastError());
+                return false;
+            }
+
+        }
+    }
+
+    
+
+
     _onConnectHandler = std::move(handler);
     _connectHandle._tcpSocket = shared_from_this();
     return true;

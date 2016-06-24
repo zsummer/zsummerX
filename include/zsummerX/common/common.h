@@ -39,7 +39,8 @@
 #define _ZSUMMERX_COMMON_H_
 
 #ifdef WIN32
-
+#define WIN32_LEAN_AND_MEAN
+#include <WS2tcpip.h>
 #include <WinSock2.h>
 #include <Windows.h>
 #include <MSWSock.h>

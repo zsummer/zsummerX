@@ -148,8 +148,7 @@ bool SessionManager::openAccepter(AccepterID aID)
     }
     if (founder->second._listenIP.empty())
     {
-        LCE("openAccepter error. no listen IP. extend info=" << founder->second);
-        return false;
+        LCW("openAccepter warning. no listen IP. default use 0.0.0.0");
     }
     
     TcpAcceptPtr accepter = std::make_shared<TcpAccept>();

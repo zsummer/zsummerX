@@ -167,7 +167,7 @@ int main(int argc, char* argv[])
         };
 
 
-        AccepterID aID = SessionManager::getRef().addAccepter("0.0.0.0", g_remotePort);
+        AccepterID aID = SessionManager::getRef().addAccepter(g_remoteIP, g_remotePort);
         SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._protoType = PT_HTTP;
         SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._onHTTPBlockDispatch = OnHTTPBlock;
         SessionManager::getRef().openAccepter(aID);

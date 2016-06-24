@@ -155,7 +155,7 @@ void Timer::checkTimer()
         unsigned long long now = getSteadyTick() - _startSteadyTime;
         while (!_steadyQue.empty() && now > resolveTimeID(_steadyQue.begin()->first).second)
         {
-            TimerID timerID = _sysQue.begin()->first;
+            TimerID timerID = _steadyQue.begin()->first;
             _OnTimerHandler * handler = _steadyQue.begin()->second;
             //erase the pointer from timer queue before call handler.
             _steadyQue.erase(_steadyQue.begin());

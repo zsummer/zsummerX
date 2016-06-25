@@ -129,7 +129,7 @@ public:
 
             if (g_sendType == 0 || g_intervalMs == 0) //echo send
             {
-                WriteStream ws(ID_EchoPack);
+                WriteStream ws(EchoPack::getProtoID());
                 ws << pack;
                 session->send(ws.getStream(), ws.getStreamLen());
             }
@@ -140,9 +140,9 @@ public:
     {
         if (session->getSendQueSize() < 1000)
         {
-            WriteStream ws(ID_EchoPack);
+            WriteStream ws(EchoPack::getProtoID());
             EchoPack pack;
-            TestIntegerData idata;
+            IntegerData idata;
             idata._char = 'a';
             idata._uchar = 100;
             idata._short = 200;
@@ -151,13 +151,13 @@ public:
             idata._uint = 500;
             idata._i64 = 600;
             idata._ui64 = 700;
-            idata._ui128 = 255;
 
-            TestFloatData fdata;
+
+            FloatData fdata;
             fdata._float = (float)123123.111111;
             fdata._double = 12312312.88888;
 
-            TestStringData sdata;
+            StringData sdata;
             sdata._string = "abcdefg";
 
             pack._iarray.push_back(idata);
@@ -175,6 +175,7 @@ public:
             pack._smap.insert(std::make_pair("623", sdata));
             ws << pack;
             session->send(ws.getStream(), ws.getStreamLen());
+            //LOGD("send once. opentimer=" << openTimer);
             if (openTimer)
             {
                 SessionManager::getRef().createTimer(g_intervalMs, std::bind(&CStressClientHandler::SendFunc, this, session, !session->isInvalidSession()));
@@ -205,6 +206,7 @@ public:
 
     void onMessage(TcpSessionPtr session, ReadStream & rs)
     {
+        //LOGD("onMessage");
         if (g_hightBenchmark)
         {
             session->send(rs.getStream(), rs.getStreamLen());
@@ -213,7 +215,7 @@ public:
         {
             EchoPack pack;
             rs >> pack;
-            WriteStream ws(ID_EchoPack);
+            WriteStream ws(EchoPack::getProtoID());
             ws << pack;
             session->send(ws.getStream(), ws.getStreamLen());
         }
@@ -326,7 +328,7 @@ int main(int argc, char* argv[])
     else
     {
         CStressServerHandler server;
-        AccepterID aID = SessionManager::getRef().addAccepter("0.0.0.0", g_remotePort);
+        AccepterID aID = SessionManager::getRef().addAccepter(g_remoteIP, g_remotePort);
         if (g_sendType != 0)
         {
             SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._maxSendListCount = 20000;

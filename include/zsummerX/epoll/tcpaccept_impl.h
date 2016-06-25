@@ -62,8 +62,8 @@ namespace zsummer
             EventLoopPtr         _summer;
             std::string        _listenIP;
             short            _listenPort = 0;
+            bool _isIPV6 = false;
 
-            sockaddr_in        _addr;
 
             EventData _eventData;
             _OnAcceptHandler _onAcceptHandler;

@@ -168,6 +168,7 @@ bool SessionManager::openAccepter(AccepterID aID)
         LCE("openAccept error. extend info=" << founder->second);
         return false;
     }
+    LCI("openAccepter success. listenIP=" << founder->second._listenIP << ", listenPort=" << founder->second._listenPort);
     founder->second._accepter = accepter;
     return true;
 }

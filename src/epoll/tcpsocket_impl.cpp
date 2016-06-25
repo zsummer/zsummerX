@@ -95,13 +95,6 @@ bool TcpSocket::initialize(const EventLoopPtr& summer)
     else if (_eventData._linkstat == LS_UNINITIALIZE)
     {
         _summer = summer;
-        _eventData._fd = socket(AF_INET, SOCK_STREAM, 0);
-        if (_eventData._fd == InvalidFD)
-        {
-            LCE("TcpSocket::initialize[this0x" << this << "] fd create failed!" );
-            return false;
-        }
-        setNonBlock(_eventData._fd);
         _eventData._linkstat = LS_WAITLINK;
         return true;
     }
@@ -109,11 +102,12 @@ bool TcpSocket::initialize(const EventLoopPtr& summer)
     LCE("TcpSocket::initialize[this0x" << this << "] fd aready used!" << logSection());
     return true;
 }
-bool TcpSocket::attachSocket(int fd, const std::string & remoteIP, unsigned short remotePort)
+bool TcpSocket::attachSocket(int fd, const std::string & remoteIP, unsigned short remotePort, bool isIPV6)
 {
     _eventData._fd = fd;
     _remoteIP = remoteIP;
     _remotePort = remotePort;
+    _isIPV6 = isIPV6;
     _eventData._linkstat = LS_ATTACHED;
     return true;
 }
@@ -128,18 +122,47 @@ bool TcpSocket::doConnect(const std::string& remoteIP, unsigned short remotePort
         LCE("TcpSocket::doConnect[this0x" << this << "] status error!" );
         return false;
     }
-
-    _eventData._event.events = EPOLLOUT;
-
     _remoteIP = remoteIP;
     _remotePort = remotePort;
-    sockaddr_in addr;
-    addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = inet_addr(_remoteIP.c_str());
-    addr.sin_port = htons(_remotePort);
-    
-    
-    int ret = connect(_eventData._fd, (sockaddr *) &addr, sizeof(addr));
+
+    _isIPV6 = remoteIP.find(':') != std::string::npos;
+    int ret = -1;
+    if (_isIPV6)
+    {
+        _eventData._fd = socket(AF_INET6, SOCK_STREAM, 0);
+        if (_eventData._fd == -1)
+        {
+            LCE("TcpSocket::doConnect[this0x" << this << "] fd create failed!");
+            return false;
+        }
+        setNonBlock(_eventData._fd);
+        _remoteIP = remoteIP;
+        _remotePort = remotePort;
+        sockaddr_in6 addr;
+        addr.sin6_family = AF_INET6;
+        inet_pton(AF_INET6, remoteIP.c_str(), &addr.sin6_addr);
+        addr.sin6_port = htons(_remotePort);
+        ret = connect(_eventData._fd, (sockaddr *)&addr, sizeof(addr));
+    }
+    else
+    {
+
+        _eventData._fd = socket(AF_INET, SOCK_STREAM, 0);
+        if (_eventData._fd == -1)
+        {
+            LCE("TcpSocket::doConnect[this0x" << this << "] fd create failed!");
+            return false;
+        }
+        setNonBlock(_eventData._fd);
+        _remoteIP = remoteIP;
+        _remotePort = remotePort;
+        sockaddr_in addr;
+        addr.sin_family = AF_INET;
+        addr.sin_addr.s_addr = inet_addr(_remoteIP.c_str());
+        addr.sin_port = htons(_remotePort);
+        ret = connect(_eventData._fd, (sockaddr *)&addr, sizeof(addr));
+    }
+
     if (ret!=0 && errno != EINPROGRESS)
     {
         LCW("TcpSocket::doConnect[this0x" << this << "] ::connect error. errno=" << strerror(errno) );
@@ -148,6 +171,7 @@ bool TcpSocket::doConnect(const std::string& remoteIP, unsigned short remotePort
         return false;
     }
 
+    _eventData._event.events = EPOLLOUT;
     _summer->registerEvent(EPOLL_CTL_ADD, _eventData);
     _eventData._tcpSocketPtr = shared_from_this();
     _onConnectHandler = std::move(handler);

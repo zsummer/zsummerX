@@ -218,7 +218,7 @@ void TcpAccept::onEPOLLMessage(uint32_t event)
             memset(&cltaddr, 0, sizeof(cltaddr));
             socklen_t len = sizeof(cltaddr);
             fd = accept(_eventData._fd, (sockaddr *)&cltaddr, &len);
-            inet_ntop(AF_INET6, &cltaddr, remoteIP, 50);
+            inet_ntop(AF_INET6, &cltaddr.sin6_addr, remoteIP, 50);
             remotePort = ntohs(cltaddr.sin6_port);
         }
         else
@@ -227,7 +227,7 @@ void TcpAccept::onEPOLLMessage(uint32_t event)
             memset(&cltaddr, 0, sizeof(cltaddr));
             socklen_t len = sizeof(cltaddr);
             fd = accept(_eventData._fd, (sockaddr *)&cltaddr, &len);
-            inet_ntop(AF_INET, &cltaddr, remoteIP, 50);
+            inet_ntop(AF_INET, &cltaddr.sin_addr, remoteIP, 50);
             remotePort = ntohs(cltaddr.sin_port);
         }
 

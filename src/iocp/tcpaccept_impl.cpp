@@ -264,7 +264,7 @@ bool TcpAccept::onIOCPMessage(BOOL bSuccess)
             int tmp2 = 0;
             GetAcceptExSockaddrs(_recvBuf, _recvLen, sizeof(SOCKADDR_IN6) + 16, sizeof(SOCKADDR_IN6) + 16, &paddr1, &tmp1, &paddr2, &tmp2);
             char ip[50] = { 0 };
-            inet_ntop(AF_INET6, paddr2, ip, sizeof(ip));
+            inet_ntop(AF_INET6, &(((SOCKADDR_IN6*)paddr2)->sin6_addr), ip, sizeof(ip));
             _client->attachSocket(_socket, ip, ntohs(((sockaddr_in6*)paddr2)->sin6_port), _isIPV6);
             onAccept(NEC_SUCCESS, _client);
         }

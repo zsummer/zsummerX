@@ -346,7 +346,7 @@ void SessionManager::kickSession(SessionID sID)
     auto iter = _mapTcpSessionPtr.find(sID);
     if (iter == _mapTcpSessionPtr.end() || !iter->second)
     {
-        LCW("kickSession NOT FOUND SessionID. SessionID=" << sID << ", trace=" << zsummer::proto4z::proto4z_traceback());
+        LCI("kickSession NOT FOUND SessionID. SessionID=" << sID << ", trace=" << zsummer::proto4z::proto4z_traceback());
         return;
     }
     LCD("kickSession SessionID. SessionID=" << sID << ", trace=" << zsummer::proto4z::proto4z_traceback());

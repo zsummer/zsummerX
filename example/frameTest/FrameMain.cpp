@@ -9,7 +9,7 @@
  * 
  * ===============================================================================
  * 
- * Copyright (C) 2010-2015 YaweiZhang <yawei.zhang@foxmail.com>.
+ * Copyright (C) 2010-2016 YaweiZhang <yawei.zhang@foxmail.com>.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -164,7 +164,8 @@ void startServer()
         ReadStream rs(begin, len);
         std::string content; 
         rs >> content;
-        LOGI("recv SessionID = " << session->getSessionID() << ", content = " << content);
+        LOGA("------------------------------------------------------------"
+                     "recv SessionID = " << session->getSessionID() << ", content = " << content);
         content += " ==> echo.";
         SessionManager::getRef().sendSessionData(session->getSessionID(), begin, len);
 
@@ -178,11 +179,11 @@ void startServer()
 
 
     //add Acceptor
-    AccepterID     aID = SessionManager::getRef().addAccepter("::", g_remotePort);
+    AccepterID  /*   aID = SessionManager::getRef().addAccepter("::", g_remotePort);
     SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._onBlockDispatch = OnSessionBlock;
     SessionManager::getRef().getAccepterOptions(aID)._setReuse = true;
     SessionManager::getRef().openAccepter(aID);
-    aID = SessionManager::getRef().addAccepter("0.0.0.0", g_remotePort);
+    */ aID = SessionManager::getRef().addAccepter("0.0.0.0", g_remotePort);
     SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._onBlockDispatch = OnSessionBlock;
     SessionManager::getRef().getAccepterOptions(aID)._setReuse = true;
     SessionManager::getRef().openAccepter(aID);
@@ -223,7 +224,8 @@ void startClient()
         ReadStream rs(begin, len);
         std::string content; 
         rs >> content;
-        LOGI("recv ConnectorID = " << session->getSessionID() << ", content = " << content);
+        LOGA("--------------------------------------- "
+                     "recv ConnectorID = " << session->getSessionID() << ", content = " << content);
         if (rs.getProtoID() == 111)
         {
             WriteStream ws(100);
@@ -251,7 +253,7 @@ void startClient()
         LOGI("session pulse");
     };
     SessionManager::getRef().openConnecter(cID);
-    cID = SessionManager::getRef().addConnecter("::1", g_remotePort);
+    /* cID = SessionManager::getRef().addConnecter("::1", g_remotePort);
     SessionManager::getRef().getConnecterOptions(cID)._onReconnectEnd = OnReconnectEnd;
     SessionManager::getRef().getConnecterOptions(cID)._onSessionLinked = OnSessionLinked;
     SessionManager::getRef().getConnecterOptions(cID)._onBlockDispatch = OnSessionBlock;
@@ -260,7 +262,7 @@ void startClient()
         LOGI("session pulse");
     };
     SessionManager::getRef().openConnecter(cID);
-
+    */
 
     //! step 2 running
     SessionManager::getRef().run();

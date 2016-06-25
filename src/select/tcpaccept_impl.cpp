@@ -9,7 +9,7 @@
  * 
  * ===============================================================================
  * 
- * Copyright (C) 2010-2015 YaweiZhang <yawei.zhang@foxmail.com>.
+ * Copyright (C) 2010-2016 YaweiZhang <yawei.zhang@foxmail.com>.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -79,8 +79,18 @@ bool TcpAccept::openAccept(const std::string& listenIP, unsigned short listenPor
         LCE("TcpAccept::openAccept[this0x" << this << "] accepter not initialize!" << AcceptSection());
         return false;
     }
+    _listenIP = listenIP;
+    _listenPort = listenPort;
+    _isIPV6 = listenIP.find(':') != std::string::npos;
+    if (_isIPV6)
+    {
 
-    _fd = socket(AF_INET, SOCK_STREAM, 0);
+        _fd = socket(AF_INET6, SOCK_STREAM, 0);
+    }
+    else
+    {
+        _fd = socket(AF_INET, SOCK_STREAM, 0);
+    }
     if (_fd == InvalidFD)
     {
         LCF("TcpAccept::openAccept[this0x" << this << "] listen socket create err " << OSTREAM_GET_LASTERROR << ", " << AcceptSection());
@@ -95,19 +105,44 @@ bool TcpAccept::openAccept(const std::string& listenIP, unsigned short listenPor
     }
 
 
-
-
-    _addr.sin_family = AF_INET;
-    _addr.sin_addr.s_addr = inet_addr(listenIP.c_str());
-    _addr.sin_port = htons(listenPort);
-    if (bind(_fd, (sockaddr *) &_addr, sizeof(_addr)) != 0)
+    if (_isIPV6)
     {
-        LCF("TcpAccept::openAccept[this0x" << this << "] listen socket bind err, " << OSTREAM_GET_LASTERROR << ", " << AcceptSection());
-        ::close(_fd);
-        _fd = InvalidFD;
-        return false;
+        sockaddr_in6 addr;
+        memset(&addr, 0, sizeof(addr));
+        addr.sin6_family = AF_INET6;
+        addr.sin6_addr = in6addr_any;
+        if (!listenIP.empty() && listenIP != "::")
+        {
+            inet_pton(AF_INET6, listenIP.c_str(), &addr.sin6_addr);
+        }
+        addr.sin6_port = htons(listenPort);
+        if (bind(_fd, (sockaddr *) &addr, sizeof(addr)) != 0) {
+            LCF("TcpAccept::openAccept[this0x" << this << "] listen socket bind err, " << OSTREAM_GET_LASTERROR <<
+                ", " << AcceptSection());
+            ::close(_fd);
+            _fd = InvalidFD;
+            return false;
+        }
     }
-
+    else
+    {
+        sockaddr_in addr;
+        memset(&addr, 0, sizeof(addr));
+        addr.sin_family = AF_INET;
+        addr.sin_addr.s_addr = INADDR_ANY;
+        if (!listenIP.empty())
+        {
+            addr.sin_addr.s_addr = inet_addr(listenIP.c_str());
+        }
+        addr.sin_port = htons(listenPort);
+        if (bind(_fd, (sockaddr *) &addr, sizeof(addr)) != 0) {
+            LCF("TcpAccept::openAccept[this0x" << this << "] listen socket bind err, " << OSTREAM_GET_LASTERROR <<
+                ", " << AcceptSection());
+            ::close(_fd);
+            _fd = InvalidFD;
+            return false;
+        }
+    }
     if (listen(_fd, 200) != 0)
     {
         LCF("TcpAccept::openAccept[this0x" << this << "] listen socket listen err, " << OSTREAM_GET_LASTERROR << ", " << AcceptSection());
@@ -160,11 +195,27 @@ void TcpAccept::onSelectMessage()
 
     TcpSocketPtr ps(std::move(_client));
     _summer->unsetEvent(_fd, 0);
-
-    sockaddr_in cltaddr;
-    memset(&cltaddr, 0, sizeof(cltaddr));
-    socklen_t len = sizeof(cltaddr);
-    int fd = ::accept(_fd, (sockaddr *)&cltaddr, &len);
+    int fd = 0;
+    char remoteIP[50]={0};
+    unsigned remotePort = 0;
+    if (_isIPV6)
+    {
+        sockaddr_in6 cltaddr;
+        memset(&cltaddr, 0, sizeof(cltaddr));
+        socklen_t len = sizeof(cltaddr);
+        fd = ::accept(_fd, (sockaddr *) &cltaddr, &len);
+        inet_ntop(AF_INET6, &cltaddr, remoteIP, 50);
+        remotePort = ntohs(cltaddr.sin6_port);
+    }
+    else
+    {
+        sockaddr_in cltaddr;
+        memset(&cltaddr, 0, sizeof(cltaddr));
+        socklen_t len = sizeof(cltaddr);
+        fd = ::accept(_fd, (sockaddr *) &cltaddr, &len);
+        inet_ntop(AF_INET, &cltaddr, remoteIP, 50);
+        remotePort = ntohs(cltaddr.sin_port);
+    }
     if (fd == -1)
     {
         if (!IS_WOULDBLOCK)
@@ -177,7 +228,7 @@ void TcpAccept::onSelectMessage()
 
     setNonBlock(fd);
 
-    ps->attachSocket(fd,inet_ntoa(cltaddr.sin_addr), ntohs(cltaddr.sin_port));
+    ps->attachSocket(fd, remoteIP, remotePort, _isIPV6);
     onAccept(NEC_SUCCESS, ps);
     
     return ;

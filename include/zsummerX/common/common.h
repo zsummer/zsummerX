@@ -151,6 +151,11 @@ namespace zsummer
             int bReuse = 1;
             return setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &bReuse, sizeof(bReuse)) == 0;
         }
+        inline bool setIPV6Only(int fd, bool only)
+        {
+            int ipv6only = only ? 1 : 0;
+            return setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &ipv6only, sizeof(ipv6only)) == 0;
+        }
 #else
         inline bool setNonBlock(SOCKET s) 
         {        
@@ -166,6 +171,11 @@ namespace zsummer
         {
             BOOL bReUseAddr = TRUE;
             return setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char*)&bReUseAddr, sizeof(BOOL)) == 0;
+        }
+        inline bool setIPV6Only(SOCKET s, bool only)
+        {
+            DWORD ipv6only = only ? 1: 0;
+            return setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, (char*)&ipv6only, sizeof(ipv6only)) == 0;
         }
 #endif
     }

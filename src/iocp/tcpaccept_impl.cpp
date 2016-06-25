@@ -102,6 +102,7 @@ bool TcpAccept::openAccept(const std::string ip, unsigned short port , bool reus
     if (_isIPV6)
     {
         _server = WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
+        setIPV6Only(_server, false);
     }
     else
     {
@@ -112,6 +113,7 @@ bool TcpAccept::openAccept(const std::string ip, unsigned short port , bool reus
         LCF("create socket error! ");
         return false;
     }
+
 
     if (reuse)
     {
@@ -212,7 +214,7 @@ bool TcpAccept::doAccept(const TcpSocketPtr & s, _OnAcceptHandler&& handler)
     _socket = INVALID_SOCKET;
     memset(_recvBuf, 0, sizeof(_recvBuf));
     _recvLen = 0;
-    size_t addrLen = 0;
+    unsigned int addrLen = 0;
     if (_isIPV6)
     {
         addrLen = sizeof(SOCKADDR_IN6)+16;

@@ -44,6 +44,7 @@
 #include <WinSock2.h>
 #include <Windows.h>
 #include <MSWSock.h>
+#pragma comment(lib, "ws2_32")
 #else
 #include <unistd.h>
 #include <errno.h>
@@ -54,7 +55,7 @@
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <string.h>
-
+#include <netdb.h>
 #endif
 
 #include <assert.h>
@@ -136,6 +137,39 @@ namespace zsummer
         };
 
         extern ZSummerEnvironment g_appEnvironment;
+
+        inline std::string getHostByName(const std::string & name)
+        {
+            if (std::find_if(name.begin(), name.end(), [](char ch) {return !isdigit(ch) && ch != '.'; }) == name.end())
+            {
+                return name; //ipv4 
+            }
+            if (std::find_if(name.begin(), name.end(), [](char ch) {return !isxdigit(ch) && ch != ':'; }) == name.end())
+            {
+                return name; //ipv6 
+            }
+            struct addrinfo *res = nullptr;
+            struct addrinfo hints;
+            memset(&hints, 0, sizeof(hints));
+            hints.ai_family = AF_UNSPEC;
+            hints.ai_socktype = SOCK_STREAM;
+            hints.ai_flags = AI_PASSIVE;
+            if (getaddrinfo(name.c_str(), "3306", &hints, &res) == 0)
+            {
+                char buf[100] = { 0 };
+                if (res->ai_family == AF_INET)
+                {
+                    inet_ntop(res->ai_family, &(((sockaddr_in*)res->ai_addr)->sin_addr), buf, 100);
+                }
+                else if (res->ai_family == AF_INET6)
+                {
+                    inet_ntop(res->ai_family, &(((sockaddr_in6*)res->ai_addr)->sin6_addr), buf, 100);
+                }
+                return buf;
+            }
+
+            return "";
+        }
 #ifndef WIN32
         inline bool setNonBlock(int fd) 
         {

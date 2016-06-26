@@ -419,7 +419,7 @@ SessionID SessionManager::addConnecter(const std::string & remoteIP, unsigned sh
 
     session->setEventLoop(_summer);
     session->setSessionID(_lastConnectID);
-    session->setRemoteIP(remoteIP);
+    session->setRemoteIP(getHostByName(remoteIP));
     session->setRemotePort(remotePort);
     return _lastConnectID;
 }

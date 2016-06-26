@@ -286,7 +286,7 @@ int main(int argc, char* argv[])
         ILog4zManager::getPtr()->config("client.cfg");
     ILog4zManager::getPtr()->start();
 
-    LOGI("g_remoteIP=" << g_remoteIP << ", g_remotePort=" << g_remotePort << ", g_startType=" << g_startType
+    LOGI("g_remoteIP=" << g_remoteIP <<", orgin=" << getHostByName(g_remoteIP) << ", g_remotePort=" << g_remotePort << ", g_startType=" << g_startType
         << ", g_maxClient=" << g_maxClient << ", g_sendType=" << g_sendType << ", g_intervalMs=" << g_intervalMs << ", hightBenchmark=" << g_hightBenchmark);
 
 

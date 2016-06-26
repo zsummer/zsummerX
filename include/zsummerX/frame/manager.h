@@ -109,6 +109,8 @@ namespace zsummer
             template<class H>
             void post(H &&h){ _summer->post(std::move(h)); }
 
+            //it's blocking call. support ipv6 & ipv4 .
+            inline std::string getHostByName(const std::string & name) { return zsummer::network::getHostByName(name); }
             //创建定时器 单位是毫秒 非线程安全.
             template <class H>
             zsummer::network::TimerID createTimer(unsigned int delayms, H &&h, bool useSystemTime = true)

@@ -275,9 +275,10 @@ void SessionManager::onAcceptNewClient(zsummer::network::NetErrorCode ec, const 
         TcpSessionPtr session = std::make_shared<TcpSession>();
         session->getOptions() = founder->second._sessionOptions;
         session->setEventLoop(_summer);
-        if (session->attatch(s, aID, _lastSessionID))
+        _mapTcpSessionPtr[_lastSessionID] = session;
+        if (!session->attatch(s, aID, _lastSessionID))
         {
-            _mapTcpSessionPtr[_lastSessionID] = session;
+            _mapTcpSessionPtr.erase(_lastSessionID);
         }
     }
     

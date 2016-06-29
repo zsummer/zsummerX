@@ -404,8 +404,13 @@ void SessionManager::removeSession(TcpSessionPtr session)
     
 }
 
-SessionID SessionManager::addConnecter(const std::string & remoteIP, unsigned short remotePort)
+SessionID SessionManager::addConnecter(const std::string & remoteHost, unsigned short remotePort)
 {
+    std::string remoteIP = getHostByName(remoteHost);
+    if (remoteIP.empty())
+    {
+        return InvalidSessionID;
+    }
     _lastConnectID = nextConnectID(_lastConnectID);
     TcpSessionPtr & session = _mapTcpSessionPtr[_lastConnectID];
     session = std::make_shared<TcpSession>();
@@ -419,7 +424,7 @@ SessionID SessionManager::addConnecter(const std::string & remoteIP, unsigned sh
 
     session->setEventLoop(_summer);
     session->setSessionID(_lastConnectID);
-    session->setRemoteIP(getHostByName(remoteIP));
+    session->setRemoteIP(remoteIP);
     session->setRemotePort(remotePort);
     return _lastConnectID;
 }

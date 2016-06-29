@@ -131,7 +131,7 @@ namespace zsummer
             AccepterID getAccepterID(SessionID sID);
 
 
-            SessionID addConnecter(const std::string& remoteIP, unsigned short remotePort);
+            SessionID addConnecter(const std::string& remoteHost, unsigned short remotePort);
             SessionOptions & getConnecterOptions(SessionID cID);
             bool openConnecter(SessionID cID);
             TcpSessionPtr getTcpSession(SessionID sID);

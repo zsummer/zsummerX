@@ -36,11 +36,12 @@
 
 #include <zsummerX/frame/session.h>
 #include <zsummerX/frame/manager.h>
-
+#include <algorithm>
 
 using namespace zsummer::proto4z;
 using namespace zsummer::network;
-
+using std::min;
+using std::max;
 
 
 TcpSession::TcpSession()
@@ -324,19 +325,22 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
             }
             catch (const std::exception & e)
             {
-                LCW("MessageEntry _onBlockCheck catch one exception: " << e.what());
+                LCW("MessageEntry _onBlockCheck catch one exception: " << e.what() << ", bindata(max 500byte):"
+                    << zsummer::log4z::Log4zBinary(_recving->begin+usedIndex, min(_recving->len - usedIndex, (unsigned int)500)));
                 close();
                 return;
             }
             catch (...)
             {
-                LCW("MessageEntry _onBlockCheck catch one unknown exception: ");
+                LCW("MessageEntry _onBlockCheck catch one unknown exception.  bindata(max 500byte) :"
+                    << zsummer::log4z::Log4zBinary(_recving->begin + usedIndex, min(_recving->len - usedIndex, (unsigned int)500)));
                 close();
                 return;
             }
             if (ret.first == BCT_CORRUPTION)
             {
-                LCW("killed socket: _onBlockCheck error ");
+                LCW("killed socket: _onBlockCheck error. bindata(max 500byte) :"
+                    << zsummer::log4z::Log4zBinary(_recving->begin + usedIndex, min(_recving->len - usedIndex, (unsigned int)500)));
                 close();
                 return;
             }
@@ -351,13 +355,13 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
             }
             catch (const std::exception & e)
             {
-                LCW("MessageEntry _onBlockDispatch catch one exception: " << e.what());
-//                close();
-//                return;
+                LCW("MessageEntry _onBlockDispatch catch one exception: " << e.what() << ", bindata(max 500byte) :"
+                    << zsummer::log4z::Log4zBinary(_recving->begin + usedIndex, min(ret.second, (unsigned int)500)));
             }
             catch (...)
             {
-                LCW("MessageEntry _onBlockDispatch catch one unknown exception: ");
+                LCW("MessageEntry _onBlockDispatch catch one unknown exception, bindata(max 500byte) :"
+                    << zsummer::log4z::Log4zBinary(_recving->begin + usedIndex, min(ret.second, (unsigned int)500)));
             }
             usedIndex += ret.second;
         }
@@ -376,13 +380,15 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
             }
             catch (const std::exception & e)
             {
-                LCW("MessageEntry _onHTTPBlockCheck catch one exception: " << e.what());
+                LCW("MessageEntry _onHTTPBlockCheck catch one exception: " << e.what() << ", bindata(max 500byte) :"
+                    << zsummer::log4z::Log4zBinary(_recving->begin + usedIndex, min(_recving->len - usedIndex, (unsigned int)500)));
                 close();
                 return;
             }
             catch (...)
             {
-                LCW("MessageEntry _onHTTPBlockCheck catch one unknown exception: ");
+                LCW("MessageEntry _onHTTPBlockCheck catch one unknown exception, bindata(max 500byte) :"
+                    << zsummer::log4z::Log4zBinary(_recving->begin + usedIndex, min(_recving->len - usedIndex, (unsigned int)500)));
                 close();
                 return;
             }
@@ -390,7 +396,8 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
 
             if (ret.first == BCT_CORRUPTION)
             {
-                LCE("killed http socket: _onHTTPBlockCheck error sID=" << _sessionID);
+                LCE("killed http socket: _onHTTPBlockCheck error sID=" << _sessionID << ", bindata(max 500byte) :"
+                    << zsummer::log4z::Log4zBinary(_recving->begin + usedIndex, min(_recving->len - usedIndex, (unsigned int)500)));
                 close();
                 return;
             }
@@ -415,11 +422,13 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
             }
             catch (const std::exception & e)
             {
-                LCW("MessageEntry _onHTTPBlockDispatch catch one exception: " << e.what());
+                LCW("MessageEntry _onHTTPBlockDispatch catch one exception: " << e.what() << ", bindata(max 500byte) :"
+                    << zsummer::log4z::Log4zBinary(_recving->begin + usedIndex, min(_recving->len - usedIndex, (unsigned int)500)));
             }
             catch (...)
             {
-                LCW("MessageEntry _onHTTPBlockDispatch catch one unknown exception: ");
+                LCW("MessageEntry _onHTTPBlockDispatch catch one unknown exception, bindata(max 500byte) :"
+                    << zsummer::log4z::Log4zBinary(_recving->begin + usedIndex, min(_recving->len - usedIndex, (unsigned int)500)));
             }
 
             usedIndex += ret.second;

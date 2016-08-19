@@ -223,7 +223,7 @@ void SessionManager::onAcceptNewClient(zsummer::network::NetErrorCode ec, const 
     std::string remoteIP;
     unsigned short remotePort = 0;
     s->getPeerInfo(remoteIP, remotePort);
-    
+    remoteIP = getPureHostName(remoteIP);
     //! check white list
     //! ---------------------
     if (!founder->second._whitelistIP.empty())

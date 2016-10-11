@@ -9,7 +9,7 @@
  * 
  * ===============================================================================
  * 
- * Copyright (C) 2010-2015 YaweiZhang <yawei.zhang@foxmail.com>.
+ * Copyright (C) 2010-2016 YaweiZhang <yawei.zhang@foxmail.com>.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -622,21 +622,6 @@ void TcpSession::onPulse()
         {
             reconnect();
             _reconnects++;
-            if (_options._onSessionPulse)
-            {
-                try
-                {
-                    _options._onSessionPulse(shared_from_this());
-                }
-                catch (const std::exception & e)
-                {
-                    LCW("TcpSession::onPulse catch one exception: " << e.what());
-                }
-                catch (...)
-                {
-                    LCW("TcpSession::onPulse catch one unknown exception: ");
-                }
-            }
             _pulseTimerID = SessionManager::getRef().createTimer(_options._connectPulseInterval, std::bind(&TcpSession::onPulse, shared_from_this()));
         }
     }

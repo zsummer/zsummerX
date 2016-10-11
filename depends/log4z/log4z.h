@@ -183,7 +183,6 @@
 #define _ZSUMMER_LOG4Z_H_
 
 #include <string>
-#include <sstream>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
@@ -269,6 +268,9 @@ const int LOG4Z_DEFAULT_LIMITSIZE = 100;
 const bool LOG4Z_DEFAULT_SHOWSUFFIX = true;
 //! support ANSI->OEM console conversion on Windows
 #undef LOG4Z_OEM_CONSOLE
+//! default logger force reserve log file count.
+const size_t LOG4Z_FORCE_RESERVE_FILE_COUNT = 7;
+
 ///////////////////////////////////////////////////////////////////////////
 //! -----------------------------------------------------------------------
 //////////////////////////////////////////////////////////////////////////
@@ -341,8 +343,9 @@ public:
     virtual bool setLoggerDisplay(LoggerId id, bool enable) = 0;
     virtual bool setLoggerOutFile(LoggerId id, bool enable) = 0;
     virtual bool setLoggerLimitsize(LoggerId id, unsigned int limitsize) = 0;
-    virtual bool setLoggerMonthdir(LoggerId id, bool enable) = 0;
-    
+	virtual bool setLoggerMonthdir(LoggerId id, bool enable) = 0;
+	virtual bool setLoggerReserveTime(LoggerId id, time_t sec) = 0;
+
 
     //! Update logger's attribute from config file, thread safe.
     virtual bool setAutoUpdate(int interval/*per second, 0 is disable auto update*/) = 0;

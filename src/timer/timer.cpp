@@ -132,6 +132,7 @@ bool Timer::cancelTimer(TimerID timerID)
         auto founder = _sysQue.find(timerID);
         if (founder != _sysQue.end())
         {
+            delete founder->second;
             _sysQue.erase(founder);
             return true;
         }
@@ -141,6 +142,7 @@ bool Timer::cancelTimer(TimerID timerID)
         auto founder = _steadyQue.find(timerID);
         if (founder != _steadyQue.end())
         {
+            delete founder->second;
             _steadyQue.erase(founder);
             return true;
         }

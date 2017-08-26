@@ -48,19 +48,27 @@ require("TestProto")
 dump = Proto4z.dump
 local proto = Proto4z
 
+
+local pack = {id=10, name="name", createTime=100, moneyTree={lastTime=1,freeCount=5,payCount=5,statSum=0,statCount=0}}
+local binMemory = Proto4z.encode(pack, "SimplePack")
+local recvPack = Proto4z.decode(binMemory, Proto4z.getName(Proto4z.SimplePack.__protoID))
+Proto4z.dump(recvPack)
+
+
 local echo = {  _iarray = {{_char=1,_uchar=2,_short=3,_ushort=4,_int=5,_uint=6,_i64=12345678.2,_ui64=12345678},{_char=1,_uchar=2,_short=3,_ushort=4,_int=5,_uint=6,_i64="123456789000000.2",_ui64="1123122345678.0"}},
 				_farray = {{_float=2.235,_double=235.111},{_float=2.235,_double=235.111},},
 				_sarray = {{_string="abcdefg"},{_string="abcdefg"},{_string="abcdefg"}},
-				_imap = {{k="123", v={_char=1,_uchar=2,_short=3,_ushort=4,_int=5,_uint=6,_i64="12345678",_ui64="12345678"}}, {k="223", v={_char=1,_uchar=2,_short=3,_ushort=4,_int=5,_uint=6,_i64="12345678",_ui64="12345678"}}},
-				_fmap = {{k="523", v={_float=2.235,_double=235.111}},{k="623", v={_float=2.235,_double=235.111}}},
-				_smap = {{k="523", v={_string="abcdefg"}},{k="523", v={_string="abcdefg"}}},
+				_imap = {[123]={_char=1,_uchar=2,_short=3,_ushort=4,_int=5,_uint=6,_i64="12345678",_ui64="12345678"}, 
+							[223]={_char=1,_uchar=2,_short=3,_ushort=4,_int=5,_uint=6,_i64="12345678",_ui64="12345678"}},
+				_fmap = {[123.123123123]={_float=2.235,_double=235.111},[122.123123123]={_float=2.235,_double=235.111}},
+				_smap = {k="523", v=4},
 				}
 
 function process(echo, isDebug)
 	if isDebug then dump(echo, "process") end
 	local data = proto.encode(echo, "EchoPack")
-	if isDebug then dump(data, "encode") end
-	local dr = proto.decode(data, proto.getName(proto.EchoPack.__getID))
+	if isDebug then print(#data) end
+	local dr = proto.decode(data, proto.getName(proto.EchoPack.__protoID))
 	if isDebug then
 		dump(dr, "decode")
 	end
@@ -70,8 +78,8 @@ process(nil, true)
 process({}, true)
 process({_iarray={{}}, _farray={{}}, _fmap={{}}}, true)
 local now = Proto4zUtil.now()
-for i=1, 1000 do
-	process(echo)
+for i=1, 1 do
+	process(echo, true)
 end
 print("used time=" .. (Proto4zUtil.now() - now))
 

@@ -20,13 +20,14 @@ public:
     bool Test(WriteHTTP &wh)
     {
         bool isChunked = false;
-        PairString commandLine;
-        HTTPHeadMap head;
+        std::string method;
+        std::string methodLine;
+        std::map<std::string,std::string> head;
         std::string body;
-        if (checkHTTPBuffIntegrity(wh.getStream(), wh.getStreamLen(), 1024, false, isChunked, commandLine, head, body).first == IRT_SUCCESS)
+        if (checkHTTPBuffIntegrity(wh.getStream(), wh.getStreamLen(), 1024, isChunked, method, methodLine, head, body).first == IRT_SUCCESS)
         {
             if (head.find("Host") != head.end()
-                && (commandLine.first == "GET" || commandLine.first == "POST" || commandLine.second == "200"))
+                && (method == "GET" || method == "POST" || methodLine == "200"))
             {
                 cout << "Check checkHTTPBuffIntegrity Success" << endl;
             }
@@ -41,12 +42,12 @@ public:
             cout << "Check checkHTTPBuffIntegrity unpack error. ret =" << (IRT_SHORTAGE ? "IRT_SHORTAGE":"IRT_CORRUPTION") << endl;
             return false;
         }
-        if (checkHTTPBuffIntegrity(wh.getStream(), wh.getStreamLen() - 1, 1024, false, isChunked, commandLine, head, body).first != IRT_SHORTAGE)
+        if (checkHTTPBuffIntegrity(wh.getStream(), wh.getStreamLen() - 1, 1024, isChunked, method, methodLine, head, body).first != IRT_SHORTAGE)
         {
             cout << "Check checkHTTPBuffIntegrity IRT_SHORTAGE error" << endl;
             return false;
         }
-        if (checkHTTPBuffIntegrity(wh.getStream(), wh.getStreamLen(), wh.getStreamLen() - 1, false, isChunked, commandLine, head, body).first != IRT_CORRUPTION)
+        if (checkHTTPBuffIntegrity(wh.getStream(), wh.getStreamLen(), wh.getStreamLen() - 1,  isChunked, method, methodLine, head, body).first != IRT_CORRUPTION)
         {
             cout << "Check checkHTTPBuffIntegrity IRT_CORRUPTION error" << endl;
             return false;

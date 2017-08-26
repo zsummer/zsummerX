@@ -24,7 +24,7 @@ using namespace zsummer::proto4z;
 
 void  fillOnePack(EchoPack &pack)
 {
-    TestIntegerData idata;
+    IntegerData idata;
     idata._char = 'a';
     idata._uchar = 100;
     idata._short = 200;
@@ -34,11 +34,11 @@ void  fillOnePack(EchoPack &pack)
     idata._i64 = 600;
     idata._ui64 = 700;
 
-    TestFloatData fdata;
+    FloatData fdata;
     fdata._float = (float)123123.111111;
     fdata._double = 12312312.88888;
 
-    TestStringData sdata;
+    StringData sdata;
     sdata._string = "abcdefg";
 
     pack._iarray.push_back(idata);
@@ -48,10 +48,10 @@ void  fillOnePack(EchoPack &pack)
     pack._sarray.push_back(sdata);
     pack._sarray.push_back(sdata);
 
-    pack._imap.insert(std::make_pair("123", idata));
-    pack._imap.insert(std::make_pair("223", idata));
-    pack._fmap.insert(std::make_pair("323", fdata));
-    pack._fmap.insert(std::make_pair("423", fdata));
+    pack._imap.insert(std::make_pair(123, idata));
+    pack._imap.insert(std::make_pair(223, idata));
+    pack._fmap.insert(std::make_pair(32.3, fdata));
+    pack._fmap.insert(std::make_pair(42.3, fdata));
     pack._smap.insert(std::make_pair("523", sdata));
     pack._smap.insert(std::make_pair("623", sdata));
 }
@@ -87,7 +87,7 @@ int main()
     cout << "check binary proto" << endl;
     try
     {
-        WriteStream ws(100);
+        WriteStream ws(EchoPack::getProtoID());
         EchoPack echo;
         fillOnePack(echo);
         ws << echo;
@@ -95,11 +95,41 @@ int main()
         rs >> echo;
         cout << "success" << endl;
     }
-    catch (std::runtime_error & e)
+    catch (const std::exception & e)
     {
         cout << "error:" << e.what() << endl;
     }
 
+    try
+    {
+
+
+        SimplePack pack;
+        pack.id = 10;
+        pack.name = "aaa";
+        pack.createTime = time(NULL);
+        pack.moneyTree.freeCount = 0;
+        pack.moneyTree.lastTime = pack.createTime;
+        pack.moneyTree.statSum = 0;
+        pack.moneyTree.statCount = 0;
+        pack.moneyTree.payCount = 0;
+
+
+        
+
+
+        //序列化
+        WriteStream ws(SimplePack::getProtoID());
+        ws << pack;
+        //反序列化
+        ReadStream rs(ws.getStream(), ws.getStreamLen());
+        rs >> pack;
+        cout << "success" << endl;
+    }
+    catch (const std::exception & e)
+    {
+        cout << "error:" << e.what() << endl;
+    }
     
 
 #define StressCount 1*10000

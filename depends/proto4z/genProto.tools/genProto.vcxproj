@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -19,63 +19,63 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="genBase.cpp" />
-    <ClCompile Include="genCPP.cpp" />
-    <ClCompile Include="genCSharp.cpp" />
-    <ClCompile Include="genLUA.cpp" />
-    <ClCompile Include="genSQL.cpp" />
-    <ClCompile Include="log4z.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="md5.cpp" />
-    <ClCompile Include="parseCache.cpp" />
-    <ClCompile Include="parseProto.cpp" />
-    <ClCompile Include="tinyxml2.cpp" />
-    <ClCompile Include="utility.cpp" />
+    <ClCompile Include="depends\log4z.cpp" />
+    <ClCompile Include="depends\md5\md5.cpp" />
+    <ClCompile Include="depends\tinyxml2.cpp" />
+    <ClCompile Include="depends\utls.cpp" />
+    <ClCompile Include="src\genBase.cpp" />
+    <ClCompile Include="src\genCPP.cpp" />
+    <ClCompile Include="src\genCSharp.cpp" />
+    <ClCompile Include="src\genLUA.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\parseCache.cpp" />
+    <ClCompile Include="src\parseProto.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="any.h" />
-    <ClInclude Include="common.h" />
-    <ClInclude Include="genBase.h" />
-    <ClInclude Include="genCPP.h" />
-    <ClInclude Include="genCSharp.h" />
-    <ClInclude Include="genLUA.h" />
-    <ClInclude Include="genSQL.h" />
-    <ClInclude Include="log4z.h" />
-    <ClInclude Include="md5.h" />
-    <ClInclude Include="parseCache.h" />
-    <ClInclude Include="parseProto.h" />
-    <ClInclude Include="tinyxml2.h" />
-    <ClInclude Include="utility.h" />
+    <ClInclude Include="depends\log4z.h" />
+    <ClInclude Include="depends\md5\md5.h" />
+    <ClInclude Include="depends\tinyxml2.h" />
+    <ClInclude Include="depends\utls.h" />
+    <ClInclude Include="depends\utlsImpl.h" />
+    <ClInclude Include="src\any.h" />
+    <ClInclude Include="src\common.h" />
+    <ClInclude Include="src\genBase.h" />
+    <ClInclude Include="src\genCPP.h" />
+    <ClInclude Include="src\genCSharp.h" />
+    <ClInclude Include="src\genLUA.h" />
+    <ClInclude Include="src\parseCache.h" />
+    <ClInclude Include="src\parseProto.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{AD368D24-8C2B-4848-822F-0827E725CAD7}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>ConsoleApplication1</RootNamespace>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -97,7 +97,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>../test/genCode</OutDir>
+    <OutDir>G:\github\breeze\protocol</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>

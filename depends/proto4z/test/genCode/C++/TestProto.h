@@ -5,18 +5,18 @@
  
 const unsigned short MAX_SESSIONS = 5000; //max session count  
  
-enum GAME_TYPE : unsigned short 
+enum ServiceStatus : unsigned short 
 { 
-    GTYPE_INVALID = 0, //无效  
-    GTYPE_WAITING = 1, //等待  
-    GTYPE_INGAME = 10, //游戏中  
-    GTYPE_LEAVE = 11, //离开  
+    SS_NONE = 0, //不存在  
+    SS_CREATED = 1, //已创建  
+    SS_WORKING = 10, //working状态  
+    SS_DESTROY = 11, //已销毁  
 }; 
  
-struct TestIntegerData //测试  
+struct IntegerData //测试  
 { 
     static const unsigned short getProtoID() { return 30000;} 
-    static const std::string getProtoName() { return "TestIntegerData";} 
+    static const std::string getProtoName() { return "IntegerData";} 
     char _char;  
     unsigned char _uchar;  
     short _short;  
@@ -25,7 +25,7 @@ struct TestIntegerData //测试
     unsigned int _uint;  
     long long _i64;  
     unsigned long long _ui64;  
-    TestIntegerData() 
+    IntegerData() 
     { 
         _char = 0; 
         _uchar = 0; 
@@ -36,7 +36,7 @@ struct TestIntegerData //测试
         _i64 = 0; 
         _ui64 = 0; 
     } 
-    TestIntegerData(const char & _char, const unsigned char & _uchar, const short & _short, const unsigned short & _ushort, const int & _int, const unsigned int & _uint, const long long & _i64, const unsigned long long & _ui64) 
+    IntegerData(const char & _char, const unsigned char & _uchar, const short & _short, const unsigned short & _ushort, const int & _int, const unsigned int & _uint, const long long & _i64, const unsigned long long & _ui64) 
     { 
         this->_char = _char; 
         this->_uchar = _uchar; 
@@ -48,7 +48,7 @@ struct TestIntegerData //测试
         this->_ui64 = _ui64; 
     } 
 }; 
-inline zsummer::proto4z::WriteStream & operator << (zsummer::proto4z::WriteStream & ws, const TestIntegerData & data) 
+inline zsummer::proto4z::WriteStream & operator << (zsummer::proto4z::WriteStream & ws, const IntegerData & data) 
 { 
     ws << data._char;  
     ws << data._uchar;  
@@ -60,7 +60,7 @@ inline zsummer::proto4z::WriteStream & operator << (zsummer::proto4z::WriteStrea
     ws << data._ui64;  
     return ws; 
 } 
-inline zsummer::proto4z::ReadStream & operator >> (zsummer::proto4z::ReadStream & rs, TestIntegerData & data) 
+inline zsummer::proto4z::ReadStream & operator >> (zsummer::proto4z::ReadStream & rs, IntegerData & data) 
 { 
     rs >> data._char;  
     rs >> data._uchar;  
@@ -73,55 +73,55 @@ inline zsummer::proto4z::ReadStream & operator >> (zsummer::proto4z::ReadStream 
     return rs; 
 } 
  
-struct TestFloatData //测试  
+struct FloatData //测试  
 { 
     static const unsigned short getProtoID() { return 30001;} 
-    static const std::string getProtoName() { return "TestFloatData";} 
+    static const std::string getProtoName() { return "FloatData";} 
     float _float;  
     double _double;  
-    TestFloatData() 
+    FloatData() 
     { 
         _float = 0.0; 
         _double = 0.0; 
     } 
-    TestFloatData(const float & _float, const double & _double) 
+    FloatData(const float & _float, const double & _double) 
     { 
         this->_float = _float; 
         this->_double = _double; 
     } 
 }; 
-inline zsummer::proto4z::WriteStream & operator << (zsummer::proto4z::WriteStream & ws, const TestFloatData & data) 
+inline zsummer::proto4z::WriteStream & operator << (zsummer::proto4z::WriteStream & ws, const FloatData & data) 
 { 
     ws << data._float;  
     ws << data._double;  
     return ws; 
 } 
-inline zsummer::proto4z::ReadStream & operator >> (zsummer::proto4z::ReadStream & rs, TestFloatData & data) 
+inline zsummer::proto4z::ReadStream & operator >> (zsummer::proto4z::ReadStream & rs, FloatData & data) 
 { 
     rs >> data._float;  
     rs >> data._double;  
     return rs; 
 } 
  
-struct TestStringData //测试  
+struct StringData //测试  
 { 
     static const unsigned short getProtoID() { return 30002;} 
-    static const std::string getProtoName() { return "TestStringData";} 
+    static const std::string getProtoName() { return "StringData";} 
     std::string _string;  
-    TestStringData() 
+    StringData() 
     { 
     } 
-    TestStringData(const std::string & _string) 
+    StringData(const std::string & _string) 
     { 
         this->_string = _string; 
     } 
 }; 
-inline zsummer::proto4z::WriteStream & operator << (zsummer::proto4z::WriteStream & ws, const TestStringData & data) 
+inline zsummer::proto4z::WriteStream & operator << (zsummer::proto4z::WriteStream & ws, const StringData & data) 
 { 
     ws << data._string;  
     return ws; 
 } 
-inline zsummer::proto4z::ReadStream & operator >> (zsummer::proto4z::ReadStream & rs, TestStringData & data) 
+inline zsummer::proto4z::ReadStream & operator >> (zsummer::proto4z::ReadStream & rs, StringData & data) 
 { 
     rs >> data._string;  
     return rs; 
@@ -131,37 +131,37 @@ inline zsummer::proto4z::ReadStream & operator >> (zsummer::proto4z::ReadStream 
 typedef std::vector<unsigned int> IntArray;  
  
  
-typedef std::vector<TestIntegerData> TestIntegerDataArray;  
+typedef std::vector<IntegerData> IntegerDataArray;  
  
  
-typedef std::vector<TestFloatData> TestFloatDataArray;  
+typedef std::vector<FloatData> FloatDataArray;  
  
  
-typedef std::vector<TestStringData> TestStringDataArray;  
+typedef std::vector<StringData> StringDataArray;  
  
  
-typedef std::map<std::string, TestIntegerData> TestIntegerDataMap;  
+typedef std::map<unsigned int, IntegerData> IntegerDataMap;  
  
  
-typedef std::map<std::string, TestFloatData> TestFloatDataMap;  
+typedef std::map<double, FloatData> FloatDataMap;  
  
  
-typedef std::map<std::string, TestStringData> TestStringDataMap;  
+typedef std::map<std::string, StringData> StringDataMap;  
  
 struct EchoPack 
 { 
     static const unsigned short getProtoID() { return 30003;} 
     static const std::string getProtoName() { return "EchoPack";} 
-    TestIntegerDataArray _iarray;  
-    TestFloatDataArray _farray;  
-    TestStringDataArray _sarray;  
-    TestIntegerDataMap _imap;  
-    TestFloatDataMap _fmap;  
-    TestStringDataMap _smap;  
+    IntegerDataArray _iarray;  
+    FloatDataArray _farray;  
+    StringDataArray _sarray;  
+    IntegerDataMap _imap;  
+    FloatDataMap _fmap;  
+    StringDataMap _smap;  
     EchoPack() 
     { 
     } 
-    EchoPack(const TestIntegerDataArray & _iarray, const TestFloatDataArray & _farray, const TestStringDataArray & _sarray, const TestIntegerDataMap & _imap, const TestFloatDataMap & _fmap, const TestStringDataMap & _smap) 
+    EchoPack(const IntegerDataArray & _iarray, const FloatDataArray & _farray, const StringDataArray & _sarray, const IntegerDataMap & _imap, const FloatDataMap & _fmap, const StringDataMap & _smap) 
     { 
         this->_iarray = _iarray; 
         this->_farray = _farray; 
@@ -192,17 +192,86 @@ inline zsummer::proto4z::ReadStream & operator >> (zsummer::proto4z::ReadStream 
     return rs; 
 } 
  
-struct Pulse 
+struct MoneyTree //摇钱树功能模块  
 { 
     static const unsigned short getProtoID() { return 30004;} 
-    static const std::string getProtoName() { return "Pulse";} 
+    static const std::string getProtoName() { return "MoneyTree";} 
+    unsigned int lastTime; //最后一次执行时间  
+    unsigned int freeCount; //今日剩余免费次数  
+    unsigned int payCount; //今日已购买次数  
+    unsigned int statSum; //历史总和  
+    unsigned int statCount; //历史总次数  
+    MoneyTree() 
+    { 
+        lastTime = 0; 
+        freeCount = 0; 
+        payCount = 0; 
+        statSum = 0; 
+        statCount = 0; 
+    } 
+    MoneyTree(const unsigned int & lastTime, const unsigned int & freeCount, const unsigned int & payCount, const unsigned int & statSum, const unsigned int & statCount) 
+    { 
+        this->lastTime = lastTime; 
+        this->freeCount = freeCount; 
+        this->payCount = payCount; 
+        this->statSum = statSum; 
+        this->statCount = statCount; 
+    } 
 }; 
-inline zsummer::proto4z::WriteStream & operator << (zsummer::proto4z::WriteStream & ws, const Pulse & data) 
+inline zsummer::proto4z::WriteStream & operator << (zsummer::proto4z::WriteStream & ws, const MoneyTree & data) 
 { 
+    ws << data.lastTime;  
+    ws << data.freeCount;  
+    ws << data.payCount;  
+    ws << data.statSum;  
+    ws << data.statCount;  
     return ws; 
 } 
-inline zsummer::proto4z::ReadStream & operator >> (zsummer::proto4z::ReadStream & rs, Pulse & data) 
+inline zsummer::proto4z::ReadStream & operator >> (zsummer::proto4z::ReadStream & rs, MoneyTree & data) 
 { 
+    rs >> data.lastTime;  
+    rs >> data.freeCount;  
+    rs >> data.payCount;  
+    rs >> data.statSum;  
+    rs >> data.statCount;  
+    return rs; 
+} 
+ 
+struct SimplePack //简单示例  
+{ 
+    static const unsigned short getProtoID() { return 30005;} 
+    static const std::string getProtoName() { return "SimplePack";} 
+    unsigned int id; //id, 对应数据库的结构为自增ID,key  
+    std::string name; //昵称, 唯一索引  
+    unsigned int createTime; //创建时间, 普通索引  
+    MoneyTree moneyTree;  
+    SimplePack() 
+    { 
+        id = 0; 
+        createTime = 0; 
+    } 
+    SimplePack(const unsigned int & id, const std::string & name, const unsigned int & createTime, const MoneyTree & moneyTree) 
+    { 
+        this->id = id; 
+        this->name = name; 
+        this->createTime = createTime; 
+        this->moneyTree = moneyTree; 
+    } 
+}; 
+inline zsummer::proto4z::WriteStream & operator << (zsummer::proto4z::WriteStream & ws, const SimplePack & data) 
+{ 
+    ws << data.id;  
+    ws << data.name;  
+    ws << data.createTime;  
+    ws << data.moneyTree;  
+    return ws; 
+} 
+inline zsummer::proto4z::ReadStream & operator >> (zsummer::proto4z::ReadStream & rs, SimplePack & data) 
+{ 
+    rs >> data.id;  
+    rs >> data.name;  
+    rs >> data.createTime;  
+    rs >> data.moneyTree;  
     return rs; 
 } 
  

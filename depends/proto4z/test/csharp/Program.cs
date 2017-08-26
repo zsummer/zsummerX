@@ -153,33 +153,33 @@ namespace ConsoleApplication2
             RC4Encryption rc4Client = new RC4Encryption();
             rc4Server.makeSBox("zhangyawei");
             rc4Client.makeSBox("zhangyawei");
-            TestIntegerData idata = new TestIntegerData('a', 1, 5, 20, 30, 40, 50, 60, 70);
-            TestFloatData fdata = new TestFloatData(243.123123f, 32432.123);
-            TestStringData sdata = new TestStringData("love");
+            IntegerData idata = new IntegerData('a', 1, 5, 20, 30, 40, 50, 60);
+            FloatData fdata = new FloatData(243.123123f, 32432.123);
+            StringData sdata = new StringData("love");
 
 
             EchoPack pack = new EchoPack();
-            pack._iarray = new Proto4z.TestIntegerDataArray();
+            pack._iarray = new IntegerDataArray();
             pack._iarray.Add(idata);
             pack._iarray.Add(idata);
             pack._iarray.Add(idata);
-            pack._farray = new Proto4z.TestFloatDataArray();
+            pack._farray = new FloatDataArray();
             pack._farray.Add(fdata);
             pack._farray.Add(fdata);
             pack._farray.Add(fdata);
-            pack._sarray = new Proto4z.TestStringDataArray();
+            pack._sarray = new StringDataArray();
             pack._sarray.Add(sdata);
             pack._sarray.Add(sdata);
             pack._sarray.Add(sdata);
 
-            pack._imap = new Proto4z.TestIntegerDataMap();
+            pack._imap = new IntegerDataMap();
             pack._imap.Add("123", idata);
             pack._imap.Add("223", idata);
 
-            pack._fmap = new Proto4z.TestFloatDataMap();
+            pack._fmap = new FloatDataMap();
             pack._fmap.Add("523", fdata);
             pack._fmap.Add("623", fdata);
-            pack._smap = new Proto4z.TestStringDataMap();
+            pack._smap = new StringDataMap();
             pack._smap.Add("723", sdata);
             pack._smap.Add("823", sdata);
 
@@ -205,6 +205,21 @@ namespace ConsoleApplication2
                 int pos = 0;
                 v.__decode(binData, ref pos);
 
+                try
+                {
+                    SimplePack pk = new SimplePack(10, "name", 100, null);
+                    pk.moneyTree = new MoneyTree(10001, 5, 5, 0, 0);
+                    var binMemory = pk.__encode().ToArray();  //序列化  
+
+                    SimplePack recvPK = new SimplePack();
+                    int curPos = 0;
+                    recvPK.__decode(binMemory, ref curPos);
+                    System.Console.Write("success");
+                }
+                catch(Exception e)
+                {
+                    System.Console.Write("error");
+                }
                  Client client = new Client();
                  client.Run(binData);
             }

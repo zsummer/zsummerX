@@ -28,60 +28,72 @@
     <const name="MAX_SESSIONS" value="5000" type="ui16" desc="max session count" />
 
     <!-- 枚举类型 -->
-    <enum type="ui16" name="GAME_TYPE" >
-        <member name="GTYPE_INVALID" desc="无效" />
-        <member name="GTYPE_WAITING" desc="等待" />
-        <member name="GTYPE_INGAME" value="10" desc="游戏中" />
-        <member name="GTYPE_LEAVE" desc="离开" />
+    <enum type="ui16" name="ServiceStatus" >
+        <member name="SS_NONE" desc="不存在" />
+        <member name="SS_CREATED" desc="已创建" />
+        <member name="SS_WORKING" value="10" desc="working状态" />
+        <member name="SS_DESTROY" desc="已销毁" />
     </enum>
 
 
     <!-- 整形-->
-    <packet name="TestIntegerData" desc="测试">
-        <member name="_char"    type="i8"    desc=""/>
-        <member name="_uchar"    type="ui8"    desc=""/>
-        <member name="_short"    type="i16"    desc=""/>
-        <member name="_ushort"    type="ui16"     desc=""/>
+    <packet name="IntegerData" desc="测试">
+        <member name="_char"    type="i8"     desc=""/>
+        <member name="_uchar"    type="ui8"   desc=""/>
+        <member name="_short"    type="i16"   desc=""/>
+        <member name="_ushort"    type="ui16" desc=""/>
         <member name="_int"    type="i32"     desc=""/>
-        <member name="_uint"    type="ui32" tag="key"    desc=""/>
-        <member name="_i64"    type="i64" tag="key"     desc=""/>
-        <member name="_ui64"    type="ui64"    tag="ignore" desc=""/>
+        <member name="_uint"    type="ui32"   desc=""/>
+        <member name="_i64"    type="i64"     desc=""/>
+        <member name="_ui64"    type="ui64"   desc=""/>
     </packet>
     <!-- 浮点-->
-    <packet name="TestFloatData" desc="测试">
+    <packet name="FloatData" desc="测试">
         <member name="_float"    type="float"    desc=""/>
         <member name="_double"    type="double"    desc=""/>
     </packet>
 
     <!-- 字符串-->
-    <packet name="TestStringData" desc="测试">
+    <packet name="StringData" desc="测试">
         <member name="_string"    type="string"    desc=""/>
     </packet>
 
     <!-- 支持数组类型-->
     <array name="IntArray" type="ui32" desc=""/>
-    <array name="TestIntegerDataArray" type="TestIntegerData" desc=""/>
-    <array name="TestFloatDataArray" type="TestFloatData" desc=""/>
-    <array name="TestStringDataArray" type="TestStringData" desc=""/>
+    <array name="IntegerDataArray" type="IntegerData" desc=""/>
+    <array name="FloatDataArray" type="FloatData" desc=""/>
+    <array name="StringDataArray" type="StringData" desc=""/>
     
     <!-- 支持字典类型-->
-    <map key="string" name="TestIntegerDataMap" value="TestIntegerData" desc=""/>
-    <map key="string" name="TestFloatDataMap" value="TestFloatData" desc=""/>
-    <map key="string" name="TestStringDataMap" value="TestStringData" desc=""/>
+    <map key="ui32" name="IntegerDataMap" value="IntegerData" desc=""/>
+    <map key="double" name="FloatDataMap" value="FloatData" desc=""/>
+    <map key="string" name="StringDataMap" value="StringData" desc=""/>
 
     
     <!-- 协议类型-->
     <packet    name="EchoPack" desc= "">
-        <member name="_iarray" type="TestIntegerDataArray"     desc=""/>
-        <member name="_farray" type="TestFloatDataArray"     desc=""/>
-        <member name="_sarray" type="TestStringDataArray"     desc=""/>
-        <member name="_imap" type="TestIntegerDataMap"     desc=""/>
-        <member name="_fmap" type="TestFloatDataMap"     desc=""/>
-        <member name="_smap" type="TestStringDataMap"     desc=""/>
+        <member name="_iarray" type="IntegerDataArray"     desc=""/>
+        <member name="_farray" type="FloatDataArray"     desc=""/>
+        <member name="_sarray" type="StringDataArray"     desc=""/>
+        <member name="_imap" type="IntegerDataMap"     desc=""/>
+        <member name="_fmap" type="FloatDataMap"     desc=""/>
+        <member name="_smap" type="StringDataMap"     desc=""/>
     </packet>
 
-    <!-- 协议类型-->
-    <packet    name="Pulse" desc= "">
+
+
+    <packet    name="MoneyTree" desc= "摇钱树功能模块">
+        <member name="lastTime" type="ui32"  desc="最后一次执行时间"/>
+        <member name="freeCount" type="ui32"  desc="今日剩余免费次数"/>
+        <member name="payCount" type="ui32"  desc="今日已购买次数"/>
+        <member name="statSum" type="ui32" desc="历史总和"/>
+        <member name="statCount" type="ui32" desc="历史总次数"/>
+    </packet>
+    <packet    name="SimplePack" desc= "简单示例">
+        <member name="id" type="ui32" tag="auto,key"     desc="id, 对应数据库的结构为自增ID,key"/>
+        <member name="name" type="string" tag="uni"     desc="昵称, 唯一索引"/>
+        <member name="createTime" type="ui32" tag="idx"     desc="创建时间, 普通索引"/>
+        <member name="moneyTree" type="MoneyTree"     desc=""/>
     </packet>
 
 </Proto>

@@ -220,7 +220,7 @@ void TcpSession::close()
             _sockptr->doClose();
             _sockptr.reset();
         }
-        LCD("TcpSession to close socket. sID= " << _sessionID);
+        LCD("TcpSession to close socket. sID= " << _sessionID << ", traceback=" << zsummer::proto4z::proto4z_traceback());
         if (_status == 2)
         {
             SessionManager::getRef()._statInfo[STAT_SESSION_CLOSED]++;

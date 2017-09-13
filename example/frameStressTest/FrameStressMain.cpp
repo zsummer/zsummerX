@@ -49,11 +49,11 @@ using namespace std::placeholders;
 //! default value
 std::string g_remoteIP = "0.0.0.0"; 
 unsigned short g_remotePort = 8081; 
-unsigned short g_startType = 0;  //0 start with server module, 1 start with client module. 
-unsigned short g_maxClient = 1; //if start with server it is client limite count. else other it is the start client count.
-unsigned short g_sendType = 0; //0 ping-pong test, 1 flooding test
-unsigned int   g_intervalMs = 0; // if start client with flood test, it's flooding interval by millionsecond.
-unsigned int   g_hightBenchmark = 0;
+unsigned short g_startClient = 0;  //0 start with server module, 1 start with client module. 
+unsigned short g_concClient = 1; //if start with server it is client limite count. else other it is the start client count.
+unsigned short g_concExtraSend = 0; //concurrent ping-pong test count(flooding test)
+unsigned int   g_intervalSend = 0; // if start client with flood test, it's flooding interval by millionsecond.
+unsigned int   g_hightBenchmarkLevel = 0; //0 serialize full data, 1 serialize simple data,  2 serialize ellipsis  
 
 
 
@@ -104,68 +104,103 @@ public:
     {
     }
 
-    void onConnected(TcpSessionPtr session)
+    void onLinked(TcpSessionPtr session)
     {
-        LOGI("onConnected. ConnectorID=" << session->getSessionID() << ", remoteIP=" << session->getRemoteIP() << ", remotePort=" << session->getRemotePort() );
-        SendFunc(session, g_sendType != 0);
+        LOGI("onLinked. ConnectorID=" << session->getSessionID() << ", remoteIP=" << session->getRemoteIP() << ", remotePort=" << session->getRemotePort() );
+        EchoPack ep;
+        initEchoPack(ep, g_hightBenchmarkLevel == 0);
+        WriteStream ws(EchoPack::getProtoID());
+        ws << ep;
+        session->send(ws.getStream(), ws.getStreamLen());
     };
-    void OnConnectDisconnect(TcpSessionPtr session)
+    void onLost(TcpSessionPtr session)
     {
+        LOGI("onLost. ConnectorID=" << session->getSessionID() << ", remoteIP=" << session->getRemoteIP() << ", remotePort=" << session->getRemotePort());
     }
 
     void onMessage(TcpSessionPtr session, ReadStream & rs)
     {
-        if (g_hightBenchmark)
+        if (g_intervalSend > 0)
         {
-            if (g_sendType == 0 || g_intervalMs == 0) //echo send
+            SessionManager::getRef().createTimer(g_intervalSend, std::bind(&CStressClientHandler::delaySend, this, session));
+            return;
+        }
+
+        if (g_hightBenchmarkLevel >= 2)
+        {
+            session->send(rs.getStream(), rs.getStreamLen());
+            if (g_concExtraSend > 0) // concurrence rule via limit memory 
             {
-                session->send(rs.getStream(), rs.getStreamLen());
+                unsigned int limitQue = (600 * 1024 * 1024 / SESSION_BLOCK_SIZE) / g_concClient;
+                const unsigned int limitQue2 = session->getOptions()._maxSendListCount;
+                limitQue = limitQue > limitQue2 ? limitQue2 : limitQue;
+                limitQue = limitQue > g_concExtraSend ? g_concExtraSend : limitQue;
+                auto up = session->getUserParam(0);
+                if (std::get<1>(up) < limitQue ) // 0 == 0 
+                {
+                    std::get<1>(up) += 1;
+                    session->setUserParam(0, up);
+                    session->send(rs.getStream(), rs.getStreamLen());
+                }
             }
         }
         else
         {
             EchoPack pack;
             rs >> pack;
+            WriteStream ws(EchoPack::getProtoID());
+            ws << pack;
+            session->send(ws.getStream(), ws.getStreamLen());
 
-            if (g_sendType == 0 || g_intervalMs == 0) //echo send
+            if (g_concExtraSend > 0)
             {
-                WriteStream ws(EchoPack::getProtoID());
-                ws << pack;
-                session->send(ws.getStream(), ws.getStreamLen());
+                unsigned int limitQue = (600 * 1024 * 1024 / SESSION_BLOCK_SIZE) / g_concClient;
+                const unsigned int limitQue2 = session->getOptions()._maxSendListCount;
+                limitQue = limitQue > limitQue2 ? limitQue2 : limitQue;
+                limitQue = limitQue > g_concExtraSend ? g_concExtraSend : limitQue;
+                auto up = session->getUserParam(0);
+                if (std::get<1>(up) < limitQue) // 0 == 0 
+                {
+                    std::get<1>(up) += 1;
+                    session->setUserParam(0, up);
+                    session->send(ws.getStream(), ws.getStreamLen());
+                }
             }
         }
-    };
+    }
 
-    void SendFunc(TcpSessionPtr session, bool openTimer)
+    void initEchoPack(EchoPack & pack, bool isFullData)
     {
-        if (session->getSendQueSize() < 1000)
+        IntegerData idata;
+        idata._char = 'a';
+        idata._uchar = 100;
+        idata._short = 200;
+        idata._ushort = 300;
+        idata._int = 400;
+        idata._uint = 500;
+        idata._i64 = 600;
+        idata._ui64 = 700;
+
+        pack._iarray.clear();
+        pack._iarray.push_back(idata);
+        pack._iarray.push_back(idata);
+
+
+        FloatData fdata;
+        fdata._float = (float)123123.111111;
+        fdata._double = 12312312.88888;
+
+        pack._farray.clear();
+        pack._farray.push_back(fdata);
+        pack._farray.push_back(fdata);
+
+        if (isFullData)
         {
-            WriteStream ws(EchoPack::getProtoID());
-            EchoPack pack;
-            IntegerData idata;
-            idata._char = 'a';
-            idata._uchar = 100;
-            idata._short = 200;
-            idata._ushort = 300;
-            idata._int = 400;
-            idata._uint = 500;
-            idata._i64 = 600;
-            idata._ui64 = 700;
-
-
-            FloatData fdata;
-            fdata._float = (float)123123.111111;
-            fdata._double = 12312312.88888;
-
             StringData sdata;
             sdata._string = "abcdefg";
+            pack._sarray.push_back(sdata);
+            pack._sarray.push_back(sdata);
 
-            pack._iarray.push_back(idata);
-            pack._iarray.push_back(idata);
-            pack._farray.push_back(fdata);
-            pack._farray.push_back(fdata);
-            pack._sarray.push_back(sdata);
-            pack._sarray.push_back(sdata);
 
             pack._imap.insert(std::make_pair("123", idata));
             pack._imap.insert(std::make_pair("223", idata));
@@ -173,23 +208,42 @@ public:
             pack._fmap.insert(std::make_pair("423", fdata));
             pack._smap.insert(std::make_pair("523", sdata));
             pack._smap.insert(std::make_pair("623", sdata));
-            ws << pack;
-            session->send(ws.getStream(), ws.getStreamLen());
-            //LOGD("send once. opentimer=" << openTimer);
-            if (openTimer)
-            {
-                SessionManager::getRef().createTimer(g_intervalMs, std::bind(&CStressClientHandler::SendFunc, this, session, !session->isInvalidSession()));
-            }
         }
-        else if (openTimer)
+    }
+    void delaySend(TcpSessionPtr session)
+    {
+        thread_local static char buff[SESSION_BLOCK_SIZE];
+        thread_local static zsummer::proto4z::Integer buffSize = 0;
+        if (buffSize == 0)
         {
-            SessionManager::getRef().createTimer(20, std::bind(&CStressClientHandler::SendFunc, this, session, !session->isInvalidSession()));
+            EchoPack ep;
+            initEchoPack(ep, g_hightBenchmarkLevel == 0);
+            WriteStream ws(EchoPack::getProtoID(), buff, SESSION_BLOCK_SIZE);
+            ws << ep;
+            buffSize = ws.getStreamLen();
         }
-        
+        if (session->isInvalidSession())
+        {
+            LOGE("InvalidSession termination send data");
+            return;
+        }
 
-
-    };
-
+        if (g_hightBenchmarkLevel >= 2)
+        {
+            session->send(buff, buffSize);
+        }
+        else
+        {
+            thread_local static EchoPack ep; 
+            if (ep._farray.empty())
+            {
+                initEchoPack(ep, g_hightBenchmarkLevel == 0);
+            }
+            WriteStream ws(EchoPack::getProtoID());
+            ws << ep;
+            session->send(ws.getStream(), ws.getStreamLen());
+        }
+    }
 };
 
 
@@ -203,11 +257,18 @@ public:
     CStressServerHandler()
     {
     }
-
+    void onLinked(TcpSessionPtr session)
+    {
+        LOGI("onLinked. sessionID=" << session->getSessionID() << ", remoteIP=" << session->getRemoteIP() << ", remotePort=" << session->getRemotePort());
+    };
+    void onLost(TcpSessionPtr session)
+    {
+        LOGI("onLost. sessionID=" << session->getSessionID() << ", remoteIP=" << session->getRemoteIP() << ", remotePort=" << session->getRemotePort());
+    }
     void onMessage(TcpSessionPtr session, ReadStream & rs)
     {
         //LOGD("onMessage");
-        if (g_hightBenchmark)
+        if (g_hightBenchmarkLevel >= 2)
         {
             session->send(rs.getStream(), rs.getStreamLen());
         }
@@ -255,13 +316,13 @@ int main(int argc, char* argv[])
         || strcmp(argv[1], "/?") == 0))
     {
         std::cout << "please input like example:" << std::endl;
-        std::cout << "tcpTest remoteIP remotePort startType maxClient sendType interval" << std::endl;
+        std::cout << "frameStressTest remoteIP remotePort isClient concurrentClient concurrentExtraSend sendInterval highbenchmarkLevel" << std::endl;
         std::cout << "./tcpTest 0.0.0.0 8081 0" << std::endl;
-        std::cout << "startType: 0 server, 1 client" << std::endl;
-        std::cout << "maxClient: limit max" << std::endl;
-        std::cout << "sendType: 0 echo send, 1 direct send" << std::endl;
-        std::cout << "interval: send once interval" << std::endl;
-        std::cout << "high benchmark: 0 close, 1 open" << std::endl;
+        std::cout << "isClient: 0 server, 1 client" << std::endl;
+        std::cout << "concurrentClient: default 1" << std::endl;
+        std::cout << "concurrentSend: default 0" << std::endl;
+        std::cout << "interval: send interval" << std::endl;
+        std::cout << "highbenchmarkLevel: 0 full , 1 simple, 2 direct" << std::endl;
         return 0;
     }
     if (argc > 1)
@@ -269,25 +330,25 @@ int main(int argc, char* argv[])
     if (argc > 2)
         g_remotePort = atoi(argv[2]);
     if (argc > 3)
-        g_startType = atoi(argv[3]);
-        if (g_startType != 0) g_maxClient = 1;
+        g_startClient = atoi(argv[3]);
+        if (g_startClient != 0) g_concClient = 1;
     if (argc > 4)
-        g_maxClient = atoi(argv[4]);
+        g_concClient = atoi(argv[4]);
     if (argc > 5)
-        g_sendType = atoi(argv[5]);
+        g_concExtraSend = atoi(argv[5]);
     if (argc > 6)
-        g_intervalMs = atoi(argv[6]);
+        g_intervalSend = atoi(argv[6]);
     if (argc > 7)
-        g_hightBenchmark = atoi(argv[7]);
+        g_hightBenchmarkLevel = atoi(argv[7]);
 
-    if (g_startType == 0)
+    if (g_startClient == 0)
         ILog4zManager::getPtr()->config("server.cfg");
     else
         ILog4zManager::getPtr()->config("client.cfg");
     ILog4zManager::getPtr()->start();
 
-    LOGI("g_remoteIP=" << g_remoteIP <<", orgin=" << getHostByName(g_remoteIP) << ", g_remotePort=" << g_remotePort << ", g_startType=" << g_startType
-        << ", g_maxClient=" << g_maxClient << ", g_sendType=" << g_sendType << ", g_intervalMs=" << g_intervalMs << ", hightBenchmark=" << g_hightBenchmark);
+    LOGI("g_remoteIP=" << g_remoteIP <<", orgin=" << getHostByName(g_remoteIP) << ", g_remotePort=" << g_remotePort << ", g_startClient=" << g_startClient
+        << ", g_concClient=" << g_concClient << ", g_concExtraSend=" << g_concExtraSend << ", g_intervalSend=" << g_intervalSend << ", hightBenchmark=" << g_hightBenchmarkLevel);
 
 
     ILog4zManager::getPtr()->setLoggerLevel(LOG4Z_MAIN_LOGGER_ID, LOG_LEVEL_INFO);
@@ -298,23 +359,21 @@ int main(int argc, char* argv[])
 
     SessionManager::getRef().createTimer(5000, MonitorFunc);
 
-
     //build client and server
-    if (g_startType) //client
+    if (g_startClient) //client
     {
         CStressClientHandler client;
         //add connector.
-        for (int i = 0; i < g_maxClient; ++i)
+        for (int i = 0; i < g_concClient; ++i)
         {
             SessionID cID = SessionManager::getRef().addConnecter(g_remoteIP, g_remotePort);
-            SessionManager::getRef().getConnecterOptions(cID)._reconnects = 5;
+            SessionManager::getRef().getConnecterOptions(cID)._reconnects = 0;
             SessionManager::getRef().getConnecterOptions(cID)._connectPulseInterval = 4000;
-            if (g_sendType != 0)
-            {
-                SessionManager::getRef().getConnecterOptions(cID)._maxSendListCount = 20000;
-            }
+            SessionManager::getRef().getConnecterOptions(cID)._maxSendListCount = 20000;
+
             
-            SessionManager::getRef().getConnecterOptions(cID)._onSessionLinked = std::bind(&CStressClientHandler::onConnected, &client, _1);
+            SessionManager::getRef().getConnecterOptions(cID)._onSessionLinked = std::bind(&CStressClientHandler::onLinked, &client, _1);
+            SessionManager::getRef().getConnecterOptions(cID)._onSessionClosed = std::bind(&CStressClientHandler::onLost, &client, _1);
             SessionManager::getRef().getConnecterOptions(cID)._onBlockDispatch = [&client](TcpSessionPtr   session, const char * begin, unsigned int len)
             {
                 ReadStream rs(begin, len);
@@ -329,10 +388,9 @@ int main(int argc, char* argv[])
     {
         CStressServerHandler server;
         AccepterID aID = SessionManager::getRef().addAccepter(g_remoteIP, g_remotePort);
-        if (g_sendType != 0)
-        {
-            SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._maxSendListCount = 20000;
-        }
+        SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._maxSendListCount = 40000;
+        SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._onSessionLinked = std::bind(&CStressServerHandler::onLinked, &server, _1);
+        SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._onSessionClosed = std::bind(&CStressServerHandler::onLost, &server, _1);
         SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._onBlockDispatch = [&server](TcpSessionPtr   session, const char * begin, unsigned int len)
         {
             ReadStream rs(begin, len);

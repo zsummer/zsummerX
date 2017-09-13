@@ -91,7 +91,7 @@ namespace zsummer
         inline AccepterID nextAccepterID(AccepterID AccepterID){ return AccepterID + 1 >= __MIDDLE_SEGMENT_VALUE ? 1 : AccepterID + 1; }
 
 
-        const unsigned int SESSION_BLOCK_SIZE = 200 * 1024;
+        const unsigned int SESSION_BLOCK_SIZE = 20 * 1024;
 
         enum ProtoType
         {

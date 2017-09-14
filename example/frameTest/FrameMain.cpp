@@ -272,18 +272,19 @@ void TestSessionUserParam()
 {
     TcpSessionPtr session = std::make_shared<TcpSession>();
     
-    session->setUserParamDouble(10, 66.66);
-    session->setUserParam(10, 25);
-    session->setUserParam(10, "string");
+    session->setUserParamNumber(10, 66.66);
+    session->setUserParamInteger(10, 25);
+    session->setUserParamString(10, "string");
 
     LOGI("TestSessionUserParam. double=66.66, number=25, string=string");
+    bool inited;
     double d;
     unsigned long long ull;
     std::string str;
-    std::tie(d, ull, str) = session->getUserParam(10);
+    std::tie(inited, d, ull, str) = session->getUserParam(10);
     LOGI("TestSessionUserParam. std::tie double=" << d << ", number=" << ull << ", string=" << str);
-    d = session->getUserParamDouble(10);
-    ull = session->getUserParamNumber(10);
+    d = session->getUserParamNumber(10);
+    ull = session->getUserParamInteger(10);
     str = session->getUserParamString(10);
 }
 

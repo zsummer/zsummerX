@@ -225,13 +225,14 @@ namespace zsummer
             SessionOptions _sessionOptions;
         };
 
-        using TupleParam = std::tuple<double, unsigned long long, std::string>;
+        using TupleParam = std::tuple<bool, double, unsigned long long, std::string>;
 
         enum TupleParamType
         {
-            TupleParamDouble = 0,
+            TupleParamInited = 0,
             TupleParamNumber = 1,
-            TupleParamString = 2,
+            TupleParamInteger = 2,
+            TupleParamString = 3,
         };
 
         inline zsummer::log4z::Log4zStream & operator << (zsummer::log4z::Log4zStream &os, const SessionOptions & traits)

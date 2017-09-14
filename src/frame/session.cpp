@@ -53,6 +53,7 @@ TcpSession::TcpSession()
     _sending = (SessionBlock*)malloc(sizeof(SessionBlock)+SESSION_BLOCK_SIZE);
     _sending->len = 0;
     _sending->bound = SESSION_BLOCK_SIZE;
+    _param.reserve(100);
 }
 
 TcpSession::~TcpSession()
@@ -220,7 +221,7 @@ void TcpSession::close()
             _sockptr->doClose();
             _sockptr.reset();
         }
-        LCD("TcpSession to close socket. sID= " << _sessionID << ", traceback=" << zsummer::proto4z::proto4z_traceback());
+        LCD("TcpSession to close socket. sID= " << _sessionID);
         if (_status == 2)
         {
             SessionManager::getRef()._statInfo[STAT_SESSION_CLOSED]++;
@@ -647,67 +648,32 @@ void TcpSession::onPulse()
 }
 
 
-void TcpSession::setUserParam(size_t index, const TupleParam &tp)
+
+
+TupleParam & TcpSession::autoTupleParamImpl(size_t index)
 {
     if (index > 100)
     {
-        LOGE("TcpSession::setUserParam. too many user param. index=" << index);
+        LOGW("user param is too many. trace=" << zsummer::proto4z::proto4z_traceback());
     }
-    
     if (_param.size() <= index)
     {
-        for (size_t i = _param.size(); i < index + 1; i++)
-        {
-            _param.push_back(std::make_tuple(0.0, 0, ""));
-        }
-    }
-    _param[index] = tp;
-}
-
-TupleParam TcpSession::getUserParam(size_t index)
-{
-    if (index > 100)
-    {
-        LOGE("TcpSession::getUserParam. too many user param. index=" << index);
-    }
-    if (index >= _param.size())
-    {
-        return std::make_tuple(0.0, 0, "");
+        _param.insert(_param.end(), index - _param.size() + 1, { false, 0.0, 0, "" });
     }
     return _param[index];
 }
 
-double TcpSession::getUserParamDouble(size_t index)
+const TupleParam & TcpSession::peekTupleParamImpl(size_t index) const
 {
-    return std::get<TupleParamDouble>(getUserParam(index));
+    const static TupleParam _invalid = { false, 0.0, 0, "" };
+    if (index > 100)
+    {
+        LOGW("user param is too many. trace=" << zsummer::proto4z::proto4z_traceback());
+    }
+    if (_param.size() <= index )
+    {
+        LOGW("get user param error. not inited. trace=" << zsummer::proto4z::proto4z_traceback());
+        return _invalid;
+    }
+    return _param.at(index);
 }
-
-unsigned long long TcpSession::getUserParamNumber(size_t index)
-{
-    return std::get<TupleParamNumber>(getUserParam(index));
-}
-
-std::string TcpSession::getUserParamString(size_t index)
-{
-    return std::get<TupleParamString>(getUserParam(index));
-}
-
-void TcpSession::setUserParamDouble(size_t index, double d)
-{
-    auto tp = getUserParam(index);
-    setUserParam(index, std::make_tuple(d, std::get<TupleParamNumber>(tp), std::get<TupleParamString>(tp)));
-}
-
-void TcpSession::setUserParam(size_t index, unsigned long long ull)
-{
-    auto tp = getUserParam(index);
-    setUserParam(index, std::make_tuple(std::get<TupleParamDouble>(tp), ull, std::get<TupleParamString>(tp)));
-}
-
-void TcpSession::setUserParam(size_t index, const std::string & str)
-{
-    auto tp = getUserParam(index);
-    setUserParam(index, std::make_tuple(std::get<TupleParamDouble>(tp), std::get<TupleParamNumber>(tp), str));
-}
-
-

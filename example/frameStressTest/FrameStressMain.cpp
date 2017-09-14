@@ -135,11 +135,10 @@ public:
                 const unsigned int limitQue2 = session->getOptions()._maxSendListCount;
                 limitQue = limitQue > limitQue2 ? limitQue2 : limitQue;
                 limitQue = limitQue > g_concExtraSend ? g_concExtraSend : limitQue;
-                auto up = session->getUserParam(0);
-                if (std::get<1>(up) < limitQue ) // 0 == 0 
+                auto up = session->getUserParamInteger(0);
+                if (up < limitQue ) // 0 == 0 
                 {
-                    std::get<1>(up) += 1;
-                    session->setUserParam(0, up);
+                    session->setUserParamInteger(0, up + 1);
                     session->send(rs.getStream(), rs.getStreamLen());
                 }
             }
@@ -158,11 +157,10 @@ public:
                 const unsigned int limitQue2 = session->getOptions()._maxSendListCount;
                 limitQue = limitQue > limitQue2 ? limitQue2 : limitQue;
                 limitQue = limitQue > g_concExtraSend ? g_concExtraSend : limitQue;
-                auto up = session->getUserParam(0);
-                if (std::get<1>(up) < limitQue) // 0 == 0 
+                auto up = session->getUserParamInteger(0);
+                if (up < limitQue) // 0 == 0 
                 {
-                    std::get<1>(up) += 1;
-                    session->setUserParam(0, up);
+                    session->setUserParamInteger(0, up + 1);
                     session->send(ws.getStream(), ws.getStreamLen());
                 }
             }
@@ -352,6 +350,7 @@ int main(int argc, char* argv[])
 
 
     ILog4zManager::getPtr()->setLoggerLevel(LOG4Z_MAIN_LOGGER_ID, LOG_LEVEL_INFO);
+
 
 
     SessionManager::getRef().start();

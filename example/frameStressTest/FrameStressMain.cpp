@@ -107,6 +107,7 @@ public:
     void onLinked(TcpSessionPtr session)
     {
         LOGI("onLinked. ConnectorID=" << session->getSessionID() << ", remoteIP=" << session->getRemoteIP() << ", remotePort=" << session->getRemotePort() );
+        session->setUserParamInteger(0, 0);
         EchoPack ep;
         initEchoPack(ep, g_hightBenchmarkLevel == 0);
         WriteStream ws(EchoPack::getProtoID());

@@ -247,7 +247,7 @@ bool TcpAccept::doAccept(const TcpSocketPtr & s, _OnAcceptHandler&& handler)
 }
 bool TcpAccept::onIOCPMessage(BOOL bSuccess)
 {
-    std::shared_ptr<TcpAccept> guad( std::move(_handle._tcpAccept));
+    std::shared_ptr<TcpAccept> guard( std::move(_handle._tcpAccept));
     _OnAcceptHandler onAccept(std::move(_onAcceptHandler));
     if (bSuccess)
     {

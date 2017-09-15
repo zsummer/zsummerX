@@ -216,9 +216,10 @@ public:
         {
             EchoPack ep;
             initEchoPack(ep, g_hightBenchmarkLevel == 0);
-            WriteStream ws(EchoPack::getProtoID(), buff, SESSION_BLOCK_SIZE);
+            WriteStream ws(EchoPack::getProtoID());
             ws << ep;
             buffSize = ws.getStreamLen();
+            memcpy(buff, ws.getStream(), ws.getStreamLen());
         }
         if (session->isInvalidSession())
         {

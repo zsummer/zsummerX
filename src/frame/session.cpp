@@ -658,14 +658,14 @@ TupleParam & TcpSession::autoTupleParamImpl(size_t index)
     }
     if (_param.size() <= index)
     {
-        _param.insert(_param.end(), index - _param.size() + 1, { false, 0.0, 0, "" });
+        _param.insert(_param.end(), index - _param.size() + 1, std::make_tuple(false, 0.0, 0, ""));
     }
     return _param[index];
 }
 
 const TupleParam & TcpSession::peekTupleParamImpl(size_t index) const
 {
-    const static TupleParam _invalid = { false, 0.0, 0, "" };
+    const static TupleParam _invalid = std::make_tuple( false, 0.0, 0, "" );
     if (index > 100)
     {
         LOGW("user param is too many. trace=" << zsummer::proto4z::proto4z_traceback());

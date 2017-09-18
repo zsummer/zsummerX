@@ -197,7 +197,7 @@ bool UdpSocket::onIOCPMessage(BOOL bSuccess, DWORD dwTranceBytes, unsigned char 
 {
     if (cType == ExtendHandle::HANDLE_RECVFROM)
     {
-        std::shared_ptr<UdpSocket> guad(std::move(_recvHandle._udpSocket));
+        std::shared_ptr<UdpSocket> guard(std::move(_recvHandle._udpSocket));
         _OnRecvFromHandler onRecv(std::move(_onRecvHander));
         _recvWSABuf.buf = nullptr;
         _recvWSABuf.len = 0;

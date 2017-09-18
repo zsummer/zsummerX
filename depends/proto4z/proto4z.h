@@ -40,7 +40,7 @@
  * VERSION:  1.0
  * PURPOSE:  A lightweight library for process protocol .
  * CREATION: 2013.07.04
- * LCHANGE:  2016.06.16
+ * LCHANGE:  2017.09.18
  * LICENSE:  Expat/MIT License, See Copyright Notice at the begin of this file.
  */
 
@@ -157,13 +157,13 @@ inline std::pair<INTEGRITY_RET_TYPE, Integer>
 checkBuffIntegrity(const char * buff, Integer curBuffLen, Integer boundLen, Integer maxBuffLen);
 
 template<class T>
-class LTSQueue
+class TLSQueue
 {
 public:
-    LTSQueue()
+    TLSQueue()
     {
     }
-    ~LTSQueue()
+    ~TLSQueue()
     {
         while (!_que.empty())
         {
@@ -200,7 +200,7 @@ template<class T = std::string>
 class WriteStreamImpl
 {
 private:
-    thread_local static LTSQueue<T> _ltsque;
+    thread_local static TLSQueue<T> _tlsque;
 public:
     //! testStream : if true then WriteStreamImpl will not do any write operation.
     //! attach : the existing memory.
@@ -254,7 +254,7 @@ private:
 };
 //http://zh.cppreference.com/w/cpp/language/storage_duration 
 template<class T>
-thread_local  LTSQueue<T> WriteStreamImpl<T>::_ltsque;
+thread_local  TLSQueue<T> WriteStreamImpl<T>::_tlsque;
 
 //////////////////////////////////////////////////////////////////////////
 //class ReadStream: De-serialization the specified data from byte stream.
@@ -637,7 +637,7 @@ WriteStreamImpl<T>::WriteStreamImpl(ProtoInteger pID)
     _pID = pID;
     _headLen = sizeof(Integer)+ sizeof(ReserveInteger) + sizeof(ProtoInteger);
     _cursor = _headLen;
-    _attach = _ltsque.pop();
+    _attach = _tlsque.pop();
     _attach->reserve(1200);
     _attach->resize(_cursor, '\0');
     _attachLen = MaxPackLen;
@@ -651,17 +651,13 @@ WriteStreamImpl<T>::WriteStreamImpl(ProtoInteger pID)
 template<class T>
 WriteStreamImpl<T>::~WriteStreamImpl()
 {
-    _ltsque.push(_attach);
+    _tlsque.push(_attach);
 }
 
 
 template<class T>
 inline void WriteStreamImpl<T>::checkMoveCursor(Integer unit)
 {
-    if (_attachLen < _headLen)
-    {
-        PROTO4Z_THROW("construction param error. attach memory size less than mini size. _attachLen=" << _attachLen << ", _headLen=" << _headLen);
-    }
     if (_cursor > _attachLen)
     {
         PROTO4Z_THROW("bound over. cursor in end-of-data. _attachLen=" << _attachLen << ", _cursor=" << _cursor);

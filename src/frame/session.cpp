@@ -62,7 +62,7 @@ TcpSession::~TcpSession()
     while (!_sendque.empty())
     {
         _options._freeBlock(_sendque.front());
-        _sendque.pop();
+        _sendque.pop_front();
     }
     if (_sockptr)
     {
@@ -114,7 +114,7 @@ void TcpSession::reconnect()
     while (_options._reconnectClean && !_sendque.empty())
     {
         _options._freeBlock(_sendque.front());
-        _sendque.pop();
+        _sendque.pop_front();
     }
 
     if (!_sockptr->doConnect(_remoteIP, _remotePort, std::bind(&TcpSession::onConnected, shared_from_this(), std::placeholders::_1)))
@@ -466,7 +466,7 @@ void TcpSession::send(const char *buf, unsigned int len)
         if (_status == 2 && _sending->len == 0 && !_sendque.empty())
         {
             SessionBlock *sb = _sendque.front();
-            _sendque.pop();
+            _sendque.pop_front();
             memcpy(_sending->begin, sb->begin, sb->len);
             _sending->len = sb->len;
             _options._freeBlock(sb);
@@ -501,7 +501,7 @@ void TcpSession::send(const char *buf, unsigned int len)
         }
         memcpy(sb->begin, buf, len);
         sb->len = len;
-        _sendque.push(sb);
+        _sendque.push_back(sb);
         SessionManager::getRef()._statInfo[STAT_SEND_QUES]++;
     }
     //send direct
@@ -554,7 +554,7 @@ void TcpSession::onSend(zsummer::network::NetErrorCode ec, int sent)
             do
             {
                 SessionBlock *sb = _sendque.front();
-                _sendque.pop();
+                _sendque.pop_front();
                 SessionManager::getRef()._statInfo[STAT_SEND_QUES]--;
                 memcpy(_sending->begin + _sending->len, sb->begin, sb->len);
                 _sending->len += sb->len;

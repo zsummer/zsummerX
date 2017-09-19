@@ -307,7 +307,7 @@ SessionBlock * SessionManager::CreateBlock()
     else
     {
         sb = _freeBlock.front();
-        _freeBlock.pop();
+        _freeBlock.pop_front();
         sb->len = 0;
         sb->reused ++;
         sb->timestamp = timestamp;
@@ -318,9 +318,17 @@ SessionBlock * SessionManager::CreateBlock()
 }
 void SessionManager::FreeBlock(SessionBlock * sb)
 {
-    //if (_freeBlock.size() > 10000);
-    _freeBlock.push(sb);
-    _statInfo[STAT_FREE_BLOCKS] = _freeBlock.size();
+    if (_freeBlock.size() > 10000)
+    {
+        free(sb);
+        _statInfo[STAT_EXIST_BLOCKS]--;
+    }
+    else
+    {
+        _freeBlock.push_back(sb);
+        _statInfo[STAT_FREE_BLOCKS] = _freeBlock.size();
+    }
+
 }
 
 std::string SessionManager::getRemoteIP(SessionID sID)

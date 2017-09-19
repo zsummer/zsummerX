@@ -108,7 +108,7 @@ namespace zsummer
             unsigned int _sendingLen = 0;
 
             //! send data queue
-            std::queue<SessionBlock *> _sendque;
+            std::deque<SessionBlock *> _sendque;
             unsigned long long _reconnects = 0;
 
             //! rc encrypt

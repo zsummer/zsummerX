@@ -107,6 +107,7 @@ public:
     void onLinked(TcpSessionPtr session)
     {
         LOGI("onLinked. ConnectorID=" << session->getSessionID() << ", remoteIP=" << session->getRemoteIP() << ", remotePort=" << session->getRemotePort() );
+        session->setUserParamInteger(0, 0);
         EchoPack ep;
         initEchoPack(ep, g_hightBenchmarkLevel == 0);
         WriteStream ws(EchoPack::getProtoID());
@@ -216,9 +217,10 @@ public:
         {
             EchoPack ep;
             initEchoPack(ep, g_hightBenchmarkLevel == 0);
-            WriteStream ws(EchoPack::getProtoID(), buff, SESSION_BLOCK_SIZE);
+            WriteStream ws(EchoPack::getProtoID());
             ws << ep;
             buffSize = ws.getStreamLen();
+            memcpy(buff, ws.getStream(), ws.getStreamLen());
         }
         if (session->isInvalidSession())
         {
@@ -291,7 +293,10 @@ void sigFun(int sig)
         SessionManager::getRef().kickConnect(); }));
 }
 
-
+void testfunction(std::shared_ptr<int> s)
+{
+    (*s)++;
+}
 
 int main(int argc, char* argv[])
 {
@@ -349,11 +354,29 @@ int main(int argc, char* argv[])
         << ", g_concClient=" << g_concClient << ", g_concExtraSend=" << g_concExtraSend << ", g_intervalSend=" << g_intervalSend << ", hightBenchmark=" << g_hightBenchmarkLevel);
 
 
-    ILog4zManager::getPtr()->setLoggerLevel(LOG4Z_MAIN_LOGGER_ID, LOG_LEVEL_INFO);
 
 
 
     SessionManager::getRef().start();
+
+    std::shared_ptr<int> sp = std::make_shared<int>();
+    auto getTick = []() {return (unsigned long long)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count(); };
+    auto now = getTick();
+    for (size_t i = 0; i < 100*10000; i++)
+    {
+        std::shared_ptr<int> sp2 = sp;
+        (*sp2)++;
+    }
+    LOGD("shared_ptr " << *sp << "  100*10000=" << getTick() - now);
+    now = getTick();
+    auto x = std::bind(testfunction, sp);
+    for (size_t i = 0; i < 100 * 10000; i++)
+    {
+        auto y = std::bind(testfunction, sp);
+        y();
+    }
+    LOGD("function  " << *sp << " 100*10000=" << getTick() - now);
+
 
 
     SessionManager::getRef().createTimer(5000, MonitorFunc);

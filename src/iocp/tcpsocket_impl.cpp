@@ -358,7 +358,7 @@ void TcpSocket::onIOCPMessage(BOOL bSuccess, DWORD dwTranceBytes, unsigned char 
     if (cType == ExtendHandle::HANDLE_CONNECT)
     {
         _OnConnectHandler onConnect(std::move(_onConnectHandler));
-        std::shared_ptr<TcpSocket> guad(std::move(_connectHandle._tcpSocket));
+        std::shared_ptr<TcpSocket> guard(std::move(_connectHandle._tcpSocket));
         if (!onConnect)
         {
             return;
@@ -386,7 +386,7 @@ void TcpSocket::onIOCPMessage(BOOL bSuccess, DWORD dwTranceBytes, unsigned char 
     if (cType == ExtendHandle::HANDLE_SEND)
     {
         _OnSendHandler onSend(std::move(_onSendHandler));
-        std::shared_ptr<TcpSocket> guad(std::move(_sendHandle._tcpSocket));
+        std::shared_ptr<TcpSocket> guard(std::move(_sendHandle._tcpSocket));
         if (!onSend)
         {
             return;
@@ -405,7 +405,7 @@ void TcpSocket::onIOCPMessage(BOOL bSuccess, DWORD dwTranceBytes, unsigned char 
     }
     else if (cType == ExtendHandle::HANDLE_RECV)
     {
-        std::shared_ptr<TcpSocket> guad(std::move(_recvHandle._tcpSocket));
+        std::shared_ptr<TcpSocket> guard(std::move(_recvHandle._tcpSocket));
         _OnRecvHandler onRecv(std::move(_onRecvHandler));
         if (!onRecv)
         {

@@ -45,15 +45,16 @@ void  fillOnePack(EchoPack &pack)
     pack._iarray.push_back(idata);
     pack._farray.push_back(fdata);
     pack._farray.push_back(fdata);
-    pack._sarray.push_back(sdata);
-    pack._sarray.push_back(sdata);
+     pack._sarray.push_back(sdata);
+     pack._sarray.push_back(sdata);
+
 
     pack._imap.insert(std::make_pair(123, idata));
     pack._imap.insert(std::make_pair(223, idata));
     pack._fmap.insert(std::make_pair(32.3, fdata));
     pack._fmap.insert(std::make_pair(42.3, fdata));
-    pack._smap.insert(std::make_pair("523", sdata));
-    pack._smap.insert(std::make_pair("623", sdata));
+     pack._smap.insert(std::make_pair("523", sdata));
+     pack._smap.insert(std::make_pair("623", sdata));
 }
 
 
@@ -63,6 +64,8 @@ unsigned int getSteadyTime();
 
 int main()
 {
+
+
     cout << "check http proto ..." << endl;
     TestHTTP th;
     WriteHTTP whGet;
@@ -87,11 +90,17 @@ int main()
     cout << "check binary proto" << endl;
     try
     {
+        WriteStream wwrap(1);
         WriteStream ws(EchoPack::getProtoID());
         EchoPack echo;
         fillOnePack(echo);
         ws << echo;
-        ReadStream rs(ws.getStream(), ws.getStreamLen());
+        wwrap << "3333333333333333333333333333";
+        wwrap.appendOriginalData(ws.getStream(), ws.getStreamLen());
+        ReadStream rwrap(wwrap.getStream(), wwrap.getStreamLen());
+        std::string tmp;
+        rwrap >> tmp;
+        ReadStream rs(rwrap.getStreamUnread(), rwrap.getStreamUnreadLen());
         rs >> echo;
         cout << "success" << endl;
     }
@@ -115,8 +124,6 @@ int main()
         pack.moneyTree.payCount = 0;
 
 
-        
-
 
         //序列化
         WriteStream ws(SimplePack::getProtoID());
@@ -132,14 +139,23 @@ int main()
     }
     
 
-#define StressCount 1*10000
+#define StressCount 1*10000000
+    SimplePack pack;
+    pack.id = 10;
+    pack.name = "aaa";
+    pack.createTime = time(NULL);
+    pack.moneyTree.freeCount = 0;
+    pack.moneyTree.lastTime = pack.createTime;
+    pack.moneyTree.statSum = 0;
+    pack.moneyTree.statCount = 0;
+    pack.moneyTree.payCount = 0;
+    unsigned long long count = 0;
     unsigned int now = getSteadyTime();
     for (int i = 0; i < StressCount; i++)
     {
         WriteStream ws(100);
-        EchoPack echo;
-        fillOnePack(echo);
-        ws << echo;
+        ws << pack;
+        count += ws.getStreamLen();
     }
     std::cout << "writeStream used time: " << getSteadyTime() - now << std::endl;
     
@@ -147,15 +163,19 @@ int main()
     for (int i = 0; i < StressCount; i++)
     {
         WriteStream ws(100);
-        EchoPack echo;
-        fillOnePack(echo);
-        ws << echo;
+        ws << pack;
         ReadStream rs(ws.getStream(), ws.getStreamLen());
-        rs >> echo;
+        rs >> pack;
+        count += rs.getStreamLen();
     }
     std::cout << "write and read stream used time: " << getSteadyTime() - now << std::endl;
 
-  
+
+
+
+
+
+    getchar();
 //     cout << "press any key to continue." << endl;
 //     getchar();
     return 0;

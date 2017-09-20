@@ -61,7 +61,12 @@ install(FILES ${ZSUMMERX_DEPENDS_DIR}/log4z/log4z.h
 install(FILES ${ZSUMMERX_DEPENDS_DIR}/proto4z/proto4z.h 
         ${ZSUMMERX_DEPENDS_DIR}/proto4z/COPYRIGHT 
         ${ZSUMMERX_DEPENDS_DIR}/proto4z/proto4z.lua 
+        ${ZSUMMERX_DEPENDS_DIR}/proto4z/Proto4z.cs
+        ${ZSUMMERX_DEPENDS_DIR}/proto4z/dbHelper.h
     DESTINATION include/proto4z)
+
+install(FILES ${ZSUMMERX_DEPENDS_DIR}/proto4z/luasrc/lproto4z.c
+    DESTINATION include/proto4z/luasrc)
 
 install(FILES ${ZSUMMERX_DEPENDS_DIR}/rc4/rc4_encryption.h 
     DESTINATION include/rc4)
@@ -75,6 +80,12 @@ install(DIRECTORY ${ZSUMMERX_INC_DIR}/zsummerX
 install(FILES ${zsummerX_SOURCE_DIR}/COPYRIGHT 
     DESTINATION include/zsummerX)
 
+install(FILES ${ZSUMMERX_DEPENDS_DIR}/proto4z/luasrc/lproto4z.c
+	${zsummerX_SOURCE_DIR}/example/luaTest/performance.h
+	${zsummerX_SOURCE_DIR}/example/luaTest/performance.cpp
+	${zsummerX_SOURCE_DIR}/example/luaTest/summer.h
+	${zsummerX_SOURCE_DIR}/example/luaTest/summer.cpp
+    DESTINATION include/zsummerX/luasrc)
 
 #cmake . -DCMAKE_INSTALL_PREFIX=/Users/zhangyawei/Documents/github/breeze
 #make

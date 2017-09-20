@@ -286,7 +286,7 @@ public:
 
 void sigFun(int sig)
 {
-    SessionManager::getRef().stop();
+    SessionManager::getRef().stop(); 
     SessionManager::getRef().post(std::bind([](){
         SessionManager::getRef().stopAccept();
         SessionManager::getRef().kickClientSession();
@@ -297,6 +297,8 @@ void testfunction(std::shared_ptr<int> s)
 {
     (*s)++;
 }
+
+
 
 int main(int argc, char* argv[])
 {
@@ -352,7 +354,6 @@ int main(int argc, char* argv[])
 
     LOGI("g_remoteIP=" << g_remoteIP <<", orgin=" << getHostByName(g_remoteIP) << ", g_remotePort=" << g_remotePort << ", g_startClient=" << g_startClient
         << ", g_concClient=" << g_concClient << ", g_concExtraSend=" << g_concExtraSend << ", g_intervalSend=" << g_intervalSend << ", hightBenchmark=" << g_hightBenchmarkLevel);
-
 
 
 

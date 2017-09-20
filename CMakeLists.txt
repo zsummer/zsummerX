@@ -66,7 +66,7 @@ install(FILES ${ZSUMMERX_DEPENDS_DIR}/proto4z/proto4z.h
 install(FILES ${ZSUMMERX_DEPENDS_DIR}/rc4/rc4_encryption.h 
     DESTINATION include/rc4)
 
-install(DIRECTORY ${ZSUMMERX_LIB_DIR} DESTINATION lib
+install(DIRECTORY ${ZSUMMERX_LIB_DIR}/ DESTINATION lib
 	FILES_MATCHING PATTERN "*.a")
 
 install(DIRECTORY ${ZSUMMERX_INC_DIR}/zsummerX 

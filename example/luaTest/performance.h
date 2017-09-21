@@ -55,6 +55,7 @@ extern "C"
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <deque>
 
 #ifdef WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -122,7 +123,7 @@ namespace zsummer
                             std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::steady_clock::now() - std::get<1>(_stack.back())).count()*1000.0,
                             mem - std::get<2>(_stack.back()));
                         _stack.pop_back();
-                        return std::move(ret);
+                        return ret;
                     }
                     _stack.pop_back();
                 }
@@ -167,9 +168,22 @@ namespace zsummer
             {
                 temp.append(15 - temp.length(), ' ');
             }
-            return std::move(temp);
+            return temp;
         }
-
+        inline std::string getProcessID()
+        {
+            std::string pid = "0";
+            char buf[260] = { 0 };
+#ifdef WIN32
+            DWORD winPID = GetCurrentProcessId();
+            sprintf(buf, "%06u", winPID);
+            pid = buf;
+#else
+            sprintf(buf, "%06d", getpid());
+            pid = buf;
+#endif
+            return pid;
+        }
         inline std::string getProcessName()
         {
             std::string name = "MainLog";
@@ -226,6 +240,8 @@ namespace zsummer
             }
             filename += getProcessName();
             filename += "_";
+            filename += getProcessID();
+            filename += "_";
             filename += prefix;
             filename += ".log";
 
@@ -253,6 +269,12 @@ namespace zsummer
                 f.write(temp.c_str(), temp.length());
             }
             f.close();
+            _historyFile.push_back(filename);
+            while (_historyFile.size() > 10)
+            {
+                ::remove(_historyFile.front().c_str());
+                _historyFile.pop_front();
+            }
         }
         inline void dump(int maxCount)
         {
@@ -287,12 +309,9 @@ namespace zsummer
     private:
         std::map<std::string, Param > _perf;
         std::map<std::string, Param > _once;
+        std::deque<std::string> _historyFile;
         Timestamp _lastPerf;
     };
-
-
-   
-
 
 };
 

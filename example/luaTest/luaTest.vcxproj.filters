@@ -103,9 +103,7 @@
       <Filter>lua</Filter>
     </ClCompile>
     <ClCompile Include="performance.cpp" />
-    <ClCompile Include="..\..\depends\proto4z\luasrc\lproto4z.c">
-      <Filter>lua</Filter>
-    </ClCompile>
+    <ClCompile Include="..\..\depends\proto4z\luasrc\lproto4z.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="summer.h" />

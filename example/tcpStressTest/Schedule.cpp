@@ -55,7 +55,7 @@ void CSchedule::start()
         return ;
     }
 
-    for (int i=0; i< 1; i++)
+    for (int i=0; i< 2; i++)
     {
         CProcess * p = new CProcess();
         if (p->start())

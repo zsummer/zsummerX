@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\depends\proto4z\luasrc\lproto4z.c" />
     <ClCompile Include="lua\lapi.c" />
     <ClCompile Include="lua\lauxlib.c" />
     <ClCompile Include="lua\lbaselib.c" />
@@ -42,7 +43,6 @@
     <ClCompile Include="lua\lopcodes.c" />
     <ClCompile Include="lua\loslib.c" />
     <ClCompile Include="lua\lparser.c" />
-    <ClCompile Include="lua\lproto4z.c" />
     <ClCompile Include="lua\lstate.c" />
     <ClCompile Include="lua\lstring.c" />
     <ClCompile Include="lua\lstrlib.c" />

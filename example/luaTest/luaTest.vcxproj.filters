@@ -102,10 +102,10 @@
     <ClCompile Include="lua\lzio.c">
       <Filter>lua</Filter>
     </ClCompile>
-    <ClCompile Include="lua\lproto4z.c">
+    <ClCompile Include="performance.cpp" />
+    <ClCompile Include="..\..\depends\proto4z\luasrc\lproto4z.c">
       <Filter>lua</Filter>
     </ClCompile>
-    <ClCompile Include="performance.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="summer.h" />

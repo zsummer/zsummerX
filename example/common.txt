@@ -1,9 +1,8 @@
 
 
 aux_source_directory(./ source)    
-aux_source_directory(./lua/ lua_src)  
 set(source ${source} ${lua_src})
-include_directories(./lua/)
+
 set(EXECUTABLE_OUTPUT_PATH ${example_SOURCE_DIR}/bin)
 
 #glibc compile

@@ -89,10 +89,15 @@ bool EventLoop::registerEvent(int op, EventData & ed)
 void EventLoop::PostMessage(_OnPostHandler &&handle)
 {
     _OnPostHandler * pHandler = new _OnPostHandler(std::move(handle));
+    bool needNotice = false;
     _stackMessagesLock.lock();
-    if (_stackMessages.empty()){char c = '0'; send(_sockpair[0], &c, 1, 0);}
+    if (_stackMessages.empty()){needNotice = true;}
     _stackMessages.push_back(pHandler);
     _stackMessagesLock.unlock();
+    if (needNotice)
+    {
+        char c = '0'; send(_sockpair[0], &c, 1, 0); // safe  
+    }
 
 }
 

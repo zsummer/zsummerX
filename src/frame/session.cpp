@@ -134,12 +134,9 @@ bool TcpSession::attatch(const TcpSocketPtr &sockptr, AccepterID aID, SessionID 
     {
         sockptr->setNoDelay();
     }
-    if (_options._floodSendOptimize)
-    {
 #ifndef WIN32
-        sockptr->setFloodSendOptimize(true);
+    sockptr->setFloodSendOptimize(_options._floodSendOptimize);
 #endif
-    }
     _status = 2;
     _pulseTimerID = SessionManager::getRef().createTimer(_options._sessionPulseInterval, std::bind(&TcpSession::onPulse, shared_from_this()));
     SessionManager::getRef()._statInfo[STAT_SESSION_LINKED]++;

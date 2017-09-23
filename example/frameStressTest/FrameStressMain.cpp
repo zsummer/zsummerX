@@ -412,6 +412,7 @@ int main(int argc, char* argv[])
         CStressServerHandler server;
         AccepterID aID = SessionManager::getRef().addAccepter(g_remoteIP, g_remotePort);
         SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._maxSendListCount = 40000;
+        if (g_concExtraSend == 0) SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._floodSendOptimize = false;
         SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._onSessionLinked = std::bind(&CStressServerHandler::onLinked, &server, _1);
         SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._onSessionClosed = std::bind(&CStressServerHandler::onLost, &server, _1);
         SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._onBlockDispatch = [&server](TcpSessionPtr   session, const char * begin, unsigned int len)

@@ -105,8 +105,8 @@ namespace zsummer
             ArrayTcpSocket _arrayTcpSocket;
             ArrayTcpAccept _arrayTcpAccept;
             ArrayUdpSocket _arrayUdpSocket;
-            MessageStack _stackMessages;
-            std::mutex     _stackMessagesLock;
+            MessageStack _postQueue;
+            std::mutex     _postQueueLock;
             //! timmer
             Timer _timer;
         };

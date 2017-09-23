@@ -90,10 +90,10 @@ void EventLoop::PostMessage(_OnPostHandler &&handle)
 {
     _OnPostHandler * pHandler = new _OnPostHandler(std::move(handle));
     bool needNotice = false;
-    _stackMessagesLock.lock();
-    if (_stackMessages.empty()){needNotice = true;}
-    _stackMessages.push_back(pHandler);
-    _stackMessagesLock.unlock();
+    _postQueueLock.lock();
+    if (_postQueue.empty()){needNotice = true;}
+    _postQueue.push_back(pHandler);
+    _postQueueLock.unlock();
     if (needNotice)
     {
         char c = '0'; send(_sockpair[0], &c, 1, 0); // safe  
@@ -104,11 +104,11 @@ void EventLoop::PostMessage(_OnPostHandler &&handle)
 std::string EventLoop::logSection()
 {
     std::stringstream os;
-    _stackMessagesLock.lock();
-    MessageStack::size_type msgSize = _stackMessages.size();
-    _stackMessagesLock.unlock();
+    _postQueueLock.lock();
+    MessageStack::size_type msgSize = _postQueue.size();
+    _postQueueLock.unlock();
     os << " EventLoop: _epoll=" << _epoll << ", _sockpair[2]={" << _sockpair[0] << "," << _sockpair[1] << "}"
-        << " _stackMessages.size()=" << msgSize << ", current total timer=" << _timer.getTimersCount()
+        << " _postQueue.size()=" << msgSize << ", current total timer=" << _timer.getTimersCount()
         << " _eventData=" << _eventData;
     return os.str();
 }
@@ -145,9 +145,9 @@ void EventLoop::runOnce(bool isImmediately)
             }
 
             MessageStack msgs;
-            _stackMessagesLock.lock();
-            msgs.swap(_stackMessages);
-            _stackMessagesLock.unlock();
+            _postQueueLock.lock();
+            msgs.swap(_postQueue);
+            _postQueueLock.unlock();
 
             for (auto pfunc : msgs)
             {

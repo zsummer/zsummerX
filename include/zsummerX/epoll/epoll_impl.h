@@ -76,8 +76,8 @@ namespace zsummer
             epoll_event _events[MAX_EPOLL_WAIT] = {};
             int        _sockpair[2] = {};
             EventData _eventData;
-            MessageStack _stackMessages;
-            std::mutex     _stackMessagesLock;
+            MessageStack _postQueue;
+            std::mutex     _postQueueLock;
             Timer _timer;
         };
         using EventLoopPtr = std::shared_ptr<EventLoop>;

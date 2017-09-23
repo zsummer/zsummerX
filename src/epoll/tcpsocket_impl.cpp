@@ -210,7 +210,7 @@ bool TcpSocket::doSend(char * buf, unsigned int len, _OnSendHandler && handler)
     }
 
 
-    int ret = send(_fd, buf, len, 0);
+    int ret = send(_eventData._fd, buf, len, 0);
     if (ret <= 0)
     {
         _pSendBuf = buf;

@@ -169,7 +169,7 @@ void TcpSession::onConnected(zsummer::network::NetErrorCode ec)
         LCW("onConnected error. ec=" << ec << ",  cID=" << _sessionID);
         return;
     }
-    LCI("onConnected success. cID=" << _sessionID);
+    LCI("onConnected success. sessionID=" << _sessionID);
 
     if (!doRecv())
     {
@@ -205,6 +205,7 @@ void TcpSession::onConnected(zsummer::network::NetErrorCode ec)
 
 bool TcpSession::doRecv()
 {
+    LCT("TcpSession::doRecv sessionID=" << getSessionID() );
     if (!_sockptr)
     {
         return false;
@@ -249,6 +250,7 @@ void TcpSession::close()
 
 void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
 {
+    LCT("TcpSession::onRecv sessionID=" << getSessionID() << ", received=" << received);
     if (ec)
     {
         _lastRecvError = ec;
@@ -352,6 +354,8 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
             try
             {
                 SessionManager::getRef()._statInfo[STAT_RECV_PACKS]++;
+                LCT("TcpSession::onRecv _onBlockDispatch(sessionID=" << getSessionID() << ", offset=" << usedIndex
+                    <<", len=" << ret.second);
                 _options._onBlockDispatch(shared_from_this(), _recving->begin + usedIndex, ret.second);
             }
             catch (const std::exception & e)
@@ -455,6 +459,7 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
 
 void TcpSession::send(const char *buf, unsigned int len)
 {
+    LCT("TcpSession::send sessionID=" << getSessionID() << ", len=" << len);
     if (len > _sending->bound)
     {
         LCE("send error.  too large block than sending block bound.  len=" << len);
@@ -526,6 +531,8 @@ void TcpSession::send(const char *buf, unsigned int len)
 
 void TcpSession::onSend(zsummer::network::NetErrorCode ec, int sent)
 {
+
+    LCT("TcpSession::onSend session id=" << getSessionID() << ", sent=" << sent);
     if (ec)
     {
         LCD("remote socket closed");

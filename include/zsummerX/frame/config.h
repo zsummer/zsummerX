@@ -168,10 +168,10 @@ namespace zsummer
         using OnBlockCheck = std::function<OnBlockCheckResult(const char * /*begin*/, unsigned int /*len*/, unsigned int /*bound*/, unsigned int /*blockLimit*/)>;
 
         //!dispatch one integrity block 
-        using OnBlockDispatch = std::function<void(TcpSessionPtr   /*session*/, const char * /*begin*/, unsigned int /*len*/)>;
+        using OnBlockDispatch = std::function<void(const TcpSessionPtr &  /*session*/, const char * /*begin*/, unsigned int /*len*/)>;
 
         //!event linked, closed, ontimer
-        using OnSessionEvent = std::function<void(TcpSessionPtr   /*session*/)>;
+        using OnSessionEvent = std::function<void(const TcpSessionPtr &  /*session*/)>;
 
  
         //!HTTP unpack, hadHeader used by 'chunked', commonLine can be GET, POST RESPONSE.  

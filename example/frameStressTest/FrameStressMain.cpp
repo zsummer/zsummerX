@@ -104,7 +104,7 @@ public:
     {
     }
 
-    void onLinked(TcpSessionPtr session)
+    void onLinked(const TcpSessionPtr & session)
     {
         LOGI("onLinked. ConnectorID=" << session->getSessionID() << ", remoteIP=" << session->getRemoteIP() << ", remotePort=" << session->getRemotePort() );
         session->setUserParamInteger(0, 0);
@@ -114,12 +114,12 @@ public:
         ws << ep;
         session->send(ws.getStream(), ws.getStreamLen());
     };
-    void onLost(TcpSessionPtr session)
+    void onLost(const TcpSessionPtr & session)
     {
         LOGI("onLost. ConnectorID=" << session->getSessionID() << ", remoteIP=" << session->getRemoteIP() << ", remotePort=" << session->getRemotePort());
     }
 
-    void onMessage(TcpSessionPtr session, ReadStream & rs)
+    void onMessage(const TcpSessionPtr & session, ReadStream & rs)
     {
         if (g_intervalSend > 0)
         {
@@ -209,7 +209,7 @@ public:
             pack._smap.insert(std::make_pair("623", sdata));
         }
     }
-    void delaySend(TcpSessionPtr session)
+    void delaySend(const TcpSessionPtr & session)
     {
         thread_local static char buff[SESSION_BLOCK_SIZE];
         thread_local static zsummer::proto4z::Integer buffSize = 0;
@@ -257,15 +257,15 @@ public:
     CStressServerHandler()
     {
     }
-    void onLinked(TcpSessionPtr session)
+    void onLinked(const TcpSessionPtr & session)
     {
         LOGI("onLinked. sessionID=" << session->getSessionID() << ", remoteIP=" << session->getRemoteIP() << ", remotePort=" << session->getRemotePort());
     };
-    void onLost(TcpSessionPtr session)
+    void onLost(const TcpSessionPtr & session)
     {
         LOGI("onLost. sessionID=" << session->getSessionID() << ", remoteIP=" << session->getRemoteIP() << ", remotePort=" << session->getRemotePort());
     }
-    void onMessage(TcpSessionPtr session, ReadStream & rs)
+    void onMessage(const TcpSessionPtr & session, ReadStream & rs)
     {
         //LOGD("onMessage");
         if (g_hightBenchmarkLevel >= 2)

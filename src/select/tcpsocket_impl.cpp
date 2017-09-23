@@ -171,6 +171,7 @@ bool TcpSocket::doConnect(const std::string & remoteIP, unsigned short remotePor
 
 bool TcpSocket::doSend(char * buf, unsigned int len, _OnSendHandler && handler)
 {
+    LCT("TcpSocket::doSend len=" << len);
     if (_linkstat != LS_ESTABLISHED)
     {
         LCW("TcpSocket::doSend[this0x" << this << "] _linkstat not REG_ESTABLISHED_TCP!" );
@@ -198,14 +199,21 @@ bool TcpSocket::doSend(char * buf, unsigned int len, _OnSendHandler && handler)
         return false;
     }
 
-    
-    
-    _pSendBuf = buf;
-    _iSendLen = len;
+    int ret = send(_fd, buf, len, 0);
+    if (ret <= 0)
+    {
+        _pSendBuf = buf;
+        _iSendLen = len;
 
-    _onSendHandler = std::move(handler);
-    _summer->setEvent(_fd, 1);
-
+        _onSendHandler = std::move(handler);
+        _summer->setEvent(_fd, 1);
+    }
+    else
+    {
+        LCT("TcpSocket::doSend direct sent=" << ret);
+        _OnSendHandler onSend(std::move(handler));
+        onSend(NEC_SUCCESS, ret);
+    }
     return true;
 }
 
@@ -239,13 +247,13 @@ bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler)
         LCE("TcpSocket::doRecv[this0x" << this << "] (_onRecvHandler) == TRUE" << logSection());
         return false;
     }
-    
+
     _pRecvBuf = buf;
     _iRecvLen = len;
 
     _onRecvHandler = std::move(handler);
     _summer->setEvent(_fd, 0);
-    
+
     return true;
 }
 

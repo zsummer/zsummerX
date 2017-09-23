@@ -163,7 +163,7 @@ namespace zsummer
         {
             std::stringstream ss;
             ss << t;
-            std::string temp = std::move(ss.str());
+            std::string temp = ss.str();
             if (temp.length() < 15)
             {
                 temp.append(15 - temp.length(), ' ');

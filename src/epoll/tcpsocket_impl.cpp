@@ -209,15 +209,24 @@ bool TcpSocket::doSend(char * buf, unsigned int len, _OnSendHandler && handler)
         return false;
     }
 
-    
-    
-    _pSendBuf = buf;
-    _iSendLen = len;
-    
 
-    _eventData._event.events = _eventData._event.events|EPOLLOUT;
-    _summer->registerEvent(EPOLL_CTL_MOD, _eventData);
-    _onSendHandler = std::move(handler);
+    int ret = send(_fd, buf, len, 0);
+    if (ret <= 0)
+    {
+        _pSendBuf = buf;
+        _iSendLen = len;
+
+
+        _eventData._event.events = _eventData._event.events|EPOLLOUT;
+        _summer->registerEvent(EPOLL_CTL_MOD, _eventData);
+        _onSendHandler = std::move(handler);
+    }
+    else
+    {
+        LCT("TcpSocket::doSend direct sent=" << ret);
+        _OnSendHandler onSend(std::move(handler));
+        onSend(NEC_SUCCESS, ret);
+    }
     return true;
 }
 

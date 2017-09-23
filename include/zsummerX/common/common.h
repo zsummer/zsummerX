@@ -157,6 +157,7 @@ namespace zsummer
 
 
 
+#define LCT( log ) LOG_TRACE( zsummer::network::g_appEnvironment.getNetCoreLogger(), log )
 #define LCD( log ) LOG_DEBUG( zsummer::network::g_appEnvironment.getNetCoreLogger(), log )
 #define LCI( log ) LOG_INFO( zsummer::network::g_appEnvironment.getNetCoreLogger(),  log )
 #define LCW( log ) LOG_WARN( zsummer::network::g_appEnvironment.getNetCoreLogger(),  log )

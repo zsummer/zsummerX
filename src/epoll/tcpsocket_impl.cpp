@@ -181,6 +181,7 @@ bool TcpSocket::doConnect(const std::string& remoteIP, unsigned short remotePort
 
 bool TcpSocket::doSend(char * buf, unsigned int len, _OnSendHandler && handler)
 {
+    LCT("TcpSocket::doSend len=" << len);
     if (_eventData._linkstat != LS_ESTABLISHED)
     {
         LCW("TcpSocket::doSend[this0x" << this << "] _linkstat error!");
@@ -265,6 +266,10 @@ bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler, 
         LCE("TcpSocket::doRecv[this0x" << this << "] already open daemon recv" << logSection());
         return false;
     }
+    if (daemonRecv)
+    {
+        _daemonRecv = daemonRecv;
+    }
     
     _pRecvBuf = buf;
     _iRecvLen = len;
@@ -318,7 +323,7 @@ void TcpSocket::onEPOLLMessage(uint32_t event)
         errno = EAGAIN;
         if (event & EPOLLIN)
         {
-            ret = recv(_eventData._fd, _pRecvBuf + _iRecvOffset, _iRecvLen, 0);
+            ret = recv(_eventData._fd, _pRecvBuf + _iRecvOffset, _iRecvLen - _iRecvOffset, 0);
         }
         if (event & EPOLLHUP || event & EPOLLERR || ret == 0 || (ret == -1 && (errno != EAGAIN && errno != EWOULDBLOCK) ) )
         {

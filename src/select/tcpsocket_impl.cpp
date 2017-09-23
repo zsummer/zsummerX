@@ -301,7 +301,7 @@ void TcpSocket::onSelectMessage(bool rd, bool wt, bool err)
 
     if (rd && _onRecvHandler)
     {
-        int ret = recv(_fd, _pRecvBuf + _iRecvOffset, _iRecvLen, 0);
+        int ret = recv(_fd, _pRecvBuf + _iRecvOffset, _iRecvLen - _iRecvOffset, 0);
         if (ret == 0 || (ret == -1 && !IS_WOULDBLOCK))
         {
             _OnRecvHandler onRecv(std::move(_onRecvHandler));

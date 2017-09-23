@@ -78,7 +78,7 @@ void signalFun(int sig)
 }
 
 void OnSocketSend(NetErrorCode ec, int recvLength);
-void OnSocketRecv(NetErrorCode ec, int recvLength);
+unsigned int OnSocketRecv(NetErrorCode ec, int recvLength);
 void onConnect(NetErrorCode ec);
 void OnAcceptSocket(NetErrorCode ec, TcpSocketPtr s);
 
@@ -151,16 +151,17 @@ void OnSocketSend(NetErrorCode ec, int recvLength)
     if (recvLength != sendBufferLen) LOGW("safe warning, need translate remaining data.");
 };
 
-void OnSocketRecv(NetErrorCode ec, int recvLength)
+unsigned int OnSocketRecv(NetErrorCode ec, int recvLength)
 {
-    if (ec != NEC_SUCCESS) return;
+    if (ec != NEC_SUCCESS) return 0;
     memcpy(sendBuffer, recvBuffer, recvLength);
     sendBufferLen = recvLength;
     bool ret = usedSocket->doSend(sendBuffer, sendBufferLen, std::bind(OnSocketSend, std::placeholders::_1, std::placeholders::_2));// safe-warning: can't call this method again when last doSend request not return. 
-    if (!ret)  return;
+    if (!ret)  return 0;
     ret = usedSocket->doRecv(recvBuffer, recvBufferLen, std::bind(OnSocketRecv, std::placeholders::_1, std::placeholders::_2));
-    if (!ret)  return;
+    if (!ret)  return 0;
     sendCount++;
+    return 0;
 };
 
 void onConnect(NetErrorCode ec)

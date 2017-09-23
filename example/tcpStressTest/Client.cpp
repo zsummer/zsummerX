@@ -128,13 +128,13 @@ void CClient::doRecv()
     }
 }
 
-void CClient::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
+unsigned int CClient::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
 {
     if (ec)
     {
         LOGD("remote socket closed");
         onClose();
-        return;
+        return 0;
     }
 
     _recving._len += nRecvedLen;
@@ -145,12 +145,12 @@ void CClient::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
         LOGD("killed socket: checkBuffIntegrity error ");
         _sockptr->doClose();
         onClose();
-        return;
+        return 0;
     }
     if (ret.first == zsummer::proto4z::IRT_SHORTAGE)
     {
         _sockptr->doRecv(_recving._orgdata + _recving._len, ret.second, std::bind(&CClient::onRecv, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
-        return ;
+        return 0;
     }
 
     //! 解包完成 进行消息处理
@@ -164,12 +164,13 @@ void CClient::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
         LOGD("MessageEntry catch one exception: "<< e.what() );
         _sockptr->doClose();
         onClose();
-        return ;
+        return 0;
     }
     _process.AddTotalRecvLen(_recving._len);
     _process.AddTotalRecvCount(1);
     //! 继续收包
     doRecv();
+    return 0;
 }
 
 void CClient::MessageEntry(zsummer::proto4z::ReadStream & rs)

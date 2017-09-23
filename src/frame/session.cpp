@@ -210,7 +210,11 @@ bool TcpSession::doRecv()
     {
         return false;
     }
+#ifndef WIN32
+    return _sockptr->doRecv(_recving->begin + _recving->len, _recving->bound - _recving->len, std::bind(&TcpSession::onRecv, shared_from_this(), std::placeholders::_1, std::placeholders::_2), true);
+#else
     return _sockptr->doRecv(_recving->begin + _recving->len, _recving->bound - _recving->len, std::bind(&TcpSession::onRecv, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
+#endif
 }
 
 void TcpSession::close()
@@ -248,7 +252,7 @@ void TcpSession::close()
     LCW("TcpSession::close closing. sID=" << _sessionID);
 }
 
-void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
+unsigned int TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
 {
     LCT("TcpSession::onRecv sessionID=" << getSessionID() << ", received=" << received);
     if (ec)
@@ -263,7 +267,7 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
             LCI("socket closed.  socket error(or win rst). sID=" << _sessionID);
         }
         close();
-        return;
+        return 0 ;
     }
     _recving->len += received;
     SessionManager::getRef()._statInfo[STAT_RECV_COUNT]++;
@@ -331,21 +335,21 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
                 LCW("MessageEntry _onBlockCheck catch one exception: " << e.what() << ", bindata(max 500byte):"
                     << zsummer::log4z::Log4zBinary(_recving->begin+usedIndex, min(_recving->len - usedIndex, (unsigned int)500)));
                 close();
-                return;
+                return 0;
             }
             catch (...)
             {
                 LCW("MessageEntry _onBlockCheck catch one unknown exception.  bindata(max 500byte) :"
                     << zsummer::log4z::Log4zBinary(_recving->begin + usedIndex, min(_recving->len - usedIndex, (unsigned int)500)));
                 close();
-                return;
+                return 0;
             }
             if (ret.first == BCT_CORRUPTION)
             {
                 LCW("killed socket: _onBlockCheck error. bindata(max 500byte) :"
                     << zsummer::log4z::Log4zBinary(_recving->begin + usedIndex, min(_recving->len - usedIndex, (unsigned int)500)));
                 close();
-                return;
+                return 0;
             }
             if (ret.first == BCT_SHORTAGE)
             {
@@ -388,14 +392,14 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
                 LCW("MessageEntry _onHTTPBlockCheck catch one exception: " << e.what() << ", bindata(max 500byte) :"
                     << zsummer::log4z::Log4zBinary(_recving->begin + usedIndex, min(_recving->len - usedIndex, (unsigned int)500)));
                 close();
-                return;
+                return 0;
             }
             catch (...)
             {
                 LCW("MessageEntry _onHTTPBlockCheck catch one unknown exception, bindata(max 500byte) :"
                     << zsummer::log4z::Log4zBinary(_recving->begin + usedIndex, min(_recving->len - usedIndex, (unsigned int)500)));
                 close();
-                return;
+                return 0;
             }
 
 
@@ -404,7 +408,7 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
                 LCE("killed http socket: _onHTTPBlockCheck error sID=" << _sessionID << ", bindata(max 500byte) :"
                     << zsummer::log4z::Log4zBinary(_recving->begin + usedIndex, min(_recving->len - usedIndex, (unsigned int)500)));
                 close();
-                return;
+                return 0;
             }
             if (ret.first == BCT_SHORTAGE)
             {
@@ -450,11 +454,16 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
             memmove(_recving->begin, _recving->begin + usedIndex, _recving->len);
         }
     }
-    
+# ifndef WIN32
+    return _recving->len;
+#else
     if (!doRecv())
     {
         close();
     }
+    return 0;
+#endif
+
 }
 
 void TcpSession::send(const char *buf, unsigned int len)

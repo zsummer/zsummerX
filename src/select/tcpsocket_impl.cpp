@@ -218,7 +218,7 @@ bool TcpSocket::doSend(char * buf, unsigned int len, _OnSendHandler && handler)
 }
 
 
-bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler)
+bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler, bool daemonRecv)
 {
     if (_linkstat != LS_ESTABLISHED)
     {
@@ -247,13 +247,21 @@ bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler)
         LCE("TcpSocket::doRecv[this0x" << this << "] (_onRecvHandler) == TRUE" << logSection());
         return false;
     }
+    if (_daemonRecv)
+    {
+        LCE("TcpSocket::doRecv[this0x" << this << "] already open daemon recv" << logSection());
+        return false;
+    }
 
     _pRecvBuf = buf;
     _iRecvLen = len;
-
+    _iRecvOffset = 0;
     _onRecvHandler = std::move(handler);
     _summer->setEvent(_fd, 0);
-
+    if (daemonRecv)
+    {
+        _daemonRecv = daemonRecv;
+    }
     return true;
 }
 
@@ -293,7 +301,7 @@ void TcpSocket::onSelectMessage(bool rd, bool wt, bool err)
 
     if (rd && _onRecvHandler)
     {
-        int ret = recv(_fd, _pRecvBuf, _iRecvLen, 0);
+        int ret = recv(_fd, _pRecvBuf + _iRecvOffset, _iRecvLen, 0);
         if (ret == 0 || (ret == -1 && !IS_WOULDBLOCK))
         {
             _OnRecvHandler onRecv(std::move(_onRecvHandler));
@@ -315,11 +323,18 @@ void TcpSocket::onSelectMessage(bool rd, bool wt, bool err)
         else if (ret != -1)
         {
             auto guard = shared_from_this();
-            _summer->unsetEvent(_fd, 0);
-            _pRecvBuf = NULL;
-            _iRecvLen = 0;
-            _OnRecvHandler onRecv(std::move(_onRecvHandler));
-            onRecv(NEC_SUCCESS,ret);
+            if (_daemonRecv)
+            {
+                _iRecvOffset = _onRecvHandler(NEC_SUCCESS,ret);
+            }
+            else
+            {
+                _summer->unsetEvent(_fd, 0);
+                _pRecvBuf = NULL;
+                _iRecvLen = 0;
+                _OnRecvHandler onRecv(std::move(_onRecvHandler));
+                onRecv(NEC_SUCCESS, ret);
+            }
             if (_linkstat == LS_CLOSED)
             {
                 return;

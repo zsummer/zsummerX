@@ -231,7 +231,7 @@ bool TcpSocket::doSend(char * buf, unsigned int len, _OnSendHandler && handler)
 }
 
 
-bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler)
+bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler, bool daemonRecv)
 {
     if (_eventData._linkstat != LS_ESTABLISHED)
     {
@@ -260,10 +260,15 @@ bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler)
         LCE("TcpSocket::doRecv[this0x" << this << "] (_onRecvHandler) == TRUE" << logSection());
         return false;
     }
+    if (_daemonRecv)
+    {
+        LCE("TcpSocket::doRecv[this0x" << this << "] already open daemon recv" << logSection());
+        return false;
+    }
     
     _pRecvBuf = buf;
     _iRecvLen = len;
-    
+    _iRecvOffset = 0;
 
     _eventData._event.events = _eventData._event.events|EPOLLIN;
     _summer->registerEvent(EPOLL_CTL_MOD, _eventData);
@@ -313,7 +318,7 @@ void TcpSocket::onEPOLLMessage(uint32_t event)
         errno = EAGAIN;
         if (event & EPOLLIN)
         {
-            ret = recv(_eventData._fd, _pRecvBuf, _iRecvLen, 0);
+            ret = recv(_eventData._fd, _pRecvBuf + _iRecvOffset, _iRecvLen, 0);
         }
         if (event & EPOLLHUP || event & EPOLLERR || ret == 0 || (ret == -1 && (errno != EAGAIN && errno != EWOULDBLOCK) ) )
         {
@@ -334,13 +339,23 @@ void TcpSocket::onEPOLLMessage(uint32_t event)
         }
         else if (ret != -1)
         {
-            _eventData._event.events = _eventData._event.events &~EPOLLIN;
-            _summer->registerEvent(EPOLL_CTL_MOD, _eventData);
-            auto guard = shared_from_this();
-            _OnRecvHandler onRecv(std::move(_onRecvHandler));
-            _pRecvBuf = NULL;
-            _iRecvLen = 0;
-            onRecv(NEC_SUCCESS,ret);
+            if (_daemonRecv)
+            {
+                auto guard = shared_from_this();
+                _iRecvOffset = _onRecvHandler(NEC_SUCCESS,ret);
+            }
+            else
+            {
+                _eventData._event.events = _eventData._event.events &~EPOLLIN;
+                _summer->registerEvent(EPOLL_CTL_MOD, _eventData);
+                auto guard = shared_from_this();
+                _OnRecvHandler onRecv(std::move(_onRecvHandler));
+                _pRecvBuf = NULL;
+                _iRecvLen = 0;
+                _iRecvOffset = 0;
+                onRecv(NEC_SUCCESS,ret);
+            }
+
             if (_eventData._linkstat == LS_CLOSED)
             {
                 return;

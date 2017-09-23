@@ -63,7 +63,7 @@ namespace zsummer
             }
             bool doConnect(const std::string & remoteIP, unsigned short remotePort, _OnConnectHandler && handler);
             bool doSend(char * buf, unsigned int len, _OnSendHandler && handler);
-            bool doRecv(char * buf, unsigned int len, _OnRecvHandler && handler);
+            bool doRecv(char * buf, unsigned int len, _OnRecvHandler && handler, bool daemonRecv = false);
             bool doClose();
 
             void OnPostClose();
@@ -80,17 +80,18 @@ namespace zsummer
             unsigned char _linkstat = LS_UNINITIALIZE;
             int _fd = InvalidFD;
             bool _isIPV6 = false;
-            
+            bool _daemonRecv = false;
             _OnConnectHandler _onConnectHandler;
 
             _OnRecvHandler  _onRecvHandler;
-            unsigned int    _iRecvLen = 0;
             char    *       _pRecvBuf = NULL;
+            unsigned int    _iRecvOffset = 0;
+            unsigned int    _iRecvLen = 0;
 
 
             _OnSendHandler  _onSendHandler;
-            unsigned int    _iSendLen = 0;
             char *          _pSendBuf = NULL;
+            unsigned int    _iSendLen = 0;
         };
 
         using TcpSocketPtr = std::shared_ptr<TcpSocket> ;

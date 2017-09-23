@@ -103,7 +103,8 @@ namespace zsummer
         using _OnConnectHandler = std::function<void(NetErrorCode)>;
         //send or recv callback  @int : translate bytes.
         using _OnSendHandler = std::function<void(NetErrorCode, int)>;
-        using _OnRecvHandler = std::function<void(NetErrorCode, int)>;
+        //return the offset that the first call doRecv with param daemon mod.
+        using _OnRecvHandler = std::function<unsigned int(NetErrorCode, int)>;
 
         //udp callback
         //! @const char *: remote ip

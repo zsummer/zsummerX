@@ -54,7 +54,7 @@ private:
     void onConnected(zsummer::network::NetErrorCode ec);
 
     void doRecv();
-    void onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen);
+    unsigned int onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen);
     void MessageEntry(zsummer::proto4z::ReadStream & rs);
 
 

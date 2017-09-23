@@ -189,7 +189,8 @@ namespace zsummer
             ProtoType       _protoType = PT_TCP;
             std::string     _rc4TcpEncryption = ""; //empty is not encryption 
             bool            _openFlashPolicy = false; //check falsh client  
-            bool            _setNoDelay = true; 
+            bool            _setNoDelay = true;
+            bool            _floodSendOptimize = true;
             bool            _joinSmallBlock = true; //merge small block  
             unsigned int    _sessionPulseInterval = 30000;  
             unsigned int    _connectPulseInterval = 5000;  

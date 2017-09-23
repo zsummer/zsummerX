@@ -393,7 +393,7 @@ int main(int argc, char* argv[])
             SessionManager::getRef().getConnecterOptions(cID)._reconnects = 0;
             SessionManager::getRef().getConnecterOptions(cID)._connectPulseInterval = 4000;
             SessionManager::getRef().getConnecterOptions(cID)._maxSendListCount = 20000;
-
+            if (g_concExtraSend == 0) SessionManager::getRef().getConnecterOptions(cID)._floodSendOptimize = false;
             
             SessionManager::getRef().getConnecterOptions(cID)._onSessionLinked = std::bind(&CStressClientHandler::onLinked, &client, _1);
             SessionManager::getRef().getConnecterOptions(cID)._onSessionClosed = std::bind(&CStressClientHandler::onLost, &client, _1);

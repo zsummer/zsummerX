@@ -54,6 +54,7 @@ namespace zsummer
             TcpSocket();
             ~TcpSocket();
             bool setNoDelay();
+            inline void setFloodSendOptimize(bool enable){_floodSendOptimize = enable;}
             bool initialize(const EventLoopPtr &summer);
             inline bool getPeerInfo(std::string & remoteIP, unsigned short &remotePort)
             {
@@ -81,6 +82,7 @@ namespace zsummer
             int _fd = InvalidFD;
             bool _isIPV6 = false;
             bool _daemonRecv = false;
+            bool _floodSendOptimize = true;
             _OnConnectHandler _onConnectHandler;
 
             _OnRecvHandler  _onRecvHandler;

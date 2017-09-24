@@ -37,9 +37,11 @@
 #include "Process.h"
 #include "Client.h"
 
-CProcess::CProcess()
+CProcess::CProcess() :_nTotalRecvLen(0), _nTotalSendLen(0), _nTotalRecvCount(0), _nTotalSendCount(0), _nTotalRecvPacket(0), _nTotalSendPacket(0), _nTotalOpen(0), _nTotalClosed(0)
 {
     _summer = zsummer::network::EventLoopPtr(new zsummer::network::EventLoop());
+
+
 }
 
 bool CProcess::start()

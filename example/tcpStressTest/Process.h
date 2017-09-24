@@ -71,42 +71,17 @@ public:
 
     //all use
 public:
-    inline unsigned long long GetTotalRecvLen() {return _nTotalRecvLen;}
-    inline void AddTotalRecvLen(unsigned long long len) { _nTotalRecvLen += len;}
+    std::atomic<unsigned long long>  _nTotalRecvLen;
+    std::atomic<unsigned long long>  _nTotalSendLen ;
 
-    inline unsigned long long GetTotalSendLen() {return _nTotalSendLen;}
-    inline void AddTotalSendLen(unsigned long long len) { _nTotalSendLen += len;}
+    std::atomic<unsigned long long>  _nTotalRecvCount ;
+    std::atomic<unsigned long long>  _nTotalSendCount ;
 
-    inline unsigned long long GetTotalRecvCount() {return _nTotalRecvCount;}
-    inline void AddTotalRecvCount(unsigned long long len) { _nTotalRecvCount += len;}
+    std::atomic<unsigned long long>  _nTotalRecvPacket ;
+    std::atomic<unsigned long long>  _nTotalSendPacket ;
 
-    inline unsigned long long GetTotalSendCount() {return _nTotalSendCount;}
-    inline void AddTotalSendCount(unsigned long long len) { _nTotalSendCount += len;}
-        
-    inline unsigned long long GetTotalOpen() {return _nTotalOpen;}
-    inline void AddTotalOpen(unsigned long long len) { _nTotalOpen += len;}
-    inline unsigned long long GetTotalClosed() {return _nTotalClosed;}
-    inline void AddTotalClosed(unsigned long long len) { _nTotalClosed += len;}
-private:
-    unsigned long long  _nTotalRecvLen = 0;
-    unsigned long long  _nTotalSendLen = 0;
-    unsigned long long  _nTotalRecvCount = 0;
-    unsigned long long  _nTotalSendCount = 0;
-    unsigned long long  _nTotalOpen = 0;
-    unsigned long long  _nTotalClosed = 0;
-    
-
-
-    //only connects use
-public:
-    inline unsigned long long GetTotalEcho() {return _nTotalEcho;}
-    inline void AddTotalEcho(unsigned long long len) { _nTotalEcho += len;}
-
-    inline unsigned long long GetTotalEchoTime() {return _nTotalEchoTime;}
-    inline void AddTotalEchoTime(unsigned long long len) { _nTotalEchoTime += len;}
-private:
-    unsigned long long _nTotalEcho = 0;
-    unsigned long long _nTotalEchoTime = 0;
+    std::atomic<unsigned long long>  _nTotalOpen ;
+    std::atomic<unsigned long long>  _nTotalClosed ;
     
 
 

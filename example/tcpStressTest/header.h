@@ -46,6 +46,7 @@
 #include <queue>
 #include <iomanip>
 #include <string.h>
+#include <atomic>
 #include <signal.h>
 #include <log4z/log4z.h>
 #include <proto4z/proto4z.h>
@@ -54,15 +55,16 @@ using namespace std;
 
 
 //! 消息包缓冲区大小
-#define _MSG_BUF_LEN    (2*1024)
-#define _SEND_BUF_LEN (_MSG_BUF_LEN*10)
+#define _MSG_BUF_LEN    (20*1024)
+
 
 //! 消息包 
 struct Packet
 {
-    unsigned short _len;
+    unsigned int _offset = 0;
     char           _orgdata[_MSG_BUF_LEN];
 };
+
 using PacketPtr = std::shared_ptr<Packet>;
 using TcpSocketPtr = zsummer::network::TcpSocketPtr;
 
@@ -89,9 +91,8 @@ static std::string g_text = "zsummerX:test text.........  zsummerX:test text....
 extern std::string g_remoteIP;
 extern unsigned short g_remotePort;
 extern unsigned short g_startType;  //0 listen, 1 connect
-extern unsigned short g_maxClient; // client count
-extern unsigned short g_sendType; //0 echo send, 1 direct send
-extern unsigned int   g_intervalMs; // send interval ms
+extern unsigned short g_maxClient; //
+extern unsigned int   g_multiThread ; // 0 full, 1 send 
 
 
 #endif

@@ -48,10 +48,8 @@ using namespace zsummer::log4z;
 std::string g_remoteIP = "0.0.0.0";
 unsigned short g_remotePort = 8081;
 unsigned short g_startType = 0;  //0 listen, 1 connect
-unsigned short g_maxClient = 1; //0 echo send, 1 direct send
-unsigned short g_sendType = 0; //0 echo send, 1 direct send
-unsigned int   g_intervalMs = 0; // send interval
-
+unsigned short g_maxClient = 1; //
+unsigned int   g_multiThread = 2; //multithread
 int main(int argc, char* argv[])
 {
 
@@ -76,8 +74,7 @@ int main(int argc, char* argv[])
         cout << "./tcpTest 0.0.0.0 8081 0" << endl;
         cout << "startType: 0 server, 1 client" << endl;
         cout << "maxClient: limit max" << endl;
-        cout << "sendType: 0 echo send, 1 direct send" << endl;
-        cout << "interval: send once interval" << endl;
+        cout << "multi-thread: default 2" << endl;
         return 0;
     }
     if (argc > 1)
@@ -98,14 +95,11 @@ int main(int argc, char* argv[])
     }
     if (argc > 5)
     {
-        g_sendType = atoi(argv[5]);
+        g_multiThread = atoi(argv[5]);
     }
-    if (argc > 6)
-    {
-        g_intervalMs = atoi(argv[6]);
-    }
+    g_multiThread = g_multiThread < 1 ? 1 : g_multiThread;
+    g_multiThread = g_multiThread > 100 ? 100 : g_multiThread;
 
-    
     if (g_startType == 0)
     {
         //! 启动日志服务
@@ -119,7 +113,7 @@ int main(int argc, char* argv[])
         ILog4zManager::getPtr()->start();
     }
     LOGI("g_remoteIP=" << g_remoteIP << ", g_remotePort=" << g_remotePort << ", g_startType=" << g_startType 
-        << ", g_maxClient=" << g_maxClient << ", g_sendType=" << g_sendType << ", g_intervalMs=" << g_intervalMs);
+        << ", g_maxClient=" << g_maxClient   << ", g_multiThread=" << g_multiThread);
 
 
 
@@ -139,14 +133,14 @@ int main(int argc, char* argv[])
 
         for (std::vector<CProcess *>::const_iterator iter = schedule._process.begin(); iter != schedule._process.end(); ++iter)
         {
-            temp[0] += (*iter)->GetTotalRecvLen();
-            temp[1] += (*iter)->GetTotalSendLen();
-            temp[2] += (*iter)->GetTotalRecvCount();
-            temp[3] += (*iter)->GetTotalSendCount();
-            temp[4] += (*iter)->GetTotalOpen();
-            temp[5] += (*iter)->GetTotalClosed();
-            temp[6] += (*iter)->GetTotalEcho();
-            temp[7] += (*iter)->GetTotalEchoTime();
+            temp[0] += (*iter)->_nTotalRecvLen;
+            temp[1] += (*iter)->_nTotalSendLen;
+            temp[2] += (*iter)->_nTotalRecvCount;
+            temp[3] += (*iter)->_nTotalSendCount;
+            temp[4] += (*iter)->_nTotalOpen;
+            temp[5] += (*iter)->_nTotalClosed;
+            temp[6] += (*iter)->_nTotalRecvPacket;
+            temp[7] += (*iter)->_nTotalSendPacket;
         }
         LOGD("Linked[" << temp[4] 
             <<"]  Closed[" << temp[5]
@@ -154,8 +148,8 @@ int main(int argc, char* argv[])
             <<"]M  Send[" << (temp[1] - nLast[1])/1024.0/1024.0/5.0
             <<"]M  RecvSpeed[" << (temp[2] - nLast[2])/5.0
             <<"]  SendSpeed[" << (temp[3] - nLast[3])/5.0
-            <<"]  EchoSpeed[" << (temp[6]- nLast[6])/5.0
-            <<"]  DelayTime[" << (temp[7]-nLast[7])/1.0/(temp[6]-nLast[6] == 0 ? 1 :temp[6]-nLast[6])
+            <<"]  RecvPacket[" << (temp[6]- nLast[6])/5.0
+            <<"]  SendPacket[" << (temp[7]-nLast[7])/5.0
             <<"].");
 
 

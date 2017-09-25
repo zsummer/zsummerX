@@ -9,7 +9,7 @@
  * 
  * ===============================================================================
  * 
- * Copyright (C) 2010-2015 YaweiZhang <yawei.zhang@foxmail.com>.
+ * Copyright (C) 2010-2017 YaweiZhang <yawei.zhang@foxmail.com>.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -128,15 +128,15 @@ bool UdpSocket::doRecvFrom(char * buf, unsigned int len, _OnRecvFromHandler && h
         return false;
     }
     
-    if (_pRecvBuf || _iRecvLen != 0 || _onRecvFromHandler)
+    if (_recvBuf || _recvLen != 0 || _onRecvFromHandler)
     {
-        LCE("UdpSocket::doRecv[this0x" << this << "] (_pRecvBuf != nullptr || _iRecvLen != 0) == TRUE");
+        LCE("UdpSocket::doRecv[this0x" << this << "] (_recvBuf != nullptr || _recvLen != 0) == TRUE");
         return false;
     }
 
     
-    _pRecvBuf = buf;
-    _iRecvLen = len;
+    _recvBuf = buf;
+    _recvLen = len;
 
     _onRecvFromHandler = std::move(handler);
 
@@ -162,10 +162,10 @@ bool UdpSocket::onSelectMessage(int type, bool rd, bool wt)
         sockaddr_in raddr;
         memset(&raddr, 0, sizeof(raddr));
         socklen_t len = sizeof(raddr);
-        int ret = recvfrom(_fd, _pRecvBuf, _iRecvLen, 0, (sockaddr*)&raddr, &len);
+        int ret = recvfrom(_fd, _recvBuf, _recvLen, 0, (sockaddr*)&raddr, &len);
 
-        _pRecvBuf = nullptr;
-        _iRecvLen = 0;
+        _recvBuf = nullptr;
+        _recvLen = 0;
         if (ret == 0 || (ret ==-1 && !IS_WOULDBLOCK) )
         {
             LCE("UdpSocket::onSelectMessage[this0x" << this << "] recv error. "  << ", ret=" << ret << ", " << OSTREAM_GET_LASTERROR);

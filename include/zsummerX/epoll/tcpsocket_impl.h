@@ -9,7 +9,7 @@
 * 
 * ===============================================================================
 * 
-* Copyright (C) 2010-2015 YaweiZhang <yawei.zhang@foxmail.com>.
+* Copyright (C) 2010-2017 YaweiZhang <yawei.zhang@foxmail.com>.
 * 
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -85,13 +85,13 @@ namespace zsummer
             _OnConnectHandler _onConnectHandler;
 
             _OnRecvHandler _onRecvHandler;
-            unsigned int _iRecvLen = 0;
-            char    *     _pRecvBuf = NULL;
-            unsigned int _iRecvOffset = 0;
+            unsigned int _recvLen = 0;
+            char    *     _recvBuf = NULL;
+            unsigned int _recvOffset = 0;
 
             _OnSendHandler _onSendHandler;
-            unsigned int _iSendLen = 0;
-            char *         _pSendBuf = NULL;
+            unsigned int _sendLen = 0;
+            char *         _sendBuf = NULL;
         };
         using TcpSocketPtr = std::shared_ptr<TcpSocket>;
     }

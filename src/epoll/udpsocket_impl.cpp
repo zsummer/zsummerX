@@ -9,7 +9,7 @@
  * 
  * ===============================================================================
  * 
- * Copyright (C) 2010-2015 YaweiZhang <yawei.zhang@foxmail.com>.
+ * Copyright (C) 2010-2017 YaweiZhang <yawei.zhang@foxmail.com>.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -48,8 +48,8 @@ UdpSocket::UdpSocket()
     _eventData._fd = -1;
     _eventData._linkstat = LS_UNINITIALIZE;
     _eventData._type = EventData::REG_UDP_SOCKET;
-    _iRecvLen  = 0;
-    _pRecvBuf = nullptr;
+    _recvLen  = 0;
+    _recvBuf = nullptr;
 }
 
 
@@ -146,15 +146,15 @@ bool UdpSocket::doRecvFrom(char * buf, unsigned int len, _OnRecvFromHandler&& ha
         return false;
     }
     
-    if (_pRecvBuf || _iRecvLen != 0 || _onRecvFromHandler)
+    if (_recvBuf || _recvLen != 0 || _onRecvFromHandler)
     {
-        LCE("UdpSocket::doRecv[this0x" << this << "] (_pRecvBuf != nullptr || _iRecvLen != 0) == TRUE");
+        LCE("UdpSocket::doRecv[this0x" << this << "] (_recvBuf != nullptr || _recvLen != 0) == TRUE");
         return false;
     }
 
     
-    _pRecvBuf = buf;
-    _iRecvLen = len;
+    _recvBuf = buf;
+    _recvLen = len;
     _eventData._event.events = _eventData._event.events|EPOLLIN;
     _summer->registerEvent(EPOLL_CTL_MOD, _eventData);
     _onRecvFromHandler = std::move(handler);
@@ -173,7 +173,7 @@ bool UdpSocket::onEPOLLMessage(uint32_t event)
     sockaddr_in raddr;
     memset(&raddr, 0, sizeof(raddr));
     socklen_t len = sizeof(raddr);
-    int ret = recvfrom(_eventData._fd, _pRecvBuf, _iRecvLen, 0, (sockaddr*)&raddr, &len);
+    int ret = recvfrom(_eventData._fd, _recvBuf, _recvLen, 0, (sockaddr*)&raddr, &len);
 
     if (event & EPOLLHUP || event & EPOLLERR || ret == 0 ||(ret ==-1 && (errno !=EAGAIN && errno != EWOULDBLOCK)))
     {
@@ -191,8 +191,8 @@ bool UdpSocket::onEPOLLMessage(uint32_t event)
         _OnRecvFromHandler onRecv(std::move(_onRecvFromHandler));
         _eventData._event.events = _eventData._event.events&~EPOLLIN;
         _summer->registerEvent(EPOLL_CTL_MOD, _eventData);
-        _pRecvBuf = nullptr;
-        _iRecvLen = 0;
+        _recvBuf = nullptr;
+        _recvLen = 0;
         onRecv(NEC_SUCCESS, inet_ntoa(raddr.sin_addr), ntohs(raddr.sin_port), ret);
     }
     return true;

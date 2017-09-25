@@ -9,7 +9,7 @@
  * 
  * ===============================================================================
  * 
- * Copyright (C) 2010-2016 YaweiZhang <yawei.zhang@foxmail.com>.
+ * Copyright (C) 2010-2017 YaweiZhang <yawei.zhang@foxmail.com>.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -67,8 +67,8 @@ std::string TcpSocket::logSection()
     std::stringstream os;
     os << ";; Status: summer.user_count()=" << _summer.use_count() << ", remoteIP=" << _remoteIP << ", remotePort=" << _remotePort
         << ", _onConnectHandler = " << (bool)_onConnectHandler 
-        << ", _onRecvHandler = " << (bool)_onRecvHandler << ", _pRecvBuf=" << (void*)_pRecvBuf << ", _iRecvLen=" << _iRecvLen 
-        << ", _onSendHandler = " << (bool)_onSendHandler << ", _pSendBuf=" << (void*)_pSendBuf << ", _iSendLen=" << _iSendLen;
+        << ", _onRecvHandler = " << (bool)_onRecvHandler << ", _recvBuf=" << (void*)_recvBuf << ", _recvLen=" << _recvLen 
+        << ", _onSendHandler = " << (bool)_onSendHandler << ", _sendBuf=" << (void*)_sendBuf << ", _sendLen=" << _sendLen;
     return os.str();
 }
 
@@ -188,9 +188,9 @@ bool TcpSocket::doSend(char * buf, unsigned int len, _OnSendHandler && handler)
         LCE("TcpSocket::doSend[this0x" << this << "] argument err! len ==0" );
         return false;
     }
-    if (_pSendBuf != NULL || _iSendLen != 0)
+    if (_sendBuf != NULL || _sendLen != 0)
     {
-        LCE("TcpSocket::doSend[this0x" << this << "] _pSendBuf =" << (void *) _pSendBuf << " _iSendLen =" << _iSendLen<< logSection());
+        LCE("TcpSocket::doSend[this0x" << this << "] _sendBuf =" << (void *) _sendBuf << " _sendLen =" << _sendLen<< logSection());
         return false;
     }
     if (_onSendHandler)
@@ -206,8 +206,8 @@ bool TcpSocket::doSend(char * buf, unsigned int len, _OnSendHandler && handler)
     }
     if (ret <= 0 )
     {
-        _pSendBuf = buf;
-        _iSendLen = len;
+        _sendBuf = buf;
+        _sendLen = len;
 
         _onSendHandler = std::move(handler);
         _summer->setEvent(_fd, 1);
@@ -241,9 +241,9 @@ bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler, 
         LCE("TcpSocket::doRecv[this0x" << this << "] argument err !!!  len==0" );
         return false;
     }
-    if (_pRecvBuf != NULL || _iRecvLen != 0)
+    if (_recvBuf != NULL || _recvLen != 0)
     {
-        LCE("TcpSocket::doRecv[this0x" << this << "]  (_pRecvBuf != NULL || _iRecvLen != 0) == TRUE" << logSection());
+        LCE("TcpSocket::doRecv[this0x" << this << "]  (_recvBuf != NULL || _recvLen != 0) == TRUE" << logSection());
         return false;
     }
     if (_onRecvHandler)
@@ -257,9 +257,9 @@ bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler, 
         return false;
     }
 
-    _pRecvBuf = buf;
-    _iRecvLen = len;
-    _iRecvOffset = 0;
+    _recvBuf = buf;
+    _recvLen = len;
+    _recvOffset = 0;
     _onRecvHandler = std::move(handler);
     _summer->setEvent(_fd, 0);
     if (daemonRecv)
@@ -305,7 +305,7 @@ void TcpSocket::onSelectMessage(bool rd, bool wt, bool err)
 
     if (rd && _onRecvHandler)
     {
-        int ret = recv(_fd, _pRecvBuf + _iRecvOffset, _iRecvLen - _iRecvOffset, 0);
+        int ret = recv(_fd, _recvBuf + _recvOffset, _recvLen - _recvOffset, 0);
         if (ret == 0 || (ret == -1 && !IS_WOULDBLOCK))
         {
             _OnRecvHandler onRecv(std::move(_onRecvHandler));
@@ -329,13 +329,13 @@ void TcpSocket::onSelectMessage(bool rd, bool wt, bool err)
             auto guard = shared_from_this();
             if (_daemonRecv)
             {
-                _iRecvOffset = _onRecvHandler(NEC_SUCCESS,ret);
+                _recvOffset = _onRecvHandler(NEC_SUCCESS,ret);
             }
             else
             {
                 _summer->unsetEvent(_fd, 0);
-                _pRecvBuf = NULL;
-                _iRecvLen = 0;
+                _recvBuf = NULL;
+                _recvLen = 0;
                 _OnRecvHandler onRecv(std::move(_onRecvHandler));
                 onRecv(NEC_SUCCESS, ret);
             }
@@ -348,7 +348,7 @@ void TcpSocket::onSelectMessage(bool rd, bool wt, bool err)
 
     if (wt && _onSendHandler)
     {
-        int ret = send(_fd, _pSendBuf, _iSendLen, 0);
+        int ret = send(_fd, _sendBuf, _sendLen, 0);
         if ((ret == -1 && !IS_WOULDBLOCK))
         {
             _summer->unsetEvent(_fd, 1);
@@ -357,8 +357,8 @@ void TcpSocket::onSelectMessage(bool rd, bool wt, bool err)
         {
             auto guard = shared_from_this();
             _OnSendHandler onSend(std::move(_onSendHandler));
-            _pSendBuf = NULL;
-            _iSendLen = 0;
+            _sendBuf = NULL;
+            _sendLen = 0;
             _summer->unsetEvent(_fd, 1);
             onSend(NEC_SUCCESS, ret);
             if (_linkstat == LS_CLOSED)

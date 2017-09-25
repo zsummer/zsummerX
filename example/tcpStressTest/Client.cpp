@@ -64,7 +64,7 @@ void CClient::initialize()
 #endif
         doRecv();
         _bEstablished = true;
-        _process._nTotalOpen.fetch_add(1, std::memory_order_relaxed);
+        _process._nTotalOpen++;
     }
     else
     {
@@ -88,7 +88,7 @@ void CClient::onConnected(zsummer::network::NetErrorCode ec)
     
     doRecv();
     _bEstablished = true;
-    _process._nTotalOpen.fetch_add(1, std::memory_order_relaxed);
+    _process._nTotalOpen++;
     zsummer::proto4z::WriteStream ws(1);
     ws << g_text;
     doSend(ws.getStream(), ws.getStreamLen());
@@ -111,7 +111,7 @@ unsigned int CClient::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
         onClose();
         return 0;
     }
-    _process._nTotalRecvCount.fetch_add(1, std::memory_order_relaxed);
+    _process._nTotalRecvCount++;
     _recving._offset += nRecvedLen;
     unsigned int readed = 0;
     while (true)
@@ -143,8 +143,8 @@ unsigned int CClient::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
             return 0;
         }
         readed += ret.second;
-        _process._nTotalRecvPacket.fetch_add(1, std::memory_order_relaxed);
-        _process._nTotalRecvLen.fetch_add(ret.second, std::memory_order_relaxed);
+        _process._nTotalRecvPacket++;
+        _process._nTotalRecvLen += ret.second;
     }
     if (readed < _recving._offset)
     {
@@ -162,8 +162,6 @@ unsigned int CClient::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
 
 void CClient::MessageEntry(zsummer::proto4z::ReadStream & rs)
 {
-    //协议流异常会被上层捕获并关闭连接
-    unsigned short protoID = rs.getProtoID();
     doSend(rs.getStream(), rs.getStreamLen());
 }
 
@@ -183,7 +181,7 @@ void CClient::doSend(const char *buf, unsigned int len)
         _sending._offset = 0;
         _needSendLen = len;
         _sockptr->doSend(_sending._orgdata, len, std::bind(&CClient::onSend, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
-        _process._nTotalSendPacket.fetch_add(1, std::memory_order_relaxed);
+        _process._nTotalSendPacket++;
     }
 }
 
@@ -195,8 +193,8 @@ void CClient::onSend(zsummer::network::NetErrorCode ec,  int nSentLen)
         LOGD("remote socket closed");
         return ;
     }
-    _process._nTotalSendCount.fetch_add(1, std::memory_order_relaxed); 
-    _process._nTotalSendLen.fetch_add(nSentLen, std::memory_order_relaxed);
+    _process._nTotalSendCount++;
+    _process._nTotalSendLen += nSentLen;
     _sending._offset += nSentLen;
     if (_sending._offset < _needSendLen)
     {
@@ -220,7 +218,7 @@ void CClient::onSend(zsummer::network::NetErrorCode ec,  int nSentLen)
                 memcpy(_recving._orgdata+_recving._offset, pack->_orgdata, pack->_offset);
                 _needSendLen += pack->_offset;
                 delete pack;
-                _process._nTotalSendPacket.fetch_add(1, std::memory_order_relaxed);
+                _process._nTotalSendPacket++;
             } while (!_sendque.empty());
             
             _sockptr->doSend(_sending._orgdata + _sending._offset, _needSendLen - _sending._offset, std::bind(&CClient::onSend, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
@@ -231,7 +229,7 @@ void CClient::onSend(zsummer::network::NetErrorCode ec,  int nSentLen)
 void CClient::onClose()
 {
     LOGI("Client Closed!");
-    _process._nTotalClosed.fetch_add(1, std::memory_order_relaxed);
+    _process._nTotalClosed++;
     _bEstablished = false;
 }
 

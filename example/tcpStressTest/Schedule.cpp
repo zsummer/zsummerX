@@ -55,7 +55,7 @@ void CSchedule::start()
         return ;
     }
 
-    for (int i=0; i< g_multiThread; i++)
+    for (unsigned int i=0; i< g_multiThread; i++)
     {
         CProcess * p = new CProcess();
         if (p->start())

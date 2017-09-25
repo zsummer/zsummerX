@@ -71,17 +71,17 @@ public:
 
     //all use
 public:
-    std::atomic<unsigned long long>  _nTotalRecvLen;
-    std::atomic<unsigned long long>  _nTotalSendLen ;
+    alignas(unsigned long long) unsigned long long  _nTotalRecvLen = 0;
+    alignas(unsigned long long) unsigned long long  _nTotalSendLen = 0;
 
-    std::atomic<unsigned long long>  _nTotalRecvCount ;
-    std::atomic<unsigned long long>  _nTotalSendCount ;
+    alignas(unsigned long long) unsigned long long  _nTotalRecvCount = 0;
+    alignas(unsigned long long) unsigned long long  _nTotalSendCount = 0;
 
-    std::atomic<unsigned long long>  _nTotalRecvPacket ;
-    std::atomic<unsigned long long>  _nTotalSendPacket ;
+    alignas(unsigned long long) unsigned long long  _nTotalRecvPacket = 0;
+    alignas(unsigned long long) unsigned long long  _nTotalSendPacket = 0;
 
-    std::atomic<unsigned long long>  _nTotalOpen ;
-    std::atomic<unsigned long long>  _nTotalClosed ;
+    alignas(unsigned long long) unsigned long long  _nTotalOpen = 0;
+    alignas(unsigned long long) unsigned long long  _nTotalClosed = 0;
     
 
 

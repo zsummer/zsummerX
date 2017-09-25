@@ -133,14 +133,14 @@ int main(int argc, char* argv[])
 
         for (std::vector<CProcess *>::const_iterator iter = schedule._process.begin(); iter != schedule._process.end(); ++iter)
         {
-            temp[0] += (*iter)->_nTotalRecvLen.load(std::memory_order_relaxed);
-            temp[1] += (*iter)->_nTotalSendLen.load(std::memory_order_relaxed);
-            temp[2] += (*iter)->_nTotalRecvCount.load(std::memory_order_relaxed);
-            temp[3] += (*iter)->_nTotalSendCount.load(std::memory_order_relaxed);
-            temp[4] += (*iter)->_nTotalOpen.load(std::memory_order_relaxed);
-            temp[5] += (*iter)->_nTotalClosed.load(std::memory_order_relaxed);
-            temp[6] += (*iter)->_nTotalRecvPacket.load(std::memory_order_relaxed);
-            temp[7] += (*iter)->_nTotalSendPacket.load(std::memory_order_relaxed);
+            temp[0] += (*iter)->_nTotalRecvLen;
+            temp[1] += (*iter)->_nTotalSendLen;
+            temp[2] += (*iter)->_nTotalRecvCount;
+            temp[3] += (*iter)->_nTotalSendCount;
+            temp[4] += (*iter)->_nTotalOpen;
+            temp[5] += (*iter)->_nTotalClosed;
+            temp[6] += (*iter)->_nTotalRecvPacket;
+            temp[7] += (*iter)->_nTotalSendPacket;
         }
         LOGD("Linked[" << temp[4] 
             <<"]  Closed[" << temp[5]

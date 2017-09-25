@@ -238,13 +238,20 @@ namespace zsummer
                 sprintf(buf, "%04d%02d%02d_%02d%02d%02d_", t->tm_year + 1900, t->tm_mon + 1, t->tm_mday, t->tm_hour, t->tm_min, t->tm_sec);
                 filename += buf;
             }
-            filename += getProcessName();
+            if (_processID.empty() && _processName.empty())
+            {
+                _processID = getProcessID();
+                _processID = _processID.c_str();
+                _processName = getProcessName();
+                _processName = _processName.c_str();
+            }
+            filename += _processName;
             filename += "_";
-            filename += getProcessID();
+            filename += _processID;
             filename += "_";
             filename += prefix;
             filename += ".log";
-
+            
             std::fstream f(filename, std::ios::out);
             if (!f.is_open())
             {
@@ -309,6 +316,8 @@ namespace zsummer
     private:
         std::map<std::string, Param > _perf;
         std::map<std::string, Param > _once;
+        std::string _processID;
+        std::string _processName;
         std::deque<std::string> _historyFile;
         Timestamp _lastPerf;
     };

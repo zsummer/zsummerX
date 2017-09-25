@@ -192,4 +192,7 @@
       <UniqueIdentifier>{0dcec022-b3a4-463e-8069-53cc4fed0893}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\depends\proto4z\proto4z.lua" />
+  </ItemGroup>
 </Project>

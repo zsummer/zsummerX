@@ -87,6 +87,9 @@
     <ClInclude Include="performance.h" />
     <ClInclude Include="summer.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\depends\proto4z\proto4z.lua" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{2A876DF9-92DD-4EEE-8792-683D0EF766DA}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>

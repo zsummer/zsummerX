@@ -69,13 +69,17 @@ summer.whenPulse(whenPulse)
 
 --启动网络
 summer.start()
+for i=1, 1, 1 do
+    --连接服务器
+    local id = summer.addConnect("127.0.0.1", 8881, nil, 5)
+    if id == nil then
+        summer.logw("id == nil when addConnect")
+    end
+    print("new connect id=" .. id)
 
---连接服务器
-local id = summer.addConnect("127.0.0.1", 8881, nil, 5)
-if id == nil then
-    summer.logw("id == nil when addConnect")
 end
-print("new connect id=" .. id)
+
+
 
 local startTick = summer.now()
 --进入循环

@@ -41,6 +41,7 @@
 #include "lauxlib.h"
 #include <string.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #ifdef WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -55,31 +56,6 @@
 
 int luaopen_proto4z_util(lua_State *L);
 
-static const unsigned short __gc_localEndianType = 1;
-static int isLittleEndian()
-{
-    if (*(const unsigned char *)&__gc_localEndianType == 1)
-    {
-        return 1;
-    }
-    return 0;
-}
-
-void byteRevese(char * buf, unsigned int bytes)
-{
-    char tmp = 0;
-    char *dst = buf;
-    char *src = buf + bytes;
-    bytes /= 2;
-    while (bytes > 0)
-    {
-        tmp = *dst;
-        *dst++ = *--src;
-        *src = tmp;
-        bytes--;
-    }
-    return;
-}
 
 
 static int newTag(lua_State * L)
@@ -123,6 +99,7 @@ static int testTag(lua_State * L)
 }
 
 
+
 static void printPackError(lua_State * L, const char *tp, const char * desc)
 {
     char buf[200] = { 0 };
@@ -131,6 +108,8 @@ static void printPackError(lua_State * L, const char *tp, const char * desc)
     lua_pushstring(L, buf);
     lua_pcall(L, 1, 0, 0);
 }
+
+
 
 static int pack(lua_State * L)
 {
@@ -152,40 +131,24 @@ static int pack(lua_State * L)
     {
         if (lua_isnil(L, 1)) printPackError(L, tp, desc);
         short v = (short)luaL_optinteger(L, 1, 0);
-        if (!isLittleEndian())
-        {
-            byteRevese((char*)&v, 2);
-        }
         lua_pushlstring(L, (const char *)&v, 2);
     }
     else if (strcmp(tp, "ui16") == 0)
     {
         if (lua_isnil(L, 1)) printPackError(L, tp, desc);
         unsigned short v = (unsigned short)luaL_optinteger(L, 1, 0);
-        if (!isLittleEndian())
-        {
-            byteRevese((char*)&v, 2);
-        }
         lua_pushlstring(L, (const char *)&v, 2);
     }
     else if (strcmp(tp, "i32") == 0)
     {
         if (lua_isnil(L, 1)) printPackError(L, tp, desc);
         int v = (int)luaL_optinteger(L, 1, 0);
-        if (!isLittleEndian())
-        {
-            byteRevese((char*)&v, 4);
-        }
         lua_pushlstring(L, (const char *)&v, 4);
     }
     else if (strcmp(tp, "ui32") == 0)
     {
         if (lua_isnil(L, 1)) printPackError(L, tp, desc);
         unsigned int v = (unsigned int)luaL_optinteger(L, 1, 0);
-        if (!isLittleEndian())
-        {
-            byteRevese((char*)&v, 4);
-        }
         lua_pushlstring(L, (const char *)&v, 4);
     }
     else if (strcmp(tp, "i64") == 0 || strcmp(tp, "ui64") == 0)
@@ -199,31 +162,13 @@ static int pack(lua_State * L)
             {
                 if (strcmp(tp, "i64") == 0)
                 {
-                    long long v = 0;
-#ifdef WIN32  
-                    sscanf(str, "%I64d", &v);
-#else
-                    sscanf(str, "%lld", &v);
-#endif
-                    if (!isLittleEndian())
-                    {
-                        byteRevese((char*)&v, 8);
-                    }
+                    long long v = atoll(str);
                     lua_pushlstring(L, (char*)&v, 8);
 
                 }
                 else
                 {
-                    unsigned long long v = 0;
-#ifdef WIN32  
-                    sscanf(str, "%I64u", &v);
-#else
-                    sscanf(str, "%llu", &v);
-#endif
-                    if (!isLittleEndian())
-                    {
-                        byteRevese((char*)&v, 8);
-                    }
+                    unsigned long long v = strtoull(str, NULL, 2);
                     lua_pushlstring(L, (char*)&v, 8);
                 }
             }
@@ -232,10 +177,6 @@ static int pack(lua_State * L)
         else
         {
             unsigned long long v = (unsigned long long)luaL_optnumber(L, 1, 0);
-            if (!isLittleEndian())
-            {
-                byteRevese((char*)&v, 8);
-            }
             lua_pushlstring(L, (char*)&v, 8);
         }
     }
@@ -243,20 +184,12 @@ static int pack(lua_State * L)
     {
         if (lua_isnil(L, 1)) printPackError(L, tp, desc);
         float v = (float)luaL_optnumber(L, 1, 0.0f);
-        if (!isLittleEndian())
-        {
-            byteRevese((char*)&v, 4);
-        }
         lua_pushlstring(L, (const char *)&v, 4);
     }
     else if (strcmp(tp, "double") == 0)
     {
         if (lua_isnil(L, 1)) printPackError(L, tp, desc);
         double v = (double)luaL_optnumber(L, 1, 0.0f);
-        if (!isLittleEndian())
-        {
-            byteRevese((char*)&v, 8);
-        }
         lua_pushlstring(L, (const char *)&v, 8);
     }
     else
@@ -318,10 +251,7 @@ static int unpack(lua_State * L)
         }
         short v = 0;
         memcpy(&v, &data[pos - 1], 2);
-        if (!isLittleEndian())
-        {
-            byteRevese((char*)&v, 2);
-        }
+
         lua_pushinteger(L, v);
         lua_pushinteger(L, pos + 2);
     }
@@ -334,10 +264,7 @@ static int unpack(lua_State * L)
         }
         unsigned short v = 0;
         memcpy(&v, &data[pos - 1], 2);
-        if (!isLittleEndian())
-        {
-            byteRevese((char*)&v, 2);
-        }
+
         lua_pushinteger(L, v);
         lua_pushinteger(L, pos + 2);
     }
@@ -350,10 +277,7 @@ static int unpack(lua_State * L)
         }
         int v = 0;
         memcpy(&v, &data[pos - 1], 4);
-        if (!isLittleEndian())
-        {
-            byteRevese((char*)&v, 4);
-        }
+
         lua_pushinteger(L, v);
         lua_pushinteger(L, pos + 4);
     }
@@ -366,10 +290,7 @@ static int unpack(lua_State * L)
         }
         unsigned int v = 0;
         memcpy(&v, &data[pos - 1], 4);
-        if (!isLittleEndian())
-        {
-            byteRevese((char*)&v, 4);
-        }
+
         lua_pushinteger(L, v);
         lua_pushinteger(L, pos + 4);
     }
@@ -383,38 +304,10 @@ static int unpack(lua_State * L)
 
         unsigned long long v = 0;
         memcpy(&v, &data[pos - 1], 8);
-        if (!isLittleEndian())
-        {
-            byteRevese((char*)&v, 8);
-        }
-        if (true) // number类型实现, 需要小于pow(2,52)
-        {
-            lua_pushnumber(L, (lua_Number)v);
-            lua_pushinteger(L, pos + 8);
-        }
-        else //字符串来实现I64/UI64类型 
-        {
-            char buf[50] = { 0 };
-            if (strcmp(tp, "i64") == 0)
-            {
-#ifdef WIN32  
-                sprintf(buf, "%I64d", (long long)v);
-#else
-                sprintf(buf, "%lld", (long long)v);
-#endif
-            }
-            else
-            {
-#ifdef WIN32  
-                sprintf(buf, "%I64u", v);
-#else
-                sprintf(buf, "%llu", v);
-#endif
-            }
-            lua_pushstring(L, buf);
-            lua_pushinteger(L, pos + 8);
-        }
 
+
+        lua_pushnumber(L, (lua_Number)v);
+        lua_pushinteger(L, pos + 8);
     }
     else if (strcmp(tp, "float") == 0)
     {
@@ -425,10 +318,6 @@ static int unpack(lua_State * L)
         }
         float v = 0;
         memcpy(&v, &data[pos - 1], 4);
-        if (!isLittleEndian())
-        {
-            byteRevese((char*)&v, 4);
-        }
         lua_pushnumber(L, v);
         lua_pushinteger(L, pos + 4);
     }
@@ -441,10 +330,6 @@ static int unpack(lua_State * L)
         }
         double v = 0;
         memcpy(&v, &data[pos - 1], 8);
-        if (!isLittleEndian())
-        {
-            byteRevese((char*)&v, 8);
-        }
         lua_pushnumber(L, v);
         lua_pushinteger(L, pos + 8);
     }
@@ -457,10 +342,6 @@ static int unpack(lua_State * L)
         }
         unsigned int strLen = 0;
         memcpy(&strLen, &data[pos - 1], 4);
-        if (!isLittleEndian())
-        {
-            byteRevese((char*)&strLen, 4);
-        }
         pos += 4;
         if (pos - 1 + strLen > dataLen)
         {

@@ -5,7 +5,7 @@ require("TestProto")
 logw = summer.logw
 logi = summer.logi
 loge = summer.loge
-
+dump = function(x, y, z) Proto4z.dump(x, y, z, logi) end
 
 
 
@@ -29,7 +29,7 @@ local echo = {  _iarray = {{_char=1,_uchar=2,_short=3,_ushort=4,_int=5,_uint=6,_
 local function whenLinked(sID, remoteIP, remotePort)
     print("session is on connected. sID=" .. sID .. ", remoteIP=" .. remoteIP .. ", remotePort=" .. remotePort)
     local data = Proto4z.encode(echo, "EchoPack")
-    Proto4z.dump(echo)
+    dump(echo)
     Proto4z.putbin(data)
     summer.sendContent(sID, Proto4z.EchoPack.__protoID, data)
 end
@@ -44,7 +44,7 @@ local function whenMessage(sID, pID, content)
         logw("unknown message id recv. pID=" .. pID)
     else
             local echo = Proto4z.decode(content, name)
-            --Proto4z.dump(echo)
+            --dump(echo)
             local data = Proto4z.encode(echo, "EchoPack")
             summer.sendContent(sID, Proto4z.EchoPack.__protoID, data)
             --local data = Proto4z.pack(echo, "EchoPack")
@@ -57,13 +57,13 @@ summer.whenMessage(whenMessage)
 
 -- 连接断开事件
 local function whenClosed(sID, remoteIP, remotePort)
-    print("session is on disconnect. sID=" .. sID .. ", remoteIP=" .. remoteIP .. ", remotePort=" .. remotePort)
+    logi("session is on disconnect. sID=" .. sID .. ", remoteIP=" .. remoteIP .. ", remotePort=" .. remotePort)
 end
 summer.whenClosed(whenClosed)
 
 -- 脉冲
 local function whenPulse(sID)
-    print("session is on pulse. sID=" .. sID )
+    logi("session is on pulse. sID=" .. sID )
 end
 summer.whenPulse(whenPulse)
 
@@ -75,7 +75,7 @@ for i=1, 1, 1 do
     if id == nil then
         summer.logw("id == nil when addConnect")
     end
-    print("new connect id=" .. id)
+    logi("new connect id=" .. id)
 
 end
 

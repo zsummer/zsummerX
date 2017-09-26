@@ -107,7 +107,6 @@ int main(int argc, char* argv[])
     }
 
     ILog4zManager::getRef().start();
-    ILog4zManager::getRef().setLoggerFileLine(LOG4Z_MAIN_LOGGER_ID, false);
     int status;
     lua_State *L = luaL_newstate();  /* create state */
     if (L == NULL) 

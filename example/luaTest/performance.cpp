@@ -344,7 +344,11 @@ std::string zsummer::luaperf::Performence::getProcessName()
 void zsummer::luaperf::Performence::serialize(const std::vector<std::unordered_map<uint64_t, Collect>::iterator> & l, const std::string & prefix, const std::string & head, int maxCount)
 {
     std::string filename = "./perf";
+#ifdef WIN32
     mkdir(filename.c_str());
+#else
+    mkdir(filename.c_str(),   600);
+#endif
     if (true)
     {
         char buf[100];

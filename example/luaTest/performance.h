@@ -58,12 +58,13 @@ extern "C"
 #include <deque>
 #include <array>
 #include <unordered_map>
-#include <direct.h>
+
 #ifdef WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <io.h>
 #include <shlwapi.h>
 #include <process.h>
+#include <direct.h>
 #pragma comment(lib, "shlwapi")
 #pragma warning(disable:4996)
 
@@ -194,7 +195,7 @@ namespace zsummer
                         break;
                     }
                 } while (true);
-                while (end - cur < fill0)
+                while ((unsigned long long)(end - cur) < fill0)
                 {
                     *--cur = '0';
                 }

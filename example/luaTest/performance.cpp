@@ -84,13 +84,40 @@ void hook_run_fn(lua_State *L, lua_Debug *ar)
     auto & stack = __perf._stack.push();
     stack.len = 0;
     // 获取Lua调用信息
-    lua_getinfo(L, "Snl", ar);
-    std::string key;
+    lua_getinfo(L, "Sn", ar);
     if (!ar->name)
     {
         __perf._stack.pop();
         return;
     }
+    if (ar->what)
+    {
+        size_t len = strlen(ar->what);
+        if (len > 0 && len + stack.len < 300 - 4)
+        {
+            stack.buf[stack.len] = '(';
+            stack.len += 1;
+            memcpy(stack.buf + stack.len, ar->what, len);
+            stack.len += len;
+            stack.buf[stack.len] = ')';
+            stack.buf[stack.len + 1] = ':';
+            stack.buf[stack.len + 2] = ':';
+            stack.len += 3;
+        }
+    }
+
+    if (ar->namewhat)
+    {
+        size_t len = strlen(ar->namewhat);
+        if (len > 0 && len + stack.len < 300 - 2)
+        {
+            memcpy(stack.buf + stack.len, ar->namewhat, len);
+            stack.len += len + 2;
+            stack.buf[stack.len - 2] = ':';
+            stack.buf[stack.len - 1] = ':';
+        }
+    }
+
     if (ar->name)
     {
         size_t len = strlen(ar->name);
@@ -99,49 +126,30 @@ void hook_run_fn(lua_State *L, lua_Debug *ar)
             __perf._stack.pop();
             return;
         }
-        if (len > 0 && len + stack.len < 300 + 1)
+        if (len > 0 && len + stack.len < 300)
         {
             memcpy(stack.buf + stack.len, ar->name, len);
-            stack.len += len + 1;
-            stack.buf[stack.len - 1] = '_';
-        }
-    }
-    /*
-    if (ar->namewhat)
-    {
-        size_t len = strlen(ar->namewhat);
-        if (len > 0 && len + stack.len < 300 + 1)
-        {
-            memcpy(stack.buf + stack.len, ar->namewhat, len);
-            stack.len += len + 1;
-            stack.buf[stack.len - 1] = '_';
+            stack.len += len;
         }
     }
 
-    if (ar->what)
+    if (300 - stack.len > 2)
     {
-        size_t len = strlen(ar->what);
-        if (len > 0 && len + stack.len < 300 + 1)
-        {
-            memcpy(stack.buf + stack.len, ar->what, len);
-            stack.len += len + 1;
-            stack.buf[stack.len - 1] = '_';
-        }
+        stack.buf[stack.len] = ' ';
+        stack.buf[stack.len+1] = '\t';
+        stack.len += 2;
     }
-    */
+
+
+
+
     if (ar->source)
     {
         size_t len = strlen(ar->source);
-        if (len == 4 && memcmp(ar->source, "=[C]", 4) == 0)
-        {
-            __perf._stack.pop();
-            return;
-        }
-        if (len > 0 && len + stack.len < 300+1)
+        if (len > 0 && len + stack.len < 300)
         {
             memcpy(stack.buf + stack.len, ar->source, len);
-            stack.len += len + 1;
-            stack.buf[stack.len - 1] = '_';
+            stack.len += len;
         }
     }
 
@@ -158,7 +166,7 @@ void hook_run_fn(lua_State *L, lua_Debug *ar)
     {
         stack.mem = lua_gc(L, LUA_GCCOUNT, 0) /1024.0 + lua_gc(L, LUA_GCCOUNTB, 0)/1024.0/1024.0;
     }
-    stack.hash = MurmurHash64A(stack.buf, stack.len, 0);
+    stack.hash = MurmurHash64A(stack.buf, stack.len, (uint64_t)0);
     stack.sec = getSteadyNow();
     if (ar->event == LUA_HOOKCALL)
     {
@@ -197,10 +205,10 @@ void hook_run_fn(lua_State *L, lua_Debug *ar)
     }
 }
 
-uint64_t MurmurHash64A(const void * key, int len, unsigned int seed)
+uint64_t MurmurHash64A(const void * key, uint64_t len, uint64_t seed)
 {
     const uint64_t m = 0xc6a4a7935bd1e995;
-    const int r = 47;
+    const uint64_t r = 47;
 
     uint64_t h = seed ^ (len * m);
 
@@ -239,3 +247,196 @@ uint64_t MurmurHash64A(const void * key, int len, unsigned int seed)
 
     return h;
 }
+
+inline void zsummer::luaperf::Performence::call(const LuaStack::Layer & param)
+{
+    auto founder = _collected.find(param.hash);
+    if (founder == _collected.end())
+    {
+        Collect pi;
+        memcpy(pi.buf, param.buf, param.len);
+        pi.len = param.len;
+        pi.hash = param.hash;
+        pi.maxsec = param.sec;
+        pi.count = 1;
+        pi.mem = param.mem;
+        _collected[param.hash] = pi;
+    }
+    else
+    {
+        Collect & pi = founder->second;
+        if (pi.len != param.len || memcmp(pi.buf, param.buf, pi.len) != 0)
+        {
+            return;
+        }
+        pi.count++;
+        pi.maxsec = pi.maxsec > param.sec ? pi.maxsec : param.sec;
+        pi.mem += param.mem;
+        pi.sec += param.sec;
+    }
+}
+
+
+
+std::string zsummer::luaperf::Performence::getProcessID()
+{
+    std::string pid = "0";
+    char buf[260] = { 0 };
+#ifdef WIN32
+    DWORD winPID = GetCurrentProcessId();
+    sprintf(buf, "%06u", winPID);
+    pid = buf;
+#else
+    sprintf(buf, "%06d", getpid());
+    pid = buf;
+#endif
+    return pid;
+}
+
+
+
+
+std::string zsummer::luaperf::Performence::getProcessName()
+{
+    std::string name = "MainLog";
+    char buf[260] = { 0 };
+#ifdef WIN32
+    if (GetModuleFileNameA(NULL, buf, 259) > 0)
+    {
+        name = buf;
+    }
+    std::string::size_type pos = name.rfind("\\");
+    if (pos != std::string::npos)
+    {
+        name = name.substr(pos + 1, std::string::npos);
+    }
+    pos = name.rfind(".");
+    if (pos != std::string::npos)
+    {
+        name = name.substr(0, pos - 0);
+    }
+
+#elif defined(__APPLE__)
+
+    proc_name(getpid(), buf, 260);
+    name = buf;
+    return name;;
+#else
+    sprintf(buf, "/proc/%d/cmdline", (int)getpid());
+    std::fstream f(buf, std::ios::in);
+    if (f.is_open())
+    {
+        std::getline(f, name);
+        f.close();
+    }
+    std::string::size_type pos = name.rfind("/");
+    if (pos != std::string::npos)
+    {
+        name = name.substr(pos + 1, std::string::npos);
+    }
+    name.pop_back();
+#endif
+    return name;
+}
+
+
+
+void zsummer::luaperf::Performence::serialize(const std::vector<std::unordered_map<uint64_t, Collect>::iterator> & l, const std::string & prefix, const std::string & head, int maxCount)
+{
+    std::string filename = "./perf";
+    mkdir(filename.c_str());
+    if (true)
+    {
+        char buf[100];
+        time_t cur = time(NULL);
+        struct tm *  t = localtime(&cur);
+        sprintf(buf, "/%04d%02d%02d_%02d%02d%02d_", t->tm_year + 1900, t->tm_mon + 1, t->tm_mday, t->tm_hour, t->tm_min, t->tm_sec);
+        filename += buf;
+    }
+    if (_processID.empty() && _processName.empty())
+    {
+        _processID = getProcessID();
+        _processID = _processID.c_str();
+        _processName = getProcessName();
+        _processName = _processName.c_str();
+    }
+    filename += _processName;
+    filename += "_";
+    filename += _processID;
+    filename += "_";
+    filename += prefix;
+    filename += ".md";
+
+    std::fstream f(filename, std::ios::out);
+    if (!f.is_open())
+    {
+        return;
+    }
+    f.write(head.c_str(), head.length());
+    std::string temp;
+    for (const auto & o : l)
+    {
+        if (maxCount <= 0)
+        {
+            break;
+        }
+        maxCount--;
+        temp.assign(o->second.buf, o->second.len);
+        temp.append("|");
+        if (temp.length() < 70)
+        {
+            temp.append(70 - temp.length(), ' ');
+        }
+        temp += "\t\t\t" + toString(o->second.count) + "\t\t|\t\t" + toString(o->second.maxsec) + "\t\t|\t\t" + toString(o->second.avgsec);
+
+        temp += "\t\t|\t\t" + toString(o->second.sec) + "\t\t|\t\t" + toString(o->second.mem) + "\n";
+
+        f.write(temp.c_str(), temp.length());
+    }
+    f.close();
+    _historyFile.push_back(filename);
+    while (_historyFile.size() > 10)
+    {
+        ::remove(_historyFile.front().c_str());
+        _historyFile.pop_front();
+    }
+}
+
+
+
+void zsummer::luaperf::Performence::dump(int maxCount)
+{
+    std::string head = "function name |  call count |  max second | avg second |  total second |  function memory (M)  \n" 
+                        "-- | -- | -- | -- | --   \n";
+    using PerfIter = std::unordered_map<uint64_t, Collect>::iterator;
+    std::vector<PerfIter> orderList;
+    for (auto iter = _collected.begin(); iter != _collected.end(); iter++)
+    {
+        iter->second.avgsec = iter->second.sec / iter->second.count;
+        orderList.push_back(iter);
+    }
+
+    std::sort(orderList.begin(), orderList.end(), [](const PerfIter & first, const PerfIter & second) {return first->second.sec > second->second.sec; });
+    serialize(orderList, "top_total_sec", head, maxCount);
+
+
+    std::sort(orderList.begin(), orderList.end(), [](const PerfIter & first, const PerfIter & second) {return first->second.maxsec > second->second.maxsec; });
+    serialize(orderList, "top_max_sec", head, maxCount);
+
+    std::sort(orderList.begin(), orderList.end(), [](const PerfIter & first, const PerfIter & second) {return first->second.avgsec > second->second.avgsec; });
+    serialize(orderList, "top_avg_sec", head, maxCount);
+
+
+    std::sort(orderList.begin(), orderList.end(), [](const PerfIter & first, const PerfIter & second) {return first->second.count > second->second.count; });
+    serialize(orderList, "top_total_ccount", head, maxCount);
+
+    if (PERF_MEM)
+    {
+        std::sort(orderList.begin(), orderList.end(), [](const PerfIter & first, const PerfIter & second) {return first->second.mem > second->second.mem; });
+        serialize(orderList, "top_total_mem", head, maxCount);
+    }
+
+
+}
+
+

@@ -198,7 +198,7 @@ void hook_run_fn(lua_State *L, lua_Debug *ar)
         }
         __perf._stack.pop(); //pop stack pop(1)
 
-        if (__perf.expire(5))
+        if (__perf.expire(50))
         {
             __perf.dump(100);
         }

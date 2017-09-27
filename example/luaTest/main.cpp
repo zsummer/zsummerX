@@ -122,7 +122,7 @@ int main(int argc, char* argv[])
     luaopen_proto4z_util(L);
     lua_gc(L, LUA_GCRESTART, 0);
 
-    luaopen_performence(L);
+    //luaopen_performence(L);
     
 
     if (strcmp(argv[1], "tcp") == 0)

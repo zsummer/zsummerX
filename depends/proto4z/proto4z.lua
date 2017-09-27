@@ -336,8 +336,9 @@ end
 --[[--
 dump table with nesting
 ]]
-function Proto4z.dump(value, desciption, nesting, logcall)
+function Proto4z.dump(value, desciption, nesting, logcall, stack)
     local nesting = nesting or 5
+    local stack = stack or 0
     local log = print
     if logcall then
         log = function(x) logcall(x, false) end
@@ -352,7 +353,7 @@ function Proto4z.dump(value, desciption, nesting, logcall)
         return tostring(v)
     end
 
-    local traceback = Proto4z.split(debug.traceback("", 2), "\n")
+    local traceback = Proto4z.split(debug.traceback("", 2 + stack), "\n")
     if logcall then
         logcall("dump from: " .. Proto4z.trim(traceback[3]), false)
     else

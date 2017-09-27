@@ -115,86 +115,90 @@ static int pack(lua_State * L)
 {
     const char * tp = luaL_checkstring(L, 2);
     const char * desc = luaL_optstring(L, 3, "");
-    if (strcmp(tp, "i8") == 0)
+
+    if (lua_isnil(L, 1))
     {
-        if (lua_isnil(L, 1)) printPackError(L, tp, desc);
-        char v = (char)luaL_optinteger(L, 1, 0);
-        lua_pushlstring(L, &v, 1);
+        printPackError(L, tp, desc);
+        return 0;
     }
-    else if (strcmp(tp, "ui8") == 0)
+
+    while (*tp == ' ') tp++;
+
+    if (tp[0] == 'i')
     {
-        if (lua_isnil(L, 1)) printPackError(L, tp, desc);
-        unsigned char v = (unsigned char)luaL_optinteger(L, 1, 0);
-        lua_pushlstring(L, (const char *)&v, 1);
-    }
-    else if (strcmp(tp, "i16") == 0)
-    {
-        if (lua_isnil(L, 1)) printPackError(L, tp, desc);
-        short v = (short)luaL_optinteger(L, 1, 0);
-        lua_pushlstring(L, (const char *)&v, 2);
-    }
-    else if (strcmp(tp, "ui16") == 0)
-    {
-        if (lua_isnil(L, 1)) printPackError(L, tp, desc);
-        unsigned short v = (unsigned short)luaL_optinteger(L, 1, 0);
-        lua_pushlstring(L, (const char *)&v, 2);
-    }
-    else if (strcmp(tp, "i32") == 0)
-    {
-        if (lua_isnil(L, 1)) printPackError(L, tp, desc);
-        int v = (int)luaL_optinteger(L, 1, 0);
-        lua_pushlstring(L, (const char *)&v, 4);
-    }
-    else if (strcmp(tp, "ui32") == 0)
-    {
-        if (lua_isnil(L, 1)) printPackError(L, tp, desc);
-        unsigned int v = (unsigned int)luaL_optinteger(L, 1, 0);
-        lua_pushlstring(L, (const char *)&v, 4);
-    }
-    else if (strcmp(tp, "i64") == 0 || strcmp(tp, "ui64") == 0)
-    {
-        if (lua_isnil(L, 1)) printPackError(L, tp, desc);
-        if (lua_isstring(L, 1))
+        if (tp[1] == '8' && tp[2] == 0)
         {
-            size_t len = 0;
-            const char * str = luaL_checklstring(L, 1, &len);
-            if (len < 50)
-            {
-                if (strcmp(tp, "i64") == 0)
-                {
-                    long long v = atoll(str);
-                    lua_pushlstring(L, (char*)&v, 8);
-
-                }
-                else
-                {
-                    unsigned long long v = strtoull(str, NULL, 2);
-                    lua_pushlstring(L, (char*)&v, 8);
-                }
-            }
-
+            char v = (char)luaL_optinteger(L, 1, 0);
+            lua_pushlstring(L, &v, 1);
         }
-        else
+        else if (tp[1] == '1' && tp[2] == '6' && tp[3] == 0)
         {
-            unsigned long long v = (unsigned long long)luaL_optnumber(L, 1, 0);
+            short v = (short)luaL_optinteger(L, 1, 0);
+            lua_pushlstring(L, (const char *)&v, 2);
+        }
+        else if (tp[1] == '3' && tp[2] == '2' && tp[3] == 0)
+        {
+            int v = (int)luaL_optinteger(L, 1, 0);
+            lua_pushlstring(L, (const char *)&v, 4);
+        }
+        else if (tp[1] == '6' && tp[2] == '4' && tp[3] == 0)
+        {
+            long long v = 0;
+            if (lua_isinteger(L, 1))
+            {
+                v = (long long)luaL_optinteger(L, 1, 0);
+            }
+            else
+            {
+                v = (long long)luaL_optnumber(L, 1, 0);
+            }
             lua_pushlstring(L, (char*)&v, 8);
         }
     }
-    else if (strcmp(tp, "float") == 0)
+    else if (tp[0] == 'u' && tp[1] == 'i' )
     {
-        if (lua_isnil(L, 1)) printPackError(L, tp, desc);
+        if (tp[2] == '8' && tp[3] == 0)
+        {
+            unsigned char v = (unsigned char)(unsigned LUA_INTEGER)luaL_optinteger(L, 1, 0);
+            lua_pushlstring(L, (const char *)&v, 1);
+        }
+        else if (tp[2] == '1' && tp[3] == '6' && tp[4] == 0)
+        {
+            unsigned short v = (unsigned short)(unsigned LUA_INTEGER)luaL_optinteger(L, 1, 0);
+            lua_pushlstring(L, (const char *)&v, 2);
+        }
+        else if (tp[2] == '3' && tp[3] == '2' && tp[4] == 0)
+        {
+            unsigned int v = (unsigned int)(unsigned LUA_INTEGER)luaL_optinteger(L, 1, 0);
+            lua_pushlstring(L, (const char *)&v, 4);
+        }
+        else if (tp[2] == '6' && tp[3] == '4' && tp[4] == 0)
+        {
+            unsigned long long v = 0;
+            if (lua_isinteger(L, 1))
+            {
+                v = (unsigned long long)(unsigned LUA_INTEGER)luaL_optinteger(L, 1, 0);
+            }
+            else
+            {
+                v = (unsigned long long)(unsigned LUA_INTEGER)luaL_optnumber(L, 1, 0);
+            }
+            lua_pushlstring(L, (char*)&v, 8);
+        }
+    }
+    else if (tp[0] == 'f' && strcmp(tp, "float") == 0)
+    {
         float v = (float)luaL_optnumber(L, 1, 0.0f);
         lua_pushlstring(L, (const char *)&v, 4);
     }
-    else if (strcmp(tp, "double") == 0)
+    else if (tp[0] == 'd' && strcmp(tp, "double") == 0)
     {
-        if (lua_isnil(L, 1)) printPackError(L, tp, desc);
         double v = (double)luaL_optnumber(L, 1, 0.0f);
         lua_pushlstring(L, (const char *)&v, 8);
     }
-    else
+    else 
     {
-        if (lua_isnil(L, 1)) printPackError(L, tp, desc);
+        printPackError(L, tp, desc);
         return 0;
     }
     return 1;
@@ -219,97 +223,135 @@ static int unpack(lua_State * L)
         printUnpackError(L, pos, dataLen, "any");
         return 0;
     }
-    
-    if (strcmp(tp, "i8") == 0)
-    {
-        if (pos - 1 + 1 > dataLen)
-        {
-            printUnpackError(L, pos, dataLen, "i8");
-            return 0;
-        }
-        char ch = (char)data[pos - 1];
-        lua_pushinteger(L, ch);
-        lua_pushinteger(L, pos + 1);
-    }
-    else if (strcmp(tp, "ui8") == 0)
-    {
-        if (pos - 1 + 1 > dataLen)
-        {
-            printUnpackError(L, pos, dataLen, "ui8");
-            return 0;
-        }
-        unsigned char ch = (unsigned char)data[pos - 1];
-        lua_pushinteger(L, ch);
-        lua_pushinteger(L, pos + 1);
-    }
-    else if (strcmp(tp, "i16") == 0)
-    {
-        if (pos - 1 + 2 > dataLen)
-        {
-            printUnpackError(L, pos, dataLen, "i16");
-            return 0;
-        }
-        short v = 0;
-        memcpy(&v, &data[pos - 1], 2);
-
-        lua_pushinteger(L, v);
-        lua_pushinteger(L, pos + 2);
-    }
-    else if (strcmp(tp, "ui16") == 0)
-    {
-        if (pos - 1 + 2 > dataLen)
-        {
-            printUnpackError(L, pos, dataLen, "ui16");
-            return 0;
-        }
-        unsigned short v = 0;
-        memcpy(&v, &data[pos - 1], 2);
-
-        lua_pushinteger(L, v);
-        lua_pushinteger(L, pos + 2);
-    }
-    else if (strcmp(tp, "i32") == 0)
-    {
-        if (pos - 1 + 4 > dataLen)
-        {
-            printUnpackError(L, pos, dataLen, "i32");
-            return 0;
-        }
-        int v = 0;
-        memcpy(&v, &data[pos - 1], 4);
-
-        lua_pushinteger(L, v);
-        lua_pushinteger(L, pos + 4);
-    }
-    else if (strcmp(tp, "ui32") == 0)
-    {
-        if (pos - 1 + 4 > dataLen)
-        {
-            printUnpackError(L, pos, dataLen, "ui32");
-            return 0;
-        }
-        unsigned int v = 0;
-        memcpy(&v, &data[pos - 1], 4);
-
-        lua_pushinteger(L, v);
-        lua_pushinteger(L, pos + 4);
-    }
-    else if (strcmp(tp, "i64") == 0 || strcmp(tp, "ui64") == 0)
-    {
-        if (pos - 1 + 8 > dataLen)
-        {
-            printUnpackError(L, pos, dataLen, "i64/ui64");
-            return 0;
-        }
-
-        unsigned long long v = 0;
-        memcpy(&v, &data[pos - 1], 8);
 
 
-        lua_pushnumber(L, (lua_Number)v);
-        lua_pushinteger(L, pos + 8);
+    while (*tp == ' ') tp++;
+
+
+    if (tp[0] == 'i')
+    {
+        if (tp[1] == '8' && tp[2] == 0)
+        {
+            if (pos - 1 + 1 > dataLen)
+            {
+                printUnpackError(L, pos, dataLen, "i8");
+                return 0;
+            }
+            char ch = (char)data[pos - 1];
+            lua_pushinteger(L, ch);
+            lua_pushinteger(L, pos + 1);
+        }
+        else if (tp[1] == '1' && tp[2] == '6' && tp[3] == 0)
+        {
+            if (pos - 1 + 2 > dataLen)
+            {
+                printUnpackError(L, pos, dataLen, "i16");
+                return 0;
+            }
+            short v = 0;
+            memcpy(&v, &data[pos - 1], 2);
+
+            lua_pushinteger(L, v);
+            lua_pushinteger(L, pos + 2);
+        }
+        else if (tp[1] == '3' && tp[2] == '2' && tp[3] == 0)
+        {
+            if (pos - 1 + 4 > dataLen)
+            {
+                printUnpackError(L, pos, dataLen, "i32");
+                return 0;
+            }
+            int v = 0;
+            memcpy(&v, &data[pos - 1], 4);
+
+            lua_pushinteger(L, v);
+            lua_pushinteger(L, pos + 4);
+        }
+        else if (tp[1] == '6' && tp[2] == '4' && tp[3] == 0)
+        {
+            if (pos - 1 + 8 > dataLen)
+            {
+                printUnpackError(L, pos, dataLen, "i64");
+                return 0;
+            }
+
+            long long v = 0;
+            memcpy(&v, &data[pos - 1], 8);
+
+            if (sizeof(lua_Integer) >=8)
+            {
+                lua_pushinteger(L, v);
+            }
+            else
+            {
+                lua_pushnumber(L, (double)v);
+            }
+
+            lua_pushinteger(L, pos + 8);
+        }
     }
-    else if (strcmp(tp, "float") == 0)
+    else if (tp[0] == 'u' && tp[1] == 'i')
+    {
+        if (tp[2] == '8' && tp[3] == 0)
+        {
+            if (pos - 1 + 1 > dataLen)
+            {
+                printUnpackError(L, pos, dataLen, "ui8");
+                return 0;
+            }
+            unsigned char ch = (unsigned char)data[pos - 1];
+            lua_pushinteger(L, ch);
+            lua_pushinteger(L, pos + 1);
+        }
+        else if (tp[2] == '1' && tp[3] == '6' && tp[4] == 0)
+        {
+            if (pos - 1 + 2 > dataLen)
+            {
+                printUnpackError(L, pos, dataLen, "ui16");
+                return 0;
+            }
+            unsigned short v = 0;
+            memcpy(&v, &data[pos - 1], 2);
+
+            lua_pushinteger(L, v);
+            lua_pushinteger(L, pos + 2);
+        }
+        else if (tp[2] == '3' && tp[3] == '2' && tp[4] == 0)
+        {
+            if (pos - 1 + 4 > dataLen)
+            {
+                printUnpackError(L, pos, dataLen, "ui32");
+                return 0;
+            }
+            unsigned int v = 0;
+            memcpy(&v, &data[pos - 1], 4);
+
+            lua_pushinteger(L, v);
+            lua_pushinteger(L, pos + 4);
+        }
+        else if (tp[2] == '6' && tp[3] == '4' && tp[4] == 0)
+        {
+            if (pos - 1 + 8 > dataLen)
+            {
+                printUnpackError(L, pos, dataLen, "ui64");
+                return 0;
+            }
+
+            unsigned long long v = 0;
+            memcpy(&v, &data[pos - 1], 8);
+
+            if (sizeof(lua_Integer) >= 8)
+            {
+                lua_pushinteger(L, (long long)v);
+            }
+            else
+            {
+                lua_pushnumber(L, (double)v);
+            }
+            lua_pushinteger(L, pos + 8);
+        }
+    }
+    else if (tp[0] == 'f' && strcmp(tp, "float") == 0)
     {
         if (pos - 1 + 4 > dataLen)
         {
@@ -321,7 +363,7 @@ static int unpack(lua_State * L)
         lua_pushnumber(L, v);
         lua_pushinteger(L, pos + 4);
     }
-    else if (strcmp(tp, "double") == 0)
+    else if (tp[0] == 'd' && strcmp(tp, "double") == 0)
     {
         if (pos - 1 + 8 > dataLen)
         {
@@ -333,7 +375,7 @@ static int unpack(lua_State * L)
         lua_pushnumber(L, v);
         lua_pushinteger(L, pos + 8);
     }
-    else if (strcmp(tp, "string") == 0)
+    else if (tp[0] == 's' && strcmp(tp, "string") == 0)
     {
         if (pos - 1 + 4 > dataLen)
         {

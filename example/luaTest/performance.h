@@ -209,6 +209,18 @@ namespace zsummer
 
             inline std::string toString(double t)
             {
+                if (isnan(t))
+                {
+                    return "nan";
+                }
+                else if (isinf(t))
+                {
+                    return "inf";
+                }
+                else if (!isnormal(t))
+                {
+                    return "notnormal";
+                }
                 double fabst = fabs(t);
                 char buf[80];
                 if (fabst < 0.000001 ||  fabst >= 4503599627370495ULL)

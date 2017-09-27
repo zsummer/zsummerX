@@ -209,11 +209,11 @@ namespace zsummer
 
             inline std::string toString(double t)
             {
-                if (isnan(t))
+                if (t != t)
                 {
                     return "nan";
                 }
-                else if (isinf(t))
+                else if (t <= 1.7976931348623158e+308 && t >= -1.7976931348623158e+308)
                 {
                     return "inf";
                 }

@@ -58,6 +58,7 @@ extern "C"
 #include <deque>
 #include <array>
 #include <unordered_map>
+#include <cmath>
 
 #ifdef WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -209,11 +210,15 @@ namespace zsummer
 
             inline std::string toString(double t)
             {
-                if (t != t)
+#if __cplusplus >= 201103L
+                using std::isnan;
+                using std::isinf;
+#endif
+                if (isnan(t))
                 {
                     return "nan";
                 }
-                else if (t <= 1.7976931348623158e+308 && t >= -1.7976931348623158e+308)
+                else if (isinf(t))
                 {
                     return "inf";
                 }

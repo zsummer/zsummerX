@@ -411,7 +411,7 @@ void zsummer::luaperf::Performence::serialize(const std::vector<std::unordered_m
 void zsummer::luaperf::Performence::dump(int maxCount)
 {
     std::string head = "function name |  call count |  max second | avg second |  total second |  function memory (M)  \n" 
-                        "-- | -- | -- | -- | --   \n";
+                        "-- | -- | -- | -- | -- | --  \n";
     using PerfIter = std::unordered_map<uint64_t, Collect>::iterator;
     std::vector<PerfIter> orderList;
     for (auto iter = _collected.begin(); iter != _collected.end(); iter++)

@@ -227,7 +227,7 @@ namespace zsummer
                 char buf[80];
                 if (fabst < 0.000001 ||  fabst >= 4503599627370495ULL)
                 {
-                    gcvt(t, 16, buf);
+                    gcvt(t, 12, buf);
                     return std::string(buf);
                 }
                 else 
@@ -236,13 +236,13 @@ namespace zsummer
                     unsigned long long len = 80;
                     toString(buf, len, (unsigned long long)fabst, t < 0, 10, 0);
 
-                    unsigned long long fn = (unsigned long long)(( fabst - integ*1.0) * 10000000000.0);
+                    unsigned long long fn = (unsigned long long)(( fabst - integ*1.0) * 1000000.0);
                     if (fn > 0)
                     {
                         buf[len] = '.';
                         len++;
                         unsigned long long nlen = 20;
-                        toString(buf + len, nlen, fn, false, 10, 10);
+                        toString(buf + len, nlen, fn, false, 10, 6);
                         len += nlen;
                     }
                     return std::string(buf, len);

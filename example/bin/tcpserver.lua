@@ -57,12 +57,12 @@ print("new accept id=" .. id)
 
 local startTick = summer.now()
 --进入循环
---summer.run()
+summer.run()
 --如果嵌入其他程序 例如cocos2dx, 可以吧runOnce设置true然后放入update中.
-while summer.runOnce(true) do
+--while summer.runOnce(true) do
 --while summer.runOnce() and summer.now() - startTick < 10*1000 do  
 
-end
+--end
 
 
 

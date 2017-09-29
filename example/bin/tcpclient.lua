@@ -42,6 +42,8 @@ local function whenMessage(sID, pID, content)
     local name = Proto4z.getName(pID)
     if name == nil then
         logw("unknown message id recv. pID=" .. pID)
+    elseif (true) then
+        summer.sendContent(sID, pID, content)
     else
             local echo = Proto4z.decode(content, name)
             --dump(echo)
@@ -49,7 +51,6 @@ local function whenMessage(sID, pID, content)
             summer.sendContent(sID, Proto4z.EchoPack.__protoID, data)
             --local data = Proto4z.pack(echo, "EchoPack")
             --summer.sendData(sID, data)
-            
     end
 
 end
@@ -69,7 +70,7 @@ summer.whenPulse(whenPulse)
 
 --启动网络
 summer.start()
-for i=1, 1, 1 do
+for i=1, 5, 1 do
     --连接服务器
     local id = summer.addConnect("127.0.0.1", 8881, nil, 5)
     if id == nil then
@@ -83,11 +84,11 @@ end
 
 local startTick = summer.now()
 --进入循环
---summer.run()
+summer.run()
 --如果嵌入其他程序 例如cocos2dx, 可以吧runOnce设置true然后放入update中.
-while summer.runOnce(true) do
+--while summer.runOnce(true) do
 --while summer.runOnce() and summer.now() - startTick < 10*1000 do    
 
-end
+--end
 
 

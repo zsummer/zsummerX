@@ -83,8 +83,6 @@ install(FILES ${zsummerX_SOURCE_DIR}/COPYRIGHT
     DESTINATION include/zsummerX)
 
 install(FILES ${ZSUMMERX_DEPENDS_DIR}/proto4z/luasrc/lproto4z.c
-	${zsummerX_SOURCE_DIR}/example/luaTest/performance.h
-	${zsummerX_SOURCE_DIR}/example/luaTest/performance.cpp
 	${zsummerX_SOURCE_DIR}/example/luaTest/summer.h
 	${zsummerX_SOURCE_DIR}/example/luaTest/summer.cpp
     DESTINATION include/zsummerX/luasrc)

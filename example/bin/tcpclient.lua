@@ -5,15 +5,24 @@ require("TestProto")
 logw = summer.logw
 logi = summer.logi
 loge = summer.loge
-dump = function(x, y, z) Proto4z.dump(x, y, z, logi, 1) end
+dump = Proto4z.dump
+
+--[[
+local begin = summer.now()
+for i = 0, 20*10000, 1 do
+    summer.logt("ffffffffsdddddddaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", " a=", 1, ", b=", 2, ", c=", 32.234)
+end
+logi("fast 200*10000 logt write used=", summer.now()-begin)
+
+local begin = summer.now()
+for i = 0, 20*10000, 1 do
+    summer.logt("ffffffffsdddddddddddddddddddddddddddddddddddddddddddddddddddddddddd" .. " a=" .. 1 .. ", b=" ..  2 ..", c=" .. 32.234)
+end
+logi("old 200*10000 logt write used=", summer.now()-begin)
 
 
-
-
-
-
-
-
+exit(0)
+]]--
 
 --echo pack
 
@@ -24,6 +33,8 @@ local echo = {  _iarray = {{_char=1,_uchar=2,_short=3,_ushort=4,_int=5,_uint=6,_
                 _fmap = {[523.3]={_float=2.235,_double=235.111},["623"]={_float=2.235,_double=235.111}},
                 _smap = {fadsfdas={_string="abcdefg"},ssss={_string="abcdefg"}},
                 }
+
+
 
 -- 连接成功事件
 local function whenLinked(sID, remoteIP, remotePort)
@@ -70,7 +81,7 @@ summer.whenPulse(whenPulse)
 
 --启动网络
 summer.start()
-for i=1, 5, 1 do
+for i=1, 2, 1 do
     --连接服务器
     local id = summer.addConnect("127.0.0.1", 8881, nil, 5)
     if id == nil then

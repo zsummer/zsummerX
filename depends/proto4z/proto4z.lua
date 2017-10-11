@@ -398,3 +398,50 @@ function Proto4z.dump(value, desciption, nesting)
 
 end
 
+
+--[[--
+fastdump table with nesting
+]]
+function Proto4z.fastdump(value, desciption, nesting)
+    local nesting = nesting or 5
+    local log = (summer and summer.logdd) or print
+
+    local lookupTable = {}
+
+
+
+    local traceback = Proto4z.split(debug.traceback("", 2), "\n")
+    log("dump from: ", Proto4z.trim(traceback[3]))
+
+    local function fastIndent(nest)
+        if nest <= 1 then return "- "
+        elseif nest == 2 then return "-     "
+        elseif nest == 3 then return "-         "
+        elseif nest == 4 then return "-             "
+        elseif nest == 5 then return "-                 "
+        else return "- " .. string.rep("    ", nest - 1) 
+        end
+    end
+
+    local function _dump(value, desciption, nest)
+        desciption = desciption or "<var>"
+        if type(value) ~= "table" then
+            log(fastIndent(nest), desciption, " = ", value)
+        elseif lookupTable[value] then
+            log(fastIndent(nest), desciption, " = *REF*")
+        else
+            lookupTable[value] = true
+            if nest > nesting then
+                log(fastIndent(nest), desciption, " = *MAX NESTING*")
+            else
+                log(fastIndent(nest), desciption, " = {")
+                for k, v in pairs(value) do
+                    _dump(v, k, nest + 1)
+                end
+                log(fastIndent(nest), "}")
+            end
+        end
+    end
+    _dump(value, desciption, 1)
+end
+

@@ -6,6 +6,7 @@ logw = summer.logw
 logi = summer.logi
 loge = summer.loge
 dump = Proto4z.dump
+dump = Proto4z.fastdump
 
 --[[
 local begin = summer.now()
@@ -34,6 +35,7 @@ local echo = {  _iarray = {{_char=1,_uchar=2,_short=3,_ushort=4,_int=5,_uint=6,_
                 _smap = {fadsfdas={_string="abcdefg"},ssss={_string="abcdefg"}},
                 }
 
+dump(echo)
 
 
 -- 连接成功事件

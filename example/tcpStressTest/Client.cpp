@@ -107,7 +107,7 @@ unsigned int CClient::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
 {
     if (ec)
     {
-        LOGD("remote socket closed");
+        LOGW("remote socket closed");
         onClose();
         return 0;
     }
@@ -119,7 +119,7 @@ unsigned int CClient::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
         auto ret = zsummer::proto4z::checkBuffIntegrity(_recving._orgdata + readed, _recving._offset - readed, _MSG_BUF_LEN - readed, _MSG_BUF_LEN - readed);
         if (ret.first == zsummer::proto4z::IRT_CORRUPTION)
         {
-            LOGD("killed socket: checkBuffIntegrity error ");
+            LOGE("killed socket: checkBuffIntegrity error readed =" << readed << ", len=" << _recving._offset << ", _MSG_BUF_LEN=" << _MSG_BUF_LEN << ", nRecvedLen=" << nRecvedLen);
             _sockptr->doClose();
             onClose();
             return 0;

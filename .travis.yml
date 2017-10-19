@@ -34,8 +34,8 @@ script:
   - cmake --version
   - cmake .
   - make
-  - ls example/bin/*
-  - cd example/bin
-  - ./luaTest_select tcp server &
-  - ./luaTest_select tcp client
+#  - ls example/bin/*
+#  - cd example/bin
+#  - ./luaTest_select tcp server &
+#  - ./luaTest_select tcp client
 

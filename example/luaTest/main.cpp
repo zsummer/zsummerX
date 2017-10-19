@@ -9,7 +9,7 @@
  * 
  * ===============================================================================
  * 
- * Copyright (C) 2010-2015 YaweiZhang <yawei.zhang@foxmail.com>.
+ * Copyright (C) 2010-2017 YaweiZhang <yawei.zhang@foxmail.com>.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -41,7 +41,7 @@ extern "C"
 int luaopen_proto4z_util(lua_State *L);
 }
 
-#include "performance.h"
+
 
 
 #include <zsummerX/zsummerX.h>
@@ -106,8 +106,9 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+//    ILog4zManager::getRef().setLoggerDisplay(LOG4Z_MAIN_LOGGER_ID, false);
+//    ILog4zManager::getRef().setLoggerLevel(LOG4Z_MAIN_LOGGER_ID, LOG_LEVEL_TRACE);
     ILog4zManager::getRef().start();
-    ILog4zManager::getRef().setLoggerFileLine(LOG4Z_MAIN_LOGGER_ID, false);
     int status;
     lua_State *L = luaL_newstate();  /* create state */
     if (L == NULL) 
@@ -123,7 +124,7 @@ int main(int argc, char* argv[])
     luaopen_proto4z_util(L);
     lua_gc(L, LUA_GCRESTART, 0);
 
-    luaopen_performence(L);
+    //luaopen_performence(L);
     
 
     if (strcmp(argv[1], "tcp") == 0)

@@ -20,7 +20,7 @@ local function whenMessage(sID, pID, content)
         summer.sendContent(sID, pID, content)
 
         --Proto4z.dump(echo)
-        local echo = Proto4z.decode(content, name)
+        --local echo = Proto4z.decode(content, name)
         echoCount = echoCount + 1
         if os.time() - lastTime >=5 then
             print("per second = " .. echoCount/5)
@@ -57,11 +57,12 @@ print("new accept id=" .. id)
 
 local startTick = summer.now()
 --进入循环
---summer.run()
+summer.run()
 --如果嵌入其他程序 例如cocos2dx, 可以吧runOnce设置true然后放入update中.
 --while summer.runOnce(true) do
-while summer.runOnce() and summer.now() - startTick < 10*1000 do
-end
+--while summer.runOnce() and summer.now() - startTick < 10*1000 do  
+
+--end
 
 
 

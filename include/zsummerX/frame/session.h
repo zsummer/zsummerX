@@ -61,7 +61,7 @@ namespace zsummer
         private:
 
             bool doRecv();
-            void onRecv(zsummer::network::NetErrorCode ec, int received);
+            unsigned int onRecv(zsummer::network::NetErrorCode ec, int received);
             void onSend(zsummer::network::NetErrorCode ec, int sent);
             void onConnected(zsummer::network::NetErrorCode ec);
             void onPulse();
@@ -108,7 +108,7 @@ namespace zsummer
             unsigned int _sendingLen = 0;
 
             //! send data queue
-            std::queue<SessionBlock *> _sendque;
+            std::deque<SessionBlock *> _sendque;
             unsigned long long _reconnects = 0;
 
             //! rc encrypt

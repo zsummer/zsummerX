@@ -54,14 +54,12 @@ private:
     void onConnected(zsummer::network::NetErrorCode ec);
 
     void doRecv();
-    void onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen);
+    unsigned int onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen);
     void MessageEntry(zsummer::proto4z::ReadStream & rs);
 
 
 
-    void SendOnce();
-    void doSend(unsigned short protoID, unsigned long long clientTick, const std::string & text);
-    void doSend(char *buf, unsigned short len);
+    void doSend(const char *buf, unsigned int len);
     void onSend(zsummer::network::NetErrorCode ec,  int nSentLen);
 
     
@@ -80,9 +78,8 @@ private:
 
     //! 当前写包
 
-    char _sendBuff[_SEND_BUF_LEN];
-    unsigned short _sendLen = 0;
-    unsigned short _curSendLen = 0;
+    Packet _sending;
+    unsigned int _needSendLen = 0;
 
     unsigned long long _lastDelayTime = 0; //最后一次收到echo消息的延迟时间
 };

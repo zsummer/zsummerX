@@ -9,7 +9,7 @@
  * 
  * ===============================================================================
  * 
- * Copyright (C) 2010-2016 YaweiZhang <yawei.zhang@foxmail.com>.
+ * Copyright (C) 2010-2017 YaweiZhang <yawei.zhang@foxmail.com>.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -199,21 +199,26 @@ void EventLoop::clearSocket(int fd)
 void EventLoop::PostMessage(_OnPostHandler &&handle)
 {
     _OnPostHandler * pHandler = new _OnPostHandler(std::move(handle));
-    _stackMessagesLock.lock();
-    if (_stackMessages.empty()){ char c = '0'; send(_sockpair[0], &c, 1, 0); }
-    _stackMessages.push_back(pHandler);
-    _stackMessagesLock.unlock();
-
+    bool needNotice = false;
+    _postQueueLock.lock();
+    if (_postQueue.empty()){ needNotice = true;}
+    _postQueue.push_back(pHandler);
+    _postQueueLock.unlock();
+    if (needNotice)
+    {
+        char c = '0';
+        send(_sockpair[0], &c, 1, 0);
+    }
 }
 
 std::string EventLoop::logSection()
 {
     std::stringstream os;
-    _stackMessagesLock.lock();
-    MessageStack::size_type msgSize = _stackMessages.size();
-    _stackMessagesLock.unlock();
+    _postQueueLock.lock();
+    MessageStack::size_type msgSize = _postQueue.size();
+    _postQueueLock.unlock();
     os << " logSection:  _sockpair[2]={" << _sockpair[0] << "," << _sockpair[1] << "}"
-        << " _stackMessages.size()=" << msgSize << ", current total timer=" << _timer.getTimersCount()
+        << " _postQueue.size()=" << msgSize << ", current total timer=" << _timer.getTimersCount()
         << " _maxfd=" << _maxfd;
     return os.str();
 }
@@ -258,9 +263,9 @@ void EventLoop::runOnce(bool isImmediately)
         while (recv(_sockpair[1], buf, 1000, 0) > 0);
 
         MessageStack msgs;
-        _stackMessagesLock.lock();
-        msgs.swap(_stackMessages);
-        _stackMessagesLock.unlock();
+        _postQueueLock.lock();
+        msgs.swap(_postQueue);
+        _postQueueLock.unlock();
 
         for (auto pfunc : msgs)
         {

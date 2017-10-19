@@ -54,13 +54,13 @@ Proto4z.StringDataArray.__protoTypeV = "StringData"
 Proto4z.IntegerDataMap = {}  
 Proto4z.IntegerDataMap.__protoName = "IntegerDataMap" 
 Proto4z.IntegerDataMap.__protoDesc = "map" 
-Proto4z.IntegerDataMap.__protoTypeK = "string" 
+Proto4z.IntegerDataMap.__protoTypeK = "ui32" 
 Proto4z.IntegerDataMap.__protoTypeV = "IntegerData" 
  
 Proto4z.FloatDataMap = {}  
 Proto4z.FloatDataMap.__protoName = "FloatDataMap" 
 Proto4z.FloatDataMap.__protoDesc = "map" 
-Proto4z.FloatDataMap.__protoTypeK = "string" 
+Proto4z.FloatDataMap.__protoTypeK = "double" 
 Proto4z.FloatDataMap.__protoTypeV = "FloatData" 
  
 Proto4z.StringDataMap = {}  

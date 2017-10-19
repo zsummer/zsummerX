@@ -1,39 +1,27 @@
 
 
 aux_source_directory(./ source)    
-aux_source_directory(./lua/ lua_src)  
-#aux_source_directory(./lua-5.3.0/ lua_src)  
 set(source ${source} ${lua_src})
-#include_directories(./lua-5.3.0)
-include_directories(./lua/)
+
 set(EXECUTABLE_OUTPUT_PATH ${example_SOURCE_DIR}/bin)
 
 #glibc compile
 #../configure --prefix=/home/summer/dependlibs/glibc_static/ --enable-shared=no --disable-build-nscd --disable-nscd
 #glibc defined
-set(GLIBC_DIR /home/summer/dependlibs/glibc_static)
-set(GLIBC_FLAG  "-static -static-libgcc -static-libstdc++ -Bstatic")
-add_definitions(-DGLIBC_INCLUDEDIR=${GLIBC_DIR}/include -DGLIBC_LIBRARYDIR=${GLIBC_DIR}/lib)
+#set(GLIBC_DIR /home/summer/dependlibs/glibc_static)
+#set(GLIBC_FLAG  "-static -static-libgcc -static-libstdc++ -Bstatic")
+#add_definitions(-DGLIBC_INCLUDEDIR=${GLIBC_DIR}/include -DGLIBC_LIBRARYDIR=${GLIBC_DIR}/lib)
 
-
-add_definitions(-Wall -D_GLIBCXX_USE_NANOSLEEP)
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    add_definitions(-g -O0)
-else()
-    add_definitions(-O2 -DNDEBUG)
-endif()
-
-set(CMAKE_CXX_FLAGS -std=c++11)
 
 
 if(APPLE)
-	add_executable(${PROJECT_NAME}_select${LIB_SUFFIX} ${source})
-	target_link_libraries(${PROJECT_NAME}_select${LIB_SUFFIX}  zsummerX_select${LIB_SUFFIX} log4z${LIB_SUFFIX}  pthread )
+    add_executable(${PROJECT_NAME}_select${LIB_SUFFIX} ${source})
+    target_link_libraries(${PROJECT_NAME}_select${LIB_SUFFIX}  zsummerX_select${LIB_SUFFIX} log4z${LIB_SUFFIX}  pthread )
 else()
-	add_executable(${PROJECT_NAME}_select${LIB_SUFFIX} ${source})
-	target_link_libraries(${PROJECT_NAME}_select${LIB_SUFFIX}  zsummerX_select${LIB_SUFFIX} log4z${LIB_SUFFIX}  pthread  rt)
-	add_executable(${PROJECT_NAME}${LIB_SUFFIX} ${source})
-	target_link_libraries(${PROJECT_NAME}${LIB_SUFFIX}  zsummerX${LIB_SUFFIX} log4z${LIB_SUFFIX}  pthread  rt)
+    add_executable(${PROJECT_NAME}_select${LIB_SUFFIX} ${source})
+    target_link_libraries(${PROJECT_NAME}_select${LIB_SUFFIX}  zsummerX_select${LIB_SUFFIX} log4z${LIB_SUFFIX}  pthread  rt)
+    add_executable(${PROJECT_NAME}${LIB_SUFFIX} ${source})
+    target_link_libraries(${PROJECT_NAME}${LIB_SUFFIX}  zsummerX${LIB_SUFFIX} log4z${LIB_SUFFIX}  pthread  rt)
 
 #    set_target_properties (${PROJECT_NAME}_select${LIB_SUFFIX} PROPERTIES LINK_FLAGS "${GLIBC_FLAG}")
 #    set_target_properties (${PROJECT_NAME}${LIB_SUFFIX} PROPERTIES LINK_FLAGS "${GLIBC_FLAG}")

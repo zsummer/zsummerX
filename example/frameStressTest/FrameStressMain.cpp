@@ -104,7 +104,7 @@ public:
     {
     }
 
-    void onLinked(TcpSessionPtr session)
+    void onLinked(const TcpSessionPtr & session)
     {
         LOGI("onLinked. ConnectorID=" << session->getSessionID() << ", remoteIP=" << session->getRemoteIP() << ", remotePort=" << session->getRemotePort() );
         session->setUserParamInteger(0, 0);
@@ -114,12 +114,12 @@ public:
         ws << ep;
         session->send(ws.getStream(), ws.getStreamLen());
     };
-    void onLost(TcpSessionPtr session)
+    void onLost(const TcpSessionPtr & session)
     {
         LOGI("onLost. ConnectorID=" << session->getSessionID() << ", remoteIP=" << session->getRemoteIP() << ", remotePort=" << session->getRemotePort());
     }
 
-    void onMessage(TcpSessionPtr session, ReadStream & rs)
+    void onMessage(const TcpSessionPtr & session, ReadStream & rs)
     {
         if (g_intervalSend > 0)
         {
@@ -209,7 +209,7 @@ public:
             pack._smap.insert(std::make_pair("623", sdata));
         }
     }
-    void delaySend(TcpSessionPtr session)
+    void delaySend(const TcpSessionPtr & session)
     {
         thread_local static char buff[SESSION_BLOCK_SIZE];
         thread_local static zsummer::proto4z::Integer buffSize = 0;
@@ -257,15 +257,15 @@ public:
     CStressServerHandler()
     {
     }
-    void onLinked(TcpSessionPtr session)
+    void onLinked(const TcpSessionPtr & session)
     {
         LOGI("onLinked. sessionID=" << session->getSessionID() << ", remoteIP=" << session->getRemoteIP() << ", remotePort=" << session->getRemotePort());
     };
-    void onLost(TcpSessionPtr session)
+    void onLost(const TcpSessionPtr & session)
     {
         LOGI("onLost. sessionID=" << session->getSessionID() << ", remoteIP=" << session->getRemoteIP() << ", remotePort=" << session->getRemotePort());
     }
-    void onMessage(TcpSessionPtr session, ReadStream & rs)
+    void onMessage(const TcpSessionPtr & session, ReadStream & rs)
     {
         //LOGD("onMessage");
         if (g_hightBenchmarkLevel >= 2)
@@ -286,7 +286,7 @@ public:
 
 void sigFun(int sig)
 {
-    SessionManager::getRef().stop();
+    SessionManager::getRef().stop(); 
     SessionManager::getRef().post(std::bind([](){
         SessionManager::getRef().stopAccept();
         SessionManager::getRef().kickClientSession();
@@ -297,6 +297,8 @@ void testfunction(std::shared_ptr<int> s)
 {
     (*s)++;
 }
+
+
 
 int main(int argc, char* argv[])
 {
@@ -356,7 +358,6 @@ int main(int argc, char* argv[])
 
 
 
-
     SessionManager::getRef().start();
 
     std::shared_ptr<int> sp = std::make_shared<int>();
@@ -392,7 +393,7 @@ int main(int argc, char* argv[])
             SessionManager::getRef().getConnecterOptions(cID)._reconnects = 0;
             SessionManager::getRef().getConnecterOptions(cID)._connectPulseInterval = 4000;
             SessionManager::getRef().getConnecterOptions(cID)._maxSendListCount = 20000;
-
+            if (g_concExtraSend == 0) SessionManager::getRef().getConnecterOptions(cID)._floodSendOptimize = false;
             
             SessionManager::getRef().getConnecterOptions(cID)._onSessionLinked = std::bind(&CStressClientHandler::onLinked, &client, _1);
             SessionManager::getRef().getConnecterOptions(cID)._onSessionClosed = std::bind(&CStressClientHandler::onLost, &client, _1);
@@ -411,6 +412,7 @@ int main(int argc, char* argv[])
         CStressServerHandler server;
         AccepterID aID = SessionManager::getRef().addAccepter(g_remoteIP, g_remotePort);
         SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._maxSendListCount = 40000;
+        if (g_concExtraSend == 0) SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._floodSendOptimize = false;
         SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._onSessionLinked = std::bind(&CStressServerHandler::onLinked, &server, _1);
         SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._onSessionClosed = std::bind(&CStressServerHandler::onLost, &server, _1);
         SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._onBlockDispatch = [&server](TcpSessionPtr   session, const char * begin, unsigned int len)

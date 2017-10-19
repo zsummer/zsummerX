@@ -9,7 +9,7 @@
  * 
  * ===============================================================================
  * 
- * Copyright (C) 2010-2015 YaweiZhang <yawei.zhang@foxmail.com>.
+ * Copyright (C) 2010-2017 YaweiZhang <yawei.zhang@foxmail.com>.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -69,8 +69,8 @@ std::string TcpSocket::logSection()
     std::stringstream os;
     os << ";; Status: summer.user_count()=" << _summer.use_count() << ", remoteIP=" << _remoteIP << ", remotePort=" << _remotePort
         << ", _onConnectHandler = " << (bool)_onConnectHandler 
-        << ", _onRecvHandler = " << (bool)_onRecvHandler << ", _pRecvBuf=" << (void*)_pRecvBuf << ", _iRecvLen=" << _iRecvLen 
-        << ", _onSendHandler = " << (bool)_onSendHandler << ", _pSendBuf=" << (void*)_pSendBuf << ", _iSendLen=" << _iSendLen
+        << ", _onRecvHandler = " << (bool)_onRecvHandler << ", _recvBuf=" << (void*)_recvBuf << ", _recvLen=" << _recvLen 
+        << ", _onSendHandler = " << (bool)_onSendHandler << ", _sendBuf=" << (void*)_sendBuf << ", _sendLen=" << _sendLen
         << "; _eventData=" << _eventData;
     return os.str();
 }
@@ -181,6 +181,7 @@ bool TcpSocket::doConnect(const std::string& remoteIP, unsigned short remotePort
 
 bool TcpSocket::doSend(char * buf, unsigned int len, _OnSendHandler && handler)
 {
+    LCT("TcpSocket::doSend len=" << len);
     if (_eventData._linkstat != LS_ESTABLISHED)
     {
         LCW("TcpSocket::doSend[this0x" << this << "] _linkstat error!");
@@ -198,9 +199,9 @@ bool TcpSocket::doSend(char * buf, unsigned int len, _OnSendHandler && handler)
         LCE("TcpSocket::doSend[this0x" << this << "] argument err! len ==0" );
         return false;
     }
-    if (_pSendBuf != NULL || _iSendLen != 0)
+    if (_sendBuf != NULL || _sendLen != 0)
     {
-        LCE("TcpSocket::doSend[this0x" << this << "] (_pSendBuf != NULL || _iSendLen != 0) == TRUE" << logSection());
+        LCE("TcpSocket::doSend[this0x" << this << "] (_sendBuf != NULL || _sendLen != 0) == TRUE" << logSection());
         return false;
     }
     if (_onSendHandler)
@@ -209,20 +210,32 @@ bool TcpSocket::doSend(char * buf, unsigned int len, _OnSendHandler && handler)
         return false;
     }
 
-    
-    
-    _pSendBuf = buf;
-    _iSendLen = len;
-    
+    int ret = 0;
+    if (!_floodSendOptimize)
+    {
+        ret = send(_eventData._fd, buf, len, 0);
+    }
+    if (ret <= 0)
+    {
+        _sendBuf = buf;
+        _sendLen = len;
 
-    _eventData._event.events = _eventData._event.events|EPOLLOUT;
-    _summer->registerEvent(EPOLL_CTL_MOD, _eventData);
-    _onSendHandler = std::move(handler);
+
+        _eventData._event.events = _eventData._event.events|EPOLLOUT;
+        _summer->registerEvent(EPOLL_CTL_MOD, _eventData);
+        _onSendHandler = std::move(handler);
+    }
+    else
+    {
+        LCT("TcpSocket::doSend direct sent=" << ret);
+        _OnSendHandler onSend(std::move(handler));
+        onSend(NEC_SUCCESS, ret);
+    }
     return true;
 }
 
 
-bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler)
+bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler, bool daemonRecv)
 {
     if (_eventData._linkstat != LS_ESTABLISHED)
     {
@@ -241,9 +254,9 @@ bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler)
         LCE("TcpSocket::doRecv[this0x" << this << "] argument err !!!  len==0" );
         return false;
     }
-    if (_pRecvBuf != NULL || _iRecvLen != 0)
+    if (_recvBuf != NULL || _recvLen != 0)
     {
-        LCE("TcpSocket::doRecv[this0x" << this << "]  (_pRecvBuf != NULL || _iRecvLen != 0) == TRUE" << logSection());
+        LCE("TcpSocket::doRecv[this0x" << this << "]  (_recvBuf != NULL || _recvLen != 0) == TRUE" << logSection());
         return false;
     }
     if (_onRecvHandler)
@@ -251,10 +264,19 @@ bool TcpSocket::doRecv(char * buf, unsigned int len, _OnRecvHandler && handler)
         LCE("TcpSocket::doRecv[this0x" << this << "] (_onRecvHandler) == TRUE" << logSection());
         return false;
     }
+    if (_daemonRecv)
+    {
+        LCE("TcpSocket::doRecv[this0x" << this << "] already open daemon recv" << logSection());
+        return false;
+    }
+    if (daemonRecv)
+    {
+        _daemonRecv = daemonRecv;
+    }
     
-    _pRecvBuf = buf;
-    _iRecvLen = len;
-    
+    _recvBuf = buf;
+    _recvLen = len;
+    _recvOffset = 0;
 
     _eventData._event.events = _eventData._event.events|EPOLLIN;
     _summer->registerEvent(EPOLL_CTL_MOD, _eventData);
@@ -304,7 +326,7 @@ void TcpSocket::onEPOLLMessage(uint32_t event)
         errno = EAGAIN;
         if (event & EPOLLIN)
         {
-            ret = recv(_eventData._fd, _pRecvBuf, _iRecvLen, 0);
+            ret = recv(_eventData._fd, _recvBuf + _recvOffset, _recvLen - _recvOffset, 0);
         }
         if (event & EPOLLHUP || event & EPOLLERR || ret == 0 || (ret == -1 && (errno != EAGAIN && errno != EWOULDBLOCK) ) )
         {
@@ -325,13 +347,23 @@ void TcpSocket::onEPOLLMessage(uint32_t event)
         }
         else if (ret != -1)
         {
-            _eventData._event.events = _eventData._event.events &~EPOLLIN;
-            _summer->registerEvent(EPOLL_CTL_MOD, _eventData);
-            auto guard = shared_from_this();
-            _OnRecvHandler onRecv(std::move(_onRecvHandler));
-            _pRecvBuf = NULL;
-            _iRecvLen = 0;
-            onRecv(NEC_SUCCESS,ret);
+            if (_daemonRecv)
+            {
+                auto guard = shared_from_this();
+                _recvOffset = _onRecvHandler(NEC_SUCCESS,ret);
+            }
+            else
+            {
+                _eventData._event.events = _eventData._event.events &~EPOLLIN;
+                _summer->registerEvent(EPOLL_CTL_MOD, _eventData);
+                auto guard = shared_from_this();
+                _OnRecvHandler onRecv(std::move(_onRecvHandler));
+                _recvBuf = NULL;
+                _recvLen = 0;
+                _recvOffset = 0;
+                onRecv(NEC_SUCCESS,ret);
+            }
+
             if (_eventData._linkstat == LS_CLOSED)
             {
                 return;
@@ -345,7 +377,7 @@ void TcpSocket::onEPOLLMessage(uint32_t event)
         errno = EAGAIN;
         if (event & EPOLLOUT)
         {
-            ret = send(_eventData._fd, _pSendBuf, _iSendLen, 0);
+            ret = send(_eventData._fd, _sendBuf, _sendLen, 0);
         }
 
         if (event & EPOLLERR || event & EPOLLHUP || (ret == -1 && (errno != EAGAIN && errno != EWOULDBLOCK)))
@@ -362,8 +394,8 @@ void TcpSocket::onEPOLLMessage(uint32_t event)
             _eventData._event.events = _eventData._event.events &~EPOLLOUT;
             _summer->registerEvent(EPOLL_CTL_MOD, _eventData);
             _OnSendHandler onSend(std::move(_onSendHandler));
-            _pSendBuf = NULL;
-            _iSendLen = 0;
+            _sendBuf = NULL;
+            _sendLen = 0;
             onSend(NEC_SUCCESS, ret);
             if (_eventData._linkstat == LS_CLOSED)
             {

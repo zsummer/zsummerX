@@ -62,7 +62,7 @@ TcpSession::~TcpSession()
     while (!_sendque.empty())
     {
         _options._freeBlock(_sendque.front());
-        _sendque.pop();
+        _sendque.pop_front();
     }
     if (_sockptr)
     {
@@ -114,7 +114,7 @@ void TcpSession::reconnect()
     while (_options._reconnectClean && !_sendque.empty())
     {
         _options._freeBlock(_sendque.front());
-        _sendque.pop();
+        _sendque.pop_front();
     }
 
     if (!_sockptr->doConnect(_remoteIP, _remotePort, std::bind(&TcpSession::onConnected, shared_from_this(), std::placeholders::_1)))
@@ -134,6 +134,9 @@ bool TcpSession::attatch(const TcpSocketPtr &sockptr, AccepterID aID, SessionID 
     {
         sockptr->setNoDelay();
     }
+#ifndef WIN32
+    sockptr->setFloodSendOptimize(_options._floodSendOptimize);
+#endif
     _status = 2;
     _pulseTimerID = SessionManager::getRef().createTimer(_options._sessionPulseInterval, std::bind(&TcpSession::onPulse, shared_from_this()));
     SessionManager::getRef()._statInfo[STAT_SESSION_LINKED]++;
@@ -169,7 +172,7 @@ void TcpSession::onConnected(zsummer::network::NetErrorCode ec)
         LCW("onConnected error. ec=" << ec << ",  cID=" << _sessionID);
         return;
     }
-    LCI("onConnected success. cID=" << _sessionID);
+    LCI("onConnected success. sessionID=" << _sessionID);
 
     if (!doRecv())
     {
@@ -181,6 +184,9 @@ void TcpSession::onConnected(zsummer::network::NetErrorCode ec)
     {
         _sockptr->setNoDelay();
     }
+#ifndef WIN32
+    _sockptr->setFloodSendOptimize(_options._floodSendOptimize);
+#endif
     if (_options._onSessionLinked)
     {
         try
@@ -205,11 +211,16 @@ void TcpSession::onConnected(zsummer::network::NetErrorCode ec)
 
 bool TcpSession::doRecv()
 {
+    LCT("TcpSession::doRecv sessionID=" << getSessionID() );
     if (!_sockptr)
     {
         return false;
     }
+#ifndef WIN32
+    return _sockptr->doRecv(_recving->begin + _recving->len, _recving->bound - _recving->len, std::bind(&TcpSession::onRecv, shared_from_this(), std::placeholders::_1, std::placeholders::_2), true);
+#else
     return _sockptr->doRecv(_recving->begin + _recving->len, _recving->bound - _recving->len, std::bind(&TcpSession::onRecv, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
+#endif
 }
 
 void TcpSession::close()
@@ -247,8 +258,9 @@ void TcpSession::close()
     LCW("TcpSession::close closing. sID=" << _sessionID);
 }
 
-void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
+unsigned int TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
 {
+    LCT("TcpSession::onRecv sessionID=" << getSessionID() << ", received=" << received);
     if (ec)
     {
         _lastRecvError = ec;
@@ -261,7 +273,7 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
             LCI("socket closed.  socket error(or win rst). sID=" << _sessionID);
         }
         close();
-        return;
+        return 0 ;
     }
     _recving->len += received;
     SessionManager::getRef()._statInfo[STAT_RECV_COUNT]++;
@@ -326,24 +338,27 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
             }
             catch (const std::exception & e)
             {
-                LCW("MessageEntry _onBlockCheck catch one exception: " << e.what() << ", bindata(max 500byte):"
+                LCW("MessageEntry _onBlockCheck catch one exception: " << e.what()  << ",  offset = " << usedIndex << ", len = " << _recving->len << ", bound = " << _recving->bound
+                    << ", bindata(max 500byte) :"
                     << zsummer::log4z::Log4zBinary(_recving->begin+usedIndex, min(_recving->len - usedIndex, (unsigned int)500)));
                 close();
-                return;
+                return 0;
             }
             catch (...)
             {
-                LCW("MessageEntry _onBlockCheck catch one unknown exception.  bindata(max 500byte) :"
+                LCW("MessageEntry _onBlockCheck catch one unknown exception.  offset=" << usedIndex << ",  len=" << _recving->len << ", bound=" << _recving->bound
+                    << "bindata(max 500byte) :"
                     << zsummer::log4z::Log4zBinary(_recving->begin + usedIndex, min(_recving->len - usedIndex, (unsigned int)500)));
                 close();
-                return;
+                return 0;
             }
             if (ret.first == BCT_CORRUPTION)
             {
-                LCW("killed socket: _onBlockCheck error. bindata(max 500byte) :"
+                LCW("killed socket: _onBlockCheck error.  offset=" << usedIndex << ",  len=" << _recving->len << ", bound=" << _recving->bound
+                    << "bindata(max 500byte) :"
                     << zsummer::log4z::Log4zBinary(_recving->begin + usedIndex, min(_recving->len - usedIndex, (unsigned int)500)));
                 close();
-                return;
+                return 0;
             }
             if (ret.first == BCT_SHORTAGE)
             {
@@ -352,6 +367,8 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
             try
             {
                 SessionManager::getRef()._statInfo[STAT_RECV_PACKS]++;
+                LCT("TcpSession::onRecv _onBlockDispatch(sessionID=" << getSessionID() << ", offset=" << usedIndex
+                    <<", len=" << ret.second);
                 _options._onBlockDispatch(shared_from_this(), _recving->begin + usedIndex, ret.second);
             }
             catch (const std::exception & e)
@@ -384,14 +401,14 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
                 LCW("MessageEntry _onHTTPBlockCheck catch one exception: " << e.what() << ", bindata(max 500byte) :"
                     << zsummer::log4z::Log4zBinary(_recving->begin + usedIndex, min(_recving->len - usedIndex, (unsigned int)500)));
                 close();
-                return;
+                return 0;
             }
             catch (...)
             {
                 LCW("MessageEntry _onHTTPBlockCheck catch one unknown exception, bindata(max 500byte) :"
                     << zsummer::log4z::Log4zBinary(_recving->begin + usedIndex, min(_recving->len - usedIndex, (unsigned int)500)));
                 close();
-                return;
+                return 0;
             }
 
 
@@ -400,7 +417,7 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
                 LCE("killed http socket: _onHTTPBlockCheck error sID=" << _sessionID << ", bindata(max 500byte) :"
                     << zsummer::log4z::Log4zBinary(_recving->begin + usedIndex, min(_recving->len - usedIndex, (unsigned int)500)));
                 close();
-                return;
+                return 0;
             }
             if (ret.first == BCT_SHORTAGE)
             {
@@ -446,15 +463,21 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
             memmove(_recving->begin, _recving->begin + usedIndex, _recving->len);
         }
     }
-    
+# ifndef WIN32
+    return _recving->len;
+#else
     if (!doRecv())
     {
         close();
     }
+    return 0;
+#endif
+
 }
 
 void TcpSession::send(const char *buf, unsigned int len)
 {
+    LCT("TcpSession::send sessionID=" << getSessionID() << ", len=" << len);
     if (len > _sending->bound)
     {
         LCE("send error.  too large block than sending block bound.  len=" << len);
@@ -466,7 +489,7 @@ void TcpSession::send(const char *buf, unsigned int len)
         if (_status == 2 && _sending->len == 0 && !_sendque.empty())
         {
             SessionBlock *sb = _sendque.front();
-            _sendque.pop();
+            _sendque.pop_front();
             memcpy(_sending->begin, sb->begin, sb->len);
             _sending->len = sb->len;
             _options._freeBlock(sb);
@@ -501,7 +524,7 @@ void TcpSession::send(const char *buf, unsigned int len)
         }
         memcpy(sb->begin, buf, len);
         sb->len = len;
-        _sendque.push(sb);
+        _sendque.push_back(sb);
         SessionManager::getRef()._statInfo[STAT_SEND_QUES]++;
     }
     //send direct
@@ -526,6 +549,8 @@ void TcpSession::send(const char *buf, unsigned int len)
 
 void TcpSession::onSend(zsummer::network::NetErrorCode ec, int sent)
 {
+
+    LCT("TcpSession::onSend session id=" << getSessionID() << ", sent=" << sent);
     if (ec)
     {
         LCD("remote socket closed");
@@ -554,7 +579,7 @@ void TcpSession::onSend(zsummer::network::NetErrorCode ec, int sent)
             do
             {
                 SessionBlock *sb = _sendque.front();
-                _sendque.pop();
+                _sendque.pop_front();
                 SessionManager::getRef()._statInfo[STAT_SEND_QUES]--;
                 memcpy(_sending->begin + _sending->len, sb->begin, sb->len);
                 _sending->len += sb->len;

@@ -7,13 +7,13 @@
     <LocalDebuggerWorkingDirectory>$(OutDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LocalDebuggerCommandArguments>127.0.0.1 8081 0 100 1 0 0</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>localhost 8081 1 1 0 0 2</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerWorkingDirectory>$(OutDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LocalDebuggerWorkingDirectory>$(OutDir)</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerCommandArguments>0.0.0.0 8081 0 200000</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>localhost 8081 1 1 0 0 2</LocalDebuggerCommandArguments>
   </PropertyGroup>
 </Project>

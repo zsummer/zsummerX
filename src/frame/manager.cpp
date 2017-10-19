@@ -193,23 +193,23 @@ void SessionManager::onAcceptNewClient(zsummer::network::NetErrorCode ec, const 
 {
     if (!_running)
     {
-        LCI("server already shutdown. accepter. aID=" << aID);
+        LCI("onAcceptNewClient server already shutdown. accepter. aID=" << aID);
         return;
     }
     auto founder = _mapAccepterOptions.find(aID);
     if (founder == _mapAccepterOptions.end())
     {
-        LCE("Unknown AccepterID aID=" << aID);
+        LCE("onAcceptNewClient Unknown AccepterID aID=" << aID);
         return;
     }
     if (founder->second._closed)
     {
-        LCI("accepter closed. accepter. aID=" << aID);
+        LCI("onAcceptNewClient accepter closed. accepter. aID=" << aID);
         return;
     }
     if (ec)
     {
-        LCE("doAccept Result Error. ec=" << ec << ", extend=" << founder->second);
+        LCE("onAcceptNewClient doAccept Result Error. ec=" << ec << ", extend=" << founder->second);
         
         auto &&handler = std::bind(&SessionManager::onAcceptNewClient, this, std::placeholders::_1, std::placeholders::_2, accepter, aID);
         auto timer = [accepter, handler]()
@@ -243,14 +243,14 @@ void SessionManager::onAcceptNewClient(zsummer::network::NetErrorCode ec, const 
 
         if (!checkSucess)
         {
-            LCW("Accept New Client Check Whitelist Failed remoteAdress=" << remoteIP << ":" << remotePort
+            LCW("onAcceptNewClient Accept New Client Check Whitelist Failed remoteAdress=" << remoteIP << ":" << remotePort
                 << ", extend=" << founder->second);
             accepter->doAccept(std::make_shared<TcpSocket>(), std::bind(&SessionManager::onAcceptNewClient, this, std::placeholders::_1, std::placeholders::_2, accepter, aID));
             return;
         }
         else
         {
-            LCI("Accept New Client Check Whitelist Success remoteAdress=" << remoteIP << ":" << remotePort
+            LCI("onAcceptNewClient Accept New Client Check Whitelist Success remoteAdress=" << remoteIP << ":" << remotePort
                 << ", extend=" << founder->second);
         }
     }
@@ -258,7 +258,7 @@ void SessionManager::onAcceptNewClient(zsummer::network::NetErrorCode ec, const 
     //! check Max Sessions
     if (founder->second._currentLinked >= founder->second._maxSessions)
     {
-        LCW("Accept New Client. Too Many Sessions And The new socket will closed. extend=" << founder->second );
+        LCW("onAcceptNewClient Accept New Client. Too Many Sessions And The new socket will closed. extend=" << founder->second );
     }
     else
     {
@@ -267,7 +267,7 @@ void SessionManager::onAcceptNewClient(zsummer::network::NetErrorCode ec, const 
         founder->second._totalAcceptCount++;
         _lastSessionID = nextSessionID(_lastSessionID);
 
-        LCD("Accept New Client. Accept new Sessions sID=" << _lastSessionID << ". The new socket  remoteAddress=" << remoteIP << ":" << remotePort
+        LCD("onAcceptNewClient Accept New Client. Accept new Sessions sID=" << _lastSessionID << ". The new socket  remoteAddress=" << remoteIP << ":" << remotePort
             << ", Aready linked sessions = " << founder->second._currentLinked << ", extend=" << founder->second);
 
         s->initialize(_summer);
@@ -307,7 +307,7 @@ SessionBlock * SessionManager::CreateBlock()
     else
     {
         sb = _freeBlock.front();
-        _freeBlock.pop();
+        _freeBlock.pop_front();
         sb->len = 0;
         sb->reused ++;
         sb->timestamp = timestamp;
@@ -318,9 +318,17 @@ SessionBlock * SessionManager::CreateBlock()
 }
 void SessionManager::FreeBlock(SessionBlock * sb)
 {
-    //if (_freeBlock.size() > 10000);
-    _freeBlock.push(sb);
-    _statInfo[STAT_FREE_BLOCKS] = _freeBlock.size();
+    if (_freeBlock.size() > 10000)
+    {
+        free(sb);
+        _statInfo[STAT_EXIST_BLOCKS]--;
+    }
+    else
+    {
+        _freeBlock.push_back(sb);
+        _statInfo[STAT_FREE_BLOCKS] = _freeBlock.size();
+    }
+
 }
 
 std::string SessionManager::getRemoteIP(SessionID sID)

@@ -166,7 +166,23 @@ bool TcpAccept::openAccept(const std::string ip, unsigned short port , bool reus
         }
         
     }
+	if (true)
+	{
+		int OptionValue = 1;
+		DWORD NumberOfBytesReturned = 0;
+		DWORD SIO_LOOPBACK_FAST_PATH_A = 0x98000010;
 
+		WSAIoctl(
+			_server,
+			SIO_LOOPBACK_FAST_PATH_A,
+			&OptionValue,
+			sizeof(OptionValue),
+			NULL,
+			0,
+			&NumberOfBytesReturned,
+			0,
+			0);
+	}
 
     if (listen(_server, SOMAXCONN) != 0)
     {

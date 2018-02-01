@@ -197,7 +197,23 @@ bool TcpSocket::doConnect(const std::string& remoteIP, unsigned short remotePort
         return false;
     }
 
+	if (true)
+	{
+		int OptionValue = 1;
+		DWORD NumberOfBytesReturned = 0;
+		DWORD SIO_LOOPBACK_FAST_PATH_A = 0x98000010;
 
+		WSAIoctl(
+			_socket,
+			SIO_LOOPBACK_FAST_PATH_A,
+			&OptionValue,
+			sizeof(OptionValue),
+			NULL,
+			0,
+			&NumberOfBytesReturned,
+			0,
+			0);
+	}
 
     GUID gid = WSAID_CONNECTEX;
     ConnectEx lpConnectEx = NULL;

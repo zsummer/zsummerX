@@ -34,9 +34,10 @@ install:
   - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then  sudo apt-get install -qq cmake; fi
 
 script:
-  - cmake --version
-  - cmake .
-  - make
+  - source make.sh
+#  - cmake --version
+#  - cmake .
+#  - make
 #  - ls example/bin/*
 #  - cd example/bin
 #  - ./luaTest_select tcp server &

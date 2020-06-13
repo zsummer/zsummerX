@@ -165,16 +165,13 @@ FILE(GLOB_RECURSE LIB_SELECT_C ${CMAKE_SOURCE_DIR}/src/select/*.cpp)
 #SET(LIB_FILES ${LIB_H} ${LIB_C})
 
 #GROUP_SRC_BY_DIR(LIB_FILES)
-IF (APPLE)
-  SET(__SELECT__ 1)
-ENDIF()
 
-IF((NOT APPLE) AND UNIX)
-    ADD_LIBRARY(zsummerX${LIB_SUFFIX} STATIC ${LIB_CROSS_C} ${LIB_EPOLL_C})
-ENDIF()
 
 IF(APPLE)
     ADD_LIBRARY(zsummerX${LIB_SUFFIX} STATIC ${LIB_CROSS_C} ${LIB_SELECT_C})
+    SET_TARGET_PROPERTIES(zsummerX${LIB_SUFFIX} PROPERTIES COMPILE_DEFINITIONS "__SELECT__=1")
+ELSEIF(UNIX)
+    ADD_LIBRARY(zsummerX${LIB_SUFFIX} STATIC ${LIB_CROSS_C} ${LIB_EPOLL_C})
 ENDIF()
 
 IF(UNIX)
@@ -187,6 +184,7 @@ IF(WIN32)
     ADD_LIBRARY(zsummerX_epoll${LIB_SUFFIX} STATIC ${LIB_CROSS_C} ${LIB_EPOLL_C})
     SET_TARGET_PROPERTIES(zsummerX_epoll${LIB_SUFFIX} PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD TRUE)
     ADD_LIBRARY(zsummerX_select${LIB_SUFFIX} STATIC ${LIB_CROSS_C} ${LIB_SELECT_C})
+    SET_TARGET_PROPERTIES(zsummerX_select${LIB_SUFFIX} PROPERTIES COMPILE_DEFINITIONS "__SELECT__=1")
     SET_TARGET_PROPERTIES(zsummerX_select${LIB_SUFFIX} PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD TRUE)
 ENDIF()
 
@@ -213,30 +211,36 @@ FOREACH(SUB_DIR ${SUB_DIRS})
         LIST(APPEND TEST_CPP ${CMAKE_SOURCE_DIR}/depends/proto4z/luasrc/lproto4z.c)
     endif()
 
+
     ADD_EXECUTABLE(${SUB_DIR}${LIB_SUFFIX} ${TEST_CPP})
     add_dependencies(${SUB_DIR}${LIB_SUFFIX} zsummerX${LIB_SUFFIX}) 
     if("${SUB_DIR}" STREQUAL "luaTest")
         target_include_directories(${SUB_DIR}${LIB_SUFFIX} PUBLIC ${CMAKE_SOURCE_DIR}/example/luaTest/lua)
     endif()
-    IF(UNIX)
+
+    IF(APPLE)
         target_link_libraries(${SUB_DIR}${LIB_SUFFIX}  zsummerX${LIB_SUFFIX} log4z${LIB_SUFFIX} pthread  rt m c)
+        SET_TARGET_PROPERTIES(${SUB_DIR}${LIB_SUFFIX} PROPERTIES COMPILE_DEFINITIONS "__SELECT__=1")
+    ELSEIF(UNIX)
+        target_link_libraries(${SUB_DIR}${LIB_SUFFIX}  zsummerX${LIB_SUFFIX} log4z${LIB_SUFFIX} pthread  m c)
     ELSE()
         target_link_libraries(${SUB_DIR}${LIB_SUFFIX}  zsummerX${LIB_SUFFIX} log4z${LIB_SUFFIX})
     ENDIF()
+    add_dependencies(${SUB_DIR}${LIB_SUFFIX} zsummerX${LIB_SUFFIX})
+
 
 
     ADD_EXECUTABLE(${SUB_DIR}_select${LIB_SUFFIX} ${TEST_CPP})
     add_dependencies(${SUB_DIR}_select${LIB_SUFFIX} zsummerX_select${LIB_SUFFIX})
     SET_TARGET_PROPERTIES(${SUB_DIR}_select${LIB_SUFFIX} PROPERTIES COMPILE_DEFINITIONS "__SELECT__=1")
+
     if("${SUB_DIR}" STREQUAL "luaTest")
         target_include_directories(${SUB_DIR}_select${LIB_SUFFIX} PUBLIC ${CMAKE_SOURCE_DIR}/example/luaTest/lua)
     endif()
 
-    if("${SUB_DIR}" STREQUAL "boost_ping_pong")
-        SET_TARGET_PROPERTIES(${SUB_DIR}${LIB_SUFFIX} PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD TRUE)
-    endif()
-    
-    IF(UNIX)
+    IF(APPLE)
+        target_link_libraries(${SUB_DIR}_select${LIB_SUFFIX}  zsummerX${LIB_SUFFIX} log4z${LIB_SUFFIX} pthread m c)
+    ELSEIF(UNIX)
         target_link_libraries(${SUB_DIR}_select${LIB_SUFFIX}  zsummerX${LIB_SUFFIX} log4z${LIB_SUFFIX} pthread  rt m c)
     ELSE()
         target_link_libraries(${SUB_DIR}_select${LIB_SUFFIX}  zsummerX${LIB_SUFFIX} log4z${LIB_SUFFIX})

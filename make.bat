@@ -2,7 +2,7 @@ cd depends/log4z
 call make.bat
 echo "%cd%"
 
-robocopy /MOV ./lib/ ../../lib/
+xcopy .\lib\* ..\..\lib\ /Y
 cd ../../
 echo "%cd%"
 
@@ -11,10 +11,10 @@ md vs_sln
 cd vs_sln
 cmake ../ -DCMAKE_BUILD_TYPE=Release -A x64 -DCMAKE_GENERATOR_PLATFORM=x64 
 MSBuild zsummerX.sln /property:Configuration=Release /property:Platform=x64
-robocopy /MOV ../lib/Release/ ../lib/
+xcopy ..\lib\Release\* ..\lib\ /Y
 rd /Q /S  "../lib/Release" 
-cmake ../ -DCMAKE_BUILD_TYPE=Debug -G "Visual Studio 16 2019" -A x64 -DCMAKE_GENERATOR_PLATFORM=x64
+cmake ../ -DCMAKE_BUILD_TYPE=Debug  -A x64 -DCMAKE_GENERATOR_PLATFORM=x64
 MSBuild zsummerX.sln /property:Configuration=Debug /property:Platform=x64
-robocopy /MOV ../lib/Debug/ ../lib/
+xcopy ..\lib\Debug\* ..\lib\ /Y
 rd /Q /S  "../lib/Debug"
 cd ..

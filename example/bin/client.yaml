@@ -1,0 +1,25 @@
+# 配表文件  
+ #logger_name: 
+ logger_desc: client
+ hot_update: true
+# 0通道为多线程带文件和屏显输出
+ - channel: 0  
+    priority: debug
+    category: 0
+    category_extend: 0
+    -device: 0
+        disable: false
+        out_type: file
+        priority: info
+        category: 0
+        category_extend: 0
+        path: "./log/"
+        file: "client_$PNAME_$YEAR$MON$DAY"
+        rollback: 4
+        limit_size: 1000 m #only support M byte
+    -device: 1
+        disable: false
+        out_type: screen
+        category: 0
+        category_extend: 0
+

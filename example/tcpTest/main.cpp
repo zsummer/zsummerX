@@ -46,9 +46,8 @@
 #include <iomanip>
 #include <string.h>
 #include <signal.h>
-#include <log4z/log4z.h>
+#include <fn-log/fn_log.h>
 using namespace std;
-using namespace zsummer::log4z;
 using namespace zsummer::network;
 
 
@@ -102,9 +101,22 @@ int main(int argc, char* argv[])
 
 
     
-    if (g_startType == 0) ILog4zManager::getPtr()->config("server.cfg");
-    else ILog4zManager::getPtr()->config("client.cfg");
-    ILog4zManager::getPtr()->start();
+    if (g_startType == 0) 
+    {
+        int ret = FNLog::LoadAndStartLogger(FNLog::GetDefaultLogger(), "server.yaml");
+        if (ret != 0)
+        {
+            return -1;
+        }
+    }
+    else
+    {
+        int ret = FNLog::LoadAndStartLogger(FNLog::GetDefaultLogger(), "client.yaml");        if (ret != 0)
+        {
+            return -2;
+        }
+    }
+
     LOGI("g_remoteIP=" << g_remoteIP << ", g_remotePort=" << g_remotePort << ", g_startType=" << g_startType );
 
     summer = std::shared_ptr<EventLoop>(new EventLoop);
@@ -147,7 +159,10 @@ int main(int argc, char* argv[])
 
 void OnSocketSend(NetErrorCode ec, int recvLength)
 {
-    if (ec) return;
+    if (ec)
+    {
+        LogError() << "has error";
+    }
     if (recvLength != sendBufferLen) LOGW("safe warning, need translate remaining data.");
 };
 
@@ -172,6 +187,7 @@ void onConnect(NetErrorCode ec)
         g_runing = false;
         return;
     }
+    LogInfo() << "on connected";
     usedSocket->doRecv(recvBuffer, recvBufferLen, std::bind(OnSocketRecv, std::placeholders::_1, std::placeholders::_2));
     sprintf(sendBuffer, "%s", "hellow----------------------------------------------------------");
     sendBufferLen = (int)strlen(sendBuffer) + 1;
@@ -185,8 +201,10 @@ void OnAcceptSocket(NetErrorCode ec, TcpSocketPtr s)
     if (ec != NEC_SUCCESS)
     {
         g_runing = false;
+        LogError() << "has error";
         return;
     }
+    LogInfo() << "on accept socket";
     usedSocket = s;
     usedSocket->initialize(summer);
     usedSocket->doRecv(recvBuffer, recvBufferLen, std::bind(OnSocketRecv, std::placeholders::_1, std::placeholders::_2));

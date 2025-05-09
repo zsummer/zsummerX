@@ -48,6 +48,13 @@ local function whenLinked(sID, remoteIP, remotePort)
 end
 summer.whenLinked(whenLinked)
 
+local function whenLose(sID, remoteIP, remotePort)
+    print("session is on lose. sID=" .. sID .. ", remoteIP=" .. remoteIP .. ", remotePort=" .. remotePort)
+    --summer.stop();
+end
+summer.whenClosed(whenLose)
+
+
 -- 收到消息
 local function whenMessage(sID, pID, content)
     --print("whenMessage. sID=" .. sID .. ", pID=" .. pID )
@@ -97,11 +104,11 @@ end
 
 local startTick = summer.now()
 --进入循环
-summer.run()
+--summer.run()
 --如果嵌入其他程序 例如cocos2dx, 可以吧runOnce设置true然后放入update中.
 --while summer.runOnce(true) do
---while summer.runOnce() and summer.now() - startTick < 10*1000 do    
+while summer.runOnce() and summer.now() - startTick < 10 do    
 
---end
+end
 
 

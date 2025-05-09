@@ -42,7 +42,6 @@
 
 
 #include <zsummerX/zsummerX.h>
-using namespace zsummer::log4z;
 using namespace zsummer::proto4z;
 using namespace zsummer::network;
 
@@ -52,7 +51,7 @@ unsigned short g_remotePort = 8081;
 unsigned short g_startIsConnector = 0;  //0 listen, 1 connect
 
 
-bool initEnv(int argc, char* argv[]);
+int initEnv(int argc, char* argv[]);
 void startServer();
 void startClient();
 
@@ -85,10 +84,10 @@ int main(int argc, char* argv[])
     signal(SIGCHLD, SIG_IGN);
 #endif
     signal(SIGINT, sigFun);
-
-    if (!initEnv(argc, argv))
+    int ret = initEnv(argc, argv);
+    if (ret != 0)
     {
-        return 0;
+        return ret;
     }
     TestSessionUserParam();
     
@@ -111,7 +110,7 @@ int main(int argc, char* argv[])
 //////////////////////////////////////////////////////////////////////////
 
 
-bool initEnv(int argc, char* argv[])
+int initEnv(int argc, char* argv[])
 {
     if (argc == 2 &&
         (strcmp(argv[1], "--help") == 0
@@ -139,18 +138,21 @@ bool initEnv(int argc, char* argv[])
 
     if (!g_startIsConnector)
     {
-        //! start log4z service
-        ILog4zManager::getPtr()->config("server.cfg");
-        ILog4zManager::getPtr()->start();
+        int ret = FNLog::LoadAndStartLogger(FNLog::GetDefaultLogger(), "server.yaml");
+        if (ret != 0)
+        {
+            return -1;
+        }
     }
     else
     {
-        //! start log4z service
-        ILog4zManager::getPtr()->config("client.cfg");
-        ILog4zManager::getPtr()->start();
+        int ret = FNLog::LoadAndStartLogger(FNLog::GetDefaultLogger(), "client.yaml");        if (ret != 0)
+        {
+            return -2;
+        }
     }
     LOGI("g_remoteIP=" << g_remoteIP << ", g_remotePort=" << g_remotePort << ", g_startIsConnector=" << g_startIsConnector);
-    return true;
+    return 0;
 }
 
 

@@ -219,12 +219,12 @@ FOREACH(SUB_DIR ${SUB_DIRS})
     endif()
 
     IF(APPLE)
-        target_link_libraries(${SUB_DIR}${LIB_SUFFIX}  zsummerX${LIB_SUFFIX} log4z${LIB_SUFFIX} pthread  m c)
+        target_link_libraries(${SUB_DIR}${LIB_SUFFIX}  zsummerX${LIB_SUFFIX}  pthread  m c)
         SET_TARGET_PROPERTIES(${SUB_DIR}${LIB_SUFFIX} PROPERTIES COMPILE_DEFINITIONS "__SELECT__=1")
     ELSEIF(UNIX)
-        target_link_libraries(${SUB_DIR}${LIB_SUFFIX}  zsummerX${LIB_SUFFIX} log4z${LIB_SUFFIX} pthread  rt m c)
+        target_link_libraries(${SUB_DIR}${LIB_SUFFIX}  zsummerX${LIB_SUFFIX}  pthread  rt m c)
     ELSE()
-        target_link_libraries(${SUB_DIR}${LIB_SUFFIX}  zsummerX${LIB_SUFFIX} log4z${LIB_SUFFIX})
+        target_link_libraries(${SUB_DIR}${LIB_SUFFIX}  zsummerX${LIB_SUFFIX} )
     ENDIF()
     add_dependencies(${SUB_DIR}${LIB_SUFFIX} zsummerX${LIB_SUFFIX})
 
@@ -239,11 +239,11 @@ FOREACH(SUB_DIR ${SUB_DIRS})
     endif()
 
     IF(APPLE)
-        target_link_libraries(${SUB_DIR}_select${LIB_SUFFIX}  zsummerX${LIB_SUFFIX} log4z${LIB_SUFFIX} pthread m c)
+        target_link_libraries(${SUB_DIR}_select${LIB_SUFFIX}  zsummerX${LIB_SUFFIX}  pthread m c)
     ELSEIF(UNIX)
-        target_link_libraries(${SUB_DIR}_select${LIB_SUFFIX}  zsummerX${LIB_SUFFIX} log4z${LIB_SUFFIX} pthread  rt m c)
+        target_link_libraries(${SUB_DIR}_select${LIB_SUFFIX}  zsummerX${LIB_SUFFIX}  pthread  rt m c)
     ELSE()
-        target_link_libraries(${SUB_DIR}_select${LIB_SUFFIX}  zsummerX${LIB_SUFFIX} log4z${LIB_SUFFIX})
+        target_link_libraries(${SUB_DIR}_select${LIB_SUFFIX}  zsummerX${LIB_SUFFIX} )
         SET_TARGET_PROPERTIES(${SUB_DIR}_select${LIB_SUFFIX} PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD TRUE)
     ENDIF()
 
@@ -256,9 +256,9 @@ ENDFOREACH()
 
 
 
-install(FILES ${ZSUMMERX_DEPENDS_DIR}/log4z/log4z.h 
-            ${ZSUMMERX_DEPENDS_DIR}/log4z/COPYRIGHT 
-    DESTINATION include/log4z)
+install(FILES ${ZSUMMERX_DEPENDS_DIR}/fn-log/fn_log.h 
+            ${ZSUMMERX_DEPENDS_DIR}/fn-log/COPYRIGHT 
+    DESTINATION include/fn-log)
 
 install(FILES ${ZSUMMERX_DEPENDS_DIR}/proto4z/proto4z.h 
         ${ZSUMMERX_DEPENDS_DIR}/proto4z/COPYRIGHT 

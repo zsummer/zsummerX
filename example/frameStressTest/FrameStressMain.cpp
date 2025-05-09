@@ -41,7 +41,7 @@
 #include <zsummerX/zsummerX.h>
 #include <unordered_map>
 #include "TestProto.h"
-using namespace zsummer::log4z;
+
 using namespace zsummer::proto4z;
 using namespace zsummer::network;
 using namespace std::placeholders;
@@ -347,10 +347,21 @@ int main(int argc, char* argv[])
         g_hightBenchmarkLevel = atoi(argv[7]);
 
     if (g_startClient == 0)
-        ILog4zManager::getPtr()->config("server.cfg");
+    {
+        int ret = FNLog::LoadAndStartLogger(FNLog::GetDefaultLogger(), "server.yaml");
+        if (ret != 0)
+        {
+            return -1;
+        }
+    }
     else
-        ILog4zManager::getPtr()->config("client.cfg");
-    ILog4zManager::getPtr()->start();
+    {
+        int ret = FNLog::LoadAndStartLogger(FNLog::GetDefaultLogger(), "client.yaml");        if (ret != 0)
+        {
+            return -2;
+        }
+    }
+
 
     LOGI("g_remoteIP=" << g_remoteIP <<", orgin=" << getHostByName(g_remoteIP) << ", g_remotePort=" << g_remotePort << ", g_startClient=" << g_startClient
         << ", g_concClient=" << g_concClient << ", g_concExtraSend=" << g_concExtraSend << ", g_intervalSend=" << g_intervalSend << ", hightBenchmark=" << g_hightBenchmarkLevel);

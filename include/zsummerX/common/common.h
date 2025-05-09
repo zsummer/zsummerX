@@ -74,7 +74,7 @@
 #include <thread>
 #include <mutex>
 #include <algorithm>
-#include <log4z/log4z.h>
+#include <fn-log/fn_log.h>
 #include <rc4/rc4_encryption.h>
 #include <atomic>
 
@@ -131,11 +131,11 @@ namespace zsummer
             inline void addClosedSocketCount(){ _totalClosedCTcpSocketObjs++; }
             inline unsigned int getCreatedSocketCount(){ return _totalCreatedCTcpSocketObjs; }
             inline unsigned int getClosedSocketCount(){ return _totalClosedCTcpSocketObjs; }
-            inline LoggerId getNetCoreLogger(){ return _netLoggerID; }
+
         private:
             std::atomic_uint _totalCreatedCTcpSocketObjs;
             std::atomic_uint _totalClosedCTcpSocketObjs;
-            LoggerId _netLoggerID = 0;
+
         };
 
         extern ZSummerEnvironment g_appEnvironment;
@@ -158,13 +158,13 @@ namespace zsummer
 
 
 
-#define LCT( log ) LOG_TRACE( zsummer::network::g_appEnvironment.getNetCoreLogger(), log )
-#define LCD( log ) LOG_DEBUG( zsummer::network::g_appEnvironment.getNetCoreLogger(), log )
-#define LCI( log ) LOG_INFO( zsummer::network::g_appEnvironment.getNetCoreLogger(),  log )
-#define LCW( log ) LOG_WARN( zsummer::network::g_appEnvironment.getNetCoreLogger(),  log )
-#define LCE( log ) LOG_ERROR( zsummer::network::g_appEnvironment.getNetCoreLogger(), log )
-#define LCA( log ) LOG_ALARM( zsummer::network::g_appEnvironment.getNetCoreLogger(), log )
-#define LCF( log ) LOG_FATAL( zsummer::network::g_appEnvironment.getNetCoreLogger(), log )
+#define LCT( log ) LOG_TRACE(0,0,0, log )
+#define LCD( log ) LOG_DEBUG(0,0,0, log )
+#define LCI( log ) LOG_INFO(0,0,0,  log )
+#define LCW( log ) LOG_WARN(0,0,0,  log )
+#define LCE( log ) LOG_ERROR(0,0,0, log )
+#define LCA( log ) LOG_ALARM(0,0,0, log )
+#define LCF( log ) LOG_FATAL(0,0,0, log )
 
 
 

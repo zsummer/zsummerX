@@ -46,7 +46,7 @@
 #include <string.h>
 #include <signal.h>
 #include <unordered_map>
-#include <log4z/log4z.h>
+#include <fn-log/fn_log.h>
 #include <proto4z/proto4z.h>
 
 #ifdef WIN32
@@ -236,7 +236,7 @@ namespace zsummer
             TupleParamString = 3,
         };
 
-        inline zsummer::log4z::Log4zStream & operator << (zsummer::log4z::Log4zStream &os, const SessionOptions & traits)
+        inline FNLog::LogStream & operator << (FNLog::LogStream &os, const SessionOptions & traits)
         {
             os << "{ " << "_protoType=" << traits._protoType
                 << ", _rc4TcpEncryption=" << traits._rc4TcpEncryption
@@ -251,7 +251,7 @@ namespace zsummer
         }
 
 
-        inline zsummer::log4z::Log4zStream & operator << (zsummer::log4z::Log4zStream &os, const AccepterOptions & extend)
+        inline FNLog::LogStream& operator << (FNLog::LogStream&os, const AccepterOptions & extend)
         {
             os << "{"
                 << "_aID=" << extend._aID

@@ -1,0 +1,55 @@
+name: NormalTest
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    strategy:    
+      matrix:
+        cc: [gcc, clang]
+        os: [ubuntu-latest, macos-latest]
+        #exclude:
+        #  - os: macos-latest
+        #    cc: clang
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v2
+      env:
+        CC: ${{ matrix.cc }}
+
+    - name: config cmake  
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Debug
+
+    - name: config cmake release
+      run: cmake -B ${{github.workspace}}/build_release -DCMAKE_BUILD_TYPE=Release
+
+    - name: build
+      # Build your program with the given configuration
+      run: cmake --build ${{github.workspace}}/build --config Debug
+
+    - name: build release
+      # Build your program with the given configuration
+      run: cmake --build ${{github.workspace}}/build_release --config Release
+
+
+    - name: test base
+      working-directory: ${{github.workspace}}/example/bin
+      run: |
+        ./luaTest_select_d tcp server &
+        ./luaTest_select_d tcp client
+
+    - name: test base
+      working-directory: ${{github.workspace}}/example/bin
+      run: |
+        ./luaTest_select tcp server &
+        ./luaTest_select tcp client

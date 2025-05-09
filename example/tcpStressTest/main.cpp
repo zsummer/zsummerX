@@ -43,7 +43,7 @@
 #include "Process.h"
 #include <thread>
 #include <chrono>
-using namespace zsummer::log4z;
+
 
 std::string g_remoteIP = "0.0.0.0";
 unsigned short g_remotePort = 8081;
@@ -102,15 +102,18 @@ int main(int argc, char* argv[])
 
     if (g_startType == 0)
     {
-        //! 启动日志服务
-        ILog4zManager::getPtr()->config("server.cfg");
-        ILog4zManager::getPtr()->start();
+        int ret = FNLog::LoadAndStartLogger(FNLog::GetDefaultLogger(), "server.yaml");
+        if (ret != 0)
+        {
+            return -1;
+        }
     }
     else
     {
-                //! 启动日志服务
-        ILog4zManager::getPtr()->config("client.cfg");
-        ILog4zManager::getPtr()->start();
+        int ret = FNLog::LoadAndStartLogger(FNLog::GetDefaultLogger(), "client.yaml");        if (ret != 0)
+        {
+            return -2;
+        }
     }
     LOGI("g_remoteIP=" << g_remoteIP << ", g_remotePort=" << g_remotePort << ", g_startType=" << g_startType 
         << ", g_maxClient=" << g_maxClient   << ", g_multiThread=" << g_multiThread);

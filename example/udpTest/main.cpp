@@ -39,7 +39,7 @@
 
 #include <signal.h>
 #include <zsummerX/zsummerX.h>
-#include <log4z/log4z.h>
+#include <fn-log/fn_log.h>
 #include <proto4z/proto4z.h>
 using namespace std;
 using namespace zsummer::network;
@@ -113,13 +113,18 @@ int main(int argc, char* argv[])
     unsigned int maxClient = atoi(argv[4]);
     if (g_type ==1)
     {
-        zsummer::log4z::ILog4zManager::getPtr()->config("server.cfg");
-        zsummer::log4z::ILog4zManager::getPtr()->start();
+        int ret = FNLog::LoadAndStartLogger(FNLog::GetDefaultLogger(), "server.yaml");
+        if (ret != 0)
+        {
+            return -1;
+        }
     }
     else
     {
-        zsummer::log4z::ILog4zManager::getPtr()->config("client.cfg");
-        zsummer::log4z::ILog4zManager::getPtr()->start();
+        int ret = FNLog::LoadAndStartLogger(FNLog::GetDefaultLogger(), "client.yaml");        if (ret != 0)
+        {
+            return -2;
+        }
     }
     LOGI("ip=" << ip << ", port=" << port << ", type=" << g_type << ", maxClients=" << maxClient);
     

@@ -45,7 +45,6 @@ int luaopen_proto4z_util(lua_State *L);
 
 
 #include <zsummerX/zsummerX.h>
-using namespace zsummer::log4z;
 using namespace zsummer::network;
 #include <fstream>
 void sigFun(int sig)
@@ -81,7 +80,7 @@ int safedofile(lua_State * L, const char * file)
 
 }
 
-
+unsigned long long loop_count = UINT64_MAX;
 
 
 
@@ -108,12 +107,31 @@ int main(int argc, char* argv[])
 
 //    ILog4zManager::getRef().setLoggerDisplay(LOG4Z_MAIN_LOGGER_ID, false);
 //    ILog4zManager::getRef().setLoggerLevel(LOG4Z_MAIN_LOGGER_ID, LOG_LEVEL_TRACE);
-    ILog4zManager::getRef().start();
+
     int status;
     lua_State *L = luaL_newstate();  /* create state */
     if (L == NULL) 
     {
         return EXIT_FAILURE;
+    }
+    if (strcmp(argv[2], "server") == 0)
+    {
+        int ret = FNLog::LoadAndStartLogger(FNLog::GetDefaultLogger(), "server.yaml");
+        if (ret != 0)
+        {
+            return -1;
+        }
+    }
+    else
+    {
+        int ret = FNLog::LoadAndStartLogger(FNLog::GetDefaultLogger(), "client.yaml");        if (ret != 0)
+        {
+            return -2;
+        }
+    }
+    if (argc > 3)
+    {
+        loop_count = atoi(argv[3]);
     }
 
     lua_gc(L, LUA_GCSTOP, 0);  /* stop collector during initialization */

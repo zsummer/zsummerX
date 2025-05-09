@@ -48,7 +48,7 @@
 #include <string.h>
 #include <atomic>
 #include <signal.h>
-#include <log4z/log4z.h>
+#include <fn-log/fn_log.h>
 #include <proto4z/proto4z.h>
 using namespace std;
 

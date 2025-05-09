@@ -41,14 +41,12 @@
 using namespace zsummer::proto4z;
 using namespace zsummer::network;
 
-
+extern unsigned long long loop_count;
 static int logimpl(lua_State * L, int level, bool isFileLine)
 {
-    if (zsummer::log4z::ILog4zManager::getRef().prePushLog(LOG4Z_MAIN_LOGGER_ID, level))
+    FNLog::LogStream ls(std::move(LOG_STREAM_DEFAULT_LOGGER(0, level, 0, 0, FNLog::LOG_PREFIX_TIMESTAMP | FNLog::LOG_PREFIX_PRIORITY)));
+    if (ls.logger_ != nullptr)
     {
-
-        zsummer::log4z::LogData * __pLog = zsummer::log4z::ILog4zManager::getPtr()->makeLogData(LOG4Z_MAIN_LOGGER_ID, level);
-        zsummer::log4z::Log4zStream __ss(__pLog->_content + __pLog->_contentLen, LOG4Z_LOG_BUF_SIZE - __pLog->_contentLen);
         int top = lua_gettop(L);
         for (int i=1; i <= top; i++)
         {
@@ -56,18 +54,19 @@ static int logimpl(lua_State * L, int level, bool isFileLine)
             {
             case LUA_TNIL:
             {
-                __ss.writeString("#nil#", sizeof("#nil#")-1);
+
+                ls.write_buffer("#nil#", sizeof("#nil#")-1);
             }
             break;
             case LUA_TBOOLEAN:
             {
                 int b = lua_toboolean(L, i);
-                __ss << (b != 0);
+                ls << (b != 0);
             }
             break;
             case LUA_TLIGHTUSERDATA:
             {
-                __ss.writeString("#lightuserdata#", sizeof("#lightuserdata#") - 1);
+                ls.write_buffer("#lightuserdata#", sizeof("#lightuserdata#") - 1);
             }
             break;
             case LUA_TNUMBER:
@@ -75,12 +74,12 @@ static int logimpl(lua_State * L, int level, bool isFileLine)
                 if (lua_isinteger(L, i))
                 {
                     lua_Integer n = luaL_checkinteger(L, i);
-                    __ss << n;
+                    ls << n;
                 }
                 else
                 {
                     double f = luaL_optnumber(L, i, 0.0);
-                    __ss << f;
+                    ls << f;
                 }
             }
             break;
@@ -88,27 +87,27 @@ static int logimpl(lua_State * L, int level, bool isFileLine)
             {
                 size_t len = 0;
                 const char * str = luaL_checklstring(L, i, &len);
-                __ss.writeString(str, len);
+                ls.write_buffer(str, len);
             }
             break;
             case LUA_TTABLE:
             {
-                __ss.writeString("#table#", sizeof("#table#") - 1);
+                ls.write_buffer("#table#", sizeof("#table#") - 1);
             }
             break;
             case LUA_TFUNCTION:
             {
-                __ss.writeString("#function#", sizeof("#function#") - 1);
+                ls.write_buffer("#function#", sizeof("#function#") - 1);
             }
             break;
             case LUA_TUSERDATA:
             {
-                __ss.writeString("#userdata#", sizeof("#userdata#") - 1);
+                ls.write_buffer("#userdata#", sizeof("#userdata#") - 1);
             }
             break;
             case LUA_TTHREAD:
             {
-                __ss.writeString("#thread#", sizeof("#thread#") - 1);
+                ls.write_buffer("#thread#", sizeof("#thread#") - 1);
             }
             break;
 
@@ -116,17 +115,13 @@ static int logimpl(lua_State * L, int level, bool isFileLine)
                 break;
             }
         }
-        __pLog->_contentLen += __ss.getCurrentLen();
+
         if (isFileLine)
         {
             lua_Debug ld = { 0 };
             lua_getstack(L, 1, &ld);
             lua_getinfo(L, "lS", &ld);
-            zsummer::log4z::ILog4zManager::getPtr()->pushLog(__pLog, ld.source, ld.currentline);
-        }
-        else
-        {
-            zsummer::log4z::ILog4zManager::getPtr()->pushLog(__pLog, NULL, 0);
+            ls << " " << ld.source << ":" << ld.currentline;
         }
 
     }
@@ -134,21 +129,21 @@ static int logimpl(lua_State * L, int level, bool isFileLine)
 }
 
 
-static int logt(lua_State * L) { return logimpl(L, LOG_LEVEL_TRACE, true); }
-static int logd(lua_State * L) { return logimpl(L, LOG_LEVEL_DEBUG, true); }
-static int logi(lua_State * L) { return logimpl(L, LOG_LEVEL_INFO, true); }
-static int logw(lua_State * L) { return logimpl(L, LOG_LEVEL_WARN, true); }
-static int loge(lua_State * L) { return logimpl(L, LOG_LEVEL_ERROR, true); }
-static int logf(lua_State * L) { return logimpl(L, LOG_LEVEL_FATAL, true); }
-static int loga(lua_State * L) { return logimpl(L, LOG_LEVEL_ALARM, true); }
+static int logt(lua_State * L) { return logimpl(L, FNLog::PRIORITY_TRACE, true); }
+static int logd(lua_State * L) { return logimpl(L, FNLog::PRIORITY_DEBUG, true); }
+static int logi(lua_State * L) { return logimpl(L, FNLog::PRIORITY_INFO, true); }
+static int logw(lua_State * L) { return logimpl(L, FNLog::PRIORITY_WARN, true); }
+static int loge(lua_State * L) { return logimpl(L, FNLog::PRIORITY_ERROR, true); }
+static int logf(lua_State * L) { return logimpl(L, FNLog::PRIORITY_ALARM, true); }
+static int loga(lua_State * L) { return logimpl(L, FNLog::PRIORITY_FATAL, true); }
 
-static int logtt(lua_State * L) { return logimpl(L, LOG_LEVEL_TRACE, false); }
-static int logdd(lua_State * L) { return logimpl(L, LOG_LEVEL_DEBUG, false); }
-static int logii(lua_State * L) { return logimpl(L, LOG_LEVEL_INFO, false); }
-static int logww(lua_State * L) { return logimpl(L, LOG_LEVEL_WARN, false); }
-static int logee(lua_State * L) { return logimpl(L, LOG_LEVEL_ERROR, false); }
-static int logff(lua_State * L) { return logimpl(L, LOG_LEVEL_FATAL, false); }
-static int logaa(lua_State * L) { return logimpl(L, LOG_LEVEL_ALARM, false); }
+static int logtt(lua_State * L) { return logimpl(L, FNLog::PRIORITY_TRACE, false); }
+static int logdd(lua_State * L) { return logimpl(L, FNLog::PRIORITY_DEBUG, false); }
+static int logii(lua_State * L) { return logimpl(L, FNLog::PRIORITY_INFO, false); }
+static int logww(lua_State * L) { return logimpl(L, FNLog::PRIORITY_WARN, false); }
+static int logee(lua_State * L) { return logimpl(L, FNLog::PRIORITY_ERROR, false); }
+static int logff(lua_State * L) { return logimpl(L, FNLog::PRIORITY_ALARM, false); }
+static int logaa(lua_State * L) { return logimpl(L, FNLog::PRIORITY_FATAL, false); }
 
 
 
@@ -212,7 +207,7 @@ static void _onMessage(lua_State * L, TcpSessionPtr session, const char * begin,
         const char *msg = lua_tostring(L, -1);
         if (msg == NULL) msg = "(error object is not a string)";
         LOGE("code crash when process message. sID=" << session->getSessionID() << ", block len=" << len
-            << ", block=" << zsummer::log4z::Log4zBinary(begin, len));
+            << ", block=" << FNLog::LogBinText(begin, len));
         LOGE(msg);
         lua_pop(L, 1);
     }
@@ -335,7 +330,7 @@ static int runOnce(lua_State * L)
 
 static int run(lua_State * L)
 {
-    while (SessionManager::getRef().runOnce());
+    while (SessionManager::getRef().runOnce() && -- loop_count > 0);
     return 0;
 }
 

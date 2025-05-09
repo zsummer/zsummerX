@@ -40,7 +40,7 @@
 
 
 #include <zsummerX/zsummerX.h>
-using namespace zsummer::log4z;
+
 using namespace zsummer::network;
 
 std::string g_remoteIP = "0.0.0.0";
@@ -76,15 +76,18 @@ int main(int argc, char* argv[])
     
     if (!g_startIsConnector)
     {
-        //! start log4z 
-        ILog4zManager::getPtr()->config("server.cfg");
-        ILog4zManager::getPtr()->start();
+        int ret = FNLog::LoadAndStartLogger(FNLog::GetDefaultLogger(), "server.yaml");
+        if (ret != 0)
+        {
+            return -1;
+        }
     }
     else
     {
-        //! start log4z 
-        ILog4zManager::getPtr()->config("client.cfg");
-        ILog4zManager::getPtr()->start();
+        int ret = FNLog::LoadAndStartLogger(FNLog::GetDefaultLogger(), "client.yaml");        if (ret != 0)
+        {
+            return -2;
+        }
     }
     LOGI("g_remoteIP=" << g_remoteIP << ", g_remotePort=" << g_remotePort << ", g_startIsConnector=" << g_startIsConnector );
 

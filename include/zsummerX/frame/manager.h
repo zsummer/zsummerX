@@ -35,8 +35,8 @@
  */
 
 
-#ifndef ZSUMMER_TCPSESSION_MANAGER_H_
-#define ZSUMMER_TCPSESSION_MANAGER_H_
+#ifndef ZSUMMERX_TCPSESSION_MANAGER_H_
+#define ZSUMMERX_TCPSESSION_MANAGER_H_
 
 #include "config.h"
 #include "session.h"

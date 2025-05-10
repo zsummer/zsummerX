@@ -35,6 +35,9 @@
  */
 
 
+#if !defined(ZSUMMERX_UDPSOCKET_IMPL_CPP_) && defined(WIN32) && !defined(USE_SELECT_IMPL)
+#define ZSUMMERX_UDPSOCKET_IMPL_CPP_
+
 #include <zsummerX/iocp/iocp_impl.h>
 #include <zsummerX/iocp/udpsocket_impl.h>
 using namespace zsummer::network;
@@ -213,4 +216,7 @@ bool UdpSocket::onIOCPMessage(BOOL bSuccess, DWORD dwTranceBytes, unsigned char 
     }
     return true;
 }
+
+
+#endif 
 

@@ -35,6 +35,10 @@
  */
 
 
+#if !defined(ZSUMMERX_SELECT_IMPL_CPP_) && (defined(__APPLE__) || defined(USE_SELECT_IMPL))
+#define ZSUMMERX_SELECT_IMPL_CPP_
+
+
 #include <zsummerX/select/select_impl.h>
 #include <zsummerX/select/tcpsocket_impl.h>
 #include <zsummerX/select/tcpaccept_impl.h>
@@ -305,4 +309,5 @@ void EventLoop::runOnce(bool isImmediately)
     }
 }
 
+#endif
 

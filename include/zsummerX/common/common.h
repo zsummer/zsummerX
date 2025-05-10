@@ -35,8 +35,8 @@
 */
 #pragma once
 
-#ifndef _ZSUMMERX_COMMON_H_
-#define _ZSUMMERX_COMMON_H_
+#ifndef ZSUMMERX_COMMON_H_
+#define ZSUMMERX_COMMON_H_
 
 #ifdef WIN32
 #define WIN32_LEAN_AND_MEAN

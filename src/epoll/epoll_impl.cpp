@@ -34,6 +34,8 @@
  * (end of COPYRIGHT)
  */
 
+#if !defined(ZSUMMERX_EPOLL_IMPL_CPP_) && !defined(WIN32) && !defined(__APPLE__) && !defined(USE_SELECT_IMPL)
+#define ZSUMMERX_EPOLL_IMPL_CPP_
 
 #include <zsummerX/epoll/epoll_impl.h>
 #include <zsummerX/epoll/tcpsocket_impl.h>
@@ -196,4 +198,6 @@ void EventLoop::runOnce(bool isImmediately)
     }
 }
 
+
+#endif
 

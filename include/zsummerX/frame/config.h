@@ -37,8 +37,8 @@
 
 //! common header 
 
-#ifndef ZSUMMER_CONFIG_H_
-#define ZSUMMER_CONFIG_H_
+#ifndef ZSUMMERX_CONFIG_H_
+#define ZSUMMERX_CONFIG_H_
 
 #include <iostream>
 #include <queue>
@@ -49,23 +49,29 @@
 #include <fn-log/fn_log.h>
 #include <proto4z/proto4z.h>
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(USE_SELECT_IMPL)
+
 #pragma warning(disable:4503)
 #pragma warning(disable:4200)
 #include "../iocp/iocp_impl.h"
 #include "../iocp/tcpsocket_impl.h"
 #include "../iocp/udpsocket_impl.h"
 #include "../iocp/tcpaccept_impl.h"
-#elif defined(__APPLE__) || defined(__SELECT__)
+
+#elif defined(__APPLE__) || defined(USE_SELECT_IMPL)
+
 #include "../select/select_impl.h"
 #include "../select/udpsocket_impl.h"
 #include "../select/tcpsocket_impl.h"
 #include "../select/tcpaccept_impl.h"
+
 #else
+
 #include "../epoll/epoll_impl.h"
 #include "../epoll/tcpsocket_impl.h"
 #include "../epoll/udpsocket_impl.h"
 #include "../epoll/tcpaccept_impl.h"
+
 #endif
 
 

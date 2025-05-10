@@ -19,7 +19,7 @@ else()
 endif()
 
 add_library(zsummerX_select${LIB_SUFFIX} STATIC ${COMMON_SRC} ${SELECT_SRC} ${TIMER_SRC} ${FRAME_SRC})
-set_target_properties(zsummerX_select${LIB_SUFFIX} PROPERTIES COMPILE_DEFINITIONS "__SELECT__=1")
+set_target_properties(zsummerX_select${LIB_SUFFIX} PROPERTIES COMPILE_DEFINITIONS "USE_SELECT_IMPL=1")
 
 
 set(LIBRARY_OUTPUT_PATH ${ZSUMMERX_LIB_DIR})

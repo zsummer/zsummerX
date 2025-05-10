@@ -34,6 +34,8 @@
  * (end of COPYRIGHT)
  */
 
+#if !defined(ZSUMMERX_TCPACCEPT_IMPL_CPP_) && defined(WIN32) && !defined(USE_SELECT_IMPL)
+#define ZSUMMERX_TCPACCEPT_IMPL_CPP_
 
 #include <zsummerX/iocp/iocp_impl.h>
 #include <zsummerX/iocp/tcpaccept_impl.h>
@@ -305,3 +307,5 @@ bool TcpAccept::onIOCPMessage(BOOL bSuccess)
     }
     return true;
 }
+
+#endif

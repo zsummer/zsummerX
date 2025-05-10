@@ -54,8 +54,8 @@
 
 //inlucde this file to use zsummerX
 
-#ifndef _ZSUMMERX_ZSUMMER_H_
-#define _ZSUMMERX_ZSUMMER_H_
+#ifndef ZSUMMERX_ZSUMMERX_H_
+#define ZSUMMERX_ZSUMMERX_H_
 
 
 // default in windows use IOCP implementation

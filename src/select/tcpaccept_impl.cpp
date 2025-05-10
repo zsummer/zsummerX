@@ -34,6 +34,8 @@
  * (end of COPYRIGHT)
  */
 
+#if !defined(ZSUMMERX_SELECT_TCPACCEPT_CPP_) && (defined(__APPLE__) || defined(USE_SELECT_IMPL))
+#define ZSUMMERX_SELECT_TCPACCEPT_CPP_
 
 #include <zsummerX/select/tcpsocket_impl.h>
 #include <zsummerX/select/tcpaccept_impl.h>
@@ -245,7 +247,12 @@ bool TcpAccept::close()
         if (_fd != InvalidFD)
         {
             _summer->clearSocket(_fd);
+#ifdef WIN32
+            shutdown(_fd, SD_BOTH);
+#else
             shutdown(_fd, SHUT_RDWR);
+#endif
+            
             ::close(_fd);
             _fd = InvalidFD;
         }
@@ -253,4 +260,7 @@ bool TcpAccept::close()
 
     return true;
 }
+
+#endif
+
 

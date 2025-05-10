@@ -34,6 +34,9 @@
  * (end of COPYRIGHT)
  */
 
+#if !defined(ZSUMMERX_IOCP_IMPL_CPP_) && defined(WIN32) && !defined(USE_SELECT_IMPL)
+#define ZSUMMERX_IOCP_IMPL_CPP_
+
 #include <zsummerX/iocp/iocp_impl.h>
 #include <zsummerX/iocp/tcpsocket_impl.h>
 #include <zsummerX/iocp/tcpaccept_impl.h>
@@ -150,3 +153,4 @@ void EventLoop::runOnce(bool isImmediately)
 }
 
 
+#endif

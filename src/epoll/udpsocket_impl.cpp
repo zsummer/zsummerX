@@ -34,6 +34,11 @@
  * (end of COPYRIGHT)
  */
 
+
+#if !defined(ZSUMMERX_EPOLL_UDPSOCKET_IMPL_CPP_) && !defined(WIN32) && !defined(__APPLE__) && !defined(USE_SELECT_IMPL)
+#define ZSUMMERX_EPOLL_UDPSOCKET_IMPL_CPP_
+
+
 #include <zsummerX/epoll/epoll_impl.h>
 #include <zsummerX/epoll/udpsocket_impl.h>
 
@@ -198,3 +203,4 @@ bool UdpSocket::onEPOLLMessage(uint32_t event)
     return true;
 }
 
+#endif

@@ -35,8 +35,8 @@
 */
 #pragma once
 
-#ifndef _ZSUMMERX_COMMON_IMPL_H_
-#define _ZSUMMERX_COMMON_IMPL_H_
+#if !defined(ZSUMMERX_COMMON_IMPL_H_) && (defined(__APPLE__) || defined(USE_SELECT_IMPL))
+#define ZSUMMERX_COMMON_IMPL_H_
 #include "../common/common.h"
 
 namespace zsummer

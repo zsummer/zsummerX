@@ -34,8 +34,8 @@
 * (end of COPYRIGHT)
 */
 
-#ifndef _ZSUMMER_EPOLL_IMPL_H_
-#define _ZSUMMER_EPOLL_IMPL_H_
+#if !defined(ZSUMMERX_EPOLL_IMPL_H_) && !defined(WIN32) && !defined(__APPLE__) && !defined(USE_SELECT_IMPL)
+#define ZSUMMERX_EPOLL_IMPL_H_
 #include "common_impl.h"
 #include "../timer/timer.h"
 

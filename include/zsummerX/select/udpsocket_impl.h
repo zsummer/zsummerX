@@ -34,8 +34,8 @@
 * (end of COPYRIGHT)
 */
 
-#ifndef _ZSUMMER_UDPSOCKET_IMPL_H_
-#define _ZSUMMER_UDPSOCKET_IMPL_H_
+#if !defined(ZSUMMERX_UDPSOCKET_IMPL_H_) && (defined(__APPLE__) || defined(USE_SELECT_IMPL))
+#define ZSUMMERX_UDPSOCKET_IMPL_H_
 
 
 

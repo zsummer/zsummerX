@@ -34,6 +34,9 @@
  * (end of COPYRIGHT)
  */
 
+#if !defined(ZSUMMERX_EPOLL_TCPACCEPT_IMPL_CPP_) && !defined(WIN32) && !defined(__APPLE__) && !defined(USE_SELECT_IMPL)
+#define ZSUMMERX_EPOLL_TCPACCEPT_IMPL_CPP_
+
 
 #include <zsummerX/epoll/tcpsocket_impl.h>
 #include <zsummerX/epoll/tcpaccept_impl.h>
@@ -268,4 +271,6 @@ bool TcpAccept::close()
 
     return true;
 }
+
+#endif
 

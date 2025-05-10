@@ -35,6 +35,10 @@
  */
 
 
+#if !defined(ZSUMMERX_SELECT_TCPSOCKET_CPP_) && (defined(__APPLE__) || defined(USE_SELECT_IMPL))
+#define ZSUMMERX_SELECT_TCPSOCKET_CPP_
+
+
 #include <zsummerX/select/tcpsocket_impl.h>
 
 using namespace zsummer::network;
@@ -378,7 +382,11 @@ bool TcpSocket::doClose()
     {
         _linkstat = LS_CLOSED;
         _summer->clearSocket(_fd);
+#ifdef WIN32
+        shutdown(_fd, SD_BOTH);
+#else
         shutdown(_fd, SHUT_RDWR);
+#endif
         close(_fd);
         _fd = InvalidFD;
         _onConnectHandler = nullptr;
@@ -387,4 +395,7 @@ bool TcpSocket::doClose()
     }
     return true;
 }
+
+
+#endif
 

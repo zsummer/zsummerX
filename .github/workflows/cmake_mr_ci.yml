@@ -33,6 +33,15 @@ jobs:
     - name: config cmake release
       run: cmake -B ${{github.workspace}}/build_release -DCMAKE_BUILD_TYPE=Release
 
+    - name: config cmake  select
+      run: cmake -B ${{github.workspace}}/build_select -DCMAKE_BUILD_TYPE=Debug -DUSE_SELECT_IMPL=ON
+
+    - name: config cmake release select
+      run: cmake -B ${{github.workspace}}/build_release_select -DCMAKE_BUILD_TYPE=Release -DUSE_SELECT_IMPL=ON
+
+
+
+
     - name: build
       # Build your program with the given configuration
       run: cmake --build ${{github.workspace}}/build --config Debug
@@ -42,13 +51,25 @@ jobs:
       run: cmake --build ${{github.workspace}}/build_release --config Release
 
 
+    - name: build select
+      # Build your program with the given configuration
+      run: cmake --build ${{github.workspace}}/build_select --config Debug
+
+    - name: build release select
+      # Build your program with the given configuration
+      run: cmake --build ${{github.workspace}}/build_release_select --config Release
+
+
+
+
+
     - name: test base
       working-directory: ${{github.workspace}}/example/bin
       run: |
-        ./luaTest_select_d tcp server &
-        ./luaTest_select_d tcp client
+        ./luaTest_d tcp server &
+        ./luaTest_d tcp client
 
-    - name: test base
+    - name: test base select
       working-directory: ${{github.workspace}}/example/bin
       run: |
         ./luaTest_select tcp server &

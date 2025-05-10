@@ -36,8 +36,8 @@
 
 
 
-#ifndef _ZSUMMERX_IOCP_IMPL_H_
-#define _ZSUMMERX_IOCP_IMPL_H_
+#if !defined(ZSUMMERX_IOCP_IMPL_H_) && defined(WIN32) && !defined(USE_SELECT_IMPL)
+#define ZSUMMERX_IOCP_IMPL_H_
 
 
 #include "common_impl.h"

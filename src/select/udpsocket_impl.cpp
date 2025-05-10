@@ -34,6 +34,11 @@
  * (end of COPYRIGHT)
  */
 
+
+#if !defined(ZSUMMERX_SELECT_UDPSOCKET_CPP_) && (defined(__APPLE__) || defined(USE_SELECT_IMPL))
+#define ZSUMMERX_SELECT_UDPSOCKET_CPP_
+
+
 #include <zsummerX/select/select_impl.h>
 #include <zsummerX/select/udpsocket_impl.h>
 
@@ -186,4 +191,6 @@ bool UdpSocket::onSelectMessage(int type, bool rd, bool wt)
 
     return true;
 }
+
+#endif
 

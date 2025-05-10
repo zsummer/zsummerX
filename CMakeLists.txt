@@ -154,42 +154,40 @@ AUTO_INCLUDE(OTHER_H)
 
 # libzsummerx
 FILE(GLOB_RECURSE LIB_H ${CMAKE_SOURCE_DIR}/include/*.h)
-FILE(GLOB_RECURSE LIB_CROSS_C 
-    ${CMAKE_SOURCE_DIR}/src/common/*.cpp 
-    ${CMAKE_SOURCE_DIR}/src/timer/*.cpp 
-    ${CMAKE_SOURCE_DIR}/src/frame/*.cpp)
-FILE(GLOB_RECURSE LIB_EPOLL_C ${CMAKE_SOURCE_DIR}/src/epoll/*.cpp)
-FILE(GLOB_RECURSE LIB_IOCP_C ${CMAKE_SOURCE_DIR}/src/iocp/*.cpp)
-FILE(GLOB_RECURSE LIB_SELECT_C ${CMAKE_SOURCE_DIR}/src/select/*.cpp)
+FILE(GLOB_RECURSE LIB_CROSS_C ${CMAKE_SOURCE_DIR}/src/*.cpp)
+
+
+#FILE(GLOB_RECURSE LIB_CROSS_C 
+#    ${CMAKE_SOURCE_DIR}/src/common/*.cpp 
+#    ${CMAKE_SOURCE_DIR}/src/timer/*.cpp 
+#    ${CMAKE_SOURCE_DIR}/src/frame/*.cpp)
+#FILE(GLOB_RECURSE LIB_EPOLL_C ${CMAKE_SOURCE_DIR}/src/epoll/*.cpp)
+#FILE(GLOB_RECURSE LIB_IOCP_C ${CMAKE_SOURCE_DIR}/src/iocp/*.cpp)
+#FILE(GLOB_RECURSE LIB_SELECT_C ${CMAKE_SOURCE_DIR}/src/select/*.cpp)
 
 #SET(LIB_FILES ${LIB_H} ${LIB_C})
 
 #GROUP_SRC_BY_DIR(LIB_FILES)
 
+option(USE_SELECT_IMPL "use select impl" OFF)
 
-IF(APPLE)
-    ADD_LIBRARY(zsummerX${LIB_SUFFIX} STATIC ${LIB_CROSS_C} ${LIB_SELECT_C})
-    SET_TARGET_PROPERTIES(zsummerX${LIB_SUFFIX} PROPERTIES COMPILE_DEFINITIONS "__SELECT__=1")
-ELSEIF(UNIX)
-    ADD_LIBRARY(zsummerX${LIB_SUFFIX} STATIC ${LIB_CROSS_C} ${LIB_EPOLL_C})
-ENDIF()
+IF (USE_SELECT_IMPL)
+    ADD_LIBRARY(zsummerX_select${LIB_SUFFIX} STATIC ${LIB_CROSS_C} ${LIB_H} ${OTHER_H})
+    SET_TARGET_PROPERTIES(zsummerX_select${LIB_SUFFIX} PROPERTIES COMPILE_DEFINITIONS "USE_SELECT_IMPL=1")
+ELSE()
+    ADD_LIBRARY(zsummerX${LIB_SUFFIX} STATIC ${LIB_CROSS_C} ${LIB_H} ${OTHER_H})
+    IF(APPLE)
+        SET_TARGET_PROPERTIES(zsummerX${LIB_SUFFIX} PROPERTIES COMPILE_DEFINITIONS "USE_SELECT_IMPL=1")
+    ENDIF()
 
-IF(UNIX)
-    ADD_LIBRARY(zsummerX_select${LIB_SUFFIX} STATIC ${LIB_CROSS_C} ${LIB_SELECT_C})
-    SET_TARGET_PROPERTIES(zsummerX_select${LIB_SUFFIX} PROPERTIES COMPILE_DEFINITIONS "__SELECT__=1")
-ENDIF()
-
-IF(WIN32)
-    ADD_LIBRARY(zsummerX${LIB_SUFFIX} STATIC ${LIB_CROSS_C} ${LIB_IOCP_C})
-    ADD_LIBRARY(zsummerX_epoll${LIB_SUFFIX} STATIC ${LIB_CROSS_C} ${LIB_EPOLL_C})
-    SET_TARGET_PROPERTIES(zsummerX_epoll${LIB_SUFFIX} PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD TRUE)
-    ADD_LIBRARY(zsummerX_select${LIB_SUFFIX} STATIC ${LIB_CROSS_C} ${LIB_SELECT_C})
-    SET_TARGET_PROPERTIES(zsummerX_select${LIB_SUFFIX} PROPERTIES COMPILE_DEFINITIONS "__SELECT__=1")
-    SET_TARGET_PROPERTIES(zsummerX_select${LIB_SUFFIX} PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD TRUE)
 ENDIF()
 
 
 
+
+
+
+#SET_TARGET_PROPERTIES(zsummerX_select${LIB_SUFFIX} PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD TRUE)
 
 
 #测试生成
@@ -212,39 +210,48 @@ FOREACH(SUB_DIR ${SUB_DIRS})
     endif()
 
 
-    ADD_EXECUTABLE(${SUB_DIR}${LIB_SUFFIX} ${TEST_CPP})
-    add_dependencies(${SUB_DIR}${LIB_SUFFIX} zsummerX${LIB_SUFFIX}) 
-    if("${SUB_DIR}" STREQUAL "luaTest")
-        target_include_directories(${SUB_DIR}${LIB_SUFFIX} PUBLIC ${CMAKE_SOURCE_DIR}/example/luaTest/lua)
-    endif()
+    IF (USE_SELECT_IMPL)
+        MESSAGE("USE_SELECT_IMPL ON")
 
-    IF(APPLE)
-        target_link_libraries(${SUB_DIR}${LIB_SUFFIX}  zsummerX${LIB_SUFFIX}  pthread  m c)
-        SET_TARGET_PROPERTIES(${SUB_DIR}${LIB_SUFFIX} PROPERTIES COMPILE_DEFINITIONS "__SELECT__=1")
-    ELSEIF(UNIX)
-        target_link_libraries(${SUB_DIR}${LIB_SUFFIX}  zsummerX${LIB_SUFFIX}  pthread  rt m c)
-    ELSE()
-        target_link_libraries(${SUB_DIR}${LIB_SUFFIX}  zsummerX${LIB_SUFFIX} )
-    ENDIF()
-    add_dependencies(${SUB_DIR}${LIB_SUFFIX} zsummerX${LIB_SUFFIX})
+        ADD_EXECUTABLE(${SUB_DIR}_select${LIB_SUFFIX} ${TEST_CPP})
+        add_dependencies(${SUB_DIR}_select${LIB_SUFFIX} zsummerX_select${LIB_SUFFIX})
+        SET_TARGET_PROPERTIES(${SUB_DIR}_select${LIB_SUFFIX} PROPERTIES COMPILE_DEFINITIONS "USE_SELECT_IMPL=1")
+
+        if("${SUB_DIR}" STREQUAL "luaTest")
+            target_include_directories(${SUB_DIR}_select${LIB_SUFFIX} PUBLIC ${CMAKE_SOURCE_DIR}/example/luaTest/lua)
+        endif()
+
+        IF(APPLE)
+            target_link_libraries(${SUB_DIR}_select${LIB_SUFFIX}  zsummerX_select${LIB_SUFFIX}  pthread m c)
+        ELSEIF(UNIX)
+            target_link_libraries(${SUB_DIR}_select${LIB_SUFFIX}  zsummerX_select${LIB_SUFFIX}  pthread  rt m c)
+        ELSE()
+            target_link_libraries(${SUB_DIR}_select${LIB_SUFFIX}  zsummerX_select${LIB_SUFFIX} )
+            SET_TARGET_PROPERTIES(${SUB_DIR}_select${LIB_SUFFIX} PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD TRUE)
+        ENDIF()
+        
+
+    else()
+        MESSAGE("USE_SELECT_IMPL OFF")
+
+        ADD_EXECUTABLE(${SUB_DIR}${LIB_SUFFIX} ${TEST_CPP})
+        add_dependencies(${SUB_DIR}${LIB_SUFFIX} zsummerX${LIB_SUFFIX}) 
+
+        if("${SUB_DIR}" STREQUAL "luaTest")
+            target_include_directories(${SUB_DIR}${LIB_SUFFIX} PUBLIC ${CMAKE_SOURCE_DIR}/example/luaTest/lua)
+        endif()
 
 
 
-    ADD_EXECUTABLE(${SUB_DIR}_select${LIB_SUFFIX} ${TEST_CPP})
-    add_dependencies(${SUB_DIR}_select${LIB_SUFFIX} zsummerX_select${LIB_SUFFIX})
-    SET_TARGET_PROPERTIES(${SUB_DIR}_select${LIB_SUFFIX} PROPERTIES COMPILE_DEFINITIONS "__SELECT__=1")
+        IF(APPLE)
+            target_link_libraries(${SUB_DIR}${LIB_SUFFIX}  zsummerX${LIB_SUFFIX}  pthread  m c)
+            SET_TARGET_PROPERTIES(${SUB_DIR}${LIB_SUFFIX} PROPERTIES COMPILE_DEFINITIONS "USE_SELECT_IMPL=1")
+        ELSEIF(UNIX)
+            target_link_libraries(${SUB_DIR}${LIB_SUFFIX}  zsummerX${LIB_SUFFIX}  pthread  rt m c)
+        ELSE()
+            target_link_libraries(${SUB_DIR}${LIB_SUFFIX}  zsummerX${LIB_SUFFIX} )
+        ENDIF()
 
-    if("${SUB_DIR}" STREQUAL "luaTest")
-        target_include_directories(${SUB_DIR}_select${LIB_SUFFIX} PUBLIC ${CMAKE_SOURCE_DIR}/example/luaTest/lua)
-    endif()
-
-    IF(APPLE)
-        target_link_libraries(${SUB_DIR}_select${LIB_SUFFIX}  zsummerX${LIB_SUFFIX}  pthread m c)
-    ELSEIF(UNIX)
-        target_link_libraries(${SUB_DIR}_select${LIB_SUFFIX}  zsummerX${LIB_SUFFIX}  pthread  rt m c)
-    ELSE()
-        target_link_libraries(${SUB_DIR}_select${LIB_SUFFIX}  zsummerX${LIB_SUFFIX} )
-        SET_TARGET_PROPERTIES(${SUB_DIR}_select${LIB_SUFFIX} PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD TRUE)
     ENDIF()
 
 ENDFOREACH()

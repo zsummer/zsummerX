@@ -33,8 +33,8 @@
 * 
 * (end of COPYRIGHT)
 */
-#ifndef _ZSUMMERX_TCPSOCKET_IMPL_H_
-#define _ZSUMMERX_TCPSOCKET_IMPL_H_
+#if !defined(ZSUMMERX_TCPSOCKET_IMPL_H_) && defined(WIN32) && !defined(USE_SELECT_IMPL)
+#define ZSUMMERX_TCPSOCKET_IMPL_H_
 
 #include "common_impl.h"
 #include "iocp_impl.h"

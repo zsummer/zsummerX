@@ -182,11 +182,11 @@ void startServer()
 
     //add Acceptor
     AccepterID  /*   aID = SessionManager::getRef().addAccepter("::", g_remotePort);
-    SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._onBlockDispatch = OnSessionBlock;
+    SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._onRawPacketProc = OnSessionBlock;
     SessionManager::getRef().getAccepterOptions(aID)._setReuse = true;
     SessionManager::getRef().openAccepter(aID);
     */ aID = SessionManager::getRef().addAccepter("0.0.0.0", g_remotePort);
-    SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._onBlockDispatch = OnSessionBlock;
+    SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._onRawPacketProc = OnSessionBlock;
     SessionManager::getRef().getAccepterOptions(aID)._setReuse = true;
     SessionManager::getRef().openAccepter(aID);
 
@@ -207,8 +207,8 @@ void startClient()
         std::string content = "hello I am " + session->getRemoteIP();
         WriteStream ws(111);
         ws << content;
-        SessionManager::getRef().fakeSessionData(session->getSessionID(), ws.getStream(), ws.getStreamLen());
-        SessionManager::getRef().sendSessionData(session->getSessionID(), ws.getStream(), ws.getStreamLen());
+        SessionManager::getRef().fakeSessionData(session->getSessionID(), ws.GetStream(), ws.GetStreamLen());
+        SessionManager::getRef().sendSessionData(session->getSessionID(), ws.GetStream(), ws.GetStreamLen());
     };
     //on connect end
     auto OnReconnectEnd = [](TcpSessionPtr session)
@@ -228,11 +228,11 @@ void startClient()
         rs >> content;
         LOGA("--------------------------------------- "
                      "recv ConnectorID = " << session->getSessionID() << ", content = " << content);
-        if (rs.getProtoID() == 111)
+        if (rs.GetProtoID() == 111)
         {
             WriteStream ws(100);
             ws << content;
-            SessionManager::getRef().sendSessionData(session->getSessionID(), ws.getStream(), ws.getStreamLen());
+            SessionManager::getRef().sendSessionData(session->getSessionID(), ws.GetStream(), ws.GetStreamLen());
             return;
         }
         SessionManager::getRef().createTimer(2000, [session]() {
@@ -249,7 +249,7 @@ void startClient()
     SessionID cID = SessionManager::getRef().addConnecter(g_remoteIP, g_remotePort);
     SessionManager::getRef().getConnecterOptions(cID)._onReconnectEnd = OnReconnectEnd;
     SessionManager::getRef().getConnecterOptions(cID)._onSessionLinked = OnSessionLinked;
-    SessionManager::getRef().getConnecterOptions(cID)._onBlockDispatch = OnSessionBlock;
+    SessionManager::getRef().getConnecterOptions(cID)._onRawPacketProc = OnSessionBlock;
     SessionManager::getRef().getConnecterOptions(cID)._onSessionPulse = [](TcpSessionPtr session)
     {
         LOGI("session pulse");
@@ -258,7 +258,7 @@ void startClient()
     /* cID = SessionManager::getRef().addConnecter("::1", g_remotePort);
     SessionManager::getRef().getConnecterOptions(cID)._onReconnectEnd = OnReconnectEnd;
     SessionManager::getRef().getConnecterOptions(cID)._onSessionLinked = OnSessionLinked;
-    SessionManager::getRef().getConnecterOptions(cID)._onBlockDispatch = OnSessionBlock;
+    SessionManager::getRef().getConnecterOptions(cID)._onRawPacketProc = OnSessionBlock;
     SessionManager::getRef().getConnecterOptions(cID)._onSessionPulse = [](TcpSessionPtr session)
     {
         LOGI("session pulse");

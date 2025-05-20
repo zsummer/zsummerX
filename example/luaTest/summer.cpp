@@ -198,8 +198,8 @@ static void _onMessage(lua_State * L, TcpSessionPtr session, const char * begin,
     lua_pushcfunction(L, pcall_error);
     lua_rawgeti(L, LUA_REGISTRYINDEX, _messageRef);
     lua_pushinteger(L, session->getSessionID());
-    lua_pushinteger(L, rs.getProtoID());
-    lua_pushlstring(L, rs.getStreamBody(), rs.getStreamBodyLen());
+    lua_pushinteger(L, rs.GetProtoID());
+    lua_pushlstring(L, rs.GetStreamBody(), rs.GetStreamBodyLen());
     int status = lua_pcall(L, 3, 0, 1);
     lua_remove(L, 1);
     if (status)
@@ -344,8 +344,8 @@ static int addConnect(lua_State *L)
     traits._connectPulseInterval = (unsigned int)luaL_optinteger(L, 5, traits._connectPulseInterval);
     traits._protoType = (unsigned int)luaL_optinteger(L, 6, 0) == 0 ? PT_TCP : PT_HTTP;
     traits._onSessionLinked = std::bind(_onSessionLinked, L, std::placeholders::_1);
-    traits._onBlockDispatch = std::bind(_onMessage, L, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-    traits._onHTTPBlockDispatch = std::bind(_onWebMessage, L, std::placeholders::_1, std::placeholders::_2,
+    traits._onRawPacketProc = std::bind(_onMessage, L, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    traits._onWebRawPacketProc = std::bind(_onWebMessage, L, std::placeholders::_1, std::placeholders::_2,
                                             std::placeholders::_3, std::placeholders::_4, std::placeholders::_5);
     traits._onSessionClosed = std::bind(_onSessionClosed, L, std::placeholders::_1);
     traits._onSessionPulse = std::bind(_onSessionPulse, L, std::placeholders::_1);
@@ -369,8 +369,8 @@ static int addListen(lua_State *L)
     extend._sessionOptions._sessionPulseInterval = (unsigned int)luaL_optinteger(L, 5, extend._sessionOptions._sessionPulseInterval);
     extend._sessionOptions._protoType = (unsigned int)luaL_optinteger(L, 6, 0) == 0 ? PT_TCP : PT_HTTP;
     extend._sessionOptions._onSessionLinked = std::bind(_onSessionLinked, L, std::placeholders::_1);
-    extend._sessionOptions._onBlockDispatch = std::bind(_onMessage, L, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-    extend._sessionOptions._onHTTPBlockDispatch = std::bind(_onWebMessage, L, std::placeholders::_1, std::placeholders::_2,
+    extend._sessionOptions._onRawPacketProc = std::bind(_onMessage, L, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    extend._sessionOptions._onWebRawPacketProc = std::bind(_onWebMessage, L, std::placeholders::_1, std::placeholders::_2,
                                             std::placeholders::_3, std::placeholders::_4, std::placeholders::_5);
     extend._sessionOptions._onSessionClosed = std::bind(_onSessionClosed, L, std::placeholders::_1);
     extend._sessionOptions._onSessionPulse = std::bind(_onSessionPulse, L, std::placeholders::_1);
@@ -477,7 +477,7 @@ static int webGet(lua_State * L)
         }
     }
     wh.get(url);
-    SessionManager::getRef().sendSessionData(sID, wh.getStream(), wh.getStreamLen());
+    SessionManager::getRef().sendSessionData(sID, wh.GetStream(), wh.GetStreamLen());
     return 0;
 }
 static int webPost(lua_State * L)
@@ -502,7 +502,7 @@ static int webPost(lua_State * L)
     std::string body;
     body.assign(str, len);
     wh.post(uri, body);
-    SessionManager::getRef().sendSessionData(sID, wh.getStream(), wh.getStreamLen());
+    SessionManager::getRef().sendSessionData(sID, wh.GetStream(), wh.GetStreamLen());
     return 0;
 }
 
@@ -528,7 +528,7 @@ static int webResponse(lua_State * L)
     std::string body;
     body.assign(str, len);
     wh.response(code, body);
-    SessionManager::getRef().sendSessionData(sID, wh.getStream(), wh.getStreamLen());
+    SessionManager::getRef().sendSessionData(sID, wh.GetStream(), wh.GetStreamLen());
     return 0;
 }
 
@@ -539,8 +539,8 @@ static int sendContent(lua_State * L)
     size_t len = 0;
     const char * content = luaL_checklstring(L, 3, &len);
     WriteStream ws(pID);
-    ws.appendOriginalData(content, (zsummer::proto4z::Integer)len);
-    SessionManager::getRef().sendSessionData(sID, ws.getStream(), ws.getStreamLen());
+    ws.AppendRawData(content, (zsummer::proto4z::LenInteger)len);
+    SessionManager::getRef().sendSessionData(sID, ws.GetStream(), ws.GetStreamLen());
     return 0;
 }
 

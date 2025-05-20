@@ -116,7 +116,7 @@ int main(int argc, char* argv[])
 //            wh.addHead("DNT", "1");
 //            wh.addHead("Connection", "Keep-Alive");
             wh.post("/user/oauth", jsonString);
-            session->send(wh.getStream(), wh.getStreamLen());
+            session->send(wh.GetStream(), wh.GetStreamLen());
         };
 
         //callback when receive http data
@@ -137,7 +137,7 @@ int main(int argc, char* argv[])
 
         SessionID cID = SessionManager::getRef().addConnecter(g_remoteIP, g_remotePort);
         SessionManager::getRef().getConnecterOptions(cID)._protoType = PT_HTTP;
-        SessionManager::getRef().getConnecterOptions(cID)._onHTTPBlockDispatch = OnHTTPBlock;
+        SessionManager::getRef().getConnecterOptions(cID)._onWebRawPacketProc = OnHTTPBlock;
         SessionManager::getRef().getConnecterOptions(cID)._onSessionLinked = OnSessionLinked;
         SessionManager::getRef().openConnecter(cID);
 
@@ -162,7 +162,7 @@ int main(int argc, char* argv[])
             wh.addHead("DNT", "1");
             wh.addHead("Connection", "Keep-Alive");
             wh.response("200", "What's your name ?");
-            session->send(wh.getStream(), wh.getStreamLen());
+            session->send(wh.GetStream(), wh.GetStreamLen());
             SessionManager::getRef().createTimer(2000, std::bind(&SessionManager::kickSession, SessionManager::getPtr(), session->getSessionID()));
             //step 3. stop server.
         //    SessionManager::getRef().createTimer(1000,std::bind(&SessionManager::stop, SessionManager::getPtr()));
@@ -172,7 +172,7 @@ int main(int argc, char* argv[])
 
         AccepterID aID = SessionManager::getRef().addAccepter(g_remoteIP, g_remotePort);
         SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._protoType = PT_HTTP;
-        SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._onHTTPBlockDispatch = OnHTTPBlock;
+        SessionManager::getRef().getAccepterOptions(aID)._sessionOptions._onWebRawPacketProc = OnHTTPBlock;
         SessionManager::getRef().openAccepter(aID);
         //! step 2 running
         SessionManager::getRef().run();
@@ -185,7 +185,7 @@ int main(int argc, char* argv[])
             zsummer::proto4z::WriteHTTP wh;
             wh.addHead("Host", "www.cnblogs.com");
             wh.get("/test.php");
-            session->send(wh.getStream(), wh.getStreamLen());
+            session->send(wh.GetStream(), wh.GetStreamLen());
         };
 
         //callback when receive http data
@@ -205,7 +205,7 @@ int main(int argc, char* argv[])
 
         SessionID cID = SessionManager::getRef().addConnecter("104.238.150.38", 80);
         SessionManager::getRef().getConnecterOptions(cID)._protoType = PT_HTTP;
-        SessionManager::getRef().getConnecterOptions(cID)._onHTTPBlockDispatch = OnHTTPBlock;
+        SessionManager::getRef().getConnecterOptions(cID)._onWebRawPacketProc = OnHTTPBlock;
         SessionManager::getRef().getConnecterOptions(cID)._onSessionLinked = OnSessionLinked;
         SessionManager::getRef().openConnecter(cID);
 

@@ -91,7 +91,7 @@ void CClient::onConnected(zsummer::network::NetErrorCode ec)
     _process._nTotalOpen++;
     zsummer::proto4z::WriteStream ws(1);
     ws << g_text;
-    doSend(ws.getStream(), ws.getStreamLen());
+    doSend(ws.GetStream(), ws.GetStreamLen());
 }
 
 void CClient::doRecv()
@@ -116,15 +116,15 @@ unsigned int CClient::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
     unsigned int readed = 0;
     while (true)
     {
-        auto ret = zsummer::proto4z::checkBuffIntegrity(_recving._orgdata + readed, _recving._offset - readed, _MSG_BUF_LEN - readed, _MSG_BUF_LEN - readed);
-        if (ret.first == zsummer::proto4z::IRT_CORRUPTION)
+        auto ret = zsummer::proto4z::HasRawPacket(_recving._orgdata + readed, _recving._offset - readed, _MSG_BUF_LEN - readed, _MSG_BUF_LEN - readed);
+        if (ret.first == zsummer::proto4z::kIntegrityCorrupted)
         {
-            LOGE("killed socket: checkBuffIntegrity error readed =" << readed << ", len=" << _recving._offset << ", _MSG_BUF_LEN=" << _MSG_BUF_LEN << ", nRecvedLen=" << nRecvedLen);
+            LOGE("killed socket: HasRawPacket error readed =" << readed << ", len=" << _recving._offset << ", _MSG_BUF_LEN=" << _MSG_BUF_LEN << ", nRecvedLen=" << nRecvedLen);
             _sockptr->doClose();
             onClose();
             return 0;
         }
-        if (ret.first == zsummer::proto4z::IRT_SHORTAGE)
+        if (ret.first == zsummer::proto4z::kIntegrityShortage)
         {
             break;
         }
@@ -162,7 +162,7 @@ unsigned int CClient::onRecv(zsummer::network::NetErrorCode ec, int nRecvedLen)
 
 void CClient::MessageEntry(zsummer::proto4z::ReadStream & rs)
 {
-    doSend(rs.getStream(), rs.getStreamLen());
+    doSend(rs.GetStream(), rs.GetStreamLen());
 }
 
 

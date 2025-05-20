@@ -1,7 +1,8 @@
 Welcome to the zsummerX wiki!  
   
 ### introduction:  
-[![Build Status](https://travis-ci.org/zsummer/zsummerX.svg?branch=master)](https://travis-ci.org/zsummer/zsummerX)  
+
+[![Build](https://github.com/zsummer/zsummerX/actions/workflows/cmake_mr_ci.yml/badge.svg)](https://github.com/zsummer/zsummerX/actions/workflows/cmake_mr_ci.yml)
 zsummerX is an net library with cross-platform, high-performance and lightweight, it's depend by C++11 implementation.    
 the underlying interface meet the standards proactor, and the implementation used by EPOLL LT / IOCP / SELECT, it's can work in windows / linux / mac  and support TCP, UDP, HTTP.  
 the frame interface is advanced and esay, you can use the frame interface to quick development, it's provide OPTIONS module, don't need to worry problem with flexibility.  

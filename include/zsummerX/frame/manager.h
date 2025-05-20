@@ -49,27 +49,27 @@ namespace zsummer
         inline SessionBlock * DefaultCreateBlock();
         inline void DefaultFreeBlock(SessionBlock *sb);
 
-        inline OnBlockCheckResult DefaulBlockCheck(const char * begin, unsigned int len, unsigned int bound, unsigned int blockLimit)
+        inline RawPacketCheckResult DefaultRawPacketCheck(const char * begin, unsigned int len, unsigned int bound, unsigned int blockLimit)
         {
-            auto ret = zsummer::proto4z::checkBuffIntegrity(begin, len, bound, blockLimit);
+            auto ret = zsummer::proto4z::HasRawPacket(begin, len, bound, blockLimit);
             return std::make_pair((BLOCK_CHECK_TYPE)ret.first, (unsigned int)ret.second);
         }
-        inline void DefaultBlockDispatch(TcpSessionPtr session, const char * begin, unsigned int len)
+        inline void DefaultRawPacketProc(TcpSessionPtr session, const char * begin, unsigned int len)
         {
-            LCW("DefaultBlockDispatch empty. ");
+            LCW("DefaultRawPacketProc empty. ");
         }
 
-        inline OnBlockCheckResult DefaultHTTPBlockCheck(const char * begin, unsigned int len, unsigned int bound,
+        inline RawPacketCheckResult DefaultWebRawPacketCheck(const char * begin, unsigned int len, unsigned int bound,
                 bool & isChunked, std::string& method, std::string & line, std::map<std::string,std::string> & head, std::string & body)
         {
-            auto ret = zsummer::proto4z::checkHTTPBuffIntegrity(begin, len, bound, isChunked, method, line, head, body);
+            auto ret = zsummer::proto4z::HasWebRawPacket(begin, len, bound, isChunked, method, line, head, body);
             return std::make_pair((BLOCK_CHECK_TYPE)ret.first, ret.second);
         }
 
-        inline void DefaultHTTPBlockDispatch(TcpSessionPtr session, const std::string & mthoed, const std::string &methodLine, 
+        inline void DefaultWebRawPacketProc(TcpSessionPtr session, const std::string & mthoed, const std::string &methodLine, 
             const std::map<std::string, std::string> &head, const std::string & body)
         {
-            LCW("DefaultHTTPBlockDispatch empty.");
+            LCW("DefaultWebRawPacketProc empty.");
         }
 
 

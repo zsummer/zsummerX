@@ -168,10 +168,10 @@ namespace zsummer
 
         using FreeBlock = std::function<void(SessionBlock *)>;
         
-        using OnBlockCheckResult = std::pair<BLOCK_CHECK_TYPE, unsigned int>;
+        using RawPacketCheckResult = std::pair<BLOCK_CHECK_TYPE, unsigned int>;
 
         //check one block integrity 
-        using OnBlockCheck = std::function<OnBlockCheckResult(const char * /*begin*/, unsigned int /*len*/, unsigned int /*bound*/, unsigned int /*blockLimit*/)>;
+        using OnBlockCheck = std::function<RawPacketCheckResult(const char * /*begin*/, unsigned int /*len*/, unsigned int /*bound*/, unsigned int /*blockLimit*/)>;
 
         //!dispatch one integrity block 
         using OnBlockDispatch = std::function<void(const TcpSessionPtr &  /*session*/, const char * /*begin*/, unsigned int /*len*/)>;
@@ -181,7 +181,7 @@ namespace zsummer
 
  
         //!HTTP unpack, hadHeader used by 'chunked', commonLine can be GET, POST RESPONSE.  
-        using OnHTTPBlockCheck = std::function<OnBlockCheckResult(const char * /*begin*/, unsigned int /*len*/, unsigned int /*bound*/,
+        using OnHTTPBlockCheck = std::function<RawPacketCheckResult(const char * /*begin*/, unsigned int /*len*/, unsigned int /*bound*/,
             bool & /*isChunked*/, std::string& /*method*/, std::string &methodLine/*method line*/, std::map<std::string,std::string> & /*head*/, std::string & /*body*/)>;
         //!HTTP dispatch  
         using OnHTTPBlockDispatch = std::function<
@@ -203,10 +203,10 @@ namespace zsummer
             unsigned int    _reconnects = 0; // can reconnect count 
             bool            _reconnectClean = true;//clean unsend block . 
             unsigned int    _maxSendListCount = 600;
-            OnBlockCheck _onBlockCheck;
-            OnBlockDispatch _onBlockDispatch;
-            OnHTTPBlockCheck _onHTTPBlockCheck;
-            OnHTTPBlockDispatch _onHTTPBlockDispatch;
+            OnBlockCheck _onRawPacketCheck;
+            OnBlockDispatch _onRawPacketProc;
+            OnHTTPBlockCheck _onWebRawPacketCheck;
+            OnHTTPBlockDispatch _onWebRawPacketProc;
             OnSessionEvent _onReconnectEnd;
             OnSessionEvent _onSessionClosed;
             OnSessionEvent _onSessionLinked;

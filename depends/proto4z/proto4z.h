@@ -1,4 +1,4 @@
-﻿/*
+/*
  * proto4z License
  * -----------
  * 
@@ -66,6 +66,8 @@
 #include <sstream>
 #include <algorithm>
 #include <type_traits>
+#include <functional>
+
 #ifndef WIN32
 #include <stdexcept>
 #include <unistd.h>
@@ -98,6 +100,7 @@ _ZSUMMER_PROTO4Z_BEGIN
 
 
 
+
 inline std::string proto4z_traceback();
 
 #define PROTO4Z_THROW(log)\
@@ -118,19 +121,22 @@ do{\
 //|--packlen-|-reserve-protoID--|-------  body  --------|
 
 //header
-typedef unsigned int Integer;
-typedef unsigned short ReserveInteger;
-typedef unsigned short ProtoInteger;
+typedef unsigned int    LenInteger;
+typedef unsigned short  ReserveInteger;
+typedef unsigned short  ProtoInteger;
 //header end.
 
 
-const static Integer MaxPackLen = (Integer)(-1) > 1024 * 1024 ? 1024 * 1024 : (Integer)-1;
+const static LenInteger kMaxPacketLen = (LenInteger)(-1) > 1024 * 1024 ? 1024 * 1024 : (LenInteger)-1;
 
-//stream translate to Integer with endian type.
+//stream translate to LenInteger with endian type.
+
+
 template<class BaseType>
-typename std::enable_if<true, BaseType>::type streamToBaseType(const char stream[sizeof(BaseType)]);
+typename std::enable_if<true, BaseType>::type ReadPodData(const char stream[sizeof(BaseType)]);
+
 template<class T>
-void baseTypeToStream(char *stream, T v);
+void WritePodData(char *stream, T v);
 
 
 
@@ -139,56 +145,121 @@ void baseTypeToStream(char *stream, T v);
 //////////////////////////////////////////////////////////////////////////
 
 
-enum INTEGRITY_RET_TYPE
+enum IntegrityType
 {
-    IRT_SUCCESS = 0,
-    IRT_SHORTAGE = 1,
-    IRT_CORRUPTION = 2,
+    kIntegrityIntact = 0,
+    kIntegrityShortage = 1,
+    kIntegrityCorrupted = 2,
 };
 //! return value:
-//! first: IRT_SUCCESS data integrity. second: current integrity data lenght.
-//! first: IRT_SHORTAGE data not integrity. second: shortage lenght.
-//! first: IRT_CORRUPTION data corruption. second: data lenght
-//! buff 缓冲区内容起始位置
-//! curBuffLen 当前缓冲区内容大小
-//! boundLen 当前缓冲区的边界大小, 如果对boundLen有疑惑 请填写和maxBuffLen一样的值
-//! maxBuffLen 当前缓冲区实际最大大小
-inline std::pair<INTEGRITY_RET_TYPE, Integer>
-checkBuffIntegrity(const char * buff, Integer curBuffLen, Integer boundLen, Integer maxBuffLen);
+//! first: kIntegrityIntact data integrity. second: current integrity data lenght.
+//! first: kIntegrityShortage data not integrity. second: shortage lenght.
+//! first: kIntegrityCorrupted data corruption. second: data lenght
+//! buff 缓冲区内容起始位置 
+//! curBuffLen 当前缓冲区内容大小 
+//! boundLen 当前缓冲区的边界大小, 如果对boundLen有疑惑 请填写和maxBuffLen一样的值 
+//! maxBuffLen 当前缓冲区实际最大大小 
+inline std::pair<IntegrityType, LenInteger>
+HasRawPacket(const char * buff, LenInteger curBuffLen, LenInteger boundLen, LenInteger maxBuffLen);
 
-template<class T>
+template<int kBufCnt, int kBufSize>
 class TLSQueue
 {
 public:
-    TLSQueue()
+    TLSQueue(std::function<void* (unsigned long long)> alloc = nullptr, std::function<unsigned long long(void*)> dealloc = nullptr)
     {
+        if (alloc)
+        {
+            alloc_ = alloc;
+        }
+        else
+        {
+            alloc_ = [](unsigned long long size) {return malloc((size_t)size); };
+        }
+        if (dealloc)
+        {
+            dealloc_ = dealloc;
+        }
+        else
+        {
+            dealloc_ = [](void* addr) {free(addr); return 0; };
+        }
+        free_cnt_ = 0;
+        used_cnt_ = 0;
+        error_cnt_ = 0;
     }
+
+
     ~TLSQueue()
     {
-        while (!_que.empty())
+        if (used_cnt_ > 0)
         {
-            T * ptr = _que.back();
-            _que.pop_back();
-            delete ptr;
+            error_cnt_ += used_cnt_;
+        }
+
+        while (free_cnt_ > 0)
+        {
+            void* addr = tls_que_[free_cnt_ - 1];
+            free_cnt_--;
+            dealloc_(addr);
         }
     }
-    inline T * pop()
+
+    inline char * pop()
     {
-        if (!_que.empty())
+        char* ptr = nullptr;
+        if (used_cnt_ >= kBufCnt)
         {
-            T * ptr = _que.back();
-            _que.pop_back();
             return ptr;
         }
-        return new T();
+        
+        if (free_cnt_ > 0)
+        {
+            ptr = tls_que_[free_cnt_ - 1];
+            free_cnt_--;
+            used_cnt_++;
+            return ptr;
+        }
+        used_cnt_++;
+        ptr = (char*)alloc_(kBufSize);
+        return ptr;
     }
-    inline void push(T * ptr)
+
+    inline void push(char * ptr)
     {
-        _que.push_back(ptr);
+        if (ptr == nullptr)
+        {
+            return;
+        }
+        if (free_cnt_ >= kBufCnt)
+        {
+            error_cnt_++;
+            return;
+        }
+        if (used_cnt_ <= 0)
+        {
+            error_cnt_++;
+            return;
+        }
+        tls_que_[free_cnt_++] = ptr;
+        used_cnt_--;
     }
-protected:
+    int free_cnt()const { return free_cnt_; }
+    int used_cnt()const { return used_cnt_; }
+    int error_cnt()const { return error_cnt_; }
+
+    int has_buf()const { return used_cnt_ < kBufCnt; }
+
+   
 private:
-    std::vector<T*> _que;
+    std::function<void* (unsigned long long)> alloc_;
+    std::function<unsigned long long(void *)> dealloc_;
+
+    using BufType = char*;
+    BufType tls_que_[kBufCnt];
+    int free_cnt_;
+    int used_cnt_;
+    int error_cnt_;
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -196,123 +267,127 @@ private:
 //////////////////////////////////////////////////////////////////////////
 //StreamHeadTrait: User-Defined like DefaultStreamHeadTrait
 
-template<class T = std::string>
+template<int kBufCnt, int kBufSize, int kHasHeader>
 class WriteStreamImpl
 {
 private:
-    thread_local static TLSQueue<T> _tlsque;
+    thread_local static TLSQueue<kBufCnt, kBufSize> tlsque_;
 public:
     //! testStream : if true then WriteStreamImpl will not do any write operation.
     //! attach : the existing memory.
-    WriteStreamImpl(ProtoInteger pID);
+    WriteStreamImpl(ProtoInteger proto_id);
     ~WriteStreamImpl();
 public:
     //get total stream buff, the pointer must be used immediately.
-    inline char* getStream();
+    inline char* GetStream();
     //get total stream length.
-    inline Integer getStreamLen(){return _cursor;}
+    inline LenInteger GetStreamLen(){return cursor_;}
 
     //get body stream buff, the pointer used by reflecting immediately.
-    inline char* getStreamBody();
+    inline char* GetStreamBody();
     //get body stream length.
-    inline Integer getStreamBodyLen(){ return _cursor - _headLen; }
+    inline LenInteger GetStreamBodyLen(){ return cursor_ - head_len_; }
 
     
-    //write original data.
-    inline WriteStreamImpl & appendOriginalData(const void * data, Integer len);
     template<class U>
-    inline WriteStreamImpl & fixOriginalData(Integer offset, U unit);
-    inline WriteStreamImpl & fixOriginalData(Integer offset, const void * data, Integer len);
+    inline WriteStreamImpl& AppendRawData(U unit);
+    inline WriteStreamImpl& AppendRawData(const void* data, LenInteger len);
+    template<class U>
+    inline WriteStreamImpl & ResetRawData(LenInteger offset, U unit);
+    inline WriteStreamImpl & ResetRawData(LenInteger offset, const void * data, LenInteger len);
 
 
-    inline WriteStreamImpl & setReserve(ReserveInteger n);
+    inline WriteStreamImpl & SetReserve(ReserveInteger n);
 
     template<class U>
     inline typename std::enable_if<std::is_arithmetic<U>::value, WriteStreamImpl>::type & operator << (U data)
     {
-        checkMoveCursor(sizeof(U));
-        _attach->append((const char*)&data, sizeof(U));
-        _cursor += sizeof(U);
-        baseTypeToStream(&(*_attach)[0], _cursor);
+        CheckCursor(sizeof(U));
+        WritePodData(attach_ + cursor_, data);
+        cursor_ += sizeof(data);
+        if (kHasHeader)
+        {
+            WritePodData(attach_, cursor_);
+        }
         return *this;
     }
 
 
 protected:
     //! check move cursor is valid. if invalid then throw exception.
-    inline void checkMoveCursor(Integer unit = (Integer)0);
+    inline void CheckCursor(LenInteger unit = (LenInteger)0);
 
 
 private:
 
-    T * _attach; //! If not attach any memory, class WriteStreamImpl will used this to managing memory.
-    Integer _attachLen; //! can write max size
-    Integer _cursor; //! current move cursor.
-    ReserveInteger _reserve;
-    ProtoInteger _pID; //! proto ID
-    Integer _headLen;
+    char* attach_; //! If not attach any memory, class WriteStreamImpl will used this to managing memory.
+    LenInteger cursor_; //! current move cursor.
+    ReserveInteger reserve_;
+    ProtoInteger proto_id_; //! proto ID
+    LenInteger head_len_;
 };
-//http://zh.cppreference.com/w/cpp/language/storage_duration 
-template<class T>
-thread_local  TLSQueue<T> WriteStreamImpl<T>::_tlsque;
+
+//http://zh.cppreference.com/w/cpp/language/storage_duration  
+
+template<int kBufCnt, int kBufSize, int kHasHeader>
+thread_local  TLSQueue<kBufCnt, kBufSize> WriteStreamImpl<kBufCnt, kBufSize, kHasHeader>::tlsque_;
 
 //////////////////////////////////////////////////////////////////////////
-//class ReadStream: De-serialization the specified data from byte stream.
+//class ReadStreamImpl: De-serialization the specified data from byte stream.
 //////////////////////////////////////////////////////////////////////////
 
-
-class ReadStream
+template<int kHasHeader>
+class ReadStreamImpl
 {
 public:
-    inline ReadStream(const char *attach, Integer attachLen, bool isHaveHeader = true);
-    ~ReadStream(){}
+    inline ReadStreamImpl(const char *attach, LenInteger attach_len);
+    ~ReadStreamImpl(){}
 public:
     //reset cursor
-    inline void resetMoveCursor();
+    inline void ResetCursor();
     //get protocol id
-    inline ProtoInteger getProtoID(){ return _pID; }
+    inline ProtoInteger GetProtoID(){ return proto_id_; }
     //get reserve id
-    inline ReserveInteger getReserve(){ return _reserve; }
+    inline ReserveInteger GetReserve(){ return reserve_; }
     //get attach data buff
-    inline const char* getStream();
+    inline const char* GetStream();
     //get pack length in stream
-    inline Integer getStreamLen();
+    inline LenInteger GetStreamLen();
 
     //get body stream buff, the pointer used by reflecting immediately.
-    inline const char* getStreamBody();
+    inline const char* GetStreamBody();
     //get body stream length.
-    inline Integer getStreamBodyLen();
+    inline LenInteger GetStreamBodyLen();
 
     //get current unread stream buff, the pointer used by reflecting immediately.
-    inline const char* getStreamUnread();
+    inline const char* GetStreamUnread();
     //get current unread stream buff length
-    inline Integer getStreamUnreadLen();
+    inline LenInteger GetStreamUnreadLen();
 
 
-    inline const char * peekOriginalData(Integer unit);
-    inline void skipOriginalData(Integer unit);
+    inline const char * PeekRawData(LenInteger unit);
+    inline void SkipRawData(LenInteger unit);
 
     template <class T>
-    inline typename std::enable_if<std::is_arithmetic<T>::value, ReadStream>::type & 
+    inline typename std::enable_if<std::is_arithmetic<T>::value, ReadStreamImpl>::type & 
         operator >> (T & data)
     {
-        checkMoveCursor(sizeof(T));
-        memcpy(&data, &_attach[_cursor], sizeof(T));
-        _cursor += sizeof(T);
+        CheckCursor(sizeof(T));
+        memcpy(&data, &attach_[cursor_], sizeof(T));
+        cursor_ += sizeof(T);
         return *this;
     }
    
 protected:
-    inline void checkMoveCursor(Integer unit);
+    inline void CheckCursor(LenInteger unit);
 
 
 private:
-    const char * _attach;
-    Integer _attachLen;
-    Integer _cursor;
-    ReserveInteger _reserve;
-    ProtoInteger _pID; //! proto ID
-    bool _isHaveHeader;
+    const char * attach_;
+    LenInteger attach_len_;
+    LenInteger cursor_;
+    ReserveInteger reserve_;
+    ProtoInteger proto_id_; //! proto ID
 };
 
 
@@ -321,41 +396,41 @@ private:
 //////////////////////////////////////////////////////////////////////////
 
 //write c-style string
-template<class T>
-inline WriteStreamImpl<T> & operator << (WriteStreamImpl<T> & ws, const char *const data)
+template<int kBufCnt, int kBufSize, int kHasHeader>
+inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & operator << (WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & ws, const char *const data)
 {
-    Integer len = (Integer)strlen(data);
+    LenInteger len = (LenInteger)strlen(data);
     ws << len;
-    ws.appendOriginalData(data, len);
+    ws.AppendRawData(data, len);
     return ws;
 }
 
 //write std::string
-template<class T, class _Traits, class _Alloc>
-inline WriteStreamImpl<T> & operator << (WriteStreamImpl<T> & ws, const std::basic_string<char, _Traits, _Alloc> & data)
+template<int kBufCnt, int kBufSize, int kHasHeader, class _Traits, class _Alloc>
+inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & operator << (WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & ws, const std::basic_string<char, _Traits, _Alloc> & data)
 {
-    Integer len = (Integer)data.length();
+    LenInteger len = (LenInteger)data.length();
     ws << len;
-    ws.appendOriginalData(data.c_str(), len);
+    ws.AppendRawData(data.c_str(), len);
     return ws;
 }
 //read std::string
-template<class _Traits, class _Alloc>
-inline ReadStream & operator >> (ReadStream & rs, std::basic_string<char, _Traits, _Alloc> & data)
+template<int kHasHeader, class _Traits, class _Alloc>
+inline ReadStreamImpl<kHasHeader> & operator >> (ReadStreamImpl<kHasHeader> & rs, std::basic_string<char, _Traits, _Alloc> & data)
 {
-    Integer len = 0;
+    LenInteger len = 0;
     rs >> len;
-    data.assign(rs.peekOriginalData(len), len);
-    rs.skipOriginalData(len);
+    data.assign(rs.PeekRawData(len), len);
+    rs.SkipRawData(len);
     return rs;
 }
 
 
 //std::vector
-template<class T, class U, class _Alloc>
-inline WriteStreamImpl<T> & operator << (WriteStreamImpl<T> & ws, const std::vector<U, _Alloc> & vct)
+template<int kBufCnt, int kBufSize, int kHasHeader, class U, class _Alloc>
+inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & operator << (WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & ws, const std::vector<U, _Alloc> & vct)
 {
-    ws << (Integer)vct.size();
+    ws << (LenInteger)vct.size();
     for (typename std::vector<U, _Alloc>::const_iterator iter = vct.begin(); iter != vct.end(); ++iter)
     {
         ws << *iter;
@@ -363,17 +438,17 @@ inline WriteStreamImpl<T> & operator << (WriteStreamImpl<T> & ws, const std::vec
     return ws;
 }
 
-template<typename T, class _Alloc>
-inline ReadStream & operator >> (ReadStream & rs, std::vector<T, _Alloc> & vct)
+template<int kHasHeader, typename T, class _Alloc>
+inline ReadStreamImpl<kHasHeader> & operator >> (ReadStreamImpl<kHasHeader> & rs, std::vector<T, _Alloc> & vct)
 {
-    Integer totalCount = 0;
+    LenInteger totalCount = 0;
     rs >> totalCount;
     if (totalCount > 0)
     {
         T t;
         vct.clear();
         vct.reserve(totalCount > 100 ? 100 : totalCount);
-        for (Integer i = 0; i < totalCount; ++i)
+        for (LenInteger i = 0; i < totalCount; ++i)
         {
             rs >> t;
             vct.push_back(t);
@@ -383,10 +458,10 @@ inline ReadStream & operator >> (ReadStream & rs, std::vector<T, _Alloc> & vct)
 }
 
 //std::set
-template<class T, class Key, class _Pr, class _Alloc>
-inline WriteStreamImpl<T> & operator << (WriteStreamImpl<T> & ws, const std::set<Key, _Pr, _Alloc> & k)
+template<int kBufCnt, int kBufSize, int kHasHeader, class Key, class _Pr, class _Alloc>
+inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & operator << (WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & ws, const std::set<Key, _Pr, _Alloc> & k)
 {
-    ws << (Integer)k.size();
+    ws << (LenInteger)k.size();
     for (typename std::set<Key, _Pr, _Alloc>::const_iterator iter = k.begin(); iter != k.end(); ++iter)
     {
         ws << *iter;
@@ -394,14 +469,14 @@ inline WriteStreamImpl<T> & operator << (WriteStreamImpl<T> & ws, const std::set
     return ws;
 }
 
-template<class Key, class _Pr, class _Alloc>
-inline ReadStream & operator >> (ReadStream & rs, std::set<Key, _Pr, _Alloc> & k)
+template<int kHasHeader, class Key, class _Pr, class _Alloc>
+inline ReadStreamImpl<kHasHeader> & operator >> (ReadStreamImpl<kHasHeader> & rs, std::set<Key, _Pr, _Alloc> & k)
 {
-    Integer totalCount = 0;
+    LenInteger totalCount = 0;
     rs >> totalCount;
     Key t;
     k.clear();
-    for (Integer i = 0; i < totalCount; ++i)
+    for (LenInteger i = 0; i < totalCount; ++i)
     {
         rs >> t;
         k.insert(t);
@@ -410,10 +485,10 @@ inline ReadStream & operator >> (ReadStream & rs, std::set<Key, _Pr, _Alloc> & k
 }
 
 //std::multiset
-template<class T, class Key, class _Pr, class _Alloc>
-inline WriteStreamImpl<T> & operator << (WriteStreamImpl<T> & ws, const std::multiset<Key, _Pr, _Alloc> & k)
+template<int kBufCnt, int kBufSize, int kHasHeader, class Key, class _Pr, class _Alloc>
+inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & operator << (WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & ws, const std::multiset<Key, _Pr, _Alloc> & k)
 {
-    ws << (Integer)k.size();
+    ws << (LenInteger)k.size();
     for (typename std::multiset<Key, _Pr, _Alloc>::const_iterator iter = k.begin(); iter != k.end(); ++iter)
     {
         ws << *iter;
@@ -421,14 +496,14 @@ inline WriteStreamImpl<T> & operator << (WriteStreamImpl<T> & ws, const std::mul
     return ws;
 }
 
-template<class Key, class _Pr, class _Alloc>
-inline ReadStream & operator >> (ReadStream & rs, std::multiset<Key, _Pr, _Alloc> & k)
+template<int kHasHeader, class Key, class _Pr, class _Alloc>
+inline ReadStreamImpl<kHasHeader> & operator >> (ReadStreamImpl<kHasHeader> & rs, std::multiset<Key, _Pr, _Alloc> & k)
 {
-    Integer totalCount = 0;
+    LenInteger totalCount = 0;
     rs >> totalCount;
     Key t;
     k.clear();
-    for (Integer i = 0; i < totalCount; ++i)
+    for (LenInteger i = 0; i < totalCount; ++i)
     {
         rs >> t;
         k.insert(t);
@@ -437,10 +512,10 @@ inline ReadStream & operator >> (ReadStream & rs, std::multiset<Key, _Pr, _Alloc
 }
 
 //std::map
-template<class T, class Key, class Value, class _Pr, class _Alloc>
-inline WriteStreamImpl<T> & operator << (WriteStreamImpl<T> & ws, const std::map<Key, Value, _Pr, _Alloc> & kv)
+template<int kBufCnt, int kBufSize, int kHasHeader, class Key, class Value, class _Pr, class _Alloc>
+inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & operator << (WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & ws, const std::map<Key, Value, _Pr, _Alloc> & kv)
 {
-    ws << (Integer)kv.size();
+    ws << (LenInteger)kv.size();
     for (typename std::map<Key, Value, _Pr, _Alloc>::const_iterator iter = kv.begin(); iter != kv.end(); ++iter)
     {
         ws << iter->first;
@@ -449,14 +524,14 @@ inline WriteStreamImpl<T> & operator << (WriteStreamImpl<T> & ws, const std::map
     return ws;
 }
 
-template<class Key, class Value, class _Pr, class _Alloc>
-inline ReadStream & operator >> (ReadStream & rs, std::map<Key, Value, _Pr, _Alloc> & kv)
+template<int kHasHeader, class Key, class Value, class _Pr, class _Alloc>
+inline ReadStreamImpl<kHasHeader> & operator >> (ReadStreamImpl<kHasHeader> & rs, std::map<Key, Value, _Pr, _Alloc> & kv)
 {
-    Integer totalCount = 0;
+    LenInteger totalCount = 0;
     rs >> totalCount;
     std::pair<Key, Value> pr;
     kv.clear();
-    for (Integer i = 0; i < totalCount; ++i)
+    for (LenInteger i = 0; i < totalCount; ++i)
     {
         rs >> pr.first;
         rs >> pr.second;
@@ -466,10 +541,10 @@ inline ReadStream & operator >> (ReadStream & rs, std::map<Key, Value, _Pr, _All
 }
 
 //std::multimap
-template<class T, class Key, class Value, class _Pr, class _Alloc>
-inline WriteStreamImpl<T> & operator << (WriteStreamImpl<T> & ws, const std::multimap<Key, Value, _Pr, _Alloc> & kv)
+template<int kBufCnt, int kBufSize, int kHasHeader, class Key, class Value, class _Pr, class _Alloc>
+inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & operator << (WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & ws, const std::multimap<Key, Value, _Pr, _Alloc> & kv)
 {
-    ws << (Integer)kv.size();
+    ws << (LenInteger)kv.size();
     for (typename std::multimap<Key, Value, _Pr, _Alloc>::const_iterator iter = kv.begin(); iter != kv.end(); ++iter)
     {
         ws << iter->first;
@@ -478,14 +553,14 @@ inline WriteStreamImpl<T> & operator << (WriteStreamImpl<T> & ws, const std::mul
     return ws;
 }
 
-template<class Key, class Value, class _Pr, class _Alloc>
-inline ReadStream & operator >> (ReadStream & rs, std::multimap<Key, Value, _Pr, _Alloc> & kv)
+template<int kHasHeader, class Key, class Value, class _Pr, class _Alloc>
+inline ReadStreamImpl<kHasHeader> & operator >> (ReadStreamImpl<kHasHeader> & rs, std::multimap<Key, Value, _Pr, _Alloc> & kv)
 {
-    Integer totalCount = 0;
+    LenInteger totalCount = 0;
     rs >> totalCount;
     std::pair<Key, Value> pr;
     kv.clear();
-    for (Integer i = 0; i < totalCount; ++i)
+    for (LenInteger i = 0; i < totalCount; ++i)
     {
         rs >> pr.first;
         rs >> pr.second;
@@ -496,10 +571,10 @@ inline ReadStream & operator >> (ReadStream & rs, std::multimap<Key, Value, _Pr,
 
 
 //std::list
-template<class T, class Value, class _Alloc>
-inline WriteStreamImpl<T> & operator << (WriteStreamImpl<T> & ws, const std::list<Value, _Alloc> & l)
+template<int kBufCnt, int kBufSize, int kHasHeader, class Value, class _Alloc>
+inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & operator << (WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & ws, const std::list<Value, _Alloc> & l)
 {
-    ws << (Integer)l.size();
+    ws << (LenInteger)l.size();
     for (typename std::list<Value,_Alloc>::const_iterator iter = l.begin(); iter != l.end(); ++iter)
     {
         ws << *iter;
@@ -507,14 +582,14 @@ inline WriteStreamImpl<T> & operator << (WriteStreamImpl<T> & ws, const std::lis
     return ws;
 }
 
-template<class Value, class _Alloc>
-inline ReadStream & operator >> (ReadStream & rs, std::list<Value, _Alloc> & l)
+template<int kHasHeader, class Value, class _Alloc>
+inline ReadStreamImpl<kHasHeader> & operator >> (ReadStreamImpl<kHasHeader> & rs, std::list<Value, _Alloc> & l)
 {
-    Integer totalCount = 0;
+    LenInteger totalCount = 0;
     rs >> totalCount;
     Value t;
     l.clear();
-    for (Integer i = 0; i < totalCount; ++i)
+    for (LenInteger i = 0; i < totalCount; ++i)
     {
         rs >> t;
         l.push_back(t);
@@ -522,10 +597,10 @@ inline ReadStream & operator >> (ReadStream & rs, std::list<Value, _Alloc> & l)
     return rs;
 }
 //std::deque
-template<class T, class Value, class _Alloc>
-inline WriteStreamImpl<T> & operator << (WriteStreamImpl<T> & ws, const std::deque<Value, _Alloc> & l)
+template<int kBufCnt, int kBufSize, int kHasHeader, class Value, class _Alloc>
+inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & operator << (WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & ws, const std::deque<Value, _Alloc> & l)
 {
-    ws << (Integer)l.size();
+    ws << (LenInteger)l.size();
     for (typename std::deque<Value,_Alloc>::const_iterator iter = l.begin(); iter != l.end(); ++iter)
     {
         ws << *iter;
@@ -533,14 +608,14 @@ inline WriteStreamImpl<T> & operator << (WriteStreamImpl<T> & ws, const std::deq
     return ws;
 }
 
-template<class Value, class _Alloc>
-inline ReadStream & operator >> (ReadStream & rs, std::deque<Value, _Alloc> & l)
+template<int kHasHeader, class Value, class _Alloc>
+inline ReadStreamImpl<kHasHeader> & operator >> (ReadStreamImpl<kHasHeader> & rs, std::deque<Value, _Alloc> & l)
 {
-    Integer totalCount = 0;
+    LenInteger totalCount = 0;
     rs >> totalCount;
     Value t;
     l.clear();
-    for (Integer i = 0; i < totalCount; ++i)
+    for (LenInteger i = 0; i < totalCount; ++i)
     {
         rs >> t;
         l.push_back(t);
@@ -558,7 +633,7 @@ inline ReadStream & operator >> (ReadStream & rs, std::deque<Value, _Alloc> & l)
 
 
 template<class BaseType>
-typename std::enable_if<true, BaseType>::type streamToBaseType(const char stream[sizeof(BaseType)])
+typename std::enable_if<true, BaseType>::type ReadPodData(const char stream[sizeof(BaseType)])
 {
     BaseType v = 0;
     memcpy(&v, stream, sizeof(BaseType));
@@ -566,7 +641,7 @@ typename std::enable_if<true, BaseType>::type streamToBaseType(const char stream
 }
 
 template<class T>
-void baseTypeToStream(char *stream, T v)
+void WritePodData(char *stream, T v)
 {
     memcpy(stream, &v, sizeof(T));
 }
@@ -578,50 +653,50 @@ void baseTypeToStream(char *stream, T v)
 
 
 
-inline std::pair<INTEGRITY_RET_TYPE, Integer> checkBuffIntegrity(const char * buff, Integer curBuffLen, Integer boundLen, Integer maxBuffLen)
+inline std::pair<IntegrityType, LenInteger> HasRawPacket(const char * buff, LenInteger curBuffLen, LenInteger boundLen, LenInteger maxBuffLen)
 {
     if (boundLen < curBuffLen || maxBuffLen < boundLen)
     {
-        return std::make_pair(IRT_CORRUPTION, curBuffLen);
+        return std::make_pair(kIntegrityCorrupted, curBuffLen);
     }
 
-    unsigned short headLen = (unsigned short)sizeof(Integer) + (unsigned short)sizeof(ProtoInteger);
+    unsigned short headLen = (unsigned short)sizeof(LenInteger) + (unsigned short)sizeof(ProtoInteger);
     if (curBuffLen < headLen)
     {
-        return std::make_pair(IRT_SHORTAGE, headLen - curBuffLen);
+        return std::make_pair(kIntegrityShortage, headLen - curBuffLen);
     }
 
-    Integer packLen = streamToBaseType<Integer>(buff);
+    LenInteger packLen = ReadPodData<LenInteger>(buff);
     if (packLen < headLen)
     {
-        return std::make_pair(IRT_CORRUPTION, curBuffLen);
+        return std::make_pair(kIntegrityCorrupted, curBuffLen);
     }
     if (packLen > boundLen)
     {
         if (packLen > maxBuffLen)
         {
-            return std::make_pair(IRT_CORRUPTION, curBuffLen);
+            return std::make_pair(kIntegrityCorrupted, curBuffLen);
         }
         else
         {
-            return std::make_pair(IRT_SHORTAGE, packLen - curBuffLen);
+            return std::make_pair(kIntegrityShortage, packLen - curBuffLen);
         }
     }
     
     //! check
     if (packLen > maxBuffLen)
     {
-        return std::make_pair(IRT_CORRUPTION, curBuffLen);
+        return std::make_pair(kIntegrityCorrupted, curBuffLen);
     }
     if (packLen == curBuffLen)
     {
-        return std::make_pair(IRT_SUCCESS, packLen);
+        return std::make_pair(kIntegrityIntact, packLen);
     }
     if (packLen < curBuffLen)
     {
-        return std::make_pair(IRT_SUCCESS, packLen);
+        return std::make_pair(kIntegrityIntact, packLen);
     }
-    return std::make_pair(IRT_SHORTAGE, packLen - curBuffLen);
+    return std::make_pair(kIntegrityShortage, packLen - curBuffLen);
 }
 
 
@@ -630,100 +705,128 @@ inline std::pair<INTEGRITY_RET_TYPE, Integer> checkBuffIntegrity(const char * bu
 //! implement 
 //////////////////////////////////////////////////////////////////////////
 
-template<class T>
-WriteStreamImpl<T>::WriteStreamImpl(ProtoInteger pID)
+template<int kBufCnt, int kBufSize, int kHasHeader>
+WriteStreamImpl<kBufCnt, kBufSize, kHasHeader>::WriteStreamImpl(ProtoInteger proto_id)
 {
-    _reserve = 0;
-    _pID = pID;
-    _headLen = sizeof(Integer)+ sizeof(ReserveInteger) + sizeof(ProtoInteger);
-    _cursor = _headLen;
-    _attach = _tlsque.pop();
-    _attach->reserve(1200);
-    _attach->resize(_cursor, '\0');
-    _attachLen = MaxPackLen;
+    attach_ = nullptr;
+    cursor_ = 0;
+    reserve_ = 0;
+    proto_id_ = proto_id;
+    head_len_ = 0;
+    attach_ = tlsque_.pop();
+    if (attach_ == nullptr)
+    {
+        PROTO4Z_THROW("tlsque_ no buff to attach . kBufSize=" << kBufSize );
+    }
 
-    baseTypeToStream(&(*_attach)[0], _headLen);
-    baseTypeToStream(&(*_attach)[0] + sizeof(Integer), _reserve);
-    baseTypeToStream(&(*_attach)[0] + sizeof(Integer) + sizeof(ReserveInteger), pID);
-
+    if (kHasHeader)
+    {
+        LenInteger headLen = sizeof(LenInteger) + sizeof(ReserveInteger) + sizeof(ProtoInteger);
+        head_len_ = headLen;
+        cursor_ = head_len_;
+        WritePodData(attach_, head_len_);
+        WritePodData(attach_ + sizeof(LenInteger), reserve_);
+        WritePodData(attach_ + sizeof(LenInteger) + sizeof(ReserveInteger), proto_id);
+    }
 }
 
-template<class T>
-WriteStreamImpl<T>::~WriteStreamImpl()
+template<int kBufCnt, int kBufSize, int kHasHeader>
+WriteStreamImpl<kBufCnt, kBufSize, kHasHeader>::~WriteStreamImpl()
 {
-    _tlsque.push(_attach);
-}
-
-
-template<class T>
-inline void WriteStreamImpl<T>::checkMoveCursor(Integer unit)
-{
-    if (_cursor > _attachLen)
+    if (attach_ != nullptr)
     {
-        PROTO4Z_THROW("bound over. cursor in end-of-data. _attachLen=" << _attachLen << ", _cursor=" << _cursor);
-    }
-    if (unit > _attachLen)
-    {
-        PROTO4Z_THROW("bound over. new unit be discarded. _attachLen=" << _attachLen << ", _cursor=" << _cursor << ", unit=" << unit);
-    }
-    if (_attachLen - _cursor < unit)
-    {
-        PROTO4Z_THROW("bound over. new unit be discarded. _attachLen=" << _attachLen << ", _cursor=" << _cursor << ", unit=" << unit);
+        tlsque_.push(attach_);
+        attach_ = nullptr;
     }
 }
 
 
-template<class T>
-inline char* WriteStreamImpl<T>::getStream()
+template<int kBufCnt, int kBufSize, int kHasHeader>
+inline void WriteStreamImpl<kBufCnt, kBufSize, kHasHeader>::CheckCursor(LenInteger unit)
 {
-    return &(*_attach)[0];
+    if (cursor_ > kBufSize)
+    {
+        PROTO4Z_THROW("bound over. cursor in end-of-data. kBufSize=" << kBufSize << ", cursor_=" << cursor_);
+    }
+    if (unit > kBufSize)
+    {
+        PROTO4Z_THROW("bound over. new unit be discarded. kBufSize=" << kBufSize << ", cursor_=" << cursor_ << ", unit=" << unit);
+    }
+    if (kBufSize - cursor_ < unit)
+    {
+        PROTO4Z_THROW("bound over. new unit be discarded. kBufSize=" << kBufSize << ", cursor_=" << cursor_ << ", unit=" << unit);
+    }
 }
 
-template<class T>
-inline char* WriteStreamImpl<T>::getStreamBody()
+
+template<int kBufCnt, int kBufSize, int kHasHeader>
+inline char* WriteStreamImpl<kBufCnt, kBufSize, kHasHeader>::GetStream()
 {
-    return &(*_attach)[0] + _headLen;
+    return attach_;
 }
 
-template<class T>
-inline WriteStreamImpl<T> & WriteStreamImpl<T>::appendOriginalData(const void * data, Integer len)
+template<int kBufCnt, int kBufSize, int kHasHeader>
+inline char* WriteStreamImpl<kBufCnt, kBufSize, kHasHeader>::GetStreamBody()
 {
-    checkMoveCursor(len);
-    T & attach = *_attach;
-    attach.append((const char*)data, len);
-    _cursor += len;
-    baseTypeToStream(&attach[0], _cursor);
-    return *this;
+    return attach_ + head_len_;
 }
 
-template<class T>
+template<int kBufCnt, int kBufSize, int kHasHeader>
 template<class U>
-inline WriteStreamImpl<T> & WriteStreamImpl<T>::fixOriginalData(Integer offset, U unit)
+inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader>& WriteStreamImpl<kBufCnt, kBufSize, kHasHeader>::AppendRawData(U unit)
 {
-    if (offset + sizeof(unit) > _cursor)
+    CheckCursor(sizeof(unit));
+    WritePodData(attach_ + cursor_, unit);
+    cursor_ += sizeof(unit);
+
+    if (kHasHeader)
     {
-        PROTO4Z_THROW("fixOriginalData over stream. _attachLen=" << _attachLen << ", _cursor=" << _cursor << ", unit=" << unit << ", offset=" << offset);
+        WritePodData(attach_, cursor_);
     }
-    baseTypeToStream(&(*_attach)[offset], unit);
     return *this;
 }
 
-template<class T>
-inline WriteStreamImpl<T> & WriteStreamImpl<T>::fixOriginalData(Integer offset, const void * data, Integer len)
+template<int kBufCnt, int kBufSize, int kHasHeader>
+inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & WriteStreamImpl<kBufCnt, kBufSize, kHasHeader>::AppendRawData(const void * data, LenInteger len)
 {
-    if (offset + len > _cursor)
+    CheckCursor(len);
+    memcpy(attach_ + cursor_, data, len);
+    cursor_ += len;
+    if (kHasHeader)
     {
-        PROTO4Z_THROW("fixOriginalData over stream. _attachLen=" << _attachLen << ", _cursor=" << _cursor << ", data len=" << len << ", offset=" << offset);
+        WritePodData(attach_, cursor_);
     }
-    memcpy(&(*_attach)[offset], data, len);
     return *this;
 }
 
-template<class T>
-inline WriteStreamImpl<T> & WriteStreamImpl<T>::setReserve(ReserveInteger n)
+template<int kBufCnt, int kBufSize, int kHasHeader>
+template<class U>
+inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & WriteStreamImpl<kBufCnt, kBufSize, kHasHeader>::ResetRawData(LenInteger offset, U unit)
 {
-    baseTypeToStream(&(*_attach)[sizeof(Integer)], n);
+    if (offset + sizeof(unit) > cursor_)
+    {
+        PROTO4Z_THROW("ResetRawData over stream.  cursor_=" << cursor_ << ", unit=" << unit << ", offset=" << offset);
+    }
+
+    WritePodData(attach_ + offset, unit);
     return *this;
+}
+
+template<int kBufCnt, int kBufSize, int kHasHeader>
+inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & WriteStreamImpl<kBufCnt, kBufSize, kHasHeader>::ResetRawData(LenInteger offset, const void * data, LenInteger len)
+{
+    if (offset + len > cursor_)
+    {
+        PROTO4Z_THROW("ResetRawData over stream.  cursor_=" << cursor_ << ", data len=" << len << ", offset=" << offset);
+    }
+    memcpy(attach_ + offset, data, len);
+    return *this;
+}
+
+template<int kBufCnt, int kBufSize, int kHasHeader>
+inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & WriteStreamImpl<kBufCnt, kBufSize, kHasHeader>::SetReserve(ReserveInteger n)
+{
+    return ResetRawData(sizeof(LenInteger), n);
 }
 
 
@@ -736,127 +839,124 @@ inline WriteStreamImpl<T> & WriteStreamImpl<T>::setReserve(ReserveInteger n)
 //////////////////////////////////////////////////////////////////////////
 //! implement 
 //////////////////////////////////////////////////////////////////////////
-
-inline ReadStream::ReadStream(const char *attach, Integer attachLen, bool isHaveHeader)
+template<int kHasHeader>
+inline ReadStreamImpl<kHasHeader>::ReadStreamImpl(const char *attach, LenInteger attach_len)
 {
-    _attach = attach;
-    _attachLen = attachLen;
-    _isHaveHeader = isHaveHeader;
-    if (_attachLen > MaxPackLen)
-    {
-        _attachLen = MaxPackLen;
-    }
+    attach_ = attach;
+    attach_len_ = attach_len;
+    reserve_ = 0;
+    cursor_ = 0;
+    proto_id_ = 0;
 
-
-    if (_isHaveHeader)
+    if (kHasHeader)
     {
-        if (_attachLen < sizeof(Integer) + sizeof(ReserveInteger) + sizeof(ProtoInteger))
+        if (attach_len_ > kMaxPacketLen)
         {
-            PROTO4Z_THROW("ReadStream attach buff less then head len. _attachLen=" << _attachLen << ", _cursor=" << _cursor << ", _isHaveHeader=" << _isHaveHeader );
+            attach_len_ = kMaxPacketLen;
         }
 
-        _cursor = sizeof(Integer) + sizeof(ReserveInteger) + sizeof(ProtoInteger);
-        Integer len = streamToBaseType<Integer>(&_attach[0]);
-        _reserve = streamToBaseType<ReserveInteger>(&_attach[sizeof(Integer)]);
-        _pID = streamToBaseType<ProtoInteger>(&_attach[sizeof(Integer) + sizeof(ReserveInteger)]);
-        if (len < _attachLen) // if stream invalid, ReadStream try read data as much as possible.
+        if (attach_len_ < sizeof(LenInteger) + sizeof(ReserveInteger) + sizeof(ProtoInteger))
         {
-            _attachLen = len;
+            PROTO4Z_THROW("ReadStreamImpl attach buff less then head len. attach_len_=" << attach_len_ << ", cursor_=" << cursor_ << ", kHasHeader=" << kHasHeader);
+        }
+
+        cursor_ = sizeof(LenInteger) + sizeof(ReserveInteger) + sizeof(ProtoInteger);
+        LenInteger len = ReadPodData<LenInteger>(attach_);
+        reserve_ = ReadPodData<ReserveInteger>(attach_ + sizeof(LenInteger));
+        proto_id_ = ReadPodData<ProtoInteger>(attach_ + sizeof(LenInteger) + sizeof(ReserveInteger));
+        if (len < attach_len_) // if stream invalid, ReadStreamImpl try read data as much as possible.
+        {
+            attach_len_ = len;
         }
     }
-    else
+
+}
+
+template<int kHasHeader>
+inline void ReadStreamImpl<kHasHeader>::ResetCursor()
+{
+    cursor_ = 0;
+    if (kHasHeader)
     {
-        _cursor = 0;
-        _pID = 0;
+        cursor_ = sizeof(LenInteger) + sizeof(ReserveInteger) + sizeof(ProtoInteger);
     }
 }
 
-inline void ReadStream::resetMoveCursor()
+template<int kHasHeader>
+inline void ReadStreamImpl<kHasHeader>::CheckCursor(LenInteger unit)
 {
-    if (_isHaveHeader)
+    if (cursor_ > attach_len_)
     {
-        _cursor = sizeof(Integer) + sizeof(ReserveInteger) + sizeof(ProtoInteger);
+        PROTO4Z_THROW("bound over. cursor in end-of-data. attach_len_=" << attach_len_ << ", cursor_=" << cursor_ << ", kHasHeader=" << kHasHeader);
     }
-    else
+    if (unit > attach_len_)
     {
-        _cursor = 0;
+        PROTO4Z_THROW("bound over. new unit be discarded. attach_len_=" << attach_len_ << ", cursor_=" << cursor_ << ", kHasHeader=" << kHasHeader);
     }
-}
-
-
-inline void ReadStream::checkMoveCursor(Integer unit)
-{
-    if (_cursor > _attachLen)
+    if (attach_len_ - cursor_ < unit)
     {
-        PROTO4Z_THROW("bound over. cursor in end-of-data. _attachLen=" << _attachLen << ", _cursor=" << _cursor << ", _isHaveHeader=" << _isHaveHeader);
-    }
-    if (unit > _attachLen)
-    {
-        PROTO4Z_THROW("bound over. new unit be discarded. _attachLen=" << _attachLen << ", _cursor=" << _cursor << ", _isHaveHeader=" << _isHaveHeader);
-    }
-    if (_attachLen - _cursor < unit)
-    {
-        PROTO4Z_THROW("bound over. new unit be discarded. _attachLen=" << _attachLen << ", _cursor=" << _cursor << ", _isHaveHeader=" << _isHaveHeader);
+        PROTO4Z_THROW("bound over. new unit be discarded. attach_len_=" << attach_len_ << ", cursor_=" << cursor_ << ", kHasHeader=" << kHasHeader);
     }
 }
 
 
-
-inline const char* ReadStream::getStream()
+template<int kHasHeader>
+inline const char* ReadStreamImpl<kHasHeader>::GetStream()
 {
-    return _attach;
+    return attach_;
 }
 
-
-inline Integer ReadStream::getStreamLen()
+template<int kHasHeader>
+inline LenInteger ReadStreamImpl<kHasHeader>::GetStreamLen()
 {
-    return _attachLen;
+    return attach_len_;
 }
 
-
-inline const char* ReadStream::getStreamBody()
+template<int kHasHeader>
+inline const char* ReadStreamImpl<kHasHeader>::GetStreamBody()
 {
-    if (_isHaveHeader)
+    if (kHasHeader)
     {
-        return _attach + sizeof(Integer) + sizeof(ReserveInteger) + sizeof(ProtoInteger);
+        return attach_ + sizeof(LenInteger) + sizeof(ReserveInteger) + sizeof(ProtoInteger);
     }
-    return _attach;
+    return attach_;
 }
 
-
-inline Integer ReadStream::getStreamBodyLen()
+template<int kHasHeader>
+inline LenInteger ReadStreamImpl<kHasHeader>::GetStreamBodyLen()
 {
-    if (_isHaveHeader)
+    if (kHasHeader)
     {
-        return getStreamLen() - sizeof(Integer) - sizeof(ReserveInteger) - sizeof(ProtoInteger);
+        return GetStreamLen() - sizeof(LenInteger) - sizeof(ReserveInteger) - sizeof(ProtoInteger);
     }
-    return getStreamLen();
+    return GetStreamLen();
+}
+
+template<int kHasHeader>
+inline const char* ReadStreamImpl<kHasHeader>::GetStreamUnread()
+{
+    return &attach_[cursor_];
+}
+
+template<int kHasHeader>
+inline LenInteger ReadStreamImpl<kHasHeader>::GetStreamUnreadLen()
+{
+    return GetStreamLen()  - cursor_;
 }
 
 
-inline const char* ReadStream::getStreamUnread()
+template<int kHasHeader>
+inline const char * ReadStreamImpl<kHasHeader>::PeekRawData(LenInteger unit)
 {
-    return &_attach[_cursor];
+    CheckCursor(unit);
+    return &attach_[cursor_];
 }
 
-
-inline Integer ReadStream::getStreamUnreadLen()
+template<int kHasHeader>
+inline void ReadStreamImpl<kHasHeader>::SkipRawData(LenInteger unit)
 {
-    return getStreamLen()  - _cursor;
-}
-
-
-
-inline const char * ReadStream::peekOriginalData(Integer unit)
-{
-    checkMoveCursor(unit);
-    return &_attach[_cursor];
-}
-
-inline void ReadStream::skipOriginalData(Integer unit)
-{
-    checkMoveCursor(unit);
-    _cursor += unit;
+    CheckCursor(unit);
+    cursor_ += unit;
 }
 
 
@@ -876,7 +976,7 @@ const char SEGM = ':';
 const char BLANK = ' ';
 
 
-inline std::pair<INTEGRITY_RET_TYPE, unsigned int> checkHTTPBuffIntegrity(const char * buff, unsigned int curBuffLen, unsigned int maxBuffLen,
+inline std::pair<IntegrityType, unsigned int> HasWebRawPacket(const char * buff, unsigned int curBuffLen, unsigned int maxBuffLen,
                             bool & isChunked, std::string & method, std::string & line, std::map<std::string,std::string> & head, std::string & body);
 
 std::string urlEncode(const std::string& orgString);
@@ -885,8 +985,8 @@ std::string urlDecode(const std::string& orgString);
 class WriteHTTP
 {
 public:
-    const char * getStream(){ return _buff.c_str();}
-    unsigned int getStreamLen() { return (unsigned int)_buff.length();}
+    const char * GetStream(){ return _buff.c_str();}
+    unsigned int GetStreamLen() { return (unsigned int)_buff.length();}
     void addHead(std::string key, std::string val)
     {
         _head.insert(std::make_pair(key, val));
@@ -1047,7 +1147,7 @@ inline unsigned int InnerReadLine(const char * buff, unsigned int curBuffLen, un
 {
     unsigned int cursor = 0;
     short readStatus = 0;
-    INTEGRITY_RET_TYPE isIntegrityData = IRT_SHORTAGE;
+    IntegrityType isIntegrityData = kIntegrityShortage;
 
     outStringKey.clear();
     outStringValue.clear();
@@ -1056,7 +1156,7 @@ inline unsigned int InnerReadLine(const char * buff, unsigned int curBuffLen, un
     {
         if (cursor >= maxBuffLen)
         {
-            isIntegrityData = IRT_CORRUPTION;
+            isIntegrityData = kIntegrityCorrupted;
             break;
         }
         if (buff[cursor] == CR)
@@ -1067,7 +1167,7 @@ inline unsigned int InnerReadLine(const char * buff, unsigned int curBuffLen, un
         if (buff[cursor] == LF)
         {
             cursor++;
-            isIntegrityData = IRT_SUCCESS;
+            isIntegrityData = kIntegrityIntact;
             break;
         }
         if (!isKV)
@@ -1119,14 +1219,14 @@ inline unsigned int InnerReadLine(const char * buff, unsigned int curBuffLen, un
         }//end. isKV
     }//extract character loop
 
-    if (isIntegrityData != IRT_SUCCESS)
+    if (isIntegrityData != kIntegrityIntact)
     {
         throw isIntegrityData;
     }
     return cursor;
 }
 
-inline std::pair<INTEGRITY_RET_TYPE, unsigned int> checkHTTPBuffIntegrity(const char * buff, unsigned int curBuffLen, unsigned int maxBuffLen,
+inline std::pair<IntegrityType, unsigned int> HasWebRawPacket(const char * buff, unsigned int curBuffLen, unsigned int maxBuffLen,
     bool & isChunked, std::string & method, std::string & line, std::map<std::string, std::string> & head, std::string & body)
 {
     if (head.empty())
@@ -1146,7 +1246,7 @@ inline std::pair<INTEGRITY_RET_TYPE, unsigned int> checkHTTPBuffIntegrity(const 
         {
             usedCount += InnerReadLine(buff + usedCount, curBuffLen - usedCount, maxBuffLen - usedCount, true, true, method, line);
         }
-        catch (INTEGRITY_RET_TYPE t)
+        catch (IntegrityType t)
         {
             return std::make_pair(t, usedCount);
         }
@@ -1177,7 +1277,7 @@ inline std::pair<INTEGRITY_RET_TYPE, unsigned int> checkHTTPBuffIntegrity(const 
                 head.insert(std::make_pair(std::move(tmpMethod), std::move(tmpLine)));
             } while (true);
         }
-        catch (INTEGRITY_RET_TYPE t)
+        catch (IntegrityType t)
         {
             return std::make_pair(t, 0);
         }
@@ -1196,37 +1296,37 @@ inline std::pair<INTEGRITY_RET_TYPE, unsigned int> checkHTTPBuffIntegrity(const 
             //chunked end. need closed.
             if (tmpMethod.empty())
             {
-                return std::make_pair(IRT_CORRUPTION, 0);
+                return std::make_pair(kIntegrityCorrupted, 0);
             }
             sscanf(tmpMethod.c_str(), "%x", &bodyLenght);
             if (bodyLenght == 0)
             {
                 //http socket end.
-                return std::make_pair(IRT_CORRUPTION, 0);
+                return std::make_pair(kIntegrityCorrupted, 0);
             }
             
         }
-        catch (INTEGRITY_RET_TYPE t)
+        catch (IntegrityType t)
         {
             return std::make_pair(t, 0);
         }
     }
     else if (head.empty())
     {
-        return std::make_pair(IRT_SHORTAGE, 0);
+        return std::make_pair(kIntegrityShortage, 0);
     }
     else if (method == "GET")
     {
-        return std::make_pair(IRT_SUCCESS, usedCount);
+        return std::make_pair(kIntegrityIntact, usedCount);
     }
     
     if (bodyLenght == -1 || usedCount + bodyLenght > maxBuffLen)
     {
-        return std::make_pair(IRT_CORRUPTION, 0);
+        return std::make_pair(kIntegrityCorrupted, 0);
     }
     if (bodyLenght + usedCount > curBuffLen)
     {
-        return std::make_pair(IRT_SHORTAGE, 0);
+        return std::make_pair(kIntegrityShortage, 0);
     }
     body.assign(buff + usedCount, bodyLenght);
     usedCount += bodyLenght;
@@ -1241,17 +1341,17 @@ inline std::pair<INTEGRITY_RET_TYPE, unsigned int> checkHTTPBuffIntegrity(const 
             //chunked end. need closed.
             if (!tmpMethod.empty())
             {
-                return std::make_pair(IRT_CORRUPTION, 0);
+                return std::make_pair(kIntegrityCorrupted, 0);
             }
         }
-        catch (INTEGRITY_RET_TYPE t)
+        catch (IntegrityType t)
         {
             return std::make_pair(t, 0);
         }
     }
     
 
-    return std::make_pair(IRT_SUCCESS, usedCount);
+    return std::make_pair(kIntegrityIntact, usedCount);
 }
 
 
@@ -1335,7 +1435,8 @@ inline std::string proto4z_traceback()
 }
 
 
-using WriteStream = WriteStreamImpl<std::string>;
+using WriteStream = WriteStreamImpl<20, 1024 * 1024, true>;
+using ReadStream = ReadStreamImpl<true>;
 
 
 

@@ -114,10 +114,10 @@ AccepterID SessionManager::addAccepter(const std::string & listenIP, unsigned sh
     extend._aID = _lastAcceptID;
     extend._listenIP = listenIP;
     extend._listenPort = listenPort;
-    extend._sessionOptions._onHTTPBlockCheck = DefaultHTTPBlockCheck;
-    extend._sessionOptions._onHTTPBlockDispatch = DefaultHTTPBlockDispatch;
-    extend._sessionOptions._onBlockCheck = DefaulBlockCheck;
-    extend._sessionOptions._onBlockDispatch = DefaultBlockDispatch;
+    extend._sessionOptions._onWebRawPacketCheck = DefaultWebRawPacketCheck;
+    extend._sessionOptions._onWebRawPacketProc = DefaultWebRawPacketProc;
+    extend._sessionOptions._onRawPacketCheck = DefaultRawPacketCheck;
+    extend._sessionOptions._onRawPacketProc = DefaultRawPacketProc;
     extend._sessionOptions._createBlock = DefaultCreateBlock;
     extend._sessionOptions._freeBlock = DefaultFreeBlock;
     return _lastAcceptID;
@@ -424,10 +424,10 @@ SessionID SessionManager::addConnecter(const std::string & remoteHost, unsigned 
     TcpSessionPtr & session = _mapTcpSessionPtr[_lastConnectID];
     session = std::make_shared<TcpSession>();
     
-    session->getOptions()._onHTTPBlockCheck = DefaultHTTPBlockCheck;
-    session->getOptions()._onHTTPBlockDispatch = DefaultHTTPBlockDispatch;
-    session->getOptions()._onBlockCheck = DefaulBlockCheck;
-    session->getOptions()._onBlockDispatch = DefaultBlockDispatch;
+    session->getOptions()._onWebRawPacketCheck = DefaultWebRawPacketCheck;
+    session->getOptions()._onWebRawPacketProc = DefaultWebRawPacketProc;
+    session->getOptions()._onRawPacketCheck = DefaultRawPacketCheck;
+    session->getOptions()._onRawPacketProc = DefaultRawPacketProc;
     session->getOptions()._createBlock = DefaultCreateBlock;
     session->getOptions()._freeBlock = DefaultFreeBlock;
 
@@ -495,7 +495,7 @@ void SessionManager::fakeSessionData(SessionID sID, const char * orgData, unsign
         }
         try
         {
-            iter->second->getOptions()._onBlockDispatch(iter->second, data.c_str(), (unsigned int)data.length());
+            iter->second->getOptions()._onRawPacketProc(iter->second, data.c_str(), (unsigned int)data.length());
         }
         catch (const std::exception & e)
         {

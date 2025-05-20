@@ -331,14 +331,14 @@ unsigned int TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
     {
         if (_options._protoType == PT_TCP)
         {
-            OnBlockCheckResult ret;
+            RawPacketCheckResult ret;
             try
             {
-                ret = _options._onBlockCheck(_recving->begin + usedIndex, _recving->len - usedIndex, _recving->bound - usedIndex, _recving->bound);
+                ret = _options._onRawPacketCheck(_recving->begin + usedIndex, _recving->len - usedIndex, _recving->bound - usedIndex, _recving->bound);
             }
             catch (const std::exception & e)
             {
-                LCW("MessageEntry _onBlockCheck catch one exception: " << e.what()  << ",  offset = " << usedIndex << ", len = " << _recving->len << ", bound = " << _recving->bound
+                LCW("MessageEntry _onRawPacketCheck catch one exception: " << e.what()  << ",  offset = " << usedIndex << ", len = " << _recving->len << ", bound = " << _recving->bound
                     << ", bindata(max 500byte) :"
                     << FNLog::LogBinText(_recving->begin+usedIndex, min(_recving->len - usedIndex, (unsigned int)500)));
                 close();
@@ -346,7 +346,7 @@ unsigned int TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
             }
             catch (...)
             {
-                LCW("MessageEntry _onBlockCheck catch one unknown exception.  offset=" << usedIndex << ",  len=" << _recving->len << ", bound=" << _recving->bound
+                LCW("MessageEntry _onRawPacketCheck catch one unknown exception.  offset=" << usedIndex << ",  len=" << _recving->len << ", bound=" << _recving->bound
                     << "bindata(max 500byte) :"
                     << FNLog::LogBinText(_recving->begin + usedIndex, min(_recving->len - usedIndex, (unsigned int)500)));
                 close();
@@ -354,7 +354,7 @@ unsigned int TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
             }
             if (ret.first == BCT_CORRUPTION)
             {
-                LCW("killed socket: _onBlockCheck error.  offset=" << usedIndex << ",  len=" << _recving->len << ", bound=" << _recving->bound
+                LCW("killed socket: _onRawPacketCheck error.  offset=" << usedIndex << ",  len=" << _recving->len << ", bound=" << _recving->bound
                     << "bindata(max 500byte) :"
                     << FNLog::LogBinText(_recving->begin + usedIndex, min(_recving->len - usedIndex, (unsigned int)500)));
                 close();
@@ -367,18 +367,18 @@ unsigned int TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
             try
             {
                 SessionManager::getRef()._statInfo[STAT_RECV_PACKS]++;
-                LCT("TcpSession::onRecv _onBlockDispatch(sessionID=" << getSessionID() << ", offset=" << usedIndex
+                LCT("TcpSession::onRecv _onRawPacketProc(sessionID=" << getSessionID() << ", offset=" << usedIndex
                     <<", len=" << ret.second);
-                _options._onBlockDispatch(shared_from_this(), _recving->begin + usedIndex, ret.second);
+                _options._onRawPacketProc(shared_from_this(), _recving->begin + usedIndex, ret.second);
             }
             catch (const std::exception & e)
             {
-                LCW("MessageEntry _onBlockDispatch catch one exception: " << e.what() << ", bindata(max 500byte) :"
+                LCW("MessageEntry _onRawPacketProc catch one exception: " << e.what() << ", bindata(max 500byte) :"
                     << FNLog::LogBinText(_recving->begin + usedIndex, min(ret.second, (unsigned int)500)));
             }
             catch (...)
             {
-                LCW("MessageEntry _onBlockDispatch catch one unknown exception, bindata(max 500byte) :"
+                LCW("MessageEntry _onRawPacketProc catch one unknown exception, bindata(max 500byte) :"
                     << FNLog::LogBinText(_recving->begin + usedIndex, min(ret.second, (unsigned int)500)));
             }
             usedIndex += ret.second;
@@ -387,10 +387,10 @@ unsigned int TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
         {
             std::string body;
             bool isFirstRead = _httpHeader.empty();
-            OnBlockCheckResult ret;
+            RawPacketCheckResult ret;
             try
             {
-                ret = _options._onHTTPBlockCheck(_recving->begin + usedIndex,
+                ret = _options._onWebRawPacketCheck(_recving->begin + usedIndex,
                     _recving->len - usedIndex,
                     _recving->bound - usedIndex,
                     _httpIsChunked, _httpMethod, _httpMethodLine, _httpHeader,
@@ -398,14 +398,14 @@ unsigned int TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
             }
             catch (const std::exception & e)
             {
-                LCW("MessageEntry _onHTTPBlockCheck catch one exception: " << e.what() << ", bindata(max 500byte) :"
+                LCW("MessageEntry _onWebRawPacketCheck catch one exception: " << e.what() << ", bindata(max 500byte) :"
                     << FNLog::LogBinText(_recving->begin + usedIndex, min(_recving->len - usedIndex, (unsigned int)500)));
                 close();
                 return 0;
             }
             catch (...)
             {
-                LCW("MessageEntry _onHTTPBlockCheck catch one unknown exception, bindata(max 500byte) :"
+                LCW("MessageEntry _onWebRawPacketCheck catch one unknown exception, bindata(max 500byte) :"
                     << FNLog::LogBinText(_recving->begin + usedIndex, min(_recving->len - usedIndex, (unsigned int)500)));
                 close();
                 return 0;
@@ -414,7 +414,7 @@ unsigned int TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
 
             if (ret.first == BCT_CORRUPTION)
             {
-                LCE("killed http socket: _onHTTPBlockCheck error sID=" << _sessionID << ", bindata(max 500byte) :"
+                LCE("killed http socket: _onWebRawPacketCheck error sID=" << _sessionID << ", bindata(max 500byte) :"
                     << FNLog::LogBinText(_recving->begin + usedIndex, min(_recving->len - usedIndex, (unsigned int)500)));
                 close();
                 return 0;
@@ -435,17 +435,17 @@ unsigned int TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
             SessionManager::getRef()._statInfo[STAT_RECV_PACKS]++;
             try
             {
-                _options._onHTTPBlockDispatch(shared_from_this(), _httpMethod, _httpMethodLine, _httpHeader, body);
+                _options._onWebRawPacketProc(shared_from_this(), _httpMethod, _httpMethodLine, _httpHeader, body);
 
             }
             catch (const std::exception & e)
             {
-                LCW("MessageEntry _onHTTPBlockDispatch catch one exception: " << e.what() << ", bindata(max 500byte) :"
+                LCW("MessageEntry _onWebRawPacketProc catch one exception: " << e.what() << ", bindata(max 500byte) :"
                     << FNLog::LogBinText(_recving->begin + usedIndex, min(_recving->len - usedIndex, (unsigned int)500)));
             }
             catch (...)
             {
-                LCW("MessageEntry _onHTTPBlockDispatch catch one unknown exception, bindata(max 500byte) :"
+                LCW("MessageEntry _onWebRawPacketProc catch one unknown exception, bindata(max 500byte) :"
                     << FNLog::LogBinText(_recving->begin + usedIndex, min(_recving->len - usedIndex, (unsigned int)500)));
             }
 

@@ -106,7 +106,7 @@ int main(int argc, char* argv[])
             jsonString += zsummer::proto4z::urlEncode(std::string(R"---({"uid":10001,"session":"0192023a7bbd73250516f069df18b500"})---"));
 
             LOGI("send to ConnectorID=" << session->getSessionID());
-            zsummer::proto4z::WriteHTTP wh;
+            zsummer::proto4z::WriteWebStream wh;
 //             wh.addHead("Accept", " text/html, application/xhtml+xml, */*");
 //             wh.addHead("Accept-Language", "zh-CN");
 //             wh.addHead("User-Agent", "Mozilla/5.0 ");
@@ -153,7 +153,7 @@ int main(int argc, char* argv[])
             const std::map<std::string, std::string> &head, const std::string & body)
         {
             LOGI("recv request. commond=" << method << ", commondvalue=" << methodLine);
-            zsummer::proto4z::WriteHTTP wh;
+            zsummer::proto4z::WriteWebStream wh;
             wh.addHead("Accept", " text/html, application/xhtml+xml, */*");
             wh.addHead("Accept-Language", "zh-CN");
             wh.addHead("User-Agent", "Mozilla/5.0 ");
@@ -182,7 +182,7 @@ int main(int argc, char* argv[])
         auto OnSessionLinked = [](TcpSessionPtr session)
         {
             LOGI("send to ConnectorID=" << session->getSessionID());
-            zsummer::proto4z::WriteHTTP wh;
+            zsummer::proto4z::WriteWebStream wh;
             wh.addHead("Host", "www.cnblogs.com");
             wh.get("/test.php");
             session->send(wh.GetStream(), wh.GetStreamLen());

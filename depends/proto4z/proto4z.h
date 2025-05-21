@@ -982,85 +982,85 @@ inline std::pair<IntegrityType, unsigned int> HasWebRawPacket(const char * buff,
 std::string urlEncode(const std::string& orgString);
 //"Content-Type" value is "application/x-www-form-urlencoded" means that your POST body will need to be URL encoded just like a GET parameter string.  
 std::string urlDecode(const std::string& orgString);
-class WriteHTTP
+class WriteWebStream
 {
 public:
-    const char * GetStream(){ return _buff.c_str();}
-    unsigned int GetStreamLen() { return (unsigned int)_buff.length();}
+    const char * GetStream(){ return buff_.c_str();}
+    unsigned int GetStreamLen() { return (unsigned int)buff_.length();}
     void addHead(std::string key, std::string val)
     {
-        _head.insert(std::make_pair(key, val));
+        head_.insert(std::make_pair(key, val));
     }
     void post(std::string uri, std::string content)
     {
         char buf[100];
         sprintf(buf, "%u", (unsigned int)content.length());
-        _head.insert(std::make_pair("Content-Length", buf));
-        _buff.append("POST " + uri + " HTTP/1.1" + CRLF);
-        if (_head.find("Connection") == _head.end())
+        head_.insert(std::make_pair("Content-Length", buf));
+        buff_.append("POST " + uri + " HTTP/1.1" + CRLF);
+        if (head_.find("Connection") == head_.end())
         {
-            _head.insert(std::make_pair("Connection", " keep-alive"));
+            head_.insert(std::make_pair("Connection", " keep-alive"));
         }
-        if (_head.find("User-Agent") == _head.end())
+        if (head_.find("User-Agent") == head_.end())
         {
-            _head.insert(std::make_pair("User-Agent", " Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) proto4z"));
+            head_.insert(std::make_pair("User-Agent", " Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) proto4z"));
         }
         writeGeneralHead();
-        _buff.append(CRLF);
-        _buff.append(content);
+        buff_.append(CRLF);
+        buff_.append(content);
     }
     void get(std::string uri)
     {
-        _head.insert(std::make_pair("Content-Length", "0"));
-        _buff.append("GET " + uri + " HTTP/1.1" + CRLF);
-        if (_head.find("Connection") == _head.end())
+        head_.insert(std::make_pair("Content-Length", "0"));
+        buff_.append("GET " + uri + " HTTP/1.1" + CRLF);
+        if (head_.find("Connection") == head_.end())
         {
-            _head.insert(std::make_pair("Connection", " keep-alive"));
+            head_.insert(std::make_pair("Connection", " keep-alive"));
         }
-        if (_head.find("User-Agent") == _head.end())
+        if (head_.find("User-Agent") == head_.end())
         {
-            _head.insert(std::make_pair("User-Agent", " Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) proto4z"));
+            head_.insert(std::make_pair("User-Agent", " Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) proto4z"));
         }
         writeGeneralHead();
-        _buff.append(CRLF);
+        buff_.append(CRLF);
     }
     void response(std::string statusCode, std::string content)
     {
         char buf[100];
         sprintf(buf, "%u", (unsigned int)content.length());
-        _head.insert(std::make_pair("Content-Length", buf));
-        _buff.append("HTTP/1.1 " + statusCode + " ^o^" + CRLF);
+        head_.insert(std::make_pair("Content-Length", buf));
+        buff_.append("HTTP/1.1 " + statusCode + " ^o^" + CRLF);
         writeGeneralHead();
-        _buff.append(CRLF);
-        _buff.append(content);
+        buff_.append(CRLF);
+        buff_.append(content);
     }
 protected:
     void writeGeneralHead()
     {
 
-        if (_head.find("Accept") == _head.end())
+        if (head_.find("Accept") == head_.end())
         {
-            _head.insert(std::make_pair("Accept", " */*"));
+            head_.insert(std::make_pair("Accept", " */*"));
         }
 
-        if (_head.find("Accept-Languaget") == _head.end())
+        if (head_.find("Accept-Languaget") == head_.end())
         {
-            _head.insert(std::make_pair("Accept-Languaget", " zh-CN,zh;q=0.8"));
+            head_.insert(std::make_pair("Accept-Languaget", " zh-CN,zh;q=0.8"));
         }
-        if (_head.find("Content-Type") == _head.end())
+        if (head_.find("Content-Type") == head_.end())
         {
-            _head.insert(std::make_pair("Content-Type", " text/html; charset=utf-8"));
+            head_.insert(std::make_pair("Content-Type", " text/html; charset=utf-8"));
         }     
 
-        for (auto iter = _head.begin(); iter != _head.end(); ++iter)
+        for (auto iter = head_.begin(); iter != head_.end(); ++iter)
         {
-            _buff.append(iter->first + ":" + iter->second + CRLF);
+            buff_.append(iter->first + ":" + iter->second + CRLF);
         }
 
     }
 private:
-    std::map<std::string, std::string> _head;
-    std::string _buff;
+    std::map<std::string, std::string> head_;
+    std::string buff_;
 };
 
 

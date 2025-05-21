@@ -464,7 +464,7 @@ static int setPulseRef(lua_State * L)
 static int webGet(lua_State * L)
 {
     SessionID sID = (SessionID)luaL_checkinteger(L, 1);
-    zsummer::proto4z::WriteHTTP wh;
+    zsummer::proto4z::WriteWebStream wh;
     std::string url = luaL_checkstring(L, 2);
     if(lua_istable(L, 3))
     {
@@ -483,7 +483,7 @@ static int webGet(lua_State * L)
 static int webPost(lua_State * L)
 {
     SessionID sID = (SessionID)luaL_checkinteger(L, 1);
-    zsummer::proto4z::WriteHTTP wh;
+    zsummer::proto4z::WriteWebStream wh;
     std::string uri = luaL_checkstring(L, 2);
     LOGD("top=" << lua_gettop(L));
     if(lua_istable(L, 3))
@@ -509,7 +509,7 @@ static int webPost(lua_State * L)
 static int webResponse(lua_State * L)
 {
     SessionID sID = (SessionID)luaL_checkinteger(L, 1);
-    zsummer::proto4z::WriteHTTP wh;
+    zsummer::proto4z::WriteWebStream wh;
     std::string code = luaL_checkstring(L, 2);
     LOGD("TOP=" << lua_gettop(L));
     if(lua_istable(L, 3))

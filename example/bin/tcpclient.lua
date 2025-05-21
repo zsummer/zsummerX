@@ -6,7 +6,7 @@ logw = summer.logw
 logi = summer.logi
 loge = summer.loge
 dump = Proto4z.dump
-dump = Proto4z.fastdump
+--dump = Proto4z.fastdump
 
 --[[
 local begin = summer.now()

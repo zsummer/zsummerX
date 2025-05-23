@@ -162,7 +162,7 @@ enum IntegrityType
 inline std::pair<IntegrityType, LenInteger>
 HasRawPacket(const char * buff, LenInteger curBuffLen, LenInteger boundLen, LenInteger maxBuffLen);
 
-template<int kBufCnt, int kBufSize>
+template<int kBufCnt, int kBufSize, int kNoCache>
 class TLSQueue
 {
 public:
@@ -241,7 +241,15 @@ public:
             error_cnt_++;
             return;
         }
-        tls_que_[free_cnt_++] = ptr;
+        if (kNoCache)
+        {
+            dealloc_(ptr);
+        }
+        else
+        {
+            tls_que_[free_cnt_++] = ptr;
+        }
+        
         used_cnt_--;
     }
     int free_cnt()const { return free_cnt_; }
@@ -267,11 +275,11 @@ private:
 //////////////////////////////////////////////////////////////////////////
 //StreamHeadTrait: User-Defined like DefaultStreamHeadTrait
 
-template<int kBufCnt, int kBufSize, int kHasHeader>
+template<int kBufCnt, int kBufSize, int kHasHeader, int kNoCache>
 class WriteStreamImpl
 {
 private:
-    thread_local static TLSQueue<kBufCnt, kBufSize> tlsque_;
+    thread_local static TLSQueue<kBufCnt, kBufSize, kNoCache> tlsque_;
 public:
     //! testStream : if true then WriteStreamImpl will not do any write operation.
     //! attach : the existing memory.
@@ -329,8 +337,8 @@ private:
 
 //http://zh.cppreference.com/w/cpp/language/storage_duration  
 
-template<int kBufCnt, int kBufSize, int kHasHeader>
-thread_local  TLSQueue<kBufCnt, kBufSize> WriteStreamImpl<kBufCnt, kBufSize, kHasHeader>::tlsque_;
+template<int kBufCnt, int kBufSize, int kHasHeader, int kNoCache>
+thread_local  TLSQueue<kBufCnt, kBufSize, kNoCache> WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache>::tlsque_;
 
 //////////////////////////////////////////////////////////////////////////
 //class ReadStreamImpl: De-serialization the specified data from byte stream.
@@ -396,8 +404,8 @@ private:
 //////////////////////////////////////////////////////////////////////////
 
 //write c-style string
-template<int kBufCnt, int kBufSize, int kHasHeader>
-inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & operator << (WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & ws, const char *const data)
+template<int kBufCnt, int kBufSize, int kHasHeader, int kNoCache>
+inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache> & operator << (WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache> & ws, const char *const data)
 {
     LenInteger len = (LenInteger)strlen(data);
     ws << len;
@@ -406,8 +414,8 @@ inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & operator << (WriteStream
 }
 
 //write std::string
-template<int kBufCnt, int kBufSize, int kHasHeader, class _Traits, class _Alloc>
-inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & operator << (WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & ws, const std::basic_string<char, _Traits, _Alloc> & data)
+template<int kBufCnt, int kBufSize, int kHasHeader, int kNoCache, class _Traits, class _Alloc>
+inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache> & operator << (WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache> & ws, const std::basic_string<char, _Traits, _Alloc> & data)
 {
     LenInteger len = (LenInteger)data.length();
     ws << len;
@@ -427,8 +435,8 @@ inline ReadStreamImpl<kHasHeader> & operator >> (ReadStreamImpl<kHasHeader> & rs
 
 
 //std::vector
-template<int kBufCnt, int kBufSize, int kHasHeader, class U, class _Alloc>
-inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & operator << (WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & ws, const std::vector<U, _Alloc> & vct)
+template<int kBufCnt, int kBufSize, int kHasHeader, int kNoCache, class U, class _Alloc>
+inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache> & operator << (WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache> & ws, const std::vector<U, _Alloc> & vct)
 {
     ws << (LenInteger)vct.size();
     for (typename std::vector<U, _Alloc>::const_iterator iter = vct.begin(); iter != vct.end(); ++iter)
@@ -458,8 +466,8 @@ inline ReadStreamImpl<kHasHeader> & operator >> (ReadStreamImpl<kHasHeader> & rs
 }
 
 //std::set
-template<int kBufCnt, int kBufSize, int kHasHeader, class Key, class _Pr, class _Alloc>
-inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & operator << (WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & ws, const std::set<Key, _Pr, _Alloc> & k)
+template<int kBufCnt, int kBufSize, int kHasHeader, int kNoCache, class Key, class _Pr, class _Alloc>
+inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache> & operator << (WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache> & ws, const std::set<Key, _Pr, _Alloc> & k)
 {
     ws << (LenInteger)k.size();
     for (typename std::set<Key, _Pr, _Alloc>::const_iterator iter = k.begin(); iter != k.end(); ++iter)
@@ -485,8 +493,8 @@ inline ReadStreamImpl<kHasHeader> & operator >> (ReadStreamImpl<kHasHeader> & rs
 }
 
 //std::multiset
-template<int kBufCnt, int kBufSize, int kHasHeader, class Key, class _Pr, class _Alloc>
-inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & operator << (WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & ws, const std::multiset<Key, _Pr, _Alloc> & k)
+template<int kBufCnt, int kBufSize, int kHasHeader, int kNoCache, class Key, class _Pr, class _Alloc>
+inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache> & operator << (WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache> & ws, const std::multiset<Key, _Pr, _Alloc> & k)
 {
     ws << (LenInteger)k.size();
     for (typename std::multiset<Key, _Pr, _Alloc>::const_iterator iter = k.begin(); iter != k.end(); ++iter)
@@ -512,8 +520,8 @@ inline ReadStreamImpl<kHasHeader> & operator >> (ReadStreamImpl<kHasHeader> & rs
 }
 
 //std::map
-template<int kBufCnt, int kBufSize, int kHasHeader, class Key, class Value, class _Pr, class _Alloc>
-inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & operator << (WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & ws, const std::map<Key, Value, _Pr, _Alloc> & kv)
+template<int kBufCnt, int kBufSize, int kHasHeader, int kNoCache, class Key, class Value, class _Pr, class _Alloc>
+inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache> & operator << (WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache> & ws, const std::map<Key, Value, _Pr, _Alloc> & kv)
 {
     ws << (LenInteger)kv.size();
     for (typename std::map<Key, Value, _Pr, _Alloc>::const_iterator iter = kv.begin(); iter != kv.end(); ++iter)
@@ -541,8 +549,8 @@ inline ReadStreamImpl<kHasHeader> & operator >> (ReadStreamImpl<kHasHeader> & rs
 }
 
 //std::multimap
-template<int kBufCnt, int kBufSize, int kHasHeader, class Key, class Value, class _Pr, class _Alloc>
-inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & operator << (WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & ws, const std::multimap<Key, Value, _Pr, _Alloc> & kv)
+template<int kBufCnt, int kBufSize, int kHasHeader, int kNoCache, class Key, class Value, class _Pr, class _Alloc>
+inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache> & operator << (WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache> & ws, const std::multimap<Key, Value, _Pr, _Alloc> & kv)
 {
     ws << (LenInteger)kv.size();
     for (typename std::multimap<Key, Value, _Pr, _Alloc>::const_iterator iter = kv.begin(); iter != kv.end(); ++iter)
@@ -571,8 +579,8 @@ inline ReadStreamImpl<kHasHeader> & operator >> (ReadStreamImpl<kHasHeader> & rs
 
 
 //std::list
-template<int kBufCnt, int kBufSize, int kHasHeader, class Value, class _Alloc>
-inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & operator << (WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & ws, const std::list<Value, _Alloc> & l)
+template<int kBufCnt, int kBufSize, int kHasHeader, int kNoCache, class Value, class _Alloc>
+inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache> & operator << (WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache> & ws, const std::list<Value, _Alloc> & l)
 {
     ws << (LenInteger)l.size();
     for (typename std::list<Value,_Alloc>::const_iterator iter = l.begin(); iter != l.end(); ++iter)
@@ -597,8 +605,8 @@ inline ReadStreamImpl<kHasHeader> & operator >> (ReadStreamImpl<kHasHeader> & rs
     return rs;
 }
 //std::deque
-template<int kBufCnt, int kBufSize, int kHasHeader, class Value, class _Alloc>
-inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & operator << (WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & ws, const std::deque<Value, _Alloc> & l)
+template<int kBufCnt, int kBufSize, int kHasHeader, int kNoCache, class Value, class _Alloc>
+inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache> & operator << (WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache> & ws, const std::deque<Value, _Alloc> & l)
 {
     ws << (LenInteger)l.size();
     for (typename std::deque<Value,_Alloc>::const_iterator iter = l.begin(); iter != l.end(); ++iter)
@@ -705,8 +713,8 @@ inline std::pair<IntegrityType, LenInteger> HasRawPacket(const char * buff, LenI
 //! implement 
 //////////////////////////////////////////////////////////////////////////
 
-template<int kBufCnt, int kBufSize, int kHasHeader>
-WriteStreamImpl<kBufCnt, kBufSize, kHasHeader>::WriteStreamImpl(ProtoInteger proto_id)
+template<int kBufCnt, int kBufSize, int kHasHeader, int kNoCache>
+WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache>::WriteStreamImpl(ProtoInteger proto_id)
 {
     attach_ = nullptr;
     cursor_ = 0;
@@ -730,8 +738,8 @@ WriteStreamImpl<kBufCnt, kBufSize, kHasHeader>::WriteStreamImpl(ProtoInteger pro
     }
 }
 
-template<int kBufCnt, int kBufSize, int kHasHeader>
-WriteStreamImpl<kBufCnt, kBufSize, kHasHeader>::~WriteStreamImpl()
+template<int kBufCnt, int kBufSize, int kHasHeader, int kNoCache>
+WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache>::~WriteStreamImpl()
 {
     if (attach_ != nullptr)
     {
@@ -741,8 +749,8 @@ WriteStreamImpl<kBufCnt, kBufSize, kHasHeader>::~WriteStreamImpl()
 }
 
 
-template<int kBufCnt, int kBufSize, int kHasHeader>
-inline void WriteStreamImpl<kBufCnt, kBufSize, kHasHeader>::CheckCursor(LenInteger unit)
+template<int kBufCnt, int kBufSize, int kHasHeader, int kNoCache>
+inline void WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache>::CheckCursor(LenInteger unit)
 {
     if (cursor_ > kBufSize)
     {
@@ -759,21 +767,21 @@ inline void WriteStreamImpl<kBufCnt, kBufSize, kHasHeader>::CheckCursor(LenInteg
 }
 
 
-template<int kBufCnt, int kBufSize, int kHasHeader>
-inline char* WriteStreamImpl<kBufCnt, kBufSize, kHasHeader>::GetStream()
+template<int kBufCnt, int kBufSize, int kHasHeader, int kNoCache>
+inline char* WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache>::GetStream()
 {
     return attach_;
 }
 
-template<int kBufCnt, int kBufSize, int kHasHeader>
-inline char* WriteStreamImpl<kBufCnt, kBufSize, kHasHeader>::GetStreamBody()
+template<int kBufCnt, int kBufSize, int kHasHeader, int kNoCache>
+inline char* WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache>::GetStreamBody()
 {
     return attach_ + head_len_;
 }
 
-template<int kBufCnt, int kBufSize, int kHasHeader>
+template<int kBufCnt, int kBufSize, int kHasHeader, int kNoCache>
 template<class U>
-inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader>& WriteStreamImpl<kBufCnt, kBufSize, kHasHeader>::AppendRawData(U unit)
+inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache>& WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache>::AppendRawData(U unit)
 {
     CheckCursor(sizeof(unit));
     WritePodData(attach_ + cursor_, unit);
@@ -786,8 +794,8 @@ inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader>& WriteStreamImpl<kBufCnt, 
     return *this;
 }
 
-template<int kBufCnt, int kBufSize, int kHasHeader>
-inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & WriteStreamImpl<kBufCnt, kBufSize, kHasHeader>::AppendRawData(const void * data, LenInteger len)
+template<int kBufCnt, int kBufSize, int kHasHeader, int kNoCache>
+inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache> & WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache>::AppendRawData(const void * data, LenInteger len)
 {
     CheckCursor(len);
     memcpy(attach_ + cursor_, data, len);
@@ -799,9 +807,9 @@ inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & WriteStreamImpl<kBufCnt,
     return *this;
 }
 
-template<int kBufCnt, int kBufSize, int kHasHeader>
+template<int kBufCnt, int kBufSize, int kHasHeader, int kNoCache>
 template<class U>
-inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & WriteStreamImpl<kBufCnt, kBufSize, kHasHeader>::ResetRawData(LenInteger offset, U unit)
+inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache> & WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache>::ResetRawData(LenInteger offset, U unit)
 {
     if (offset + sizeof(unit) > cursor_)
     {
@@ -812,8 +820,8 @@ inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & WriteStreamImpl<kBufCnt,
     return *this;
 }
 
-template<int kBufCnt, int kBufSize, int kHasHeader>
-inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & WriteStreamImpl<kBufCnt, kBufSize, kHasHeader>::ResetRawData(LenInteger offset, const void * data, LenInteger len)
+template<int kBufCnt, int kBufSize, int kHasHeader, int kNoCache>
+inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache> & WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache>::ResetRawData(LenInteger offset, const void * data, LenInteger len)
 {
     if (offset + len > cursor_)
     {
@@ -823,8 +831,8 @@ inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & WriteStreamImpl<kBufCnt,
     return *this;
 }
 
-template<int kBufCnt, int kBufSize, int kHasHeader>
-inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader> & WriteStreamImpl<kBufCnt, kBufSize, kHasHeader>::SetReserve(ReserveInteger n)
+template<int kBufCnt, int kBufSize, int kHasHeader, int kNoCache>
+inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache> & WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache>::SetReserve(ReserveInteger n)
 {
     return ResetRawData(sizeof(LenInteger), n);
 }
@@ -1435,8 +1443,8 @@ inline std::string proto4z_traceback()
 }
 
 
-using WriteStream = WriteStreamImpl<20, 1024 * 1024, true>;
-using ReadStream = ReadStreamImpl<true>;
+using WriteStream = WriteStreamImpl<20, 1024 * 1024, 1, 0>;
+using ReadStream = ReadStreamImpl<1>;
 
 
 

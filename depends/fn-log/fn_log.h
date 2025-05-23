@@ -2772,20 +2772,24 @@ namespace FNLog
 
 
 
-        int real_wide = 0;
+        int real_wide = 1;
+        if (number != 0)
+        {
 #ifndef WIN32
-        real_wide = sizeof(number) * 8 - __builtin_clzll(number);
+            real_wide = sizeof(number) * 8 - __builtin_clzll(number);
 #else
-        unsigned long win_index = 0;
-        if (_BitScanReverse(&win_index, (unsigned long)(number >> 32)))
-        {
-            real_wide = win_index + 1 + 32;
-        }
-        else if(_BitScanReverse(&win_index, (unsigned long)(number & 0xffffffff)))
-        {
-            real_wide = win_index + 1;
-        }
+            unsigned long win_index = 0;
+            if (_BitScanReverse(&win_index, (unsigned long)(number >> 32)))
+            {
+                real_wide = win_index + 1 + 32;
+            }
+            else if (_BitScanReverse(&win_index, (unsigned long)(number & 0xffffffff)))
+            {
+                real_wide = win_index + 1;
+            }
 #endif 
+        }
+
         switch (real_wide)
         {
         case  1:case  2:case  3:case  4:real_wide = 1; break;
@@ -2837,14 +2841,17 @@ namespace FNLog
         static const char* lut =
             "0123456789abcdefghijk";
 
-        int real_wide = 0;
+        int real_wide = 1;
+        if (number != 0)
+        {
 #ifndef WIN32
-        real_wide = sizeof(number) * 8 - __builtin_clzll(number);
+            real_wide = sizeof(number) * 8 - __builtin_clzll(number);
 #else
-        unsigned long win_index = 0;
-        _BitScanReverse64(&win_index, number);
-        real_wide = (int)win_index + 1;
+            unsigned long win_index = 0;
+            _BitScanReverse64(&win_index, number);
+            real_wide = (int)win_index + 1;
 #endif 
+        }
         if (real_wide < WIDE)
         {
             real_wide = WIDE;
@@ -2857,6 +2864,10 @@ namespace FNLog
             *(dst + cur_wide - 1) = lut[m2];
             cur_wide--;
         } while (number);
+        while (cur_wide-- != 0)
+        {
+            *(dst + cur_wide) = '0';
+        }
         return real_wide;
     }
 
@@ -4988,11 +4999,21 @@ namespace FNLog
 
     struct LogBinText
     {
-        LogBinText(const char* bin, int len) { text_bin = bin; bin_len = len; }
-        const char* text_bin;
+        LogBinText(const void* bin, int len) { text_bin = bin; bin_len = len; }
+        template<class T>
+        LogBinText(const T& t) { text_bin = &t; bin_len = sizeof(T); }
+        const void* text_bin;
         int bin_len;
     };
 
+    struct LogHexText
+    {
+        LogHexText(const void* bin, int len) { text_bin = bin; bin_len = len; }
+        template<class T>
+        LogHexText(const T& t) { text_bin = &t; bin_len = sizeof(T); }
+        const void* text_bin;
+        int bin_len;
+    };
 
 
     struct LogTimestamp
@@ -5042,21 +5063,26 @@ namespace FNLog
             logger_ = other.logger_;
             log_data_ = other.log_data_;
             hold_idx_ = other.hold_idx_;
+            tick_ = other.tick_;
             other.logger_ = nullptr;
             other.log_data_ = nullptr;
             other.hold_idx_ = -1;
+            other.tick_ = 0;
         }
         long long get_tick()
         {
 #ifdef WIN32
-            _mm_lfence();
+            //_mm_lfence();
             return (long long)__rdtsc();
 #elif defined(__GCC_ASM_FLAG_OUTPUTS__) && defined(__x86_64__)
             unsigned int lo = 0;
             unsigned int hi = 0;
-            __asm__ __volatile__("lfence;rdtsc" : "=a" (lo), "=d" (hi) ::);
+ //           __asm__ __volatile__("lfence;rdtsc" : "=a" (lo), "=d" (hi) ::);
+            __asm__ __volatile__("rdtsc" : "=a" (lo), "=d" (hi) ::);
             unsigned long long val = ((unsigned long long)hi << 32) | lo;
             return (long long)val;
+#else
+            return 0;
 #endif
         }
 
@@ -5255,7 +5281,37 @@ namespace FNLog
             return *this;
         }
 
-        LogStream& write_binary(const char* dst, int len)
+        LogStream& write_bin_text(const char* dst, int len)
+        {
+            if (!log_data_)
+            {
+                return *this;
+            }
+            write_buffer("\r\n\t[", sizeof("\r\n\t[") - 1);
+            for (int i = 0; i < (len / 16) + 1; i++)
+            {
+                if (i*16 >= len)
+                {
+                    continue;
+                }
+                write_buffer("\r\n\t[", sizeof("\r\n\t[") - 1);
+                *this << (void*)(dst + (size_t)i * 16);
+                write_buffer(": ", sizeof(": ") - 1);
+                for (int j = i * 16; j < (i + 1) * 16 && j < len; j++)
+                {
+                    if (log_data_->content_len_ + 30 >= LogData::LOG_SIZE)
+                    {
+                        break;
+                    }
+                    log_data_->content_len_ += FNLog::write_bin_unsafe<8>(log_data_->content_ + log_data_->content_len_,
+                        (unsigned long long)(unsigned char)dst[j]);
+                    write_buffer(" ", sizeof(" ") - 1);
+                }
+            }
+            write_buffer("\r\n\t]\r\n\t", sizeof("\r\n\t]\r\n\t") - 1);
+            return *this;
+        }
+        LogStream& write_hex_text(const char* dst, int len)
         {
             if (!log_data_)
             {
@@ -5264,6 +5320,10 @@ namespace FNLog
             write_buffer("\r\n\t[", sizeof("\r\n\t[")-1);
             for (int i = 0; i < (len / 32) + 1; i++)
             {
+                if (i * 32 >= len)
+                {
+                    continue;
+                }
                 write_buffer("\r\n\t[", sizeof("\r\n\t[") - 1);
                 *this << (void*)(dst + (size_t)i * 32);
                 write_buffer(": ", sizeof(": ") - 1);
@@ -5437,9 +5497,14 @@ namespace FNLog
             return *this;
         }
 
-        LogStream & operator <<(const LogBinText& text)
+        LogStream & operator <<(const LogHexText& text)
         {
-            return write_binary(text.text_bin, text.bin_len);
+            return write_hex_text((const char *)text.text_bin, text.bin_len);
+        }
+
+        LogStream& operator <<(const LogBinText& text)
+        {
+            return write_bin_text((const char*)text.text_bin, text.bin_len);
         }
 
         LogStream & operator <<(const LogTimestamp& date)

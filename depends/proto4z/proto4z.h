@@ -58,6 +58,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <unordered_map>
 #include <set>
 #include <list>
 #include <queue>
@@ -434,6 +435,23 @@ inline ReadStreamImpl<kHasHeader> & operator >> (ReadStreamImpl<kHasHeader> & rs
 }
 
 
+//std::pair
+template<int kBufCnt, int kBufSize, int kHasHeader, int kNoCache, class U1, class U2>
+inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache>& operator << (WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache>& ws, const std::pair<U1, U2>& pr)
+{
+    ws << pr.first << pr.second;
+    return ws;
+}
+
+template<int kHasHeader, class U1, class U2>
+inline ReadStreamImpl<kHasHeader>& operator >> (ReadStreamImpl<kHasHeader>& rs, std::pair<U1, U2>& pr)
+{
+    rs >> pr.first >> pr.second;
+    return rs;
+}
+
+
+
 //std::vector
 template<int kBufCnt, int kBufSize, int kHasHeader, int kNoCache, class U, class _Alloc>
 inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache> & operator << (WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache> & ws, const std::vector<U, _Alloc> & vct)
@@ -455,11 +473,10 @@ inline ReadStreamImpl<kHasHeader> & operator >> (ReadStreamImpl<kHasHeader> & rs
     {
         T t;
         vct.clear();
-        vct.reserve(totalCount > 100 ? 100 : totalCount);
         for (LenInteger i = 0; i < totalCount; ++i)
         {
             rs >> t;
-            vct.push_back(t);
+            vct.push_back(std::move(t));
         }
     }
     return rs;
@@ -487,10 +504,11 @@ inline ReadStreamImpl<kHasHeader> & operator >> (ReadStreamImpl<kHasHeader> & rs
     for (LenInteger i = 0; i < totalCount; ++i)
     {
         rs >> t;
-        k.insert(t);
+        k.insert(std::move(t));
     }
     return rs;
 }
+
 
 //std::multiset
 template<int kBufCnt, int kBufSize, int kHasHeader, int kNoCache, class Key, class _Pr, class _Alloc>
@@ -514,7 +532,7 @@ inline ReadStreamImpl<kHasHeader> & operator >> (ReadStreamImpl<kHasHeader> & rs
     for (LenInteger i = 0; i < totalCount; ++i)
     {
         rs >> t;
-        k.insert(t);
+        k.insert(std::move(t));
     }
     return rs;
 }
@@ -526,8 +544,7 @@ inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache> & operator << (W
     ws << (LenInteger)kv.size();
     for (typename std::map<Key, Value, _Pr, _Alloc>::const_iterator iter = kv.begin(); iter != kv.end(); ++iter)
     {
-        ws << iter->first;
-        ws << iter->second;
+        ws << *iter;
     }
     return ws;
 }
@@ -541,9 +558,8 @@ inline ReadStreamImpl<kHasHeader> & operator >> (ReadStreamImpl<kHasHeader> & rs
     kv.clear();
     for (LenInteger i = 0; i < totalCount; ++i)
     {
-        rs >> pr.first;
-        rs >> pr.second;
-        kv.insert(pr);
+        rs >> pr;
+        kv.insert(std::move(pr));
     }
     return rs;
 }
@@ -555,8 +571,7 @@ inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache> & operator << (W
     ws << (LenInteger)kv.size();
     for (typename std::multimap<Key, Value, _Pr, _Alloc>::const_iterator iter = kv.begin(); iter != kv.end(); ++iter)
     {
-        ws << iter->first;
-        ws << iter->second;
+        ws << *iter;
     }
     return ws;
 }
@@ -570,9 +585,8 @@ inline ReadStreamImpl<kHasHeader> & operator >> (ReadStreamImpl<kHasHeader> & rs
     kv.clear();
     for (LenInteger i = 0; i < totalCount; ++i)
     {
-        rs >> pr.first;
-        rs >> pr.second;
-        kv.insert(pr);
+        rs >> pr;
+        kv.insert(std::move(pr));
     }
     return rs;
 }
@@ -600,7 +614,7 @@ inline ReadStreamImpl<kHasHeader> & operator >> (ReadStreamImpl<kHasHeader> & rs
     for (LenInteger i = 0; i < totalCount; ++i)
     {
         rs >> t;
-        l.push_back(t);
+        l.push_back(std::move(t));
     }
     return rs;
 }
@@ -626,11 +640,37 @@ inline ReadStreamImpl<kHasHeader> & operator >> (ReadStreamImpl<kHasHeader> & rs
     for (LenInteger i = 0; i < totalCount; ++i)
     {
         rs >> t;
-        l.push_back(t);
+        l.push_back(std::move(t));
     }
     return rs;
 }
 
+//std::unordered_map
+template<int kBufCnt, int kBufSize, int kHasHeader, int kNoCache, class Key, class Value, class _Pr, class _Alloc>
+inline WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache>& operator << (WriteStreamImpl<kBufCnt, kBufSize, kHasHeader, kNoCache>& ws, const std::unordered_map<Key, Value, _Pr, _Alloc>& kv)
+{
+    ws << (LenInteger)kv.size();
+    for (typename std::unordered_map<Key, Value, _Pr, _Alloc>::const_iterator iter = kv.begin(); iter != kv.end(); ++iter)
+    {
+        ws << *iter;
+    }
+    return ws;
+}
+
+template<int kHasHeader, class Key, class Value, class _Pr, class _Alloc>
+inline ReadStreamImpl<kHasHeader>& operator >> (ReadStreamImpl<kHasHeader>& rs, std::unordered_map<Key, Value, _Pr, _Alloc>& kv)
+{
+    LenInteger totalCount = 0;
+    rs >> totalCount;
+    std::pair<Key, Value> pr;
+    kv.clear();
+    for (LenInteger i = 0; i < totalCount; ++i)
+    {
+        rs >> pr;
+        kv.insert(std::move(pr));
+    }
+    return rs;
+}
 
 
 //////////////////////////////////////////////////////////////////////////

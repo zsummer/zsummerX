@@ -350,16 +350,16 @@ void TcpSocket::onEPOLLMessage(uint32_t event)
         }
         else if (ret != -1)
         {
+            auto guard = shared_from_this();
             if (_daemonRecv)
             {
-                auto guard = shared_from_this();
+                
                 _recvOffset = _onRecvHandler(NEC_SUCCESS,ret);
             }
             else
             {
                 _eventData._event.events = _eventData._event.events &~EPOLLIN;
                 _summer->registerEvent(EPOLL_CTL_MOD, _eventData);
-                auto guard = shared_from_this();
                 _OnRecvHandler onRecv(std::move(_onRecvHandler));
                 _recvBuf = NULL;
                 _recvLen = 0;
